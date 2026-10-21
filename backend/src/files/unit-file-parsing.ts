@@ -46,6 +46,10 @@ export function parseUnitXml(
     const codingSchemeRef = codingRefMatch?.[1]?.trim() || undefined;
     const metaRefMatch = xmlContent.match(/<Reference>([^<]+)<\/Reference>/);
     const metadataRef = metaRefMatch?.[1]?.trim() || undefined;
+    const commentsRef =
+      xmlContent
+        .match(/<UnitCommentsRef[^>]*>([^<]+)<\/UnitCommentsRef>/)?.[1]
+        ?.trim() || undefined;
 
     return {
       unitId,
@@ -55,6 +59,7 @@ export function parseUnitXml(
       playerRef,
       codingSchemeRef,
       metadataRef,
+      commentsRef,
     };
   } catch (error) {
     logger.error(`Failed to parse unit XML ${xmlFilename}: ${error}`);

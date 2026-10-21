@@ -202,6 +202,7 @@ export function normalizeFeatureConfig(featureConfig: unknown): UnknownRecord {
 
   normalized.enablePlayerFocusHighlight =
     source.enablePlayerFocusHighlight === true;
+  normalized.showStudioItemComments = source.showStudioItemComments === true;
 
   normalized.enablePersonalItemData = source.enablePersonalItemData === true;
   normalized.enableItemCollections = source.enableItemCollections === true;
