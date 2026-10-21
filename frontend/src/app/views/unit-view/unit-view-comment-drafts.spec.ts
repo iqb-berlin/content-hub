@@ -2,7 +2,7 @@ import { provideZonelessChangeDetection, ɵresolveComponentResources } from '@an
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, provideRouter } from '@angular/router';
-import { BehaviorSubject, of, Subject } from 'rxjs';
+import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import threadTemplate from '../comment-thread/item-comment-thread.component.html?raw';
 import { ApiService } from '../../core/services/api.service';
@@ -35,6 +35,9 @@ describe('Unit review comment drafts', () => {
   const api = {
     getViewUnit: vi.fn(),
     getReviewCommentThread: vi.fn(),
+    getItemCommentThread: vi.fn(),
+    getItemCommentCounts: vi.fn(),
+    createItemComment: vi.fn(),
     updateItemComment: vi.fn(),
   };
 
@@ -57,6 +60,20 @@ describe('Unit review comment drafts', () => {
       }),
     );
     api.updateItemComment.mockReturnValue(of({}));
+    api.getItemCommentCounts.mockReturnValue(
+      of({
+        revision: '1',
+        counts: [
+          { unitId: 'U', itemId: 'I2', count: 0, codingCount: 0 },
+          { unitId: 'U', itemId: 'I1', count: 0, codingCount: 0 },
+          { unitId: 'V', itemId: 'I1', count: 0, codingCount: 0 },
+        ],
+      }),
+    );
+    api.getItemCommentThread.mockImplementation((_acpId: string, unitId: string, itemId: string) =>
+      api.getReviewCommentThread(_acpId, { targetType: 'ITEM', unitId, itemId }),
+    );
+    api.createItemComment.mockReturnValue(of({}));
     (ItemCommentThreadComponent as any).ctorParameters = () => [{ type: ApiService }];
     await ɵresolveComponentResources(async (url: string) =>
       url.endsWith('.html') ? threadTemplate : '',
@@ -107,6 +124,144 @@ describe('Unit review comment drafts', () => {
     expect(thread()!.editingCommentId).toBe('root');
     expect(thread()!.editText).toBe('Bearbeitungsentwurf');
   }
+
+  function enableItemComments(targets = ['UNIT', 'ITEM', 'BOOKLET']) {
+    fixture.componentRef.setInput('featureConfigOverride', {
+      enableCommenting: true,
+      commentTargets: targets,
+    });
+    detect();
+  }
+
+  function select(selector: string, value: string) {
+    const element = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
+    expect(element).not.toBeNull();
+    element.value = value;
+    element.dispatchEvent(new Event('change'));
+    detect();
+  }
+
+  it('uses canonical item IDs for the current unit and submits to the selected item', () => {
+    api.getViewUnit.mockReturnValue(
+      of({
+        id: 'U',
+        name: 'Aufgabe U',
+        items: [
+          { id: 'I1', name: 'Erstes Item' },
+          { id: 'not-in-catalog', name: 'Veraltet' },
+        ],
+        dependencies: [],
+      }),
+    );
+    fixture.componentInstance['loadUnit']();
+    enableItemComments();
+    select('.comment-scope-select select', 'item');
+    const options = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '.comment-item-select option',
+      ) as NodeListOf<HTMLOptionElement>,
+    );
+    expect(options.map((option) => option.value)).toEqual(['I1', 'I2']);
+    expect(options[0].textContent).toContain('Erstes Item');
+    expect(options[0].textContent).toContain('I1');
+    expect(fixture.nativeElement.textContent).not.toContain('Veraltet');
+    expect(thread()!.targetType).toBe('ITEM');
+    expect(thread()!.unitId).toBe('U');
+    expect(thread()!.itemId).toBe('I1');
+
+    select('.comment-item-select select', 'I2');
+    thread()!.newCommentText = 'Kommentar zum zweiten Item';
+    thread()!.submitComment();
+
+    expect(api.createItemComment).toHaveBeenCalledWith(
+      'A',
+      expect.objectContaining({
+        unitId: 'U',
+        itemId: 'I2',
+        commentText: 'Kommentar zum zweiten Item',
+      }),
+    );
+  });
+
+  it('keeps item, unit and booklet drafts separate and restores the selected item on return', () => {
+    enableItemComments();
+    select('.comment-scope-select select', 'item');
+    enterDrafts();
+    select('.comment-item-select select', 'I2');
+    expect(thread()!.newCommentText).toBe('');
+    thread()!.newCommentText = 'Zweites Item';
+    select('.comment-scope-select select', 'unit');
+    expect(thread()!.newCommentText).toBe('');
+    thread()!.newCommentText = 'Aufgabenentwurf';
+    select('.comment-scope-select select', 'booklet');
+    expect(thread()!.newCommentText).toBe('');
+    thread()!.newCommentText = 'Testheftentwurf';
+    select('.comment-scope-select select', 'item');
+    expect(thread()!.itemId).toBe('I2');
+    expect(thread()!.newCommentText).toBe('Zweites Item');
+    select('.comment-item-select select', 'I1');
+    expectDrafts();
+
+    fixture.componentRef.setInput('unitId', 'V');
+    detect();
+    expect(thread()!.unitId).toBe('V');
+    expect(thread()!.newCommentText).toBe('');
+    fixture.componentRef.setInput('unitId', 'U');
+    detect();
+    expect(thread()!.itemId).toBe('I1');
+    expectDrafts();
+  });
+
+  it('discards delayed item catalogs after changing the unit', () => {
+    const oldCatalog = new Subject<any>();
+    const currentCatalog = new Subject<any>();
+    api.getItemCommentCounts.mockReturnValueOnce(oldCatalog).mockReturnValueOnce(currentCatalog);
+    enableItemComments(['ITEM']);
+    expect(thread()).toBeUndefined();
+    fixture.componentRef.setInput('unitId', 'V');
+    detect();
+    oldCatalog.next({ revision: 'old', counts: [{ unitId: 'U', itemId: 'OLD' }] });
+    detect();
+    expect(thread()).toBeUndefined();
+
+    currentCatalog.next({
+      revision: 'new',
+      counts: [
+        { unitId: 'V', itemId: 'I1' },
+        { unitId: 'U', itemId: 'OLD' },
+      ],
+    });
+    detect();
+    expect(thread()!.unitId).toBe('V');
+    expect(thread()!.itemId).toBe('I1');
+    expect(api.getItemCommentThread).not.toHaveBeenCalledWith('A', 'V', 'OLD', expect.anything());
+  });
+
+  it('supports item-only review, retries catalog errors and respects disabled targets', () => {
+    api.getItemCommentCounts.mockReturnValueOnce(throwError(() => new Error('offline')));
+    enableItemComments(['ITEM']);
+    expect(thread()).toBeUndefined();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain(
+      'Items für die Kommentierung konnten nicht geladen werden.',
+    );
+    const retry = fixture.nativeElement.querySelector('.comment-items-retry') as HTMLButtonElement;
+    retry.click();
+    detect();
+    expect(thread()!.targetType).toBe('ITEM');
+
+    const calls = api.getItemCommentCounts.mock.calls.length;
+    enableItemComments(['UNIT', 'BOOKLET']);
+    expect(thread()!.targetType).toBe('UNIT');
+    expect(fixture.nativeElement.querySelector('.comment-item-select')).toBeNull();
+    expect(api.getItemCommentCounts).toHaveBeenCalledTimes(calls);
+
+    api.getItemCommentCounts.mockReturnValue(of({ revision: 'empty', counts: [] }));
+    enableItemComments(['ITEM']);
+    expect(thread()).toBeUndefined();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain(
+      'Für diese Aufgabe sind keine kommentierbaren Items verfügbar.',
+    );
+  });
 
   it.each(['tab', 'collapse'] as const)(
     'preserves all drafts and their group through %s changes',

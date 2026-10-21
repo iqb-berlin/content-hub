@@ -612,8 +612,16 @@ nur die Sichtbarkeit von Kommentaren und vergeben keinen Zugang.
 
 Wenn Kommentare aktiviert sind, koennen angemeldete Nutzerinnen und Nutzer Kommentare im
 jeweiligen fachlichen Kontext anlegen. Item-Kommentare werden beim ausgewaehlten Item im
-Item-Explorer erfasst; Unit-Kommentare in der Ansicht der jeweiligen Unit. Auf der
-ACP-Startseite stehen dann typischerweise zur Verfuegung:
+Item-Explorer erfasst; Unit-Kommentare in der Ansicht der jeweiligen Unit.
+
+Im Review-Arbeitsplatz kann unter `Kommentarziel` zwischen `Aufgabe`, `Item` und `Testheft`
+gewechselt werden, soweit diese Ziele fuer den ACP aktiviert sind. Fuer `Item` waehlen Sie
+anschliessend das gewuenschte Item der aktuellen Aufgabe aus. Die Auswahl zeigt die Item-ID
+und, soweit vorhanden, die Bezeichnung. Nicht abgesendete Kommentare bleiben beim Wechsel
+zwischen Items und Kommentarzielen erhalten. Ein separater Zugang zum Item-Explorer ist fuer
+diese Kommentierung nicht erforderlich.
+
+Auf der ACP-Startseite stehen dann typischerweise zur Verfuegung:
 
 - ein Link zu den Item-Kommentaren im Item-Explorer, falls diese aktiviert sind
 - `Kommentare exportieren (XLSX)`

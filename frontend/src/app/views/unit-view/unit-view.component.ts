@@ -37,6 +37,8 @@ type UnitPagingMode =
   | 'view-all'
   | 'print-ids';
 
+type ReviewCommentScope = 'unit' | 'item' | 'booklet';
+
 @Component({
   selector: 'app-unit-view',
   standalone: true,
@@ -247,17 +249,55 @@ type UnitPagingMode =
 
         <div class="panel-content">
           @if (activeTab === 'comments') {
-            @if (showCommentBtn || showBookletCommentBtn) {
-              @if (showCommentBtn && showBookletCommentBtn) {
+            @if (commentScopeOptions.length) {
+              @if (commentScopeOptions.length > 1) {
                 <label class="comment-scope-select">
                   Kommentarziel
-                  <select [(ngModel)]="commentScope">
-                    <option value="unit">Aufgabe</option>
-                    <option value="booklet">Testheft</option>
+                  <select aria-label="Kommentarziel" [(ngModel)]="commentScope">
+                    @for (scope of commentScopeOptions; track scope.value) {
+                      <option [value]="scope.value">{{ scope.label }}</option>
+                    }
                   </select>
                 </label>
               }
-              @if (commentScope === 'booklet' && showBookletCommentBtn) {
+              @if (commentScope === 'item' && showItemCommentBtn) {
+                @if (commentItemsLoading) {
+                  <p class="help-text" role="status">Items werden geladen …</p>
+                } @else if (commentItemsError) {
+                  <p class="alert alert-error" role="alert">{{ commentItemsError }}</p>
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm comment-items-retry"
+                    (click)="loadCommentItems()"
+                  >
+                    Items erneut laden
+                  </button>
+                } @else if (commentItems.length) {
+                  <label class="comment-item-select">
+                    Item
+                    <select aria-label="Item" [(ngModel)]="selectedCommentItemId">
+                      @for (item of commentItems; track item.id) {
+                        <option [value]="item.id">{{ item.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <app-item-comment-thread
+                    [drafts]="commentDrafts"
+                    [sessionToken]="commentSessionToken"
+                    [acpId]="acpId"
+                    [targetType]="'ITEM'"
+                    [unitId]="unitId"
+                    [itemId]="selectedCommentItemId"
+                    [enabled]="showItemCommentBtn"
+                    [initiallyOpen]="true"
+                    [hideToggle]="true"
+                  />
+                } @else {
+                  <p class="help-text" role="status">
+                    Für diese Aufgabe sind keine kommentierbaren Items verfügbar.
+                  </p>
+                }
+              } @else if (commentScope === 'booklet' && showBookletCommentBtn) {
                 <app-item-comment-thread
                   [drafts]="commentDrafts"
                   [sessionToken]="commentSessionToken"
@@ -706,7 +746,8 @@ type UnitPagingMode =
         color: var(--color-text-secondary);
         font-size: 0.85rem;
       }
-      .comment-scope-select {
+      .comment-scope-select,
+      .comment-item-select {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -717,6 +758,10 @@ type UnitPagingMode =
       }
       .comment-scope-select select {
         min-width: 130px;
+      }
+      .comment-item-select select {
+        flex: 1;
+        min-width: 0;
       }
 
       @media (max-width: 1100px) {
@@ -794,10 +839,32 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   showRichText = false;
   showMetadataToggle = false;
   showCommentBtn = false;
+  showItemCommentBtn = false;
   showBookletCommentBtn = false;
   showDownloadBtn = false;
   showAudioVideoCodingVariables = true;
-  commentScope: 'unit' | 'booklet' = 'unit';
+  commentScope: ReviewCommentScope = 'unit';
+  commentItems: { id: string; label: string }[] = [];
+  commentItemsLoading = false;
+  commentItemsError = '';
+  private readonly selectedCommentItems = new Map<string, string>();
+
+  get selectedCommentItemId(): string {
+    return this.selectedCommentItems.get(`${this.acpId}\u0000${this.unitId}`) || '';
+  }
+
+  set selectedCommentItemId(value: string) {
+    this.selectedCommentItems.set(`${this.acpId}\u0000${this.unitId}`, value);
+  }
+
+  get commentScopeOptions(): { value: ReviewCommentScope; label: string }[] {
+    const scopes: { value: ReviewCommentScope; label: string; enabled: boolean }[] = [
+      { value: 'unit', label: 'Aufgabe', enabled: this.showCommentBtn },
+      { value: 'item', label: 'Item', enabled: this.showItemCommentBtn },
+      { value: 'booklet', label: 'Testheft', enabled: this.showBookletCommentBtn },
+    ];
+    return scopes.filter((scope) => scope.enabled);
+  }
   readonly commentDrafts = new CommentThreadDrafts();
   commentSessionToken = 0;
   private commentIdentity: string | null = null;
@@ -819,6 +886,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private featureConfigRequest: Subscription | null = null;
   private unitRequest: Subscription | null = null;
   private metadataRequest: Subscription | null = null;
+  private commentItemsRequest: Subscription | null = null;
+  private commentItemsLoadToken = 0;
   private unitAbortController: AbortController | null = null;
   private panelResizeStartX = 0;
   private panelResizeStartWidth = 0;
@@ -897,8 +966,10 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       const identity = this.personalSession.resolveIdentityFromToken(this.auth.getToken());
       if (identity !== this.commentIdentity) {
         this.commentDrafts.clear();
+        this.selectedCommentItems.clear();
         this.commentIdentity = identity;
         this.commentSessionToken += 1;
+        this.loadCommentItems();
         this.changeDetector.markForCheck();
       }
     });
@@ -949,14 +1020,20 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       ? featureConfig.commentTargets
       : [];
     this.showCommentBtn = !!(featureConfig.enableCommenting && commentTargets.includes('UNIT'));
+    this.showItemCommentBtn = !!(
+      this.reviewMode &&
+      featureConfig.enableCommenting &&
+      commentTargets.includes('ITEM')
+    );
     this.showBookletCommentBtn = !!(
       this.reviewMode &&
       this.bookletId &&
       featureConfig.enableCommenting &&
       commentTargets.includes('BOOKLET')
     );
-    if (!this.showCommentBtn && this.showBookletCommentBtn) this.commentScope = 'booklet';
-    else if (!this.showBookletCommentBtn) this.commentScope = 'unit';
+    if (!this.commentScopeOptions.some((scope) => scope.value === this.commentScope)) {
+      this.commentScope = this.commentScopeOptions[0]?.value || 'unit';
+    }
     this.showDownloadBtn = !!featureConfig.allowUnitDownload;
     this.showAudioVideoCodingVariables = featureConfig.showAudioVideoCodingVariables !== false;
 
@@ -965,6 +1042,57 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     else if (this.showCodingScheme) this.activeTab = 'coding';
     else if (this.showRichText) this.activeTab = 'richtext';
     if (!this.showMetadataToggle) this.panelVisible = false;
+    this.loadCommentItems();
+  }
+
+  private resetCommentItems() {
+    this.commentItemsLoadToken += 1;
+    this.commentItemsRequest?.unsubscribe();
+    this.commentItemsRequest = null;
+    this.commentItems = [];
+    this.commentItemsLoading = false;
+    this.commentItemsError = '';
+  }
+
+  loadCommentItems() {
+    this.resetCommentItems();
+    if (!this.showItemCommentBtn || !this.unit || this.unit.id !== this.unitId) return;
+    const token = this.commentItemsLoadToken;
+    const unitId = this.unitId;
+    const names = new Map(
+      (this.unit.items || []).map((item) => [
+        String(item.id || '').trim(),
+        typeof item.name === 'string' ? item.name.trim() : '',
+      ]),
+    );
+    this.commentItemsLoading = true;
+    // Counts include every canonical target, even without comments, and do not
+    // require Item Explorer access. Raw unit metadata alone may omit file items.
+    this.commentItemsRequest = this.api.getItemCommentCounts(this.acpId).subscribe({
+      next: (snapshot) => {
+        if (token !== this.commentItemsLoadToken) return;
+        const ids = new Set(
+          snapshot.counts.filter((item) => item.unitId === unitId).map((item) => item.itemId),
+        );
+        this.commentItems = [...ids]
+          .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
+          .map((id) => ({
+            id,
+            label: names.get(id) && names.get(id) !== id ? `${names.get(id)} (${id})` : id,
+          }));
+        if (!ids.has(this.selectedCommentItemId)) {
+          this.selectedCommentItemId = this.commentItems[0]?.id || '';
+        }
+        this.commentItemsLoading = false;
+        this.changeDetector.markForCheck();
+      },
+      error: () => {
+        if (token !== this.commentItemsLoadToken) return;
+        this.commentItemsLoading = false;
+        this.commentItemsError = 'Items für die Kommentierung konnten nicht geladen werden.';
+        this.changeDetector.markForCheck();
+      },
+    });
   }
 
   private loadUnit() {
@@ -972,6 +1100,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     const requestToken = ++this.unitLoadToken;
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
+    this.resetCommentItems();
     this.unitAbortController?.abort();
     this.unitAbortController = new AbortController();
     this.stopAutoResize();
@@ -990,6 +1119,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.unitRequest = this.api.getViewUnit(this.acpId, this.unitId).subscribe((u) => {
       if (requestToken !== this.unitLoadToken) return;
       this.unit = u;
+      this.loadCommentItems();
       this.breadcrumbs = [
         { label: 'Assessment Content Pool', route: ['/'] },
         { label: 'ACP', route: ['/view', this.acpId] },
@@ -1017,6 +1147,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy() {
     this.authSubscription?.unsubscribe();
     this.commentDrafts.clear();
+    this.selectedCommentItems.clear();
+    this.resetCommentItems();
     this.unitLoadToken += 1;
     this.featureConfigRequest?.unsubscribe();
     this.unitRequest?.unsubscribe();
