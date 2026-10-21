@@ -229,6 +229,23 @@ export type ItemExplorerCollectionsViewModel = ReadonlyViewModelSlice<
 export type ItemExplorerPreviewViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
+    | 'itemExplorerConditionalVisibilityEnabled'
+    | 'syntheticPreviewState'
+    | 'previewMode'
+    | 'setPreviewMode'
+    | 'presentationMessage'
+    | 'preparingPresentation'
+    | 'hasPreviewContext'
+    | 'hasCurrentResponseState'
+    | 'capturePreviewContext'
+    | 'clearPreviewContext'
+    | 'canOpenFullUnit'
+    | 'previewStateVariables'
+    | 'previewStartPage'
+    | 'previewStartPages'
+    | 'showPreviewStartPageSelector'
+    | 'setPreviewStartPage'
+    | 'setPreviewStateValue'
     | 'applyCustomPreviewTarget'
     | 'acpId'
     | 'canEditExplorer'

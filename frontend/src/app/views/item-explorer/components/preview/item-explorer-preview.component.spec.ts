@@ -1,7 +1,22 @@
-import { ElementRef } from '@angular/core';
+import { Component, ElementRef, inject, NO_ERRORS_SCHEMA } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter, RouterLink } from '@angular/router';
+import { ItemExplorerFacade } from '../../item-explorer.facade';
 import { describe, expect, it, vi } from 'vitest';
 import { ItemExplorerPreviewComponent } from './item-explorer-preview.component';
 import template from './item-explorer-preview.component.html?raw';
+
+@Component({
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
+  schemas: [NO_ERRORS_SCHEMA],
+  template,
+})
+class PreviewAccessTemplateHarness {
+  readonly vm = inject(ItemExplorerFacade).previewViewModel;
+}
 
 function createPreview() {
   const feature = {
@@ -16,6 +31,81 @@ function createPreview() {
 }
 
 describe('ItemExplorerPreviewComponent', () => {
+  it('tracks frame inputs and native media changes, and stops tracking replaced frames', () => {
+    vi.useFakeTimers();
+    const { component } = createPreview();
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML =
+      '<input><div data-element-id="audio"><audio></audio><input type="range"><button>Lautstärke</button></div><button>Weiter</button><p>Text</p>';
+    try {
+      component.playerFrame = new ElementRef(frame);
+      component.postMessage({ type: 'vopStartCommand' });
+      expect(component.getLastInteractionTime()).toBe(0);
+      doc.querySelector('p')!.click();
+      expect(component.getLastInteractionTime()).toBe(0);
+      doc.querySelector('input')!.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(component.getLastInteractionTime()).toBe(Date.now());
+      vi.advanceTimersByTime(20);
+      const inputTime = component.getLastInteractionTime();
+      doc.querySelector('input')!.dispatchEvent(new Event('change', { bubbles: true }));
+      doc
+        .querySelector('input[type="range"]')!
+        .dispatchEvent(new Event('input', { bubbles: true }));
+      doc.querySelector('[data-element-id="audio"] button')!.click();
+      expect(component.getLastInteractionTime()).toBe(inputTime);
+      doc.querySelector('audio')!.dispatchEvent(new Event('timeupdate'));
+      expect(component.getLastInteractionTime()).toBe(Date.now());
+      component.playerFrame = undefined;
+      const last = component.getLastInteractionTime();
+      vi.advanceTimersByTime(20);
+      doc.querySelector('input')!.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(component.getLastInteractionTime()).toBe(last);
+    } finally {
+      component.ngOnDestroy();
+      frame.remove();
+      vi.useRealTimers();
+    }
+  });
+
+  it.each([false, true])(
+    'offers the complete unit only with effective access (%s)',
+    async (canOpenFullUnit) => {
+      const item = { itemId: 'item', unitId: 'unit' };
+      const feature = {
+        registerPlayerDom: vi.fn(),
+        unregisterPlayerDom: vi.fn(),
+        playerFrameChanged: vi.fn(),
+        previewViewModel: {
+          acpId: 'acp',
+          selectedItem: item,
+          selectedIndex: 0,
+          filteredItems: [item],
+          isItemExcluded: () => false,
+          previewUnavailableReason: 'unsupported condition',
+          previewUnavailableMessage: 'Keine Vorschau verfügbar.',
+          canOpenFullUnit,
+        },
+      };
+      TestBed.configureTestingModule({
+        imports: [PreviewAccessTemplateHarness],
+        providers: [provideRouter([]), { provide: ItemExplorerFacade, useValue: feature }],
+      });
+      const fixture = TestBed.createComponent(PreviewAccessTemplateHarness);
+      try {
+        fixture.detectChanges();
+        await fixture.whenStable();
+        const link = fixture.nativeElement.querySelector('.empty-state a');
+        expect(Boolean(link)).toBe(canOpenFullUnit);
+        if (link) expect(link.getAttribute('href')).toBe('/view/acp/unit/unit');
+      } finally {
+        fixture.destroy();
+        TestBed.resetTestingModule();
+      }
+    },
+  );
+
   it('exposes metadata and exclusion state with the matching semantics', () => {
     expect(template.match(/class="btn btn-outline btn-sm btn-state"/g)).toHaveLength(4);
     expect(template).toContain('[attr.aria-expanded]="vm.showMetadataDrawer"');
@@ -198,6 +288,7 @@ describe('ItemExplorerPreviewComponent', () => {
     document.body.appendChild(iframe);
     const target = iframe.contentDocument!.createElement('button');
     target.id = 'target';
+    Object.defineProperty(target, 'getClientRects', { value: () => [{ width: 10, height: 10 }] });
     const scrollIntoView = vi.fn();
     const focus = vi.fn();
     Object.defineProperty(target, 'scrollIntoView', { value: scrollIntoView });
@@ -210,6 +301,19 @@ describe('ItemExplorerPreviewComponent', () => {
     expect(scrollIntoView).toHaveBeenCalled();
     expect(focus).toHaveBeenCalled();
 
+    component.ngOnDestroy();
+    iframe.remove();
+  });
+
+  it('does not focus a hidden target through an unrelated text fallback', () => {
+    const { component } = createPreview();
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    iframe.contentDocument!.body.innerHTML =
+      '<button id="target" style="display:none">Item</button><p>Item</p>';
+    component.playerFrame = new ElementRef(iframe);
+    expect(component.isTargetVisible(['#target'])).toBe(false);
+    expect(component.focus(['#target'], ['Item'], true)).toBe(false);
     component.ngOnDestroy();
     iframe.remove();
   });

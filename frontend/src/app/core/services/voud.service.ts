@@ -1,3 +1,4 @@
+import { collectVoudNodes, findVoudIdentifierMatches } from './voud-nodes';
 import { Injectable } from '@angular/core';
 
 export interface TransformedVariablePage {
@@ -235,25 +236,12 @@ export class VoudService {
   }
 
   private findTargetNode(pages: any[], target: string): IdentifierNodeMatch | undefined {
-    const normalizedTarget = target.toLowerCase();
-    const findBy = (key: 'alias' | 'id'): IdentifierNodeMatch | undefined => {
-      for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
-        let matchingNode: IdentifierBearingNode | undefined;
-        this.visitNodes(pages[pageIndex], (node) => {
-          if (matchingNode) return;
-          const value = String(node[key] || '').trim();
-          if (value && value.toLowerCase() === normalizedTarget) {
-            matchingNode = node;
-          }
-        });
-        if (matchingNode) return { pageIndex, node: matchingNode };
-      }
-      return undefined;
-    };
-
-    // Item and coding references use VOUD aliases. Generated element IDs are
-    // a compatibility fallback for manually stored targets.
-    return findBy('alias') || findBy('id');
+    return findVoudIdentifierMatches(
+      pages.flatMap((page, pageIndex) =>
+        collectVoudNodes(page).map((node) => ({ pageIndex, node })),
+      ),
+      target,
+    )[0];
   }
 
   private isPageAlwaysVisible(page: any): boolean {
@@ -272,31 +260,6 @@ export class VoudService {
           .filter((value) => value.length > 0),
       ),
     );
-  }
-
-  private visitNodes(
-    node: unknown,
-    visitor: (node: IdentifierBearingNode) => void,
-    noParent: string[] = ['visibilityRules'],
-  ): void {
-    if (typeof node !== 'object' || node === null) {
-      return;
-    }
-
-    if (!Array.isArray(node)) {
-      visitor(node as IdentifierBearingNode);
-    }
-
-    if (Array.isArray(node)) {
-      node.forEach((item) => this.visitNodes(item, visitor, noParent));
-      return;
-    }
-
-    Object.entries(node).forEach(([key, value]) => {
-      if (!noParent.includes(key)) {
-        this.visitNodes(value, visitor, noParent);
-      }
-    });
   }
 
   private removeConditionalVisibility(node: unknown): unknown {

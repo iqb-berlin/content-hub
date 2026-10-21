@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
 import { DataSource } from "typeorm";
 import * as bcrypt from "bcryptjs";
+import { responseStatePlayerHtml } from "./response-state-player";
 import { AppModule } from "../../src/app.module";
 import {
   AccessModel,
@@ -516,8 +517,7 @@ async function seed(): Promise<void> {
       {
         name: "iqb-player-aspect-2.11.6.html",
         type: "PLAYER",
-        content:
-          "<!doctype html><html><body>Regression E2E Player</body></html>",
+        content: responseStatePlayerHtml,
       },
     ];
     for (const file of regressionFiles) {

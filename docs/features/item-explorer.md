@@ -539,6 +539,55 @@ of it behind section visibility rules or media dependencies. ACP managers can re
 original conditional behavior through the ACP access-config feature flag
 `enableItemExplorerConditionalVisibility`.
 
+When enabled, a fresh item preview derives a transient start state from the target section,
+equality rules and stable state-variable triggers on the target and always-visible pages.
+AND/OR constraints must yield exactly one assignment (bounded to 4096 candidates). Trigger
+references use canonical variable IDs; the player receives aliases in `stateVariableCodes`.
+This is a stable preview context, not a simulation of the preceding user interactions.
+
+“Vorschau einstellen” allows managers to constrain declared state variables. For regular item
+targets, the containing page is always selected automatically. Only targets in an always-visible
+stimulus expose an “Aufgabenkontext” selector; its default leaves the navigable context page
+unset. These settings are stored as `itemProperties[rowKey].previewStart` with optional zero-based
+`page` and `values` keyed by canonical state-variable ID. They follow the existing shared
+draft/publish workflow. Empty fields restore automatic resolution. Stored answer states have
+priority and are forwarded unchanged. Prepared states cannot be saved as answer states.
+
+Missing, ambiguous, conflicting, external-response or timer-dependent conditions display an
+unavailable explanation and a link to the regular unit workflow. No audio progress or answers
+are fabricated, and the original unit definition is forwarded unchanged. The ACP flag remains
+opt-in. Definition/player version compatibility is still required by Aspect itself.
+
+### Conditional visibility acceptance scope (Issue #150)
+
+The supported preview is an explicit start context, not a replay of a student's interaction
+history. The following describes the technical scope; the broader request for identical
+rendering of arbitrary dynamic tasks still requires subject-matter acceptance before closing
+Issue #150.
+
+| Case | Expected behavior |
+| --- | --- |
+| Option disabled | Existing overview behavior, with conditional visibility neutralized. |
+| Option enabled, uniquely resolvable equality rules | Preserve the original definition, select the target page and show only matching stimulus sections. Switching A → B → A restores each context. |
+| Multiple stable contexts | Explain the ambiguity; managers may constrain declared state values. |
+| Answers, media progress, timers, unsupported or conflicting rules | Explain why the preview is unavailable and link to the complete unit workflow. |
+| Existing saved state, including a fallback state | Use the saved context with priority. It can differ from the automatically derived item context. This is intentional and requires acceptance for the intended review workflow. |
+| Synthetic visibility context or correct-solution preview | Never save it as an answer, including after restarts, solution toggles or late API responses. |
+
+The active player session groups its ID, data origin and received data. Save/delete completions
+and their errors apply only to the item and session that started the operation. A session change
+closes its obsolete confirmation dialog. Saved answer data remains separate; a new session
+must report current data before it can be saved. `stateReportPolicy: eager` requests those reports.
+Correct-solution data does not overwrite the ordinary answer snapshot.
+
+`npm run e2e` downloads and SHA-256-verifies the pinned **Aspect 3.0.1** release into
+`frontend/tmp/` (cached and unversioned). `item-explorer-visibility.spec.ts` runs the real player
+with synthetic VOUD **4.10.0** content, verifying stimulus switching, the disabled option,
+saved-state priority and the unavailable fallback. The response-state regression suite uses
+a separate protocol fixture to test editing, saving, reloading and deleting answers. Other
+player/definition version combinations require their own compatibility checks; these tests
+make no compatibility claim for Aspect 2.12.6 or for the old DLB002 production example.
+
 The preview keeps the corresponding schema fields in place with neutral default values so the
 embedded Aspect player can still parse the generated unit definition reliably.
 

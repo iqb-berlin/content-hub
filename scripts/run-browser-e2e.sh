@@ -66,6 +66,7 @@ fi
 if [[ "$SKIP_BROWSER_INSTALL" != "true" ]]; then
   (cd "$REPOSITORY_ROOT/frontend" && npx playwright install chromium firefox webkit)
 fi
+node "$REPOSITORY_ROOT/scripts/prepare-aspect-e2e-player.mjs"
 (cd "$REPOSITORY_ROOT/backend" && npm run "$SEED_SCRIPT")
 # The seed process has already synchronized the complete schema. Repeating
 # synchronization during the Playwright backend startup is redundant and makes

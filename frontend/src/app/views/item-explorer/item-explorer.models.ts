@@ -1,3 +1,4 @@
+import type { PreviewStart } from '../../core/services/preview-visibility';
 import { CodingAsText } from '@iqb/responses';
 import { ItemExplorerPerspective } from '../../core/models/api.models';
 
@@ -63,6 +64,7 @@ export interface ExplorerItem {
   bookletOccurrences?: Array<{ booklet: string; position: number | null }>;
   tags?: string[];
   previewTargetId?: string;
+  previewStart?: PreviewStart;
   excluded?: boolean;
 }
 
