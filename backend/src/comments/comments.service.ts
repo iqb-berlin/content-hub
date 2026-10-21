@@ -3,6 +3,7 @@ import {
   matchesReviewFilters,
 } from "./review-comment-filters";
 import { ReviewerColumnPolicy } from "../item-explorer/reviewer-column-policy";
+import { commentAuthorName } from "./comment-author-name";
 import {
   BadRequestException,
   ConflictException,
@@ -916,10 +917,11 @@ export class CommentsService {
       parentCommentId: comment.parentCommentId || "",
       comment: comment.commentText,
       author: preferCredential
-        ? comment.authorLabel ||
-          comment.credential?.username ||
-          comment.credentialUsername ||
-          this.resolveAuthorLabel(comment)
+        ? commentAuthorName(
+            comment.authorLabel,
+            comment.credential?.username,
+            comment.credentialUsername,
+          ) || this.resolveAuthorLabel(comment)
         : this.resolveAuthorLabel(comment),
       createdAt: comment.createdAt.toISOString(),
       updatedAt: (comment.updatedAt || comment.createdAt).toISOString(),
@@ -1795,13 +1797,23 @@ export class CommentsService {
   }
 
   private resolveAuthorLabel(comment: Comment): string {
+    if (comment.credentialId) {
+      return (
+        commentAuthorName(
+          comment.authorLabel,
+          comment.credential?.username,
+          comment.credentialUsername,
+        ) || "Unknown"
+      );
+    }
     return (
-      comment.authorLabel ||
-      comment.user?.displayName ||
-      comment.user?.username ||
-      comment.credential?.username ||
-      comment.credentialUsername ||
-      "Unknown"
+      commentAuthorName(
+        comment.user?.displayName,
+        comment.user?.username,
+        comment.authorLabel,
+        comment.credential?.username,
+        comment.credentialUsername,
+      ) || "Unknown"
     );
   }
 

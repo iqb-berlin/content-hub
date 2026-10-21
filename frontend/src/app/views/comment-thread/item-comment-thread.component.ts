@@ -13,6 +13,7 @@ import { Subject, Subscription, takeUntil, timeout } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { Comment, CommentThreadSnapshot, ReviewCommentTarget } from '../../core/models/api.models';
 import { CommentThreadDrafts } from './comment-thread-drafts';
+import { unitLabel } from '../../shared/unit-label';
 
 interface CommentThreadGroup {
   id: string;
@@ -31,7 +32,9 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   @Input() acpId = '';
   @Input() targetType: ReviewCommentTarget['targetType'] = 'ITEM';
   @Input() bookletId = '';
+  @Input() bookletName = '';
   @Input() unitId = '';
+  @Input() unitName = '';
   @Input() itemId = '';
   @Input() enabled = false;
   @Input() refreshToken = 0;
@@ -168,15 +171,16 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   }
 
   get contextLabel(): string {
-    if (this.targetType === 'BOOKLET') return `Testheft ${this.bookletId}`;
-    if (this.targetType === 'UNIT') return `Unit ${this.unitId}`;
+    if (this.targetType === 'BOOKLET') return `Testheft ${this.bookletName || this.bookletId}`;
+    if (this.targetType === 'UNIT')
+      return `Aufgabe ${unitLabel({ id: this.unitId, name: this.unitName })}`;
     if (this.targetType === 'CODING') return `Kodierung ${this.unitId} · ${this.itemId}`;
     return `Item ${this.unitId} · ${this.itemId}`;
   }
 
   get commentHeading(): string {
-    if (this.targetType === 'BOOKLET') return `Kommentare zum Testheft ${this.bookletId}`;
-    if (this.targetType === 'UNIT') return `Kommentare zur Unit ${this.unitId}`;
+    if (this.targetType === 'BOOKLET') return `Kommentare zum ${this.contextLabel}`;
+    if (this.targetType === 'UNIT') return `Kommentare zur ${this.contextLabel}`;
     if (this.targetType === 'CODING') {
       return `Kommentare zur Kodierung ${this.unitId} · ${this.itemId}`;
     }
@@ -189,8 +193,8 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
 
   get newCommentPlaceholder(): string {
     if (this.targetType === 'ITEM') return 'Kommentar zu diesem Item …';
-    if (this.targetType === 'BOOKLET') return `Kommentar zum Testheft ${this.bookletId} …`;
-    if (this.targetType === 'UNIT') return `Kommentar zur Unit ${this.unitId} …`;
+    if (this.targetType === 'BOOKLET') return `Kommentar zum ${this.contextLabel} …`;
+    if (this.targetType === 'UNIT') return `Kommentar zur ${this.contextLabel} …`;
     return `Kommentar zur Kodierung ${this.unitId} · ${this.itemId} …`;
   }
 

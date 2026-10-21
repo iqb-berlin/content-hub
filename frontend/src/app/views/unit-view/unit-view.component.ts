@@ -23,6 +23,7 @@ import {
   rewriteGeoGebraAssetUrls,
 } from '../../core/utils/geogebra-player-html.util';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/breadcrumb.component';
+import { unitLabel } from '../../shared/unit-label';
 import { ItemCommentThreadComponent } from '../comment-thread/item-comment-thread.component';
 
 import { CommentThreadDrafts } from '../comment-thread/comment-thread-drafts';
@@ -50,7 +51,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
       }
 
       <div class="unit-header">
-        <h1>{{ unit.name }}</h1>
+        <h1>{{ unitDisplayName }}</h1>
         <div class="unit-actions">
           @if (showMetadataToggle && !reviewMode) {
             <button
@@ -73,7 +74,9 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
             </select>
           }
           @if (showDownloadBtn) {
-            <button class="btn btn-outline btn-sm" (click)="downloadUnit()">⬇️ Download</button>
+            <button class="btn btn-outline btn-sm" (click)="downloadUnit()">
+              ⬇️ Download Aufgabe
+            </button>
           }
           @if (reviewMode) {
             <button
@@ -109,6 +112,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
           [acpId]="acpId"
           [targetType]="'UNIT'"
           [unitId]="unitId"
+          [unitName]="unit.name"
           [enabled]="showCommentBtn"
         />
       }
@@ -287,6 +291,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                     [acpId]="acpId"
                     [targetType]="'ITEM'"
                     [unitId]="unitId"
+                    [unitName]="unit.name"
                     [itemId]="selectedCommentItemId"
                     [enabled]="showItemCommentBtn"
                     [initiallyOpen]="true"
@@ -304,6 +309,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                   [acpId]="acpId"
                   [targetType]="'BOOKLET'"
                   [bookletId]="bookletId"
+                  [bookletName]="bookletName"
                   [enabled]="showBookletCommentBtn"
                   [initiallyOpen]="true"
                   [hideToggle]="true"
@@ -315,6 +321,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                   [acpId]="acpId"
                   [targetType]="'UNIT'"
                   [unitId]="unitId"
+                  [unitName]="unit.name"
                   [enabled]="showCommentBtn"
                   [initiallyOpen]="true"
                   [hideToggle]="true"
@@ -362,7 +369,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                     [(ngModel)]="codingFilterText"
                   />
                 </label>
-                @if (hiddenCodingVariableCount > 0) {
+                @if (!reviewMode && hiddenCodingVariableCount > 0) {
                   <label class="coding-visibility-toggle">
                     <input type="checkbox" [(ngModel)]="showAllCodingVariables" />
                     <span>
@@ -552,7 +559,8 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
       }
       .panel-resize-handle {
         position: absolute;
-        inset: 0 auto 0 -9px;
+        inset: 0 auto 0 0;
+        z-index: 2;
         width: 14px;
         min-height: 100%;
         padding: 0;
@@ -560,6 +568,8 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         border-left: 3px solid transparent;
         background: transparent;
         cursor: col-resize;
+        touch-action: none;
+        user-select: none;
       }
       .panel-resize-handle:hover,
       .panel-resize-handle:focus-visible {
@@ -765,8 +775,9 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
       }
 
       @media (max-width: 1100px) {
-        .unit-layout.with-panel {
-          grid-template-columns: 1fr;
+        .unit-layout.with-panel,
+        .unit-layout.review-mode.with-panel {
+          grid-template-columns: minmax(0, 1fr);
         }
         .review-mode .meta-panel.split {
           position: static;
@@ -811,6 +822,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   @Input() acpId = '';
   @Input() unitId = '';
   @Input() bookletId = '';
+  @Input() bookletName = '';
   @Input() embedded = false;
   @Input() reviewMode = false;
   @Input() featureConfigOverride: FeatureConfig | null = null;
@@ -891,16 +903,26 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private unitAbortController: AbortController | null = null;
   private panelResizeStartX = 0;
   private panelResizeStartWidth = 0;
+  private panelResizePointerId: number | null = null;
+  private panelResizeHandle: HTMLElement | null = null;
 
   private messageHandler = this.onPlayerMessage.bind(this);
   private resizeHandler = this.onWindowResize.bind(this);
   private panelResizeMoveHandler = (event: PointerEvent) => {
+    if (event.pointerId !== this.panelResizePointerId) return;
+    if (!(event.buttons & 1)) {
+      this.stopReviewPanelResize();
+      return;
+    }
     this.reviewPanelWidth = this.clampReviewPanelWidth(
       this.panelResizeStartWidth + this.panelResizeStartX - event.clientX,
     );
     this.changeDetector.markForCheck();
   };
-  private panelResizeEndHandler = () => this.stopReviewPanelResize();
+  private panelResizeEndHandler = (event: PointerEvent) => {
+    if (event.pointerId === this.panelResizePointerId) this.stopReviewPanelResize();
+  };
+  private panelResizeBlurHandler = () => this.stopReviewPanelResize();
   private autoResizeInterval: any;
 
   constructor(
@@ -920,9 +942,17 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   get visibleCodingSchemeAsText(): CodingAsText[] {
-    const visibleCodings = this.showAllCodingVariables
-      ? this.availableCodingSchemeAsText
-      : this.availableCodingSchemeAsText.filter((coding) => this.isRelevantCodingVariable(coding));
+    const visibleCodings =
+      !this.reviewMode && this.showAllCodingVariables
+        ? this.availableCodingSchemeAsText
+        : this.availableCodingSchemeAsText.filter((coding) =>
+            this.isRelevantCodingVariable(coding),
+          );
+    if (this.reviewMode) {
+      visibleCodings.sort((left, right) =>
+        left.id.localeCompare(right.id, 'de', { numeric: true }),
+      );
+    }
     const term = this.codingFilterText.trim().toLowerCase();
     if (!term) return visibleCodings;
     return visibleCodings.filter((coding) => {
@@ -947,6 +977,10 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     return this.availableCodingSchemeAsText.filter(
       (coding) => !this.isRelevantCodingVariable(coding),
     ).length;
+  }
+
+  get unitDisplayName(): string {
+    return this.unit ? (this.reviewMode ? unitLabel(this.unit) : this.unit.name) : '';
   }
 
   private get availableCodingSchemeAsText(): CodingAsText[] {
@@ -1013,7 +1047,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private applyFeatureConfig(featureConfig: FeatureConfig) {
     this.showMetadata = this.reviewMode || !!featureConfig.showMetadata;
     this.showCodingScheme = this.reviewMode || !!featureConfig.showCodingScheme;
-    this.showRichText = !!featureConfig.showRichText;
+    this.showRichText = !this.reviewMode && !!featureConfig.showRichText;
     this.showMetadataToggle = this.showMetadata || this.showCodingScheme || this.showRichText;
 
     const commentTargets = Array.isArray(featureConfig.commentTargets)
@@ -1096,6 +1130,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private loadUnit() {
+    this.stopReviewPanelResize();
     if (!this.acpId || !this.unitId) return;
     const requestToken = ++this.unitLoadToken;
     this.unitRequest?.unsubscribe();
@@ -1236,17 +1271,27 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   toggleReviewPanel() {
+    this.stopReviewPanelResize();
     this.reviewPanelCollapsed = !this.reviewPanelCollapsed;
   }
 
   startReviewPanelResize(event: PointerEvent) {
-    if (!this.reviewMode || this.isNarrowLayout) return;
+    if (!this.reviewMode || this.isNarrowLayout || event.button !== 0 || event.isPrimary === false)
+      return;
     event.preventDefault();
-    (event.currentTarget as HTMLElement | null)?.focus();
+    this.stopReviewPanelResize();
+    const handle = event.currentTarget as HTMLElement;
+    handle.focus();
+    this.panelResizePointerId = event.pointerId;
+    this.panelResizeHandle = handle;
     this.panelResizeStartX = event.clientX;
     this.panelResizeStartWidth = this.reviewPanelWidth;
-    document.addEventListener('pointermove', this.panelResizeMoveHandler);
-    document.addEventListener('pointerup', this.panelResizeEndHandler, { once: true });
+    handle.addEventListener('lostpointercapture', this.panelResizeEndHandler);
+    handle.setPointerCapture?.(event.pointerId);
+    window.addEventListener('pointermove', this.panelResizeMoveHandler, true);
+    window.addEventListener('pointerup', this.panelResizeEndHandler, true);
+    window.addEventListener('pointercancel', this.panelResizeEndHandler, true);
+    window.addEventListener('blur', this.panelResizeBlurHandler);
   }
 
   resizeReviewPanelWithKeyboard(event: KeyboardEvent) {
@@ -1382,6 +1427,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
           ? (codingScheme as any).variableCodings
           : [];
       const codingSchemeAsText = CodingSchemeTextFactory.asText(variableCodings);
+      if (codingSchemeAsText.some((coding) => typeof coding.id !== 'string' || !coding.id.trim())) {
+        throw new Error('Coding variables require a non-empty ID');
+      }
       codingSchemeAsText.forEach((coding) => {
         const rawVariable = variableCodings.find((variable: any) => variable.id === coding.id);
         if (!rawVariable) return;
@@ -1450,6 +1498,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private onWindowResize() {
+    this.stopReviewPanelResize();
     this.isNarrowLayout = window.innerWidth <= 1100;
     this.reviewPanelWidth = this.clampReviewPanelWidth(this.reviewPanelWidth);
   }
@@ -1477,8 +1526,18 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private stopReviewPanelResize() {
-    document.removeEventListener('pointermove', this.panelResizeMoveHandler);
-    document.removeEventListener('pointerup', this.panelResizeEndHandler);
+    const handle = this.panelResizeHandle;
+    const pointerId = this.panelResizePointerId;
+    this.panelResizePointerId = null;
+    this.panelResizeHandle = null;
+    window.removeEventListener('pointermove', this.panelResizeMoveHandler, true);
+    window.removeEventListener('pointerup', this.panelResizeEndHandler, true);
+    window.removeEventListener('pointercancel', this.panelResizeEndHandler, true);
+    window.removeEventListener('blur', this.panelResizeBlurHandler);
+    handle?.removeEventListener('lostpointercapture', this.panelResizeEndHandler);
+    if (pointerId !== null && handle?.hasPointerCapture?.(pointerId)) {
+      handle.releasePointerCapture(pointerId);
+    }
   }
 
   private startAutoResize() {
