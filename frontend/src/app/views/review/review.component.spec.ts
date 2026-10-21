@@ -40,6 +40,24 @@ function setup() {
 }
 
 describe('Review configuration', () => {
+  it('loads, saves and restores the developer-name visibility setting', () => {
+    const { component, api } = setup();
+    const config = { ...component.config!, hideReviewDeveloperNames: true };
+    api.getReviewConfig.mockReturnValue(of(config));
+    component.loadConfig();
+    expect(component.config!.hideReviewDeveloperNames).toBe(true);
+    component.config!.hideReviewDeveloperNames = false;
+    api.configureReview.mockReturnValue(of({ ...component.config!, configVersion: 2 }));
+    component.configure();
+    expect(api.configureReview).toHaveBeenCalledWith(
+      'acp',
+      expect.objectContaining({
+        hideReviewDeveloperNames: false,
+      }),
+    );
+    expect(component.config!.hideReviewDeveloperNames).toBe(false);
+    component.ngOnDestroy();
+  });
   it('keeps both personal formats separate from the manager export', () => {
     const { component, api } = setup();
     component.access = { canManageReview: true, canReview: true } as any;

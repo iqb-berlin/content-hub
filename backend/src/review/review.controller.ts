@@ -59,6 +59,7 @@ class ReviewGroupDto {
 }
 class ReviewConfigDto {
   @IsBoolean() enableReview!: boolean;
+  @IsOptional() @IsBoolean() hideReviewDeveloperNames?: boolean;
   @IsInt() @Min(1) configVersion!: number;
   @IsIn(["PRIVATE", "SHARED", "GROUP"]) visibilityMode!:
     | "PRIVATE"
@@ -236,6 +237,9 @@ export class ReviewController {
       config.featureConfig = {
         ...config.featureConfig,
         enableReview: dto.enableReview,
+        ...(dto.hideReviewDeveloperNames !== undefined
+          ? { hideReviewDeveloperNames: dto.hideReviewDeveloperNames }
+          : {}),
         commentVisibilityMode: dto.visibilityMode,
       };
       config.reviewConfigVersion += 1;
@@ -294,6 +298,8 @@ export class ReviewController {
   private configView(config: AcpAccessConfig) {
     return {
       enableReview: config.featureConfig.enableReview === true,
+      hideReviewDeveloperNames:
+        config.featureConfig.hideReviewDeveloperNames === true,
       visibilityMode: config.featureConfig.commentVisibilityMode || "PRIVATE",
       configVersion: config.reviewConfigVersion,
       groups: config.reviewGroups || [],

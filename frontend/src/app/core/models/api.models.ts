@@ -466,6 +466,7 @@ export interface FeatureConfig {
   allowFileDownload?: boolean;
   enableUnitView?: boolean;
   showMetadata?: boolean;
+  hideReviewDeveloperNames?: boolean;
   showRichText?: boolean;
   showCodingScheme?: boolean;
   enableUnitListNavigation?: boolean;
