@@ -12,7 +12,9 @@ import type {
   ItemListResult,
   MetadataColumn,
   VomdItemData,
+  StudioItemComment,
 } from "./unit-parser.types";
+import { parseStudioItemComments } from "./studio-item-comments";
 import { AsyncCacheStatus, AsyncLruCache } from "./async-lru-cache";
 import {
   extractLabelText,
@@ -205,6 +207,33 @@ export class ItemListParser {
           }
         }
 
+        let studioComments = new Map<string, StudioItemComment[]>();
+        if (
+          normalizedFeatureConfig.showStudioItemComments === true &&
+          parsed.commentsRef
+        ) {
+          const commentsFile = allFiles.find(
+            (file) => file.originalName === parsed.commentsRef,
+          );
+          if (commentsFile) {
+            try {
+              studioComments = parseStudioItemComments(
+                await fs.readFile(commentsFile.filePath, "utf-8"),
+              );
+            } catch {
+              cacheable = false;
+              this.logger.warn(
+                `Could not parse Studio comments ${parsed.commentsRef}`,
+              );
+            }
+          } else {
+            cacheable = false;
+            this.logger.warn(
+              `Referenced Studio comments file is missing: ${parsed.commentsRef}`,
+            );
+          }
+        }
+
         for (const item of vomdData.items) {
           if (!isValidVomdItem(item)) {
             cacheable = false;
@@ -380,6 +409,9 @@ export class ItemListParser {
               variableReadOnlyId: variableReadOnlyId || undefined,
               useUnitAliasAsPrefix: item.useUnitAliasAsPrefix,
               metadata: { ...metadata },
+              ...(studioComments.has(itemUuid)
+                ? { studioComments: studioComments.get(itemUuid) }
+                : {}),
               empiricalDifficulty,
               bista: optionalNumber("bista"),
               infit: optionalNumber("infit"),
@@ -448,6 +480,8 @@ export class ItemListParser {
       itemSubIdLabel:
         context.normalizedFeatureConfig.itemSubIdLabel || "Sub-ID",
       itemSubIdLabels: context.normalizedFeatureConfig.itemSubIdLabels || {},
+      showStudioItemComments:
+        context.normalizedFeatureConfig.showStudioItemComments === true,
     })}`;
   }
 

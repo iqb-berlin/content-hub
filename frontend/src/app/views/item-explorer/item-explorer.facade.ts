@@ -80,6 +80,7 @@ export class ItemExplorerFacade implements OnDestroy {
   private tableDom?: ItemExplorerTableDomPort;
 
   acpId = '';
+  showStudioItemComments = false;
   get columns() {
     return this.table.columns;
   }
@@ -1150,6 +1151,7 @@ export class ItemExplorerFacade implements OnDestroy {
       .subscribe({
         next: (data) => {
           const fc = data?.featureConfig || {};
+          this.showStudioItemComments = fc.showStudioItemComments === true;
           const commentTargets = Array.isArray(fc.commentTargets) ? fc.commentTargets : [];
           this.comments.itemCommentsConfigured = Boolean(
             fc.enableCommenting && (commentTargets.length === 0 || commentTargets.includes('ITEM')),

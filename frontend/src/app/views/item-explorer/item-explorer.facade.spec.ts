@@ -721,7 +721,7 @@ describe('ItemExplorerFacade', () => {
     expect(getAcpStartPage).toHaveBeenCalledWith('');
     expect(getFileItemList).not.toHaveBeenCalled();
 
-    startPage$.next({ featureConfig: { enableItemListTags: true } });
+    startPage$.next({ featureConfig: { enableItemListTags: true, showStudioItemComments: true } });
     explorerState$.next(createExplorerEnvelope());
     await vi.waitFor(() => expect(getFileItemList).toHaveBeenCalledOnce());
 
@@ -744,6 +744,7 @@ describe('ItemExplorerFacade', () => {
     currentUser$.next(null);
 
     expect(component.enableTags).toBe(true);
+    expect(component.showStudioItemComments).toBe(true);
     expect(component.itemExplorerPlayerTargetInfoEnabled).toBe(false);
     expect(component.items).toEqual([]);
     expect((component.personalData as any).personalDataSessionIdentity).toBeNull();

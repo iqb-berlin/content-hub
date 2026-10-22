@@ -10,6 +10,18 @@ const policy = (...visible: string[]) =>
   });
 
 describe("Reviewer column information boundary", () => {
+  it("preserves feature-gated Studio comments independently of table column restrictions", () => {
+    const studioComments = [
+      { id: 1, body: "Imported Studio hint", hidden: false },
+    ];
+    expect(
+      policy().projectItem({
+        itemId: "i1",
+        studioComments,
+        unitLabel: "Hidden label",
+      }),
+    ).toEqual({ itemId: "i1", studioComments });
+  });
   it.each(["constructor", "toString", "__proto__", "hasOwnProperty"])(
     "handles custom metadata named %s without inherited dictionary entries",
     (id) => {
