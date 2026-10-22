@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StudioItemComment } from '../../../../core/models/api.models';
 
@@ -6,6 +6,9 @@ import { StudioItemComment } from '../../../../core/models/api.models';
   selector: 'app-studio-item-comments',
   standalone: true,
   imports: [CommonModule],
+  // Imported rich text has no Angular scope attributes. Keep every style below
+  // scoped to this section so embedded images and paragraphs receive the rules.
+  encapsulation: ViewEncapsulation.None,
   template: `
     @if (comments.length) {
       <section class="studio-comments card" aria-label="Studio-Kommentare">
@@ -39,44 +42,50 @@ import { StudioItemComment } from '../../../../core/models/api.models';
   `,
   styles: `
     .studio-comments {
+      min-width: 0;
       padding: 16px;
       margin-bottom: 12px;
       overflow-wrap: anywhere;
     }
-    h3 {
+    .studio-comments h3 {
       margin: 0 0 4px;
       font-size: 1rem;
     }
-    .source-hint,
-    .comment-meta {
+    .studio-comments .source-hint,
+    .studio-comments .comment-meta {
       color: var(--color-text-secondary);
       font-size: 0.85rem;
     }
-    .source-hint {
+    .studio-comments .source-hint {
       margin: 0 0 12px;
     }
-    ol {
+    .studio-comments > ol {
       margin: 0;
       padding-left: 20px;
     }
-    li + li {
+    .studio-comments > ol > li + li {
       margin-top: 12px;
       padding-top: 12px;
       border-top: 1px solid var(--color-border);
     }
-    .comment-meta {
+    .studio-comments .comment-meta {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 4px;
     }
-    .comment-body {
+    .studio-comments .comment-body {
+      overflow-x: auto;
       white-space: pre-wrap;
     }
-    .comment-body :first-child {
+    .studio-comments .comment-body img {
+      max-width: 100%;
+      height: auto;
+    }
+    .studio-comments .comment-body > :first-child {
       margin-top: 0;
     }
-    .comment-body :last-child {
+    .studio-comments .comment-body > :last-child {
       margin-bottom: 0;
     }
   `,
