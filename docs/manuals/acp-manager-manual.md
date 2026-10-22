@@ -516,6 +516,23 @@ metadatenbezogene Bearbeitung.
 - Kodierung und Metadaten direkt neben dem Player einsehen
 - Aenderungsverlauf einsehen
 
+### Studio-Kommentare anzeigen
+
+Unter `Zugriff & Funktionen` → `Item-Explorer` → `Inhalte und Darstellung` können
+ACP-Manager `Studio-Kommentare im Item-Explorer anzeigen` einschalten. Die Einstellung
+ist standardmäßig ausgeschaltet und unabhängig von der Freigabe für Review-Kommentare.
+
+Voraussetzung ist ein Studio-Export einschließlich Kommentaren: Die Aufgaben-XML
+verweist mit `UnitCommentsRef` auf die mit hochgeladene `.vouc`-Datei. Die dortigen
+`itemUuids` müssen zu den UUIDs der Items in der `.vomd`-Datei passen.
+
+Beim Auswählen eines Items erscheinen seine Kommentare und zugehörigen Antworten
+oberhalb der Player-Vorschau in einem eigenen Abschnitt `Studio-Kommentare`. Die
+Reihenfolge des Studio-Exports bleibt erhalten; im Studio ausgeblendete Kommentare
+werden entsprechend gekennzeichnet. Ohne zugehörige Kommentare erscheint kein
+Abschnitt. Die Hinweise sind ausschließlich lesbar und werden nicht in
+Review-Kommentar-Threads übernommen. Ein neuer Upload aktualisiert die Hinweise.
+
 ### Entwurf und Veroeffentlichung
 
 Der Explorer arbeitet mit einem Entwurfsmodell:

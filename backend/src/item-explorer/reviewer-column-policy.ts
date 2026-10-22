@@ -115,6 +115,9 @@ export class ReviewerColumnPolicy {
   }
 
   allowsField(field: string): boolean {
+    // Studio comments have their own ACP feature flag in the source parser;
+    // table column selection does not control this read-only preview section.
+    if (field === "studioComments") return true;
     return (
       !this.restricted ||
       IDENTITY_FIELDS.has(field) ||

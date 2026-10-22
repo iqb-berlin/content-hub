@@ -459,6 +459,7 @@ export interface ItemExplorerTableColumnLayout {
 }
 
 export interface FeatureConfig {
+  showStudioItemComments?: boolean;
   // Preserve extension keys while requiring callers to narrow unknown values.
   [key: string]: unknown;
   allowIndexDownload?: boolean;
@@ -506,6 +507,15 @@ export interface FeatureConfig {
 }
 
 export type CommentTargetType = 'BOOKLET' | 'UNIT' | 'ITEM' | 'CODING' | 'TASK_SEQUENCE';
+
+export interface StudioItemComment {
+  id: number;
+  body: string;
+  userName?: string;
+  createdAt?: string;
+  parentId?: number;
+  hidden: boolean;
+}
 
 export interface ReviewCommentTarget {
   targetType: Exclude<CommentTargetType, 'TASK_SEQUENCE'>;

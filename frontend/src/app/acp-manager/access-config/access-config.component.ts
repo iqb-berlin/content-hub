@@ -519,6 +519,14 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
           <details class="settings-details">
             <summary>Inhalte und Darstellung</summary>
             <label class="feature-toggle">
+              <input type="checkbox" [(ngModel)]="featureConfig.showStudioItemComments" />
+              <span>Studio-Kommentare im Item-Explorer anzeigen</span>
+            </label>
+            <p class="help-text">
+              Zeigt importierte Item-Kommentare aus dem Studio schreibgeschützt bei der Vorschau.
+              Diese Hinweise sind unabhängig von Review-Kommentaren.
+            </p>
+            <label class="feature-toggle">
               <input
                 type="checkbox"
                 [(ngModel)]="featureConfig[showGeneralCodingInstructionsKey]"
@@ -1530,6 +1538,7 @@ export class AccessConfigComponent implements OnInit {
 
     this.featureConfig[this.showGeneralCodingInstructionsKey] =
       this.featureConfig[this.showGeneralCodingInstructionsKey] === true;
+    this.featureConfig.showStudioItemComments = this.featureConfig.showStudioItemComments === true;
     this.featureConfig[this.preferManualCodingInstructionsKey] =
       this.featureConfig[this.preferManualCodingInstructionsKey] !== false;
 

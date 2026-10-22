@@ -8,6 +8,16 @@ export interface UnitXmlData {
   playerRef: string;
   codingSchemeRef?: string;
   metadataRef?: string;
+  commentsRef?: string;
+}
+
+export interface StudioItemComment {
+  id: number;
+  body: string;
+  userName?: string;
+  createdAt?: string;
+  parentId?: number;
+  hidden: boolean;
 }
 
 export interface UnitValidationResult {
@@ -42,6 +52,7 @@ export interface VomdItemData {
   variableReadOnlyId?: string;
   useUnitAliasAsPrefix?: boolean;
   metadata: Record<string, string>;
+  studioComments?: StudioItemComment[];
   empiricalDifficulty?: number;
   bista?: number;
   meanTaskDifficulty?: number;

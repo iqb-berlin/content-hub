@@ -229,6 +229,7 @@ export type ItemExplorerCollectionsViewModel = ReadonlyViewModelSlice<
 export type ItemExplorerPreviewViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
+    | 'showStudioItemComments'
     | 'applyCustomPreviewTarget'
     | 'acpId'
     | 'canEditExplorer'
