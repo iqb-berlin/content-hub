@@ -214,13 +214,13 @@ test('shares item comments and replies directly in the selected Item Explorer pr
     name: 'Kommentare zum ausgewählten Item',
   });
   const expandReplies = reloadedPanel.getByRole('button', {
-    name: '1 Antworten aufklappen',
+    name: '1 Antwort aufklappen',
   });
   await expect(expandReplies).toBeVisible();
   await expect(reloadedPanel.getByText('E2E Antwort')).not.toBeVisible();
   await expandReplies.click();
   await expect(reloadedPanel.getByText('E2E Antwort')).toBeVisible();
-  await reloadedPanel.getByRole('button', { name: 'Antworten einklappen' }).click();
+  await reloadedPanel.getByRole('button', { name: 'Antwort einklappen' }).click();
   await expect(reloadedPanel.getByText('E2E Antwort')).not.toBeVisible();
 
   const commentStatusFilter = page.getByLabel('Nach Kommentarstatus filtern');
