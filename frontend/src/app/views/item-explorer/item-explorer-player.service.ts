@@ -190,7 +190,10 @@ export class ItemExplorerPlayerService implements OnDestroy {
   applyResponseState(data: Record<string, any> | null, isFallback = false): void {
     if (this.destroyed) return;
     this.savedResponseData = data && Object.keys(data).length ? data : null;
+    this.workingAnswerData = null;
+    this.responseBeforeSolution = null;
     this.responseSession.dataParts = null;
+    this.responseSession.initialDataParts = {};
     this.hasResponseState = this.savedResponseData !== null;
     this.isFallbackState = this.hasResponseState && isFallback;
   }

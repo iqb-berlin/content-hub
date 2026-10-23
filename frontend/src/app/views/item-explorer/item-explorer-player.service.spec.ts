@@ -892,6 +892,34 @@ describe('ItemExplorerPlayerService', () => {
     player.ngOnDestroy();
   });
 
+  it('uses reloaded saved answers instead of an older answer view cache', () => {
+    vi.useFakeTimers();
+    const { player, dom, request, voud } = createPlayer();
+    voud.resolvePlayerTargetLocation.mockReturnValue({ absolutePageIndex: 0, scrollPageIndex: 0 });
+    player.itemExplorerConditionalVisibilityEnabled = true;
+    player.definitionContent = JSON.stringify({
+      pages: [{ sections: [{ elements: [{ id: 'v', alias: 'v' }] }] }],
+    });
+    const response = (value: string) => ({
+      elementCodes: JSON.stringify([{ id: 'v', status: 'VALUE_CHANGED', value }]),
+    });
+    try {
+      player.applyResponseState(response('old saved answer'));
+      player.changePreviewMode('answers');
+      player.start(request);
+      player.changePreviewMode('reference');
+      player.start(request);
+      player.applyResponseState(response('new saved answer'));
+      player.changePreviewMode('answers');
+      player.start(request);
+      expect(dom.postMessage.mock.calls.at(-1)![0].unitState.dataParts).toEqual(
+        response('new saved answer'),
+      );
+    } finally {
+      player.ngOnDestroy();
+    }
+  });
+
   it('updates the available visibility configuration when the task definition changes', () => {
     const { player } = createPlayer();
     player.definitionContent = JSON.stringify({
