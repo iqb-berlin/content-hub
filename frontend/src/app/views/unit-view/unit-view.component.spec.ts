@@ -5,7 +5,7 @@ import { of, Subject } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
-import { UnitViewData } from '../../core/models/api.models';
+import { FeatureConfig, UnitViewData } from '../../core/models/api.models';
 import { UnitViewComponent } from './unit-view.component';
 
 vi.mock('../comment-thread/item-comment-thread.component', async () => {
@@ -43,9 +43,181 @@ vi.mock('../comment-thread/item-comment-thread.component', async () => {
 
 describe('UnitViewComponent', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
     TestBed.resetTestingModule();
   });
+
+  async function playerFixture(
+    definition: string | Promise<string> = JSON.stringify({
+      pages: [{ alwaysVisible: true }, {}, {}],
+    }),
+  ) {
+    const api = {
+      appendAuthToken: (url: string) => url,
+      getViewUnit: () =>
+        of({
+          id: 'u1',
+          name: 'Aufgabe',
+          items: [],
+          dependencies: [
+            { type: 'PLAYER', downloadUrl: '/player' },
+            { type: 'UNIT_DEFINITION', downloadUrl: '/definition' },
+          ],
+        }),
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => ({
+        text: async () => (url === '/definition' ? definition : '<p>Player</p>'),
+      })),
+    );
+    await TestBed.configureTestingModule({
+      imports: [UnitViewComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: ApiService, useValue: api },
+        { provide: AuthService, useValue: { currentUser$: of(null), getToken: () => null } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(UnitViewComponent);
+    fixture.componentRef.setInput('acpId', 'acp');
+    fixture.componentRef.setInput('unitId', 'u1');
+    fixture.componentRef.setInput('embedded', true);
+    fixture.componentRef.setInput('reviewMode', true);
+    fixture.componentRef.setInput('featureConfigOverride', {});
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.nativeElement.querySelector('iframe')).not.toBeNull());
+    await fixture.whenStable();
+    const frame = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+    const postMessage = vi.spyOn(frame.contentWindow!, 'postMessage');
+    const message = async (data: object, source = frame.contentWindow!) => {
+      window.dispatchEvent(new MessageEvent('message', { data, source }));
+      await fixture.whenStable();
+    };
+    return { fixture, component: fixture.componentInstance, frame, postMessage, message };
+  }
+
+  it('shows the initial scroll-page count and synchronizes internal player navigation', async () => {
+    const { fixture, component, postMessage, message } = await playerFixture();
+    expect(fixture.nativeElement.querySelector('.page-info').textContent).toContain('Seite 1 / 2');
+    component.onPlayerLoaded();
+    expect(postMessage).not.toHaveBeenCalled();
+    await message({ type: 'vopReadyNotification' });
+    expect(postMessage).toHaveBeenCalledTimes(1);
+    const start = postMessage.mock.calls[0][0];
+    expect(start).toMatchObject({ type: 'vopStartCommand', sessionId: expect.any(String) });
+    await message({ type: 'vopReadyNotification' });
+    expect(postMessage).toHaveBeenCalledTimes(1);
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: start.sessionId,
+      playerState: { validPages: [{ id: '0' }, { id: '1' }], currentPage: '1' },
+    });
+    expect(fixture.nativeElement.querySelector('.page-info').textContent).toContain('Seite 2 / 2');
+    component.navigateToPage(1);
+    expect(postMessage).toHaveBeenLastCalledWith(
+      {
+        type: 'vopPageNavigationCommand',
+        sessionId: start.sessionId,
+        target: '0',
+      },
+      '*',
+    );
+    await message({ type: 'vopStateChangedNotification', playerState: { currentPage: '0' } });
+    expect(fixture.nativeElement.querySelector('.page-info').textContent).toContain('Seite 1 / 2');
+    // Messages from another frame or an old unit cannot alter this unit's navigation.
+    await message(
+      { type: 'vopStateChangedNotification', playerState: { currentPage: '1' } },
+      window,
+    );
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: 'previous-unit',
+      playerState: { currentPage: '1' },
+    });
+    expect(component.currentPage).toBe(1);
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    expect(component.currentPage).toBe(1);
+    expect(component.totalPages).toBe(1);
+  });
+
+  it('uses ordered page IDs for Verona 6 and maps from older players', async () => {
+    const { fixture, component, postMessage, message } = await playerFixture();
+    await message({ type: 'vopReadyNotification' });
+    await message({
+      type: 'vopStateChangedNotification',
+      playerState: { validPages: [{ id: 'intro' }, { id: 'question' }], currentPage: 'question' },
+    });
+    expect(component.currentPage).toBe(2);
+    component.navigateToPage(1);
+    expect(postMessage.mock.calls.at(-1)?.[0].target).toBe('intro');
+    await message({
+      type: 'vopStateChangedNotification',
+      playerState: { validPages: { '2': 'Seite 3', '5': 'Seite 6' }, currentPage: '5' },
+    });
+    expect(component.totalPages).toBe(2);
+    expect(component.currentPage).toBe(2);
+    component.navigateToPage(1);
+    expect(postMessage.mock.calls.at(-1)?.[0].target).toBe('2');
+    await message({
+      type: 'vopStateChangedNotification',
+      playerState: { validPages: [0, 1], currentPage: 1 },
+    });
+    expect(component.currentPage).toBe(2);
+    await message({ type: 'vopStateChangedNotification', playerState: { validPages: [] } });
+    expect(fixture.nativeElement.querySelector('.page-nav')).toBeNull();
+    expect(component.totalPages).toBe(0);
+  });
+
+  it('starts after the definition arrives when the player reports readiness first', async () => {
+    let resolveDefinition!: (definition: string) => void;
+    const definition = new Promise<string>((resolve) => {
+      resolveDefinition = resolve;
+    });
+    const { component, postMessage, message } = await playerFixture(definition);
+    await message({ type: 'vopReadyNotification' });
+    expect(postMessage).not.toHaveBeenCalled();
+    resolveDefinition(JSON.stringify({ pages: [{}, {}, {}] }));
+    await vi.waitFor(() => expect(postMessage).toHaveBeenCalledTimes(1));
+    expect(component.totalPages).toBe(3);
+    expect(component.currentPage).toBe(1);
+  });
+
+  it.each([true, false])(
+    'filters developer metadata only in Review (reviewMode: %s)',
+    async (reviewMode) => {
+      const { fixture, component } = await playerFixture();
+      fixture.componentRef.setInput('reviewMode', reviewMode);
+      fixture.componentRef.setInput('featureConfigOverride', {
+        showMetadata: true,
+        hideReviewDeveloperNames: true,
+      } satisfies FeatureConfig);
+      fixture.detectChanges();
+      component.unitMetadata = [
+        { id: 'iqb_author', label: 'Verantwortlich', value: 'EM' },
+        { id: 'custom-author', label: 'Entwickler:in', value: 'Elsa Mignon' },
+        { id: 'subject', label: 'Fach', value: 'Deutsch' },
+      ];
+      component.activeTab = 'metadata';
+      component.panelVisible = true;
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+      const metadata = fixture.nativeElement.querySelector('.meta-dl').textContent;
+      expect(metadata.includes('Elsa Mignon')).toBe(!reviewMode);
+      expect(metadata.includes('EM')).toBe(!reviewMode);
+      expect(metadata).toContain('Deutsch');
+      fixture.componentRef.setInput('featureConfigOverride', { showMetadata: true });
+      fixture.detectChanges();
+      component.activeTab = 'metadata';
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.meta-dl').textContent).toContain('Elsa Mignon');
+    },
+  );
 
   it('renders changing booklet units inline with review metadata, coding and comments', async () => {
     const units: Record<string, UnitViewData> = {

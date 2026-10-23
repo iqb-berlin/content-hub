@@ -614,6 +614,16 @@ aktuellen Aktivierungsstatus.
 5. Aktivieren Sie den Review und speichern Sie die Konfiguration.
 6. Vergeben Sie unter den Personen oder ACP-Zugaengen die Berechtigung `Review: teilnehmen`.
 
+Unter **Metadaten in der Prüfansicht** koennen Sie **Namen und Kürzel der
+Aufgabenentwickler/innen ausblenden** aktivieren. Speichern Sie anschliessend die
+Review-Konfiguration. In der Testheft-Pruefansicht wird das Metadatenfeld
+`iqb_author` bzw. „Entwickler/in“ dann fuer alle Review-Teilnehmenden ausgeblendet.
+Andere Metadaten bleiben sichtbar. Die Einstellung aendert die Anzeige; die
+Metadatendateien und vorhandene Downloadrechte bleiben erhalten.
+
+Bei mehrseitigen Aufgaben zeigt die Seitennavigation die aktuelle Seite und die
+Gesamtzahl an. Sie folgt auch Seitenwechseln ueber Schaltflaechen innerhalb der Aufgabe.
+
 Die Bereitschaftspruefung kontrolliert insbesondere Booklets, referenzierte Units,
 Aufgabendefinitionen, Player sowie syntaktische und semantische Validierungsergebnisse. Sie ist
 keine formale Release-Freigabe.
