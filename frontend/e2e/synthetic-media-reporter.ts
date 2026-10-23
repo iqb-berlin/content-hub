@@ -19,6 +19,7 @@ interface CaseResult {
   status: string;
   durationMs: number;
   retry: number;
+  repetition: number;
   media: { name: string; file: string; type: string; sha256: string }[];
 }
 
@@ -63,7 +64,7 @@ export default class SyntheticMediaReporter implements Reporter {
     const output = this.output;
     if (!/\/synthetic-aspect(?:-media)?\.spec\.ts$/.test(test.location.file)) return;
     const browser = test.parent.project()!.name;
-    const id = `${createHash('sha256').update(test.titlePath().join('/')).digest('hex').slice(0, 12)}-attempt-${result.retry}`;
+    const id = `${createHash('sha256').update(test.titlePath().join('/')).digest('hex').slice(0, 12)}-repeat-${test.repeatEachIndex}-attempt-${result.retry}`;
     const media: CaseResult['media'] = [];
     for (const attachment of result.attachments) {
       if (!attachment.path || !['image/png', 'video/webm'].includes(attachment.contentType))
@@ -84,6 +85,7 @@ export default class SyntheticMediaReporter implements Reporter {
       status: result.status,
       durationMs: result.duration,
       retry: result.retry,
+      repetition: test.repeatEachIndex,
       media,
     });
   }

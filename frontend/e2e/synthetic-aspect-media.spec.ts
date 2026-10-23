@@ -28,13 +28,16 @@ test('records a verified walkthrough with personal, solution and manual states',
   await jump(page, 'u2');
   await show(page);
   await expect(page.locator('.solution-info')).toContainText('1 von 2');
+  await expect(frame(page).getByRole('textbox').first()).toHaveValue('Fahrrad');
   await capture('05-teilmusterloesung');
   await jump(page, 'u3');
   await show(page);
   await expect(page.locator('.coding-content')).toContainText('2 Punkte:');
+  await expect(frame(page).getByRole('textbox')).toBeVisible();
   await capture('06-manuelle-kodierung');
   await jump(page, 'u4');
   await show(page);
   await expect(page.locator('.solution-info')).toContainText('Keine eindeutige Musterlösung');
+  await expect(frame(page).getByRole('textbox')).toBeVisible();
   await capture('07-alternativen');
 });

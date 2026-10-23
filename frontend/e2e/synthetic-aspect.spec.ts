@@ -97,24 +97,22 @@ test('filters readable coding by rule text and explains an empty search', async 
 test('supports interactive display modes and protects personal answers in print modes', async ({
   page,
 }, testInfo) => {
-  await open(page);
-  await page.getByRole('button', { name: 'Nächste Seite →', exact: true }).click();
-  await frame(page).getByRole('textbox').fill('Eigene Antwort vor Druck');
+  // Exercise layout changes on the single-page mixed task. Multi-page navigation
+  // and aliases are checked independently in the complete-solution case.
+  await open(page, 'u2');
+  const answer = frame(page).getByRole('textbox').first();
+  await answer.fill('Eigene Antwort vor Druck');
   await show(page);
-  await expect(frame(page).getByRole('textbox')).toHaveValue('Fahrrad');
+  await expect(answer).toHaveValue('Fahrrad');
   const display = page.getByRole('combobox', { name: 'Seitendarstellung der Aufgabe' });
   for (const mode of ['separate', 'concat-scroll', 'concat-scroll-snap', 'buttons']) {
     await display.selectOption(mode);
     await expect(
       page.getByRole('button', { name: 'Musterlösung ausblenden', exact: true }),
     ).toBeEnabled();
-    if (
-      (mode === 'buttons' || mode === 'separate') &&
-      (await frame(page).getByRole('textbox').count()) === 0
-    ) {
-      await page.getByRole('button', { name: 'Nächste Seite →', exact: true }).click();
-    }
-    await expect(frame(page).getByRole('textbox')).toHaveValue('Fahrrad');
+    // The real player restarts asynchronously. An immediate count() can observe
+    // its empty replacement frame; wait for the expected answer instead.
+    await expect(answer).toHaveValue('Fahrrad');
   }
   for (const mode of ['view-all', 'print-ids']) {
     await display.selectOption(mode);
@@ -122,6 +120,9 @@ test('supports interactive display modes and protects personal answers in print 
       page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }),
     ).toBeDisabled();
     await expect(page.locator('.solution-info')).toContainText('interaktive Seitendarstellung');
+    await expect(
+      frame(page).getByText('Eine Antwort – zwei Bewertungen', { exact: true }),
+    ).toBeVisible();
     if (mode === 'print-ids') {
       const path = testInfo.outputPath('druckansicht.png');
       await page.screenshot({ path, fullPage: true, animations: 'disabled', caret: 'hide' });
@@ -132,9 +133,7 @@ test('supports interactive display modes and protects personal answers in print 
   await expect(
     page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }),
   ).toBeEnabled();
-  if ((await frame(page).getByRole('textbox').count()) === 0)
-    await page.getByRole('button', { name: 'Nächste Seite →', exact: true }).click();
-  await expect(frame(page).getByRole('textbox')).toHaveValue('Eigene Antwort vor Druck');
+  await expect(answer).toHaveValue('Eigene Antwort vor Druck');
 });
 
 test('labels a partial solution and restores both personal answers', async ({ page }) => {

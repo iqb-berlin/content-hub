@@ -25,6 +25,7 @@ function testCase(title: string, file = '/e2e/synthetic-aspect-media.spec.ts') {
   return {
     title,
     titlePath: () => ['chromium', title],
+    repeatEachIndex: 0,
     location: { file },
     parent: { project: () => ({ name: 'chromium' }) },
   } as unknown as TestCase;
@@ -111,5 +112,25 @@ describe('Synthetic media reporter', () => {
     expect(readFileSync(join(outputDir, first.media[0].file), 'utf8')).toBe('first attempt');
     expect(readFileSync(join(outputDir, second.media[0].file), 'utf8')).toBe('second attempt');
     expect([first.retry, second.retry]).toEqual([0, 1]);
+  });
+
+  it('keeps recordings distinct when repeating a test with repeat-each', async () => {
+    const { reporter, directory, outputDir } = setup();
+    const path = join(directory, 'state.png');
+    const entry = testCase('repeated case', '/e2e/synthetic-aspect.spec.ts');
+    writeFileSync(path, 'first repetition');
+    reporter.onTestEnd(entry, testResult([{ name: 'state', contentType: 'image/png', path }]));
+    writeFileSync(path, 'second repetition');
+    reporter.onTestEnd(
+      { ...entry, repeatEachIndex: 1 },
+      testResult([{ name: 'state', contentType: 'image/png', path }]),
+    );
+    await reporter.onEnd(fullResult('passed'));
+    const manifest = JSON.parse(readFileSync(join(outputDir, 'manifest.json'), 'utf8'));
+    const [first, second] = manifest.cases;
+    expect(first.media[0].file).not.toBe(second.media[0].file);
+    expect(readFileSync(join(outputDir, first.media[0].file), 'utf8')).toBe('first repetition');
+    expect(readFileSync(join(outputDir, second.media[0].file), 'utf8')).toBe('second repetition');
+    expect([first.repetition, second.repetition]).toEqual([0, 1]);
   });
 });
