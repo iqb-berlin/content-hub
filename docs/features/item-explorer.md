@@ -106,7 +106,11 @@ reduced view, even when their separate ACP feature is enabled.
 Hidden regions are removed from the DOM. Without the right-hand panel the table fills the available
 width and height, including narrow screens and fullscreen. The existing split percentage is retained
 when switching back to editing; hidden previews do not load item-preview resources on row selection.
-There is no local visibility override for reviewers.
+When the table toolbar is hidden, its global search and active-collection filter are suspended;
+per-column filters remain active. The saved search and collection selection are retained for the
+full editing view. Switching back to editing reloads the selected preview, including when an item
+was selected while its preview panel was hidden. Pending preview requests are cancelled when the
+panel disappears. There is no local visibility override for reviewers.
 
 Missing visibility keys default to visible; `enabled` defaults to false. The visibility of each new
 header action must be considered explicitly when introducing it, following the domain decision in

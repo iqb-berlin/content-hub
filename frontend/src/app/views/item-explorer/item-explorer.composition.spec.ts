@@ -298,6 +298,11 @@ describe('ItemExplorer production template composition', () => {
     facade.personalData.personalDataLoadState = 'loaded';
     facade.personalData.personalDataSaveState = 'error';
     facade.personalData.personalDataError = 'Speichern fehlgeschlagen';
+    facade.personalData.collectionDataExportError = 'Export fehlgeschlagen';
+    facade.collections.enableItemCollections = true;
+    facade.collections.collectionLoadState = 'error';
+    facade.collections.collectionError = 'Auswahllisten konnten nicht geladen werden';
+    const retry = vi.spyOn(facade, 'loadItemCollections').mockImplementation(() => undefined);
     const fixture = await renderExplorer(facade);
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('h1')).toBeNull();
@@ -312,6 +317,13 @@ describe('ItemExplorer production template composition', () => {
       'Erneut speichern',
     );
     expect(root.querySelector('.table-scroll')).not.toBeNull();
+    expect(root.textContent).toContain('Export fehlgeschlagen');
+    expect(root.querySelector('.collection-status')?.getAttribute('role')).toBe('alert');
+    expect(root.querySelector('.collection-status')?.textContent).toContain(
+      'Auswahllisten konnten nicht geladen werden',
+    );
+    root.querySelector<HTMLButtonElement>('.collection-status button')!.click();
+    expect(retry).toHaveBeenCalledOnce();
     fixture.destroy();
   });
 

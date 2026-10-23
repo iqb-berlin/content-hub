@@ -944,8 +944,11 @@ export class ItemExplorerFacade implements OnDestroy {
       itemTags: this.itemTags,
       personalColumnFilters: this.personalColumnFilters,
       personalItemData: this.personalItemData,
+      globalFilterText: this.showTableToolbarArea ? this.filterText : '',
       activeCollectionRowKeys:
-        this.collectionViewMode === 'active' && this.activeItemCollection
+        this.showTableToolbarArea &&
+        this.collectionViewMode === 'active' &&
+        this.activeItemCollection
           ? new Set(this.activeItemCollection.rowKeys)
           : null,
     };
@@ -1897,7 +1900,8 @@ export class ItemExplorerFacade implements OnDestroy {
     item.rowKey = this.getStableRowKey(item);
     if (
       this.selectedItem &&
-      this.getStableRowKey(this.selectedItem) === this.getStableRowKey(item)
+      this.getStableRowKey(this.selectedItem) === this.getStableRowKey(item) &&
+      (!this.showExplorerItemPanel || this.previewCoordinator.status.kind !== 'idle')
     ) {
       this.selectedIndex = index;
       return;
@@ -1960,6 +1964,7 @@ export class ItemExplorerFacade implements OnDestroy {
   private applyPreviewResult(result: ItemExplorerPreviewResult): void {
     if (
       this.destroyed ||
+      !this.showExplorerItemPanel ||
       !this.selectedItem ||
       this.getStableRowKey(result.item) !== this.getStableRowKey(this.selectedItem)
     ) {
@@ -2710,6 +2715,11 @@ export class ItemExplorerFacade implements OnDestroy {
     this.canPublishExplorer = this.hasExplorerPublishPermission && inEditorPerspective;
     this.configureDraft();
     this.configurePersonalData();
+    if (!this.showExplorerItemPanel) {
+      this.resetPlayer();
+      this.clearPreviewSlowTimer();
+      this.cancelPlayerReadyTiming();
+    }
   }
 
   private getExplorerStateForCurrentPerspective(

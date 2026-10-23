@@ -8,6 +8,8 @@ type ReadonlyViewModelSlice<T> = {
 export type ItemExplorerHeaderViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
+    | 'showTableToolbarArea'
+    | 'collectionDataExportError'
     | 'showExplorerHeader'
     | 'isHeaderActionVisible'
     | 'activeItemCollection'
@@ -104,6 +106,8 @@ export type ItemExplorerTableViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
     | 'showTableToolbarArea'
+    | 'collectionError'
+    | 'loadItemCollections'
     | 'totalItemsCount'
     | 'addCustomTag'
     | 'addItemTag'
