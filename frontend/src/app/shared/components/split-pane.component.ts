@@ -4,16 +4,23 @@ import { Component, Input, ElementRef, ViewChild, AfterViewInit, OnDestroy } fro
   selector: 'app-split-pane',
   standalone: true,
   template: `
-    <div class="split-pane" #container [class.dragging]="isDragging">
-      <div class="pane pane-left" [style.width.%]="leftPercent">
+    <div
+      class="split-pane"
+      #container
+      [class.dragging]="isDragging"
+      [class.single-pane]="hideRight"
+    >
+      <div class="pane pane-left" [style.width.%]="hideRight ? 100 : leftPercent">
         <ng-content select="[left]"></ng-content>
       </div>
-      <div class="divider" [class.active]="isDragging" (mousedown)="onDragStart($event)">
-        <div class="divider-handle"></div>
-      </div>
-      <div class="pane pane-right">
-        <ng-content select="[right]"></ng-content>
-      </div>
+      @if (!hideRight) {
+        <div class="divider" [class.active]="isDragging" (mousedown)="onDragStart($event)">
+          <div class="divider-handle"></div>
+        </div>
+        <div class="pane pane-right">
+          <ng-content select="[right]"></ng-content>
+        </div>
+      }
     </div>
   `,
   styles: [
@@ -82,6 +89,18 @@ import { Component, Input, ElementRef, ViewChild, AfterViewInit, OnDestroy } fro
 export class SplitPaneComponent implements AfterViewInit, OnDestroy {
   @ViewChild('container') container!: ElementRef<HTMLElement>;
 
+  private rightHidden = false;
+  @Input()
+  get hideRight(): boolean {
+    return this.rightHidden;
+  }
+  set hideRight(value: boolean) {
+    this.rightHidden = value;
+    if (value) {
+      this.isDragging = false;
+      this.cleanupListeners();
+    }
+  }
   @Input() initialLeftPercent = 45;
   @Input() minLeftPx = 300;
   @Input() minRightPx = 350;
@@ -101,6 +120,7 @@ export class SplitPaneComponent implements AfterViewInit, OnDestroy {
   }
 
   onDragStart(event: MouseEvent) {
+    if (this.hideRight) return;
     event.preventDefault();
     this.isDragging = true;
 

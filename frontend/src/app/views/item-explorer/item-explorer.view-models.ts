@@ -8,6 +8,8 @@ type ReadonlyViewModelSlice<T> = {
 export type ItemExplorerHeaderViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
+    | 'showExplorerHeader'
+    | 'isHeaderActionVisible'
     | 'activeItemCollection'
     | 'enableItemCollections'
     | 'collectionBusy'
@@ -101,6 +103,7 @@ export type ItemExplorerHeaderViewModel = ReadonlyViewModelSlice<
 export type ItemExplorerTableViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
+    | 'showTableToolbarArea'
     | 'totalItemsCount'
     | 'addCustomTag'
     | 'addItemTag'
@@ -229,6 +232,8 @@ export type ItemExplorerCollectionsViewModel = ReadonlyViewModelSlice<
 export type ItemExplorerPreviewViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
+    | 'showItemInfo'
+    | 'showPlayerPreview'
     | 'showStudioItemComments'
     | 'applyCustomPreviewTarget'
     | 'acpId'

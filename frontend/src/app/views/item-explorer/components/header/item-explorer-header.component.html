@@ -1,7 +1,7 @@
 <div class="explorer-header">
-  <div class="header-title">
-    <h1>Item-Explorer</h1>
-  </div>
+  @if (vm.showExplorerHeader) {
+    <div class="header-title"><h1>Item-Explorer</h1></div>
+  }
   <div class="header-actions">
     <div class="toolbar-group" role="group" aria-label="Ansicht">
       <button
@@ -20,7 +20,7 @@
         </svg>
         {{ vm.isFullscreen ? 'Vollbild beenden' : 'Vollbild' }}
       </button>
-      @if (vm.canToggleReadOnlyPreview) {
+      @if (vm.canToggleReadOnlyPreview && vm.isHeaderActionVisible('readonlyPreview')) {
         <button
           class="btn btn-outline btn-sm btn-state"
           type="button"
@@ -41,7 +41,7 @@
           {{ vm.isReadOnlyPreview ? 'Bearbeitungsansicht' : 'Leseansicht' }}
         </button>
       }
-      @if (vm.latestExplorerState) {
+      @if (vm.latestExplorerState && vm.isHeaderActionVisible('columnManager')) {
         <button
           title="Sichtbare Tabellenspalten und ihre Reihenfolge festlegen"
           class="btn btn-outline btn-sm"
@@ -236,49 +236,57 @@
               accept=".csv"
               (change)="vm.onCsvFileSelected($event)"
             />
-            <button
-              title="Eine CSV-Datei auswählen, um Itemparameter zu importieren"
-              class="btn btn-outline btn-sm"
-              (click)="moreActions.removeAttribute('open'); csvUploadInput.click()"
-            >
-              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M12 16V3m-4 4 4-4 4 4M4 16v5h16v-5" />
-              </svg>
-              Itemparameter importieren …
-            </button>
-            <button
-              class="btn btn-outline btn-sm btn-clear-difficulties"
-              (click)="
-                moreActions.removeAttribute('open'); vm.openClearEmpiricalDifficultiesDialog()
-              "
-              title="Alle empirischen Itemschwierigkeiten nach Bestätigung löschen; weitere Itemparameter bleiben erhalten"
-            >
-              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" />
-              </svg>
-              Empirische Itemschwierigkeiten löschen …
-            </button>
-            <button
-              class="btn btn-outline btn-sm"
-              (click)="moreActions.removeAttribute('open'); vm.openRenumberDialog()"
-              [disabled]="vm.isRenumberingBlocked()"
-              [title]="vm.getRenumberingActionTitle()"
-            >
-              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M10 4 8 20M17 4l-2 16M4 9h17M3 15h17" />
-              </svg>
-              Referenznummern neu vergeben
-            </button>
-            <button
-              title="Änderungen am Item-Explorer und frühere Versionen ansehen"
-              class="btn btn-outline btn-sm"
-              (click)="moreActions.removeAttribute('open'); vm.showHistory()"
-            >
-              <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M3 11a9 9 0 1 1 2 7M3 4v7h7m2-4v5l4 2" />
-              </svg>
-              Änderungsverlauf
-            </button>
+            @if (vm.isHeaderActionVisible('importParameters')) {
+              <button
+                title="Eine CSV-Datei auswählen, um Itemparameter zu importieren"
+                class="btn btn-outline btn-sm"
+                (click)="moreActions.removeAttribute('open'); csvUploadInput.click()"
+              >
+                <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 16V3m-4 4 4-4 4 4M4 16v5h16v-5" />
+                </svg>
+                Itemparameter importieren …
+              </button>
+            }
+            @if (vm.isHeaderActionVisible('clearEmpiricalDifficulties')) {
+              <button
+                class="btn btn-outline btn-sm btn-clear-difficulties"
+                (click)="
+                  moreActions.removeAttribute('open'); vm.openClearEmpiricalDifficultiesDialog()
+                "
+                title="Alle empirischen Itemschwierigkeiten nach Bestätigung löschen; weitere Itemparameter bleiben erhalten"
+              >
+                <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" />
+                </svg>
+                Empirische Itemschwierigkeiten löschen …
+              </button>
+            }
+            @if (vm.isHeaderActionVisible('renumberReferences')) {
+              <button
+                class="btn btn-outline btn-sm"
+                (click)="moreActions.removeAttribute('open'); vm.openRenumberDialog()"
+                [disabled]="vm.isRenumberingBlocked()"
+                [title]="vm.getRenumberingActionTitle()"
+              >
+                <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M10 4 8 20M17 4l-2 16M4 9h17M3 15h17" />
+                </svg>
+                Referenznummern neu vergeben
+              </button>
+            }
+            @if (vm.isHeaderActionVisible('history')) {
+              <button
+                title="Änderungen am Item-Explorer und frühere Versionen ansehen"
+                class="btn btn-outline btn-sm"
+                (click)="moreActions.removeAttribute('open'); vm.showHistory()"
+              >
+                <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M3 11a9 9 0 1 1 2 7M3 4v7h7m2-4v5l4 2" />
+                </svg>
+                Änderungsverlauf
+              </button>
+            }
           </div>
         </details>
       </div>

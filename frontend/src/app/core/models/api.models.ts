@@ -459,6 +459,7 @@ export interface ItemExplorerTableColumnLayout {
 }
 
 export interface FeatureConfig {
+  itemExplorerReducedView?: import('./item-explorer-reduced-view').ItemExplorerReducedView;
   showStudioItemComments?: boolean;
   // Preserve extension keys while requiring callers to narrow unknown values.
   [key: string]: unknown;

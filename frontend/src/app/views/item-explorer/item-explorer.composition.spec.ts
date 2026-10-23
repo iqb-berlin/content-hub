@@ -179,6 +179,10 @@ class ItemExplorerShellTemplateHarness implements OnInit {
   private readonly facade = inject(ItemExplorerFacade);
   private readonly route = inject(ActivatedRoute);
 
+  get showExplorerItemPanel(): boolean {
+    return this.facade.showExplorerItemPanel;
+  }
+
   get isFullscreenActive(): boolean {
     return this.facade.isFullscreen;
   }
@@ -283,6 +287,34 @@ describe('ItemExplorer production template composition', () => {
     expect(preview.vm).toBe(facade.previewViewModel);
     expect(init).toHaveBeenCalledWith('acp-42');
   }, 15_000);
+  it('removes optional regions from the DOM but keeps loading and personal save errors reachable', async () => {
+    const facade = createFacade();
+    vi.spyOn(facade, 'init').mockImplementation(() => undefined);
+    vi.spyOn(facade, 'showExplorerHeader', 'get').mockReturnValue(false);
+    vi.spyOn(facade, 'showTableToolbarArea', 'get').mockReturnValue(false);
+    vi.spyOn(facade, 'showExplorerItemPanel', 'get').mockReturnValue(false);
+    vi.spyOn(facade, 'showPersonalItemData', 'get').mockReturnValue(true);
+    facade.itemListLoading = true;
+    facade.personalData.personalDataLoadState = 'loaded';
+    facade.personalData.personalDataSaveState = 'error';
+    facade.personalData.personalDataError = 'Speichern fehlgeschlagen';
+    const fixture = await renderExplorer(facade);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('h1')).toBeNull();
+    expect(root.querySelector('.table-toolbar')).toBeNull();
+    expect(root.querySelector('.pane-right')).toBeNull();
+    expect(root.querySelector('.divider')).toBeNull();
+    expect(root.querySelector('.item-list-loading')?.getAttribute('role')).toBe('status');
+    expect(root.querySelector('.personal-data-status')?.textContent).toContain(
+      'Speichern fehlgeschlagen',
+    );
+    expect(root.querySelector('.personal-data-status button')?.textContent).toContain(
+      'Erneut speichern',
+    );
+    expect(root.querySelector('.table-scroll')).not.toBeNull();
+    fixture.destroy();
+  });
+
   it('updates breadcrumbs and fullscreen controls through the rendered toolbar', async () => {
     const facade = createFacade();
     vi.spyOn(facade, 'init').mockImplementation(() => undefined);

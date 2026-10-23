@@ -68,6 +68,11 @@ import {
   ItemExplorerTimingToken,
 } from './item-explorer-load-diagnostics.service';
 
+import {
+  ExplorerOptionalHeaderAction,
+  normalizeReducedView,
+} from '../../core/models/item-explorer-reduced-view';
+
 type ItemListLoadOutcome = 'loaded' | 'version-mismatch' | 'superseded' | 'error';
 @Injectable()
 export class ItemExplorerFacade implements OnDestroy {
@@ -80,7 +85,38 @@ export class ItemExplorerFacade implements OnDestroy {
   private tableDom?: ItemExplorerTableDomPort;
 
   acpId = '';
-  showStudioItemComments = false;
+  private studioItemCommentsConfigured = false;
+  private reducedView = normalizeReducedView(undefined);
+
+  get reducedViewActive(): boolean {
+    return this.reducedView.enabled && (this.isReadOnlyPreview || !this.hasExplorerEditPermission);
+  }
+  get showStudioItemComments(): boolean {
+    return this.studioItemCommentsConfigured && !this.reducedViewActive;
+  }
+  get showExplorerHeader(): boolean {
+    return !this.reducedViewActive || this.reducedView.showHeader;
+  }
+  isHeaderActionVisible(action: ExplorerOptionalHeaderAction): boolean {
+    // Returning to editing must always remain possible for managers.
+    if (action === 'readonlyPreview' && this.isReadOnlyPreview && this.canToggleReadOnlyPreview)
+      return true;
+    return (
+      !this.reducedViewActive || (this.showExplorerHeader && this.reducedView.headerActions[action])
+    );
+  }
+  get showTableToolbarArea(): boolean {
+    return !this.reducedViewActive || this.reducedView.showTableToolbarArea;
+  }
+  get showExplorerItemPanel(): boolean {
+    return !this.reducedViewActive || this.reducedView.showExplorerItemPanel;
+  }
+  get showItemInfo(): boolean {
+    return !this.reducedViewActive || this.reducedView.showItemInfo;
+  }
+  get showPlayerPreview(): boolean {
+    return !this.reducedViewActive || this.reducedView.showPlayerPreview;
+  }
   get columns() {
     return this.table.columns;
   }
@@ -1151,7 +1187,8 @@ export class ItemExplorerFacade implements OnDestroy {
       .subscribe({
         next: (data) => {
           const fc = data?.featureConfig || {};
-          this.showStudioItemComments = fc.showStudioItemComments === true;
+          this.studioItemCommentsConfigured = fc.showStudioItemComments === true;
+          this.reducedView = normalizeReducedView(fc.itemExplorerReducedView);
           const commentTargets = Array.isArray(fc.commentTargets) ? fc.commentTargets : [];
           this.comments.itemCommentsConfigured = Boolean(
             fc.enableCommenting && (commentTargets.length === 0 || commentTargets.includes('ITEM')),
@@ -1867,6 +1904,13 @@ export class ItemExplorerFacade implements OnDestroy {
     }
 
     this.cancelPlayerReadyTiming();
+    if (!this.showExplorerItemPanel) {
+      this.selectedItem = item;
+      this.selectedIndex = index;
+      this.resetPlayer();
+      this.clearPreviewSlowTimer();
+      return;
+    }
     const reuseLoadedUnit = this.hasReusablePreviewUnit(item);
     this.selectedItem = item;
     this.selectedIndex = index;
@@ -3265,7 +3309,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   openColumnManager() {
-    if (this.showColumnManager) return;
+    if (!this.isHeaderActionVisible('columnManager') || this.showColumnManager) return;
     this.rememberFocusBeforeOverlay();
     this.table.openColumnManager();
   }

@@ -14,6 +14,10 @@ import {
   FeatureConfig,
   UpdateAccessConfigRequest,
 } from '../../core/models/api.models';
+import {
+  EXPLORER_OPTIONAL_HEADER_ACTIONS,
+  normalizeReducedView,
+} from '../../core/models/item-explorer-reduced-view';
 import { AcpManagerContextComponent } from '../shared/acp-manager-context.component';
 
 @Component({
@@ -516,6 +520,100 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
           Verwaltung konfigurierbar. Die Hervorhebung gilt auch in der separaten Item-Ansicht.
         </p>
         <div class="explorer-options">
+          @if (configLoaded) {
+            <details class="settings-details">
+              <summary>Reduzierte Ansicht des Item-Explorers</summary>
+              <p class="help-text">
+                Gilt nur für Reviewer und die Leseansicht. Manager behalten die vollständige
+                Bearbeitungsansicht. Nach „Änderungen speichern“ gilt die Darstellung bei neuen
+                Aufrufen sofort. Explorer-Veröffentlichung und das Verwerfen eines Entwurfs ändern
+                sie nicht.
+              </p>
+              <div
+                class="button-group"
+                role="group"
+                aria-label="Ausgangsprofil für die reduzierte Ansicht"
+              >
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="applyReducedViewProfile('full')"
+                >
+                  Vollständig
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="applyReducedViewProfile('review')"
+                >
+                  Review mit Vorschau
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="applyReducedViewProfile('table')"
+                >
+                  Nur Tabelle
+                </button>
+              </div>
+              <label class="feature-toggle">
+                <input type="checkbox" [(ngModel)]="reducedView.enabled" />
+                <span>Reduzierte Ansicht aktivieren</span>
+              </label>
+              @if (reducedView.enabled) {
+                <label class="feature-toggle">
+                  <input type="checkbox" [(ngModel)]="reducedView.showHeader" />
+                  <span>Header: Titel und optionale Aktionen anzeigen</span>
+                </label>
+                @for (action of reducedViewActions; track action.id) {
+                  <label class="feature-toggle">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="reducedView.headerActions[action.id]"
+                      [disabled]="!reducedView.showHeader"
+                    />
+                    <span
+                      >{{ action.label
+                      }}{{ action.managerOnly ? ' (nur mit Verwaltungsrecht)' : '' }}</span
+                    >
+                  </label>
+                }
+                <p class="help-text">
+                  Vollbild sowie erlaubte Sortier-, Download- und Speicheraktionen bleiben
+                  erreichbar. Verwaltungsaktionen bleiben ohne Berechtigung verborgen. Manager
+                  können die Leseansicht immer verlassen. Neue Aktionen werden bei ihrer Einführung
+                  einzeln bewertet.
+                </p>
+                <label class="feature-toggle">
+                  <input type="checkbox" [(ngModel)]="reducedView.showTableToolbarArea" />
+                  <span
+                    >Bedienbereich oberhalb der Tabelle anzeigen (Suche, Ausblendungen und
+                    Auswahllisten)</span
+                  >
+                </label>
+                <label class="feature-toggle">
+                  <input type="checkbox" [(ngModel)]="reducedView.showExplorerItemPanel" />
+                  <span>Gesamten Item- und Vorschaubereich anzeigen</span>
+                </label>
+                @if (reducedView.showExplorerItemPanel) {
+                  <label class="feature-toggle">
+                    <input type="checkbox" [(ngModel)]="reducedView.showItemInfo" />
+                    <span>Bereich „Item“ mit Vorschau-Einstellungen anzeigen</span>
+                  </label>
+                  <label class="feature-toggle">
+                    <input type="checkbox" [(ngModel)]="reducedView.showPlayerPreview" />
+                    <span>Player-Vorschau anzeigen</span>
+                  </label>
+                }
+                <p class="help-text">
+                  Lade-, Fehler- und Speicherhinweise bleiben sichtbar. Beim Ausblenden des gesamten
+                  Vorschaubereichs entfallen auch dessen Review-Kommentare. Studio-Kommentare werden
+                  in der reduzierten Ansicht nicht angezeigt. Die bisherige Breitenaufteilung bleibt
+                  erhalten.
+                </p>
+              }
+            </details>
+          }
           <details class="settings-details">
             <summary>Inhalte und Darstellung</summary>
             <label class="feature-toggle">
@@ -1193,6 +1291,24 @@ export class AccessConfigComponent implements OnInit {
   credentialCount = 0;
   dateError = '';
   featureConfig: FeatureConfig = {};
+  readonly reducedViewActions = EXPLORER_OPTIONAL_HEADER_ACTIONS;
+  get reducedView() {
+    return this.featureConfig.itemExplorerReducedView!;
+  }
+
+  applyReducedViewProfile(profile: 'full' | 'review' | 'table'): void {
+    const config = normalizeReducedView(undefined);
+    config.enabled = profile !== 'full';
+    if (config.enabled) {
+      config.showTableToolbarArea = false;
+      config.headerActions.columnManager = false;
+    }
+    if (profile === 'table') {
+      config.showHeader = false;
+      config.showExplorerItemPanel = false;
+    }
+    this.featureConfig.itemExplorerReducedView = config;
+  }
   commentTargets: string[] = [];
   availableTags: string[] = [];
   newTag = '';
@@ -1499,6 +1615,9 @@ export class AccessConfigComponent implements OnInit {
   }
 
   private applyFeatureConfigDefaults() {
+    this.featureConfig.itemExplorerReducedView = normalizeReducedView(
+      this.featureConfig.itemExplorerReducedView,
+    );
     // Match the viewer API: existing ACPs without this flag allow the Explorer.
     if (this.featureConfig['enableItemList'] === undefined) {
       this.featureConfig['enableItemList'] = true;

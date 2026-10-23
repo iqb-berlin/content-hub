@@ -701,6 +701,58 @@ describe('ItemExplorerFacade', () => {
     sessionStorage.clear();
   });
 
+  it('applies server presentation settings only to read-only viewers and keeps the manager exit available', () => {
+    const startPage$ = new Subject<any>();
+    const component = createFacade({
+      api: {
+        getAcpStartPage: () => startPage$,
+        getItemExplorerState: () => new Subject(),
+      },
+    });
+    component.init('acp-1');
+    startPage$.next({
+      featureConfig: {
+        showStudioItemComments: true,
+        itemExplorerReducedView: {
+          enabled: true,
+          showHeader: false,
+          showTableToolbarArea: false,
+          showItemInfo: false,
+          showPlayerPreview: false,
+          showExplorerItemPanel: false,
+          headerActions: { columnManager: false, readonlyPreview: false },
+        },
+      },
+    });
+    expect(component.showExplorerHeader).toBe(false);
+    expect(component.showTableToolbarArea).toBe(false);
+    expect(component.showExplorerItemPanel).toBe(false);
+    expect(component.showItemInfo).toBe(false);
+    expect(component.showPlayerPreview).toBe(false);
+    expect(component.showStudioItemComments).toBe(false);
+    expect(component.isHeaderActionVisible('columnManager')).toBe(false);
+
+    component.hasExplorerEditPermission = true;
+    component.viewPerspective = 'editor';
+    expect(component.showExplorerHeader).toBe(true);
+    expect(component.showTableToolbarArea).toBe(true);
+    expect(component.showExplorerItemPanel).toBe(true);
+    expect(component.showStudioItemComments).toBe(true);
+    expect(component.isHeaderActionVisible('columnManager')).toBe(true);
+
+    component.viewPerspective = 'read-only';
+    expect(component.showExplorerHeader).toBe(false);
+    expect(component.isHeaderActionVisible('readonlyPreview')).toBe(true);
+    const select = vi.spyOn((component as any).previewCoordinator, 'select');
+    component.selectItem(
+      { itemId: 'i1', unitId: 'u1', uuid: 'i1', rowKey: 'u1::i1', metadata: {} } as any,
+      0,
+    );
+    expect(component.selectedItem?.itemId).toBe('i1');
+    expect(select).not.toHaveBeenCalled();
+    destroyFacade(component);
+  });
+
   it('initializes exactly once and ignores pending responses after destroy', async () => {
     const startPage$ = new Subject<any>();
     const explorerState$ = new Subject<any>();
