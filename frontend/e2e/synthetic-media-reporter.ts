@@ -26,6 +26,28 @@ interface CaseResult {
 export default class SyntheticMediaReporter implements Reporter {
   private cases: CaseResult[] = [];
   private readonly output: string;
+  // Capture provenance before execution; a developer may commit while tests run.
+  private readonly revision = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: root,
+    encoding: 'utf8',
+  }).trim();
+  private readonly workingTreeModified = Boolean(
+    execFileSync(
+      'git',
+      [
+        'status',
+        '--porcelain',
+        '--untracked-files=normal',
+        '--',
+        'frontend',
+        'backend/test',
+        'test-fixtures',
+        'scripts/run-browser-e2e.sh',
+        '.github/workflows/ci.yml',
+      ],
+      { cwd: root, encoding: 'utf8' },
+    ).trim(),
+  );
 
   constructor(options: { outputDir?: string } = {}) {
     this.output = options.outputDir || resolve(root, 'frontend/synthetic-review-report');
@@ -97,24 +119,8 @@ export default class SyntheticMediaReporter implements Reporter {
     const report = {
       status: missingMedia.length ? ('failed' as const) : result.status,
       mediaErrors: missingMedia,
-      revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
-      workingTreeModified: Boolean(
-        execFileSync(
-          'git',
-          [
-            'status',
-            '--porcelain',
-            '--untracked-files=normal',
-            '--',
-            'frontend',
-            'backend/test',
-            'test-fixtures',
-            'scripts/run-browser-e2e.sh',
-            '.github/workflows/ci.yml',
-          ],
-          { cwd: root, encoding: 'utf8' },
-        ).trim(),
-      ),
+      revision: this.revision,
+      workingTreeModified: this.workingTreeModified,
       playerVersion: pool.player.version,
       definitionVersion: pool.definitionVersion,
       data: pool.data,
