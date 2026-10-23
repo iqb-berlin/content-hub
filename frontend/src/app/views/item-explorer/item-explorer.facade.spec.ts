@@ -623,6 +623,29 @@ describe('ItemExplorerFacade comment counts', () => {
     expect(component.metadataSettings.layout?.schemaVersion).toBe(3);
   });
 
+  it('selects a coding deep link without opening the hidden item panel', () => {
+    const component = createFacade();
+    (component as any).reducedView = normalizeReducedView({
+      enabled: true,
+      showExplorerItemPanel: false,
+    });
+    const target = item('row-target', 'item-1');
+    component.items = [target];
+    component.applyFilter(false);
+    (component as any).initialCommentTarget = {
+      unitId: 'unit-1',
+      itemId: 'item-1',
+      openCoding: true,
+    };
+
+    (component as any).selectInitialCommentTarget();
+
+    expect(component.selectedItem?.rowKey).toBe('row-target');
+    expect(component.showOverlay).toBeNull();
+    expect((component as any).initialCommentTarget).toBeNull();
+    destroyFacade(component);
+  });
+
   it('resolves a filtered deep link and consumes its automatic-open state on navigation', () => {
     const component = createFacade();
     (component as any).previewCoordinator.select = vi.fn();
