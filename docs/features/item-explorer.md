@@ -76,6 +76,42 @@ Typical manager loop:
 5. save draft to publish changes,
 6. or discard the draft to revert to published state.
 
+## Reduced read-only view
+
+ACP managers configure **Reduzierte Ansicht des Item-Explorers** under **Zugriff & Funktionen**.
+These settings are saved directly in `featureConfig.itemExplorerReducedView`. They take effect on
+subsequent Explorer loads without publishing an Explorer draft. Publishing or discarding an Explorer
+draft does not change them. They are presentation settings, not API permissions.
+
+The feature is opt-in. Existing ACPs retain the complete view. Managers always retain their full
+editing view and can inspect the configured view through **Leseansicht**. The return action
+**Bearbeitungsansicht** is always available to managers, even when the header is hidden.
+
+The profiles **Vollständig**, **Review mit Vorschau**, and **Nur Tabelle** provide starting points;
+all visibility settings can then be changed independently:
+
+- `showHeader`: title and optional header actions;
+- `headerActions`: stable IDs `readonlyPreview`, `columnManager`, `importParameters`,
+  `clearEmpiricalDifficulties`, `renumberReferences`, and `history`;
+- `showTableToolbarArea`: global search, exclusion controls, and collection controls;
+- `showItemInfo`: selected-item information and preview settings;
+- `showPlayerPreview`: player container and its controls;
+- `showExplorerItemPanel`: the complete right-hand panel, including item actions and review comments.
+
+Fullscreen, permitted manual-order, export and save actions, and loading/error/save messages remain
+available independently of optional controls. Per-column table filters remain in the table.
+Management actions still require their existing permissions. Studio comments are omitted from the
+reduced view, even when their separate ACP feature is enabled.
+
+Hidden regions are removed from the DOM. Without the right-hand panel the table fills the available
+width and height, including narrow screens and fullscreen. The existing split percentage is retained
+when switching back to editing; hidden previews do not load item-preview resources on row selection.
+There is no local visibility override for reviewers.
+
+Missing visibility keys default to visible; `enabled` defaults to false. The visibility of each new
+header action must be considered explicitly when introducing it, following the domain decision in
+[issue #167](https://github.com/iqb-berlin/content-pool-next/issues/167).
+
 ## Keyboard Interaction
 
 The Item Explorer supports keyboard-first work for the most common navigation tasks.

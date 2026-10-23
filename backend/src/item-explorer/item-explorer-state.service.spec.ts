@@ -714,7 +714,12 @@ describe("ItemExplorerStateService", () => {
     acpRepo.findOne.mockResolvedValue({ id: "acp-1", itemProperties: {} });
     accessConfigRepo.findOne.mockResolvedValue({
       acpId: "acp-1",
-      featureConfig: {},
+      featureConfig: {
+        itemExplorerReducedView: {
+          enabled: true,
+          showExplorerItemPanel: false,
+        },
+      },
     });
     stateRepo.save.mockImplementation(async (entity: any) => ({
       ...entity,
@@ -735,6 +740,10 @@ describe("ItemExplorerStateService", () => {
     expect(accessConfigRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({
         featureConfig: expect.objectContaining({
+          itemExplorerReducedView: expect.objectContaining({
+            enabled: true,
+            showExplorerItemPanel: false,
+          }),
           metadataColumns: expect.objectContaining({
             visible: draftState.metadataColumns.visible,
             order: draftState.metadataColumns.order,

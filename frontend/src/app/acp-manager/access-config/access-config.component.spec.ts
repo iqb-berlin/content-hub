@@ -254,6 +254,35 @@ describe('AccessConfigComponent', () => {
     expect(component.featureConfig.showUnitListOnStartPage).toBe(false);
   });
 
+  it('stores the reduced view directly with access settings and permits a reset', () => {
+    const component = new AccessConfigComponent(route as any, api as any);
+    component.loadConfig();
+    expect(component.reducedView.enabled).toBe(false);
+    component.applyReducedViewProfile('table');
+    component.reducedView.headerActions.columnManager = false;
+    expect(component.hasUnsavedChanges).toBe(true);
+    component.saveFeatures();
+    expect(api.updateAccessConfig).toHaveBeenLastCalledWith(
+      '',
+      expect.objectContaining({
+        featureConfig: expect.objectContaining({
+          itemExplorerReducedView: expect.objectContaining({
+            enabled: true,
+            showHeader: false,
+            showTableToolbarArea: false,
+            showExplorerItemPanel: false,
+            headerActions: expect.objectContaining({ columnManager: false }),
+          }),
+        }),
+      }),
+    );
+    expect(component.hasUnsavedChanges).toBe(false);
+    component.applyReducedViewProfile('full');
+    component.saveFeatures();
+    expect(component.reducedView.enabled).toBe(false);
+    expect(component.reducedView.showExplorerItemPanel).toBe(true);
+  });
+
   it('defaults Studio comments to off and persists explicit activation and deactivation', () => {
     const component = new AccessConfigComponent(route as any, api as any);
     component.loadConfig();

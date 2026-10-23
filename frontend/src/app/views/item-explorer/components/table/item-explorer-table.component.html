@@ -1,155 +1,155 @@
 <div class="table-panel">
-  <div class="table-toolbar">
-    <div class="search-row">
-      <input
-        #globalFilterInput
-        class="filter-input"
-        [ngModel]="vm.filterText"
-        (ngModelChange)="vm.setFilterText($event)"
-        placeholder="🔍 Items filtern..."
-        (input)="vm.applyFilter(false)"
-      />
-      <div class="search-count-group">
-        <span
-          class="visibility-summary"
-          aria-live="polite"
-          tabindex="0"
-          title="Angezeigte Tabellenzeilen / alle Tabellenzeilen. Suche, Spaltenfilter, Auswahlliste und Ausblendungen begrenzen die Anzeige. Ein Item kann mehrere Zeilen haben."
-        >
-          @if (vm.filteredItems.length === vm.totalItemsCount) {
-            {{ vm.totalItemsCount }} Zeilen
-          } @else {
-            {{ vm.filteredItems.length }} / {{ vm.totalItemsCount }} Zeilen
+  @if (vm.showTableToolbarArea) {
+    <div class="table-toolbar">
+      <div class="search-row">
+        <input
+          #globalFilterInput
+          class="filter-input"
+          [ngModel]="vm.filterText"
+          (ngModelChange)="vm.setFilterText($event)"
+          placeholder="🔍 Items filtern..."
+          (input)="vm.applyFilter(false)"
+        />
+        <div class="search-count-group">
+          <span
+            class="visibility-summary"
+            aria-live="polite"
+            tabindex="0"
+            title="Angezeigte Tabellenzeilen / alle Tabellenzeilen. Suche, Spaltenfilter, Auswahlliste und Ausblendungen begrenzen die Anzeige. Ein Item kann mehrere Zeilen haben."
+          >
+            @if (vm.filteredItems.length === vm.totalItemsCount) {
+              {{ vm.totalItemsCount }} Zeilen
+            } @else {
+              {{ vm.filteredItems.length }} / {{ vm.totalItemsCount }} Zeilen
+            }
+          </span>
+          @if (vm.hiddenMissingDifficultyItemsCount > 0 || vm.hiddenExcludedItemsCount > 0) {
+            <button
+              type="button"
+              class="search-help"
+              aria-label="Ausblendgründe anzeigen"
+              title="Ausblendgründe anzeigen"
+              popovertarget="explorer-visibility-help"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 11v6m0-10v1" />
+              </svg>
+            </button>
+            <div id="explorer-visibility-help" popover class="search-help-popover">
+              <strong>Ausgeblendete Zeilen</strong>
+              @if (vm.hiddenMissingDifficultyItemsCount > 0) {
+                <p>{{ vm.hiddenMissingDifficultyItemsCount }} ohne Itemschwierigkeit</p>
+              }
+              @if (vm.hiddenExcludedItemsCount > 0) {
+                <p>{{ vm.hiddenExcludedItemsCount }} als ausgeschlossen markiert</p>
+              }
+            </div>
           }
-        </span>
-        @if (vm.hiddenMissingDifficultyItemsCount > 0 || vm.hiddenExcludedItemsCount > 0) {
+        </div>
+        @if (vm.showExplorerKeyboardHints) {
           <button
             type="button"
-            class="search-help"
-            aria-label="Ausblendgründe anzeigen"
-            title="Ausblendgründe anzeigen"
-            popovertarget="explorer-visibility-help"
+            class="search-help keyboard-help"
+            aria-label="Tastaturkürzel anzeigen"
+            title="Tastaturkürzel anzeigen"
+            popovertarget="explorer-keyboard-help"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 11v6m0-10v1" />
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <path d="M6 9h1m4 0h1m4 0h1M6 12h1m4 0h1m4 0h1M7 15h10" />
             </svg>
           </button>
-          <div id="explorer-visibility-help" popover class="search-help-popover">
-            <strong>Ausgeblendete Zeilen</strong>
-            @if (vm.hiddenMissingDifficultyItemsCount > 0) {
-              <p>{{ vm.hiddenMissingDifficultyItemsCount }} ohne Itemschwierigkeit</p>
-            }
-            @if (vm.hiddenExcludedItemsCount > 0) {
-              <p>{{ vm.hiddenExcludedItemsCount }} als ausgeschlossen markiert</p>
-            }
+          <div id="explorer-keyboard-help" popover class="search-help-popover">
+            <strong>Tastaturkürzel</strong>
+            <p>
+              Navigation bei Fokus in der Tabelle; Eingabefelder behalten ihre üblichen
+              Tastenfunktionen. Im Player gelten dessen eigene Kürzel.
+            </p>
+            <dl>
+              <dt><kbd>/</kbd></dt>
+              <dd>Suchfeld fokussieren</dd>
+              <dt><kbd>↑</kbd> / <kbd>↓</kbd></dt>
+              <dd>Item auswählen</dd>
+              <dt><kbd>Pos1</kbd> / <kbd>Ende</kbd></dt>
+              <dd>Zum ersten / letzten Item springen</dd>
+              <dt><kbd>Bild ↑</kbd> / <kbd>Bild ↓</kbd></dt>
+              <dd>Zehn Zeilen zurück / weiter springen</dd>
+              <dt><kbd>Strg/Cmd + ↑</kbd> / <kbd>Strg/Cmd + ↓</kbd></dt>
+              <dd>Item bei manueller Sortierung verschieben (mit Bearbeitungsrecht)</dd>
+              <dt><kbd>Strg/Cmd + S</kbd></dt>
+              <dd>Änderungen prüfen (mit Veröffentlichungsrecht)</dd>
+            </dl>
           </div>
         }
       </div>
-      @if (vm.showExplorerKeyboardHints) {
-        <button
-          type="button"
-          class="search-help keyboard-help"
-          aria-label="Tastaturkürzel anzeigen"
-          title="Tastaturkürzel anzeigen"
-          popovertarget="explorer-keyboard-help"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <rect x="2" y="5" width="20" height="14" rx="2" />
-            <path d="M6 9h1m4 0h1m4 0h1M6 12h1m4 0h1m4 0h1M7 15h10" />
-          </svg>
-        </button>
-        <div id="explorer-keyboard-help" popover class="search-help-popover">
-          <strong>Tastaturkürzel</strong>
-          <p>
-            Navigation bei Fokus in der Tabelle; Eingabefelder behalten ihre üblichen
-            Tastenfunktionen. Im Player gelten dessen eigene Kürzel.
-          </p>
-          <dl>
-            <dt><kbd>/</kbd></dt>
-            <dd>Suchfeld fokussieren</dd>
-            <dt><kbd>↑</kbd> / <kbd>↓</kbd></dt>
-            <dd>Item auswählen</dd>
-            <dt><kbd>Pos1</kbd> / <kbd>Ende</kbd></dt>
-            <dd>Zum ersten / letzten Item springen</dd>
-            <dt><kbd>Bild ↑</kbd> / <kbd>Bild ↓</kbd></dt>
-            <dd>Zehn Zeilen zurück / weiter springen</dd>
-            <dt><kbd>Strg/Cmd + ↑</kbd> / <kbd>Strg/Cmd + ↓</kbd></dt>
-            <dd>Item bei manueller Sortierung verschieben (mit Bearbeitungsrecht)</dd>
-            <dt><kbd>Strg/Cmd + S</kbd></dt>
-            <dd>Änderungen prüfen (mit Veröffentlichungsrecht)</dd>
-          </dl>
+      @if (vm.excludedItemsCount > 0 || vm.showExcludedItems) {
+        <div class="table-toolbar-actions">
+          <button
+            class="btn btn-outline btn-sm btn-state"
+            type="button"
+            (click)="vm.toggleShowExcludedItems()"
+            [attr.aria-pressed]="vm.showExcludedItems"
+          >
+            {{
+              vm.showExcludedItems
+                ? 'Ausgeschlossene ausblenden'
+                : 'Ausgeschlossene anzeigen (' + vm.excludedItemsCount + ')'
+            }}
+          </button>
         </div>
       }
     </div>
-    @if (vm.itemCommentsEnabled && vm.itemCommentCountsError) {
-      <span class="personal-data-error" role="alert">{{ vm.itemCommentCountsError }}</span>
-      <button
-        class="btn btn-outline btn-sm"
-        type="button"
-        (click)="vm.refreshItemComments()"
-        [disabled]="vm.itemCommentCountsLoading"
-      >
-        Erneut versuchen
-      </button>
-    }
-    @if (vm.excludedItemsCount > 0 || vm.showExcludedItems) {
-      <div class="table-toolbar-actions">
-        <button
-          class="btn btn-outline btn-sm btn-state"
-          type="button"
-          (click)="vm.toggleShowExcludedItems()"
-          [attr.aria-pressed]="vm.showExcludedItems"
-        >
-          {{
-            vm.showExcludedItems
-              ? 'Ausgeschlossene ausblenden'
-              : 'Ausgeschlossene anzeigen (' + vm.excludedItemsCount + ')'
-          }}
-        </button>
-      </div>
-    }
-    @if (vm.showPersonalItemData) {
-      <div class="personal-data-status" aria-live="polite">
-        @if (vm.personalDataLoadState === 'loading') {
-          Persönliche Arbeitsdaten werden geladen …
-        } @else if (vm.personalDataLoadState === 'error') {
-          <span class="personal-data-error">{{ vm.personalDataError }}</span>
-          <button
-            class="btn btn-outline btn-sm"
-            type="button"
-            (click)="vm.retryPersonalItemDataLoad()"
-          >
-            Erneut laden
-          </button>
-        } @else if (
-          vm.personalDataSaveState === 'saving' || vm.personalDataSaveState === 'pending'
-        ) {
-          Persönliche Änderungen werden gespeichert …
-        } @else if (vm.personalDataSaveState === 'error') {
-          <span class="personal-data-error">{{ vm.personalDataError }}</span>
-          <button
-            class="btn btn-outline btn-sm"
-            type="button"
-            (click)="vm.retryPersonalItemDataSave()"
-          >
-            Erneut speichern
-          </button>
-          <button
-            class="btn btn-outline btn-sm"
-            type="button"
-            (click)="vm.openDiscardPersonalItemDataDialog()"
-          >
-            Änderungen verwerfen
-          </button>
-        } @else if (vm.personalDataSaveState === 'saved') {
-          Persönliche Änderungen gespeichert
-        }
-      </div>
-    }
-  </div>
+    <app-item-explorer-collections />
+  }
 
-  <app-item-explorer-collections />
+  @if (vm.itemCommentsEnabled && vm.itemCommentCountsError) {
+    <span class="personal-data-error" role="alert">{{ vm.itemCommentCountsError }}</span>
+    <button
+      class="btn btn-outline btn-sm"
+      type="button"
+      (click)="vm.refreshItemComments()"
+      [disabled]="vm.itemCommentCountsLoading"
+    >
+      Erneut versuchen
+    </button>
+  }
+  @if (vm.showPersonalItemData) {
+    <div class="personal-data-status" aria-live="polite">
+      @if (vm.personalDataLoadState === 'loading') {
+        Persönliche Arbeitsdaten werden geladen …
+      } @else if (vm.personalDataLoadState === 'error') {
+        <span class="personal-data-error">{{ vm.personalDataError }}</span>
+        <button
+          class="btn btn-outline btn-sm"
+          type="button"
+          (click)="vm.retryPersonalItemDataLoad()"
+        >
+          Erneut laden
+        </button>
+      } @else if (vm.personalDataSaveState === 'saving' || vm.personalDataSaveState === 'pending') {
+        Persönliche Änderungen werden gespeichert …
+      } @else if (vm.personalDataSaveState === 'error') {
+        <span class="personal-data-error">{{ vm.personalDataError }}</span>
+        <button
+          class="btn btn-outline btn-sm"
+          type="button"
+          (click)="vm.retryPersonalItemDataSave()"
+        >
+          Erneut speichern
+        </button>
+        <button
+          class="btn btn-outline btn-sm"
+          type="button"
+          (click)="vm.openDiscardPersonalItemDataDialog()"
+        >
+          Änderungen verwerfen
+        </button>
+      } @else if (vm.personalDataSaveState === 'saved') {
+        Persönliche Änderungen gespeichert
+      }
+    </div>
+  }
 
   @if (vm.itemListLoading) {
     <div class="item-list-loading" role="status" aria-live="polite">
