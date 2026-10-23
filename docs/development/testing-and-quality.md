@@ -37,6 +37,81 @@ npm run lint
 
 The frontend uses Vitest for tests and Angular ESLint tooling for lint checks.
 
+### Lint and formatting gates
+
+Run these commands from either `backend/` or `frontend/` before submitting changes:
+
+```bash
+npm run lint
+npm run format:check
+```
+
+Both commands only check files; they do not rewrite them. Lint fails on any error
+or warning (`--max-warnings=0`), and the format check fails on formatting differences.
+CI runs the same commands for both projects and requires both jobs in the release gate.
+
+To apply automatic fixes locally, use the separate write commands:
+
+```bash
+npm run lint:fix
+npm run format
+```
+
+Review the resulting diff and rerun the checks. `lint:fix` still fails if any
+errors or warnings remain after automatic fixes.
+
+### Strict types and handled promises
+
+The backend enables the complete TypeScript `strict` option. The production
+build and Jest compilation enforce it; caught errors must be narrowed before
+accessing their properties.
+
+Type-aware ESLint rules `no-floating-promises` and `no-misused-promises`
+are errors across backend production source. Tests and test fixtures retain
+their existing lint configuration. Bare `void promise` does not bypass the
+rule: await the result or handle rejection. The stream bootstrap has one local,
+documented exception because its implementation forwards failures to the stream.
+
+The frontend starts these same rules in `src/app/core/guards/*.ts`,
+`acp-navigation.service.ts`, and `pending-personal-session-storage.service.ts`
+(excluding specs). Legacy frontend modules remain a subsequent migration;
+the rules are not yet repository-wide there.
+
+Explicit `any` is forbidden in these frontend modules and in the backend
+ACP service, credentials service, and ACP DTO directory. Extend the protected
+paths as modules are cleaned up. Do not add broad disable directives to admit
+new violations; any necessary exception must be local and explain the reason.
+The existing required CI lint jobs enforce these scopes without additional jobs.
+
+ACP credential persistence and import belong to `AcpCredentialsService`.
+`AcpService` delegates its existing public methods, preserving callers while
+separating credential transactions and password hashing from package management.
+
+### Coverage and behavior regression gates
+
+Run `npm run test:cov -- --runInBand` from `backend/` or `npm run test:cov` from
+`frontend/`. CI runs these complete suites with coverage in its required unit-test
+jobs. Protected modules have separate minimums for statements, branches, functions,
+and lines; results from other files cannot compensate for a regression.
+
+See [the measured baseline, protected modules, and update policy](coverage-baseline.md).
+The HTML and JSON reports are available in each project's `coverage/` directory
+and as CI artifacts. The baseline includes untested application files; it does
+not replace browser, database, or migration checks.
+
+### ACP API contracts
+
+`backend/src/acp/acp-http-contract.spec.ts` exercises actual HTTP routing, the
+validation pipe, response serialization, and the role guard for ACP management.
+Authentication, ACP access and capability resolution, and persistence are mocked
+in this suite; service, authentication,
+and database E2E tests remain responsible for those layers. The suite also checks
+the generated OpenAPI date schemas and permission checks when review settings change.
+
+`frontend/src/app/core/services/api-acp-contract.spec.ts` uses Angular's HTTP test
+backend to check request methods and payloads, nullable fields, role response
+shapes, credential import counters, and propagation of HTTP 400/403 responses.
+
 ### Full-stack browser tests
 
 The Playwright suite runs Chromium against the real Angular frontend, NestJS backend, and an

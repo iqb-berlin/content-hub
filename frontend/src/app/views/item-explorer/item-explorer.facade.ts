@@ -1,28 +1,29 @@
+import {
+  ItemExplorerImportService,
+  ItemExplorerImportResult,
+} from './item-explorer-import.service';
+import {
+  ItemExplorerTableService,
+  ItemExplorerTableColumnContext,
+  ItemExplorerTableFilterContext,
+} from './item-explorer-table.service';
+import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerCodingService } from './item-explorer-coding.service';
+import { ItemExplorerDraftService, ItemExplorerDraftResult } from './item-explorer-draft.service';
+import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
+import { ItemExplorerPersonalDataService } from './item-explorer-personal-data.service';
+import { ItemExplorerCommentsService } from './item-explorer-comments.service';
 import { Injectable, OnDestroy, Optional } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import DOMPurify from 'dompurify';
 import { ApiService } from '../../core/services/api.service';
-import { VoudService } from '../../core/services/voud.service';
-import {
-  GEOGEBRA_PLAYER_RESOURCE_BASE,
-  rewriteGeoGebraAssetUrls,
-} from '../../core/utils/geogebra-player-html.util';
+import { rewriteGeoGebraAssetUrls } from '../../core/utils/geogebra-player-html.util';
 import { AuthService } from '../../core/services/auth.service';
 import { PendingPersonalSessionStorageService } from '../../core/services/pending-personal-session-storage.service';
 import { BreadcrumbItem } from '../../shared/components/breadcrumb.component';
-import { CodingSchemeTextFactory, CodingAsText } from '@iqb/responses';
-import {
-  finalize,
-  firstValueFrom,
-  Observable,
-  ReplaySubject,
-  Subscription,
-  takeUntil,
-  timeout,
-} from 'rxjs';
+import { CodingAsText } from '@iqb/responses';
+import { finalize, firstValueFrom, ReplaySubject, Subscription, takeUntil } from 'rxjs';
 import {
   ItemCollection,
-  ItemCollectionSummary,
   ItemExplorerChangeLogEntry,
   ItemExplorerSharedState,
   ItemExplorerStateEnvelope,
@@ -43,31 +44,21 @@ import type {
 } from './item-explorer.view-models';
 import {
   CodingVariableFocusResolution,
-  CodingVariableFocusStatus,
   DeepReadonly,
   ExplorerItem,
-  ExplorerUiStatus,
-  ItemParameterUploadResult,
   ItemExplorerTableColumn,
   MetadataColumn,
   MetadataSettings,
-  PendingPersonalRowUpdate,
-  PersonalDataLoadState,
-  PersonalDataSaveState,
-  PersonalItemRowData,
   PersonalItemTagConfig,
   PreviewTargetOption,
-  PreviewTargetResolution,
   ReadonlyExplorerItem,
   ReadonlyItemParameterUploadSuccess,
-  SuspendedPersonalSession,
 } from './item-explorer.models';
 import {
   ItemExplorerPlayerDomPort,
   ItemExplorerShellDomPort,
   ItemExplorerTableDomPort,
 } from './item-explorer.dom-ports';
-import { matchesNumericFilter } from '../../core/utils/numeric-filter.util';
 import {
   ItemExplorerPreviewCoordinator,
   ItemExplorerPreviewResult,
@@ -76,92 +67,8 @@ import {
   ItemExplorerLoadDiagnostics,
   ItemExplorerTimingToken,
 } from './item-explorer-load-diagnostics.service';
-import {
-  normalizeItemExplorerColumnFilters,
-  normalizeItemExplorerColumnList,
-  normalizeItemExplorerColumnRecord,
-  normalizeItemExplorerMetadataColumnId,
-  normalizeItemExplorerTableColumnKey,
-} from './item-explorer-time-columns.util';
-import {
-  derivePlayerSolutionPrefill,
-  mergePlayerSolutionIntoDataParts,
-  PlayerSolutionPrefill,
-} from './item-explorer-solution-prefill';
 
-const DEFAULT_EXPLORER_SORT_FIELD = 'unitLabel';
-const DEFAULT_EXPLORER_SORT_DIR: 'asc' | 'desc' = 'asc';
-const COLLECTION_SELECTION_COLUMN_WIDTH = 38;
-const POSITION_COLUMN_WIDTH = 72;
-const COMMENT_COLUMN_LAYOUT_SCHEMA_VERSION = 2;
-const TABLE_COLUMN_LAYOUT_SCHEMA_VERSION = 3;
-const TABLE_COLUMN_KEYS = {
-  position: 'system:position',
-  referenceNumber: 'system:referenceNumber',
-  itemId: 'system:itemId',
-  unitLabel: 'system:unitLabel',
-  subId: 'system:subId',
-  empiricalDifficulty: 'system:empiricalDifficulty',
-  meanTaskDifficulty: 'system:meanTaskDifficulty',
-  comments: 'system:comments',
-  tags: 'system:tags',
-  personalCategory: 'personal:category',
-  personalTags: 'personal:tags',
-  personalNote: 'personal:note',
-} as const;
-const TABLE_COLUMN_SORT_FIELDS: Readonly<Record<string, string>> = {
-  [TABLE_COLUMN_KEYS.referenceNumber]: 'rowNumber',
-  [TABLE_COLUMN_KEYS.itemId]: 'itemId',
-  [TABLE_COLUMN_KEYS.unitLabel]: 'unitLabel',
-  [TABLE_COLUMN_KEYS.subId]: 'subIdDisplay',
-  [TABLE_COLUMN_KEYS.empiricalDifficulty]: 'empiricalDifficulty',
-  [TABLE_COLUMN_KEYS.meanTaskDifficulty]: 'meanTaskDifficulty',
-  [TABLE_COLUMN_KEYS.comments]: 'commentCount',
-};
-const METADATA_COLUMN_KEY_PREFIX = 'metadata:';
 type ItemListLoadOutcome = 'loaded' | 'version-mismatch' | 'superseded' | 'error';
-type CodingVariableMatchStatus = 'unique' | 'missing-target' | 'not-found' | 'ambiguous';
-interface CodingVariableMatch {
-  status: CodingVariableMatchStatus;
-  reference: string;
-  variable?: any;
-  index?: number;
-  matchIndices: number[];
-  usedLegacyFallback?: boolean;
-  requestedInternalId?: string;
-}
-const IMPORTED_PARAMETER_COLUMNS: MetadataColumn[] = [
-  { id: 'bista', label: 'BiSta-Wert', kind: 'number', visible: false },
-  { id: 'infit', label: 'Infit', kind: 'number' },
-  { id: 'discrimination', label: 'Trennschärfe', kind: 'number' },
-  { id: 'solutionRate', label: 'Lösungshäufigkeit', kind: 'number' },
-  { id: 'textComplexity', label: 'Textkomplexität', kind: 'text' },
-  { id: 'competenceLevel', label: 'Kompetenzstufe', kind: 'text' },
-  { id: 'itemTimeSeconds', label: 'Itemzeit (s)', kind: 'number' },
-  { id: 'stimulusTimeSeconds', label: 'Stimuluszeit (s)', kind: 'number' },
-  { id: 'booklet', label: 'Booklet', kind: 'booklet' },
-  { id: 'bookletPosition', label: 'Position im Booklet', kind: 'position' },
-];
-const UPLOAD_FIELD_LABELS: Record<string, string> = {
-  est: 'Empirische Itemschwierigkeit',
-  empiricalDifficulty: 'Empirische Itemschwierigkeit',
-  bista: 'BiSta-Wert',
-  infit: 'Infit',
-  discrimination: 'Trennschärfe',
-  solution_rate: 'Lösungshäufigkeit',
-  solutionRate: 'Lösungshäufigkeit',
-  text_complexity: 'Textkomplexität',
-  textComplexity: 'Textkomplexität',
-  kstufe: 'Kompetenzstufe',
-  competenceLevel: 'Kompetenzstufe',
-  item_time_s: 'Itemzeit (s)',
-  itemTimeSeconds: 'Itemzeit (s)',
-  stimulus_time_s: 'Stimuluszeit (s)',
-  stimulusTimeSeconds: 'Stimuluszeit (s)',
-  booklet: 'Booklet',
-  position: 'Position im Booklet',
-};
-
 @Injectable()
 export class ItemExplorerFacade implements OnDestroy {
   private initialized = false;
@@ -171,126 +78,206 @@ export class ItemExplorerFacade implements OnDestroy {
   private readonly excludedItemPropertyKey = 'excluded';
   private shellDom?: ItemExplorerShellDomPort;
   private tableDom?: ItemExplorerTableDomPort;
-  private playerDom?: ItemExplorerPlayerDomPort;
 
   acpId = '';
-  columns: MetadataColumn[] = [];
+  showStudioItemComments = false;
+  get columns() {
+    return this.table.columns;
+  }
   items: ExplorerItem[] = [];
-  filteredItems: ExplorerItem[] = [];
-  hasEmpiricalDifficulty = false;
-  hasMeanTaskDifficulty = false;
-  hasPartialCredit = false;
-  itemSubIdLabel = 'Sub-ID';
-  filterText = '';
+  get filteredItems() {
+    return this.table.filteredItems;
+  }
+  get hasEmpiricalDifficulty() {
+    return this.table.hasEmpiricalDifficulty;
+  }
+  get hasMeanTaskDifficulty() {
+    return this.table.hasMeanTaskDifficulty;
+  }
+  get hasPartialCredit() {
+    return this.table.hasPartialCredit;
+  }
+  get itemSubIdLabel() {
+    return this.table.itemSubIdLabel;
+  }
+  get filterText() {
+    return this.table.filterText;
+  }
   isFullscreen = false;
-  sortField = DEFAULT_EXPLORER_SORT_FIELD;
-  sortIsMeta = false;
-  sortDir: 'asc' | 'desc' = DEFAULT_EXPLORER_SORT_DIR;
-  // Session-only return target; a reloaded manual mode falls back to the default sort.
-  private sortBeforeManualOrder: {
-    field: string;
-    isMeta: boolean;
-    direction: 'asc' | 'desc';
-  } | null = null;
+  get sortField() {
+    return this.table.sortField;
+  }
+  get sortIsMeta() {
+    return this.table.sortIsMeta;
+  }
+  get sortDir() {
+    return this.table.sortDir;
+  }
   breadcrumbs: BreadcrumbItem[] = [];
-  columnFilters: Record<string, string> = {};
-  showExcludedItems = false;
+  get columnFilters() {
+    return this.table.columnFilters;
+  }
+  get showExcludedItems() {
+    return this.table.showExcludedItems;
+  }
 
   // Selection
   selectedItem: ExplorerItem | null = null;
   selectedIndex = -1;
-  private playerFrameRefreshPending = false;
-
-  // Player
-  unit: any = null;
-  playerSrcDoc: any = null;
-  currentPage = 1;
-  totalPages = 1;
-  pagingMode:
-    | 'buttons'
-    | 'separate'
-    | 'concat-scroll'
-    | 'concat-scroll-snap'
-    | 'view-all'
-    | 'print-ids' = 'buttons';
-  playerHeight = '100%';
+  private get playerFrameRefreshPending() {
+    return this.player.playerFrameRefreshPending;
+  }
+  get unit() {
+    return this.player.unit;
+  }
+  get playerSrcDoc() {
+    return this.player.playerSrcDoc;
+  }
+  get currentPage() {
+    return this.player.currentPage;
+  }
+  get totalPages() {
+    return this.player.totalPages;
+  }
+  get pagingMode() {
+    return this.player.pagingMode;
+  }
+  get playerHeight() {
+    return this.player.playerHeight;
+  }
 
   // Overlays
   showOverlay: 'coding' | null = null;
   showMetadataDrawer = false;
   unitMetadataCache: Record<string, any[]> = {};
   codingSchemeCache: Record<string, any> = {};
-  currentCodingSchemeAsText: CodingAsText[] | null = null;
+  get currentCodingSchemeAsText() {
+    return this.coding.currentCodingSchemeAsText;
+  }
   currentUnitMetadata: any[] = [];
-  currentCodingScheme: any = null;
+  get currentCodingScheme() {
+    return this.coding.currentCodingScheme;
+  }
 
   // Tags
   enableTags = false;
   availableTags: string[] = [];
-  showAudioVideoCodingVariables = true;
-  showGeneralCodingInstructions = false;
-  preferManualCodingInstructions = true;
-  itemExplorerConditionalVisibilityEnabled = false;
-  playerFocusHighlightEnabled = false;
+  get showAudioVideoCodingVariables() {
+    return this.coding.showAudioVideoCodingVariables;
+  }
+  get showGeneralCodingInstructions() {
+    return this.coding.showGeneralCodingInstructions;
+  }
+  get preferManualCodingInstructions() {
+    return this.coding.preferManualCodingInstructions;
+  }
+  get itemExplorerConditionalVisibilityEnabled() {
+    return this.player.itemExplorerConditionalVisibilityEnabled;
+  }
+  get playerFocusHighlightEnabled() {
+    return this.player.playerFocusHighlightEnabled;
+  }
   itemExplorerPlayerTargetInfoEnabled = false;
-  itemCommentsEnabled = false;
-  private itemCommentsConfigured = false;
-  codingCommentsEnabled = false;
-  private codingCommentsConfigured = false;
-  itemCommentCounts: Record<string, number> = {};
-  codingCommentCounts: Record<string, number> = {};
-  itemCommentCountsLoading = false;
-  itemCommentCountsAvailable = false;
-  itemCommentCountsError = '';
-  itemCommentRefreshToken = 0;
-  itemCommentSessionToken = 0;
+  get itemCommentsEnabled() {
+    return this.comments.itemCommentsEnabled;
+  }
+
+  get codingCommentsEnabled() {
+    return this.comments.codingCommentsEnabled;
+  }
+
+  get itemCommentCounts() {
+    return this.comments.itemCommentCounts;
+  }
+  get codingCommentCounts() {
+    return this.comments.codingCommentCounts;
+  }
+  get itemCommentCountsLoading() {
+    return this.comments.itemCommentCountsLoading;
+  }
+  get itemCommentCountsAvailable() {
+    return this.comments.itemCommentCountsAvailable;
+  }
+  get itemCommentCountsError() {
+    return this.comments.itemCommentCountsError;
+  }
+  get itemCommentRefreshToken() {
+    return this.comments.itemCommentRefreshToken;
+  }
+  get itemCommentSessionToken() {
+    return this.comments.itemCommentSessionToken;
+  }
   commentThreadInitiallyOpen = false;
-  commentExportInProgress = false;
-  commentExportError = '';
-  private itemCommentCountsRequestToken = 0;
-  private commentRefreshTimer: ReturnType<typeof setInterval> | null = null;
-  private readonly commentVisibilityListener = () => this.refreshVisibleItemComments();
-  private itemCommentCountStateVersion = 0;
-  private readonly itemCommentCountChangeVersions = new Map<string, number>();
-  private readonly codingCommentCountChangeVersions = new Map<string, number>();
-  private itemCommentCountSessionIdentity: string | null = null;
+  get commentExportInProgress() {
+    return this.comments.commentExportInProgress;
+  }
+  get commentExportError() {
+    return this.comments.commentExportError;
+  }
+
   private initialCommentTarget: {
     unitId: string;
     itemId: string;
     openCoding?: boolean;
   } | null = null;
   private selectingInitialCommentTarget = false;
-  showOnlyItemsWithEmpiricalDifficulty = false;
+  get showOnlyItemsWithEmpiricalDifficulty() {
+    return this.table.showOnlyItemsWithEmpiricalDifficulty;
+  }
   itemTags: Record<string, string[]> = {};
   persistUserPreferences = false;
   useServerPreferences = false;
 
   // Personal row-level working data (never part of the shared Explorer state)
-  enablePersonalItemData = false;
-  personalItemCategoryLabel = 'Kompetenzstufe';
-  personalItemCategoryValues: string[] = [];
-  personalItemTagLabel = 'Markierungen';
-  personalItemTags: PersonalItemTagConfig[] = [];
-  personalItemData: Record<string, PersonalItemRowData> = {};
-  personalColumnFilters: Record<string, string> = {};
-  personalDataLoadState: PersonalDataLoadState = 'idle';
-  personalDataSaveState: PersonalDataSaveState = 'idle';
-  personalDataError = '';
-  personalExportInProgress = false;
-  personalExportError = '';
-  allPersonalDataExportInProgress = false;
-  allPersonalDataExportError = '';
-  collectionDataExportError = '';
-  showDiscardPersonalItemDataDialog = false;
-  private readonly personalPreferenceViewId = 'item-explorer';
-  private readonly personalSaveDebounceMs = 350;
-  private personalSaveTimeout: ReturnType<typeof setTimeout> | null = null;
-  private personalSaveInFlight = false;
-  private personalRowUpdateVersion = 0;
-  private readonly pendingPersonalRowUpdates = new Map<string, PendingPersonalRowUpdate>();
-  private personalSaveWaiters: Array<(saved: boolean) => void> = [];
-  private personalDataSessionIdentity: string | null = null;
-  private personalDataSessionVersion = 0;
+  get enablePersonalItemData() {
+    return this.personalData.enablePersonalItemData;
+  }
+  get personalItemCategoryLabel() {
+    return this.personalData.personalItemCategoryLabel;
+  }
+  get personalItemCategoryValues() {
+    return this.personalData.personalItemCategoryValues;
+  }
+  get personalItemTagLabel() {
+    return this.personalData.personalItemTagLabel;
+  }
+  get personalItemTags() {
+    return this.personalData.personalItemTags;
+  }
+  get personalItemData() {
+    return this.personalData.personalItemData;
+  }
+  get personalColumnFilters() {
+    return this.personalData.personalColumnFilters;
+  }
+  get personalDataLoadState() {
+    return this.personalData.personalDataLoadState;
+  }
+  get personalDataSaveState() {
+    return this.personalData.personalDataSaveState;
+  }
+  get personalDataError() {
+    return this.personalData.personalDataError;
+  }
+  get personalExportInProgress() {
+    return this.personalData.personalExportInProgress;
+  }
+  get personalExportError() {
+    return this.personalData.personalExportError;
+  }
+  get allPersonalDataExportInProgress() {
+    return this.personalData.allPersonalDataExportInProgress;
+  }
+  get allPersonalDataExportError() {
+    return this.personalData.allPersonalDataExportError;
+  }
+  get collectionDataExportError() {
+    return this.personalData.collectionDataExportError;
+  }
+  get showDiscardPersonalItemDataDialog() {
+    return this.personalData.showDiscardPersonalItemDataDialog;
+  }
+
   private authSessionSubscription: Subscription | null = null;
   private readonly authStorageListener = (event: StorageEvent) => {
     if (!event.key || event.key === 'cp_token') {
@@ -301,46 +288,41 @@ export class ItemExplorerFacade implements OnDestroy {
   };
 
   // Personal named item collections
-  enableItemCollections = false;
-  itemCollections: ItemCollection[] = [];
-  activeCollectionId: string | null = null;
-  collectionViewMode: 'all' | 'active' = 'all';
-  collectionLoadState: 'idle' | 'loading' | 'loaded' | 'error' = 'idle';
-  collectionBusy = false;
-  collectionError = '';
-  sharedCollectionsTruncated = false;
-  showCollectionDialog = false;
-  private collectionSessionIdentity: string | null = null;
-  private collectionSessionVersion = 0;
-  private collectionItemMapSource: ExplorerItem[] | null = null;
-  private collectionItemMap = new Map<string, ExplorerItem>();
-  private collectionItemsCacheSource: string[] | null = null;
-  private collectionItemsCacheItemSource: ExplorerItem[] | null = null;
-  private collectionItemsCache: Array<{
-    rowKey: string;
-    position: number;
-    item: ExplorerItem | null;
-  }> = [];
-  private activeCollectionSetSource: string[] | null = null;
-  private activeCollectionRowKeySet = new Set<string>();
-
-  private readonly draftPatchDebounceMs = 250;
-  private draftPatchTimeout: ReturnType<typeof setTimeout> | null = null;
-  private draftPatchFlushInFlight: Promise<boolean> | null = null;
-  private pendingDraftPatch: Record<string, unknown> | null = null;
-  private pendingDraftChangeType = 'UI_UPDATE';
-  private suppressDraftPatch = false;
-  private saveStatusResetTimeout: ReturnType<typeof setTimeout> | null = null;
-  private focusRetryTimer: ReturnType<typeof setTimeout> | null = null;
-  private playerFrameRefreshTimeout: ReturnType<typeof setTimeout> | null = null;
-  private legacyPageNavigationTimers: ReturnType<typeof setTimeout>[] = [];
-  private readonly legacyPageNavigationDelaysMs = [160, 520, 1100];
+  get enableItemCollections() {
+    return this.collections.enableItemCollections;
+  }
+  get itemCollections() {
+    return this.collections.itemCollections;
+  }
+  get activeCollectionId() {
+    return this.collections.activeCollectionId;
+  }
+  get collectionViewMode() {
+    return this.collections.collectionViewMode;
+  }
+  get collectionLoadState() {
+    return this.collections.collectionLoadState;
+  }
+  get collectionBusy() {
+    return this.collections.collectionBusy;
+  }
+  get collectionError() {
+    return this.collections.collectionError;
+  }
+  get sharedCollectionsTruncated() {
+    return this.collections.sharedCollectionsTruncated;
+  }
+  get showCollectionDialog() {
+    return this.collections.showCollectionDialog;
+  }
   private readonly listPageSize = 10;
-  private definitionContent: string | null = null;
-  private playerFrameReady = false;
-  private activePlayerSessionId: string | null = null;
+  private get definitionContent() {
+    return this.player.definitionContent;
+  }
+  private get playerFrameReady() {
+    return this.player.playerFrameReady;
+  }
   private itemListLoadToken = 0;
-  private startSessionCounter = 0;
   private itemListSlowTimer: ReturnType<typeof setTimeout> | null = null;
   private previewSlowTimer: ReturnType<typeof setTimeout> | null = null;
   private playerReadyTiming: ItemExplorerTimingToken | null = null;
@@ -349,52 +331,78 @@ export class ItemExplorerFacade implements OnDestroy {
   previewLoadPhase = '';
 
   // File Upload
-  showUploadReport = false;
-  uploadResult: ItemParameterUploadResult | null = null;
-  isUploading = false;
-  showUploadWarningDialog = false;
-  uploadWarningMessages: string[] = [];
-  uploadWarningBusy = false;
-  uploadWarningError = '';
-  private pendingItemParameterUploadFile: File | null = null;
-  showErrorDialog = false;
-  errorMessage = '';
+  get showUploadReport() {
+    return this.imports.showUploadReport;
+  }
+  get uploadResult() {
+    return this.imports.uploadResult;
+  }
+  get isUploading() {
+    return this.imports.isUploading;
+  }
+  get showUploadWarningDialog() {
+    return this.imports.showUploadWarningDialog;
+  }
+  get uploadWarningMessages() {
+    return this.imports.uploadWarningMessages;
+  }
+  get uploadWarningBusy() {
+    return this.imports.uploadWarningBusy;
+  }
+  get uploadWarningError() {
+    return this.imports.uploadWarningError;
+  }
+
+  get showErrorDialog() {
+    return this.imports.showErrorDialog;
+  }
+  get errorMessage() {
+    return this.imports.errorMessage;
+  }
 
   // Metadata column management
   isAcpManager = false;
-  canEditExplorer = false;
+  private explorerEditingAllowed = false;
+  get canEditExplorer(): boolean {
+    return this.explorerEditingAllowed && !this.draft.discarding;
+  }
   canPublishExplorer = false;
   hasExplorerEditPermission = false;
   hasExplorerPublishPermission = false;
   viewPerspective: ItemExplorerPerspective = 'editor';
   perspectiveSwitchBusy = false;
-  showColumnManager = false;
-  allColumns: MetadataColumn[] = [];
-  private configuredMetadataColumns: MetadataColumn[] = [];
-  metadataSettings: MetadataSettings = {
-    visible: [],
-    order: [],
-    configured: false,
-    widths: {},
-    referenceNumberVisible: false,
-    layout: {
-      visible: [],
-      order: [],
-      configured: false,
-      widths: {},
-      schemaVersion: TABLE_COLUMN_LAYOUT_SCHEMA_VERSION,
-    },
-  };
-  private columnManagerOriginalSettings: MetadataSettings | null = null;
-  columnFilterText = '';
-  itemOrder: string[] = [];
+  get showColumnManager() {
+    return this.table.showColumnManager;
+  }
+  get allColumns() {
+    return this.table.allColumns;
+  }
+  get metadataSettings() {
+    return this.table.metadataSettings;
+  }
+  get columnFilterText() {
+    return this.table.columnFilterText;
+  }
+  get itemOrder() {
+    return this.table.itemOrder;
+  }
 
   // Shared draft state
-  explorerUiStatus: ExplorerUiStatus = 'CLEAN';
-  explorerVersion = 1;
-  explorerPublishedVersion = 1;
-  lastExplorerChangeInfo = '';
-  latestExplorerState: ItemExplorerStateEnvelope | null = null;
+  get explorerUiStatus() {
+    return this.draft.explorerUiStatus;
+  }
+  get explorerVersion() {
+    return this.draft.explorerVersion;
+  }
+  get explorerPublishedVersion() {
+    return this.draft.explorerPublishedVersion;
+  }
+  get lastExplorerChangeInfo() {
+    return this.draft.lastExplorerChangeInfo;
+  }
+  get latestExplorerState() {
+    return this.draft.latestExplorerState;
+  }
   itemListError = '';
   itemListLoading = false;
 
@@ -409,14 +417,26 @@ export class ItemExplorerFacade implements OnDestroy {
   historyFilterTo = '';
 
   // Save preview
-  showSavePreviewDialog = false;
-  draftPreviewSummary: Array<{ label: string; detail: string }> = [];
-  lastDraftOperationError = '';
+  get showSavePreviewDialog() {
+    return this.draft.showSavePreviewDialog;
+  }
+  get draftPreviewSummary() {
+    return this.draft.draftPreviewSummary;
+  }
+  get lastDraftOperationError() {
+    return this.draft.lastDraftOperationError;
+  }
 
   // Draft / destructive dialogs
-  showDiscardDraftDialog = false;
-  discardDraftDialogBusy = false;
-  discardDraftDialogError = '';
+  get showDiscardDraftDialog() {
+    return this.draft.showDiscardDraftDialog;
+  }
+  get discardDraftDialogBusy() {
+    return this.draft.discardDraftDialogBusy;
+  }
+  get discardDraftDialogError() {
+    return this.draft.discardDraftDialogError;
+  }
   showClearEmpiricalDifficultiesDialog = false;
   clearEmpiricalDifficultiesBusy = false;
   clearEmpiricalDifficultiesError = '';
@@ -424,8 +444,9 @@ export class ItemExplorerFacade implements OnDestroy {
   renumberBusy = false;
   renumberError = '';
   numberingSuccessMessage = '';
-  draftSaveSuccessMessage = '';
-  private draftSaveMessageResetTimeout: ReturnType<typeof setTimeout> | null = null;
+  get draftSaveSuccessMessage() {
+    return this.draft.draftSaveSuccessMessage;
+  }
 
   // Leave with pending changes dialog
   showLeaveWithChangesDialog = false;
@@ -434,32 +455,40 @@ export class ItemExplorerFacade implements OnDestroy {
   private leaveWithChangesResolver: ((value: boolean) => void) | null = null;
 
   // Coding scheme display filtering
-  codingSearchText = '';
-  codingSortField: 'id' | 'label' = 'id';
-  codingSortDir: 'asc' | 'desc' = 'asc';
-
-  // Response State
-  currentResponseData: Record<string, any> | null = null;
-  hasResponseState = false;
-  isFallbackState = false;
+  get codingSearchText() {
+    return this.coding.codingSearchText;
+  }
+  get codingSortField() {
+    return this.coding.codingSortField;
+  }
+  get codingSortDir() {
+    return this.coding.codingSortDir;
+  }
+  get currentResponseData() {
+    return this.player.currentResponseData;
+  }
+  get hasResponseState() {
+    return this.player.hasResponseState;
+  }
+  get isFallbackState() {
+    return this.player.isFallbackState;
+  }
   correctSolutionRequested = false;
-  correctSolutionPrefill: PlayerSolutionPrefill = {
-    status: 'unavailable',
-    responses: [],
-    message: 'Für dieses Item wurde noch keine Musterlösung ermittelt.',
-  };
-  private restoreResponseDataAfterSolution = false;
+  get correctSolutionPrefill() {
+    return this.coding.correctSolutionPrefill;
+  }
   showRawDataOverlay = false;
   allResponseStates: any[] = [];
   previewUserFacingMessage = '';
-  selectedPreviewTargetId = '';
-  customPreviewTargetDraft = '';
-  private previewTargetResolution: PreviewTargetResolution = {
-    itemTarget: '',
-    isDerived: false,
-    options: [],
-    defaultTargetId: '',
-  };
+  get selectedPreviewTargetId() {
+    return this.coding.selectedPreviewTargetId;
+  }
+  get customPreviewTargetDraft() {
+    return this.coding.customPreviewTargetDraft;
+  }
+  get previewTargetResolution() {
+    return this.coding.previewTargetResolution;
+  }
 
   // Response State Confirmation Dialogs
   showSaveConfirmDialog = false;
@@ -468,194 +497,48 @@ export class ItemExplorerFacade implements OnDestroy {
   confirmDialogError = '';
 
   get filteredCodingSchemeAsText(): CodingAsText[] {
-    if (!this.currentCodingSchemeAsText) return [];
-
-    const focus = this.codingVariableFocus;
-    let list = focus.status === 'unique' ? [...focus.matches] : [...this.currentCodingSchemeAsText];
-
-    if (!this.showAudioVideoCodingVariables) {
-      list = list.filter((c) => !this.isAudioVideoCodingVariable(c));
-    }
-
-    // Search
-    if (focus.status !== 'unique' && this.codingSearchText) {
-      const term = this.codingSearchText.toLowerCase();
-      list = list.filter(
-        (c) =>
-          c.id.toLowerCase().includes(term) || (c.label && c.label.toLowerCase().includes(term)),
-      );
-    }
-
-    // Sort
-    return list.sort((a, b) => {
-      const aVal = (this.codingSortField === 'id' ? a.id : a.label || a.id).toLowerCase();
-      const bVal = (this.codingSortField === 'id' ? b.id : b.label || b.id).toLowerCase();
-
-      const cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
-      return this.codingSortDir === 'asc' ? cmp : -cmp;
-    });
+    return this.coding.filteredCodingSchemeAsText(this.selectedItem, this.definitionContent);
   }
 
   shouldShowGeneralCodingInstruction(coding: DeepReadonly<CodingAsText>): boolean {
-    return Boolean(this.showGeneralCodingInstructions && (coding as any).generalInstructionText);
+    return this.coding.shouldShowGeneralCodingInstruction(coding);
   }
 
   getCodingVariableDisplayLabel(coding: DeepReadonly<CodingAsText>): string {
-    const id = String(coding.id || '').trim();
-    const label = String(coding.label || '').trim();
-    if (!label || label.toLowerCase() === id.toLowerCase()) {
-      return '';
-    }
-    if (/^\d+$/.test(id) && /^\d+$/.test(label)) {
-      return '';
-    }
-    return label;
+    return this.coding.getCodingVariableDisplayLabel(coding);
   }
 
   shouldShowAutomaticCodingRules(code: DeepReadonly<CodingAsText['codes'][number]>): boolean {
-    if (!code.ruleSetDescriptions.length) return false;
-    if (!this.preferManualCodingInstructions) return true;
-    return !(code as any).manualInstructionText;
+    return this.coding.shouldShowAutomaticCodingRules(code);
   }
 
   get codingVariableFocus(): CodingVariableFocusResolution {
-    const rawVariables = this.getCurrentCodingVariables();
-    const variableMatch = this.resolveItemCodingVariable(this.selectedItem, rawVariables);
-    const targetId = variableMatch.reference;
-    const emptyResolution = (
-      status: Exclude<CodingVariableFocusStatus, 'unique'>,
-      matches: CodingAsText[] = [],
-    ): CodingVariableFocusResolution => ({
-      status,
-      targetId,
-      internalId: '',
-      codingId: '',
-      playerTargetId: '',
-      usedLegacyFallback: false,
-      requestedInternalId: variableMatch.requestedInternalId || '',
-      matches,
-      isDerived: false,
-      sourceIds: [],
-    });
-
-    if (variableMatch.status === 'missing-target') {
-      return emptyResolution('missing-target');
-    }
-
-    const codings = this.currentCodingSchemeAsText || [];
-    if (variableMatch.status === 'ambiguous') {
-      return emptyResolution(
-        'ambiguous',
-        variableMatch.matchIndices
-          .map((index) => codings[index])
-          .filter((coding): coding is CodingAsText => Boolean(coding)),
-      );
-    }
-
-    if (
-      variableMatch.status === 'not-found' &&
-      String(this.selectedItem?.variableReadOnlyId || '').trim()
-    ) {
-      return emptyResolution('not-found');
-    }
-
-    if (variableMatch.status === 'unique' && variableMatch.index !== undefined) {
-      const matchIndex = variableMatch.index;
-      const textMatch = codings[matchIndex];
-      if (!textMatch) {
-        return emptyResolution('not-found');
-      }
-
-      const effectiveTextMatch = this.enrichDerivedCodingDisplay(
-        this.selectedItem,
-        rawVariables,
-        variableMatch,
-        textMatch,
-        codings,
-      );
-
-      const rawVariable = variableMatch.variable;
-      const sourceType = this.getCodingVariableSourceType(rawVariable);
-      return {
-        status: 'unique',
-        targetId,
-        internalId: this.getCodingVariableId(rawVariable, targetId),
-        codingId: effectiveTextMatch.id,
-        playerTargetId: this.resolvePlayerVariableReference(
-          rawVariable,
-          this.getVisiblePlayerTarget(this.selectedItem),
-        ),
-        usedLegacyFallback: Boolean(variableMatch.usedLegacyFallback),
-        requestedInternalId: variableMatch.requestedInternalId || '',
-        matches: [effectiveTextMatch],
-        isDerived: sourceType !== 'BASE' && sourceType !== 'BASE_NO_VALUE',
-        sourceIds: this.getCodingVariableSources(rawVariable),
-      };
-    }
-
-    const normalizedTarget = targetId.toLowerCase();
-    const directMatches = codings.filter(
-      (coding) =>
-        String(coding.id || '')
-          .trim()
-          .toLowerCase() === normalizedTarget,
-    );
-    if (directMatches.length !== 1) {
-      return emptyResolution(directMatches.length ? 'ambiguous' : 'not-found', directMatches);
-    }
-
-    return {
-      status: 'unique',
-      targetId,
-      internalId: targetId,
-      codingId: directMatches[0].id,
-      playerTargetId: this.getPlayerTarget(this.selectedItem),
-      usedLegacyFallback: false,
-      requestedInternalId: '',
-      matches: directMatches,
-      isDerived: false,
-      sourceIds: [],
-    };
+    return this.coding.codingVariableFocus(this.selectedItem, this.definitionContent);
   }
 
   get codingVariableFocusMessage(): string {
-    const focus = this.codingVariableFocus;
-    if (focus.status === 'missing-target') {
-      return 'Dem ausgewählten Item ist keine Variable zugeordnet. Das vollständige Kodierschema wird angezeigt.';
-    }
-    if (focus.status === 'not-found') {
-      return `Die zugeordnete Variable „${focus.targetId}“ wurde im Kodierschema nicht gefunden. Das vollständige Kodierschema wird angezeigt.`;
-    }
-    if (focus.status === 'ambiguous') {
-      return `Die zugeordnete Variable „${focus.targetId}“ kommt im Kodierschema nicht eindeutig vor. Das vollständige Kodierschema wird angezeigt.`;
-    }
-    return '';
+    return this.coding.codingVariableFocusMessage(this.selectedItem, this.definitionContent);
   }
 
   get excludedItemsCount(): number {
-    return this.items.filter((item) => this.isItemExcluded(item)).length;
+    return this.table.excludedItemsCount(this.items);
   }
 
   get totalItemsCount(): number {
-    return this.items.length;
+    return this.table.totalItemsCount(this.items);
   }
 
   get canExportAllComments(): boolean {
-    return (
-      (this.itemCommentsEnabled || this.codingCommentsEnabled) && this.hasExplorerEditPermission
-    );
+    this.configureComments();
+    return this.comments.canExportAllComments;
   }
 
   getItemCommentCount(item?: ReadonlyExplorerItem | null): number {
-    if (!item) return 0;
-    const key = this.resolveItemCommentCountKey(item.unitId, item.itemId, this.itemCommentCounts);
-    return this.itemCommentCounts[key] || 0;
+    return this.comments.getItemCommentCount(item);
   }
 
   getCodingCommentCount(item?: ReadonlyExplorerItem | null): number {
-    if (!item) return 0;
-    const key = this.resolveItemCommentCountKey(item.unitId, item.itemId, this.codingCommentCounts);
-    return this.codingCommentCounts[key] || 0;
+    return this.comments.getCodingCommentCount(item);
   }
 
   updateItemCommentCount(event: {
@@ -665,152 +548,58 @@ export class ItemExplorerFacade implements OnDestroy {
     count: number;
     refreshToken?: number;
   }): void {
-    if (event.targetType && event.targetType !== 'ITEM' && event.targetType !== 'CODING') return;
-    if (event.refreshToken !== undefined && event.refreshToken !== this.itemCommentRefreshToken) {
-      return;
-    }
-    const key = this.itemCommentTargetKey(event.unitId, event.itemId);
-    const count = Math.max(0, Number(event.count) || 0);
-    // Even an unchanged count is a newer observation than an in-flight batch.
-    this.itemCommentCountStateVersion += 1;
-    const changeVersions =
-      event.targetType === 'CODING'
-        ? this.codingCommentCountChangeVersions
-        : this.itemCommentCountChangeVersions;
-    changeVersions.set(key, this.itemCommentCountStateVersion);
-    const targetCounts =
-      event.targetType === 'CODING' ? this.codingCommentCounts : this.itemCommentCounts;
-    if (targetCounts[key] === count) return;
-    if (event.targetType === 'CODING') {
-      this.codingCommentCounts = { ...this.codingCommentCounts, [key]: count };
-    } else {
-      this.itemCommentCounts = { ...this.itemCommentCounts, [key]: count };
-    }
-    this.applyFilter(false);
+    this.configureComments();
+    return this.comments.updateItemCommentCount(event);
   }
 
   refreshItemComments(refreshSelectedThread = true): void {
-    if ((!this.itemCommentsEnabled && !this.codingCommentsEnabled) || !this.acpId) return;
-    const token = ++this.itemCommentCountsRequestToken;
-    const stateVersion = this.itemCommentCountStateVersion;
-    if (refreshSelectedThread) this.itemCommentRefreshToken += 1;
-    this.itemCommentCountsLoading = true;
-    this.itemCommentCountsError = '';
-    this.api
-      .getItemCommentCounts(this.acpId)
-      .pipe(timeout(10_000), takeUntil(this.destroy$))
-      .subscribe({
-        next: (snapshot) => {
-          if (token !== this.itemCommentCountsRequestToken) return;
-          const nextCounts = Object.fromEntries(
-            (snapshot.counts || []).map((entry) => [
-              this.itemCommentTargetKey(entry.unitId, entry.itemId),
-              entry.count,
-            ]),
-          );
-          const nextCodingCounts = Object.fromEntries(
-            (snapshot.counts || []).map((entry) => [
-              this.itemCommentTargetKey(entry.unitId, entry.itemId),
-              entry.codingCount || 0,
-            ]),
-          );
-          for (const [key, changeVersion] of this.itemCommentCountChangeVersions) {
-            if (changeVersion > stateVersion) {
-              nextCounts[key] = this.itemCommentCounts[key] || 0;
-            } else {
-              this.itemCommentCountChangeVersions.delete(key);
-            }
-          }
-          for (const [key, changeVersion] of this.codingCommentCountChangeVersions) {
-            if (changeVersion > stateVersion) {
-              nextCodingCounts[key] = this.codingCommentCounts[key] || 0;
-            } else {
-              this.codingCommentCountChangeVersions.delete(key);
-            }
-          }
-          this.itemCommentCounts = nextCounts;
-          this.codingCommentCounts = nextCodingCounts;
-          this.itemCommentCountsAvailable = true;
-          this.itemCommentCountsLoading = false;
-          this.applyFilter(false);
-        },
-        error: () => {
-          if (token !== this.itemCommentCountsRequestToken) return;
-          this.itemCommentCountsLoading = false;
-          this.itemCommentCountsError = 'Kommentaranzahlen konnten nicht geladen werden.';
-          this.applyFilter(false);
-        },
-      });
+    this.configureComments();
+    return this.comments.refreshItemComments(refreshSelectedThread);
   }
 
   exportMyCommentsCsv(): void {
-    this.downloadCommentExport(
-      this.api.exportMyReviewCommentsCsv(this.acpId),
-      `comments-${this.acpId}-mine.csv`,
-    );
+    this.configureComments();
+    return this.comments.exportMyCommentsCsv();
   }
 
   exportMyCommentsXlsx(): void {
-    this.downloadCommentExport(
-      this.api.exportMyReviewCommentsXlsx(this.acpId),
-      `comments-${this.acpId}-mine.xlsx`,
-    );
+    this.configureComments();
+    return this.comments.exportMyCommentsXlsx();
   }
 
   exportAllCommentsXlsx(): void {
-    if (!this.canExportAllComments) return;
-    this.downloadCommentExport(
-      this.api.exportAllReviewCommentsXlsx(this.acpId),
-      `comments-${this.acpId}-all.xlsx`,
-    );
+    this.configureComments();
+    return this.comments.exportAllCommentsXlsx();
   }
 
   get visibleItemsCount(): number {
-    return this.items.filter((item) => this.isItemVisibleByBaseRules(item)).length;
+    return this.table.visibleItemsCount(this.items);
   }
 
   get hiddenExcludedItemsCount(): number {
-    if (this.showExcludedItems) return 0;
-    return this.items.filter((item) => this.isItemExcluded(item)).length;
+    return this.table.hiddenExcludedItemsCount(this.items);
   }
 
   get hiddenMissingDifficultyItemsCount(): number {
-    if (!this.showOnlyItemsWithEmpiricalDifficulty || !this.hasEmpiricalDifficulty) return 0;
-    return this.items.filter(
-      (item) =>
-        (this.showExcludedItems || !this.isItemExcluded(item)) &&
-        (item.empiricalDifficulty === undefined || item.empiricalDifficulty === null),
-    ).length;
+    return this.table.hiddenMissingDifficultyItemsCount(this.items);
   }
 
   get referenceNumberVisible(): boolean {
-    const layout = this.metadataSettings.layout;
-    if (layout?.configured) {
-      return layout.visible.includes(TABLE_COLUMN_KEYS.referenceNumber);
-    }
-    return this.metadataSettings.referenceNumberVisible === true;
+    return this.table.referenceNumberVisible();
   }
 
   get canResetMetadataSettings(): boolean {
-    return (
-      this.metadataSettings.configured ||
-      Object.keys(this.metadataSettings.widths).length > 0 ||
-      this.referenceNumberVisible ||
-      this.metadataSettings.layout?.configured === true ||
-      Object.keys(this.metadataSettings.layout?.widths || {}).length > 0
-    );
+    return this.table.canResetMetadataSettings();
   }
 
   get activeItemCollection(): ItemCollection | null {
-    return (
-      this.itemCollections.find((collection) => collection.id === this.activeCollectionId) || null
-    );
+    this.configureCollections();
+    return this.collections.activeItemCollection;
   }
 
   get canEditActiveCollection(): boolean {
-    return (
-      Boolean(this.activeItemCollection) && this.activeItemCollection?.ownedByCurrentUser !== false
-    );
+    this.configureCollections();
+    return this.collections.canEditActiveCollection;
   }
 
   get activeCollectionItems(): Array<{
@@ -818,26 +607,8 @@ export class ItemExplorerFacade implements OnDestroy {
     position: number;
     item: ExplorerItem | null;
   }> {
-    const collection = this.activeItemCollection;
-    if (!collection) {
-      this.collectionItemsCacheSource = null;
-      this.collectionItemsCache = [];
-      return this.collectionItemsCache;
-    }
-    if (
-      this.collectionItemsCacheSource !== collection.rowKeys ||
-      this.collectionItemsCacheItemSource !== this.items
-    ) {
-      const itemMap = this.getCollectionItemMap();
-      this.collectionItemsCacheSource = collection.rowKeys;
-      this.collectionItemsCacheItemSource = this.items;
-      this.collectionItemsCache = collection.rowKeys.map((rowKey, index) => ({
-        rowKey,
-        position: index + 1,
-        item: itemMap.get(rowKey) || null,
-      }));
-    }
-    return this.collectionItemsCache;
+    this.configureCollections();
+    return this.collections.activeCollectionItems;
   }
 
   get selectedPreviewTarget(): string {
@@ -972,29 +743,12 @@ export class ItemExplorerFacade implements OnDestroy {
     );
   }
 
-  private isAudioVideoCodingVariable(coding: CodingAsText): boolean {
-    const id = coding.id?.toLowerCase() || '';
-    const label = coding.label?.toLowerCase() || '';
-    return (
-      id.includes('audio') ||
-      id.includes('video') ||
-      label.includes('audio') ||
-      label.includes('video')
-    );
-  }
-
   toggleCodingSort(field: 'id' | 'label') {
-    if (this.codingSortField === field) {
-      this.codingSortDir = this.codingSortDir === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.codingSortField = field;
-      this.codingSortDir = 'asc';
-    }
+    return this.coding.toggleCodingSort(field);
   }
 
   getCodingSortIndicator(field: 'id' | 'label'): string {
-    if (this.codingSortField !== field) return '';
-    return this.codingSortDir === 'asc' ? '↑' : '↓';
+    return this.coding.getCodingSortIndicator(field);
   }
 
   get reviewerColumnsRestricted(): boolean {
@@ -1006,203 +760,23 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   isReviewerColumnAllowed(key: string): boolean {
-    if (
-      !this.reviewerColumnsRestricted ||
-      key.startsWith('personal:') ||
-      key === TABLE_COLUMN_KEYS.itemId
-    )
-      return true;
-    const visible = this.latestExplorerState?.publishedState?.metadataColumns?.layout?.visible;
-    return (
-      Array.isArray(visible) &&
-      normalizeItemExplorerColumnList(visible, normalizeItemExplorerTableColumnKey).includes(key)
-    );
+    return this.table.isReviewerColumnAllowed(this.tableColumnContext(), key);
   }
 
   setRestrictReviewerColumns(value: boolean) {
-    if (!this.canEditExplorer) return;
-    this.ensureExplicitTableLayout();
-    this.metadataSettings.restrictReviewerColumnsToManagerSelection = value;
-    if (value && !this.metadataSettings.layout!.visible.includes(TABLE_COLUMN_KEYS.itemId)) {
-      this.metadataSettings.layout!.visible.unshift(TABLE_COLUMN_KEYS.itemId);
-    }
+    return this.table.setRestrictReviewerColumns(this.tableColumnContext(), value);
   }
 
   get allTableColumns(): ItemExplorerTableColumn[] {
-    const columns: ItemExplorerTableColumn[] = [
-      {
-        key: TABLE_COLUMN_KEYS.position,
-        id: 'position',
-        label: 'Position',
-        source: 'system',
-        defaultWidth: POSITION_COLUMN_WIDTH,
-      },
-      {
-        key: TABLE_COLUMN_KEYS.referenceNumber,
-        id: 'referenceNumber',
-        label: 'Referenz-Nr.',
-        source: 'system',
-        defaultWidth: 140,
-      },
-      {
-        key: TABLE_COLUMN_KEYS.itemId,
-        id: 'itemId',
-        label: 'Item-ID',
-        source: 'system',
-        defaultWidth: 220,
-      },
-      {
-        key: TABLE_COLUMN_KEYS.unitLabel,
-        id: 'unitLabel',
-        label: 'Aufgabe',
-        source: 'system',
-        defaultWidth: 200,
-      },
-    ];
-    if (this.hasPartialCredit) {
-      columns.push({
-        key: TABLE_COLUMN_KEYS.subId,
-        id: 'subId',
-        label: this.itemSubIdLabel,
-        source: 'system',
-        defaultWidth: 140,
-      });
-    }
-    if (this.hasEmpiricalDifficulty) {
-      columns.push({
-        key: TABLE_COLUMN_KEYS.empiricalDifficulty,
-        id: 'empiricalDifficulty',
-        label: 'Empirische Itemschwierigkeit',
-        source: 'system',
-        defaultWidth: 210,
-      });
-    }
-    if (this.hasMeanTaskDifficulty) {
-      columns.push({
-        key: TABLE_COLUMN_KEYS.meanTaskDifficulty,
-        id: 'meanTaskDifficulty',
-        label: 'Mittlere Aufgabenschwierigkeit',
-        source: 'system',
-        defaultWidth: 230,
-      });
-    }
-    if (this.itemCommentsEnabled) {
-      columns.push({
-        key: TABLE_COLUMN_KEYS.comments,
-        id: 'comments',
-        label: 'Kommentare',
-        source: 'system',
-        defaultWidth: 150,
-      });
-    }
-    columns.push(
-      ...this.allColumns.map((metadataColumn) => ({
-        key: this.getMetadataTableColumnKey(metadataColumn.id),
-        id: metadataColumn.id,
-        label: metadataColumn.label,
-        source: 'metadata' as const,
-        defaultWidth: 180,
-        metadataColumn,
-      })),
-    );
-    if (this.enableTags) {
-      columns.push({
-        key: TABLE_COLUMN_KEYS.tags,
-        id: 'tags',
-        label: 'Tags',
-        source: 'system',
-        defaultWidth: 220,
-      });
-    }
-    if (this.showPersonalItemData) {
-      columns.push(
-        {
-          key: TABLE_COLUMN_KEYS.personalCategory,
-          id: 'personalCategory',
-          label: this.personalItemCategoryLabel,
-          source: 'personal',
-          defaultWidth: 200,
-        },
-        {
-          key: TABLE_COLUMN_KEYS.personalTags,
-          id: 'personalTags',
-          label: this.personalItemTagLabel,
-          source: 'personal',
-          defaultWidth: 240,
-        },
-        {
-          key: TABLE_COLUMN_KEYS.personalNote,
-          id: 'personalNote',
-          label: 'Notiz',
-          source: 'personal',
-          defaultWidth: 280,
-        },
-      );
-    }
-    return columns.filter((column) => this.isReviewerColumnAllowed(column.key));
+    return this.table.allTableColumns(this.tableColumnContext());
   }
 
   get tableColumns(): ItemExplorerTableColumn[] {
-    const available = this.allTableColumns;
-    const layout = this.metadataSettings.layout;
-    if (!layout?.configured) {
-      const visibleMetadata = new Set(this.columns.map((column) => column.id));
-      return this.orderPinnedTableColumns(
-        available.filter((column) => {
-          if (column.key === TABLE_COLUMN_KEYS.referenceNumber) return this.referenceNumberVisible;
-          return column.source !== 'metadata' || visibleMetadata.has(column.id);
-        }),
-      );
-    }
-    const availableByKey = new Map(available.map((column) => [column.key, column]));
-    const visible = new Set(layout.visible);
-    if (this.reviewerColumnsRestricted) visible.add(TABLE_COLUMN_KEYS.itemId);
-    const ordered = layout.order
-      .map((key) => availableByKey.get(key))
-      .filter((column): column is ItemExplorerTableColumn => column !== undefined)
-      .filter((column) => visible.has(column.key));
-    const orderedKeys = new Set(ordered.map((column) => column.key));
-    for (const column of available) {
-      if (visible.has(column.key) && !orderedKeys.has(column.key)) {
-        ordered.push(column);
-        orderedKeys.add(column.key);
-      }
-    }
-    return this.orderPinnedTableColumns(ordered);
+    return this.table.tableColumns(this.tableColumnContext());
   }
 
   get filteredAllColumns(): ItemExplorerTableColumn[] {
-    let list = [...this.allTableColumns];
-    if (this.columnFilterText) {
-      const term = this.columnFilterText.toLowerCase();
-      list = list.filter(
-        (c) =>
-          c.label.toLowerCase().includes(term) ||
-          c.id.toLowerCase().includes(term) ||
-          c.key.toLowerCase().includes(term),
-      );
-    }
-
-    const layout = this.metadataSettings.layout;
-    if (!layout?.configured) {
-      return list;
-    }
-
-    // Sort columns: selected/ordered ones first, then alphabetical
-    const ordered = list.sort((a, b) => {
-      const indexA = layout.order.indexOf(a.key);
-      const indexB = layout.order.indexOf(b.key);
-
-      // Both are in the custom order
-      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-      // Only A is in the order
-      if (indexA !== -1) return -1;
-      // Only B is in the order
-      if (indexB !== -1) return 1;
-      // Neither is in the order: alphabetical
-      return a.label.localeCompare(b.label);
-    });
-    return this.orderPinnedTableColumns(ordered);
+    return this.table.filteredAllColumns(this.tableColumnContext());
   }
 
   get explorerStatusLabel(): string {
@@ -1240,15 +814,148 @@ export class ItemExplorerFacade implements OnDestroy {
   constructor(
     private api: ApiService,
     public sanitizer: DomSanitizer,
-    private voudService: VoudService,
     private authService: AuthService,
     private pendingPersonalSessionStorage: PendingPersonalSessionStorageService,
     private readonly previewCoordinator: ItemExplorerPreviewCoordinator,
+    readonly comments: ItemExplorerCommentsService,
+    readonly personalData: ItemExplorerPersonalDataService,
+    readonly collections: ItemExplorerCollectionsService,
+    readonly draft: ItemExplorerDraftService,
+    readonly coding: ItemExplorerCodingService,
+    readonly player: ItemExplorerPlayerService,
+    readonly table: ItemExplorerTableService,
+    readonly imports: ItemExplorerImportService,
     @Optional() private readonly diagnostics?: ItemExplorerLoadDiagnostics,
   ) {
+    this.draft.flushRequested$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      void this.flushDraftPatch();
+    });
+    this.collections.collectionsChanged$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.applyFilter(false));
+    this.personalData.dataChanged$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.applyFilter(false));
+    this.comments.countsChanged$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.ensureTableColumnDefaults();
+      this.applyFilter(false);
+    });
     this.previewCoordinator.results$
       .pipe(takeUntil(this.destroy$))
       .subscribe((result) => this.applyPreviewResult(result));
+  }
+
+  private readonly draftResultApplications = new WeakMap<
+    ItemExplorerDraftResult,
+    Promise<boolean>
+  >();
+
+  private applyDraftResult(result: ItemExplorerDraftResult): Promise<boolean> {
+    const existing = this.draftResultApplications.get(result);
+    if (existing) return existing;
+    const application = this.performDraftResultApplication(result);
+    this.draftResultApplications.set(result, application);
+    return application;
+  }
+
+  private async performDraftResultApplication(result: ItemExplorerDraftResult): Promise<boolean> {
+    if (this.destroyed) return false;
+    if (result.kind === 'conflict') {
+      let reloaded = false;
+      try {
+        reloaded = await this.reloadSharedExplorerStateAndItems(true);
+      } finally {
+        this.draft.finishConflictRecovery(reloaded);
+      }
+      return false;
+    }
+    if (result.kind === 'failed') {
+      if (result.rollbackTags) this.rollbackItemTagsToLatestExplorerState();
+      return false;
+    }
+    if (result.kind === 'cancelled' || result.kind === 'busy' || result.kind === 'version-only') {
+      return false;
+    }
+    if (result.kind === 'applied') {
+      if (!this.draft.canApplyEnvelope(result.envelope)) return false;
+      this.applySharedExplorerEnvelope(result.envelope, result.markSaved);
+    }
+    return true;
+  }
+
+  private tableColumnContext(): ItemExplorerTableColumnContext {
+    return {
+      canEditExplorer: this.canEditExplorer,
+      reviewerColumnsRestricted: this.reviewerColumnsRestricted,
+      reviewerVisibleColumns:
+        this.latestExplorerState?.publishedState?.metadataColumns?.layout?.visible,
+      itemCommentsEnabled: this.itemCommentsEnabled,
+      enableTags: this.enableTags,
+      showPersonalItemData: this.showPersonalItemData,
+      personalItemCategoryLabel: this.personalItemCategoryLabel,
+      personalItemTagLabel: this.personalItemTagLabel,
+      enableItemCollections: this.enableItemCollections,
+    };
+  }
+
+  private tableFilterContext(): ItemExplorerTableFilterContext {
+    return {
+      ...this.tableColumnContext(),
+      itemCommentCountsAvailable: this.itemCommentCountsAvailable,
+      commentCountsByRow: new Map(
+        this.items.map((item) => [this.getStableRowKey(item), this.getItemCommentCount(item)]),
+      ),
+      itemTags: this.itemTags,
+      personalColumnFilters: this.personalColumnFilters,
+      personalItemData: this.personalItemData,
+      activeCollectionRowKeys:
+        this.collectionViewMode === 'active' && this.activeItemCollection
+          ? new Set(this.activeItemCollection.rowKeys)
+          : null,
+    };
+  }
+
+  private configureDraft(): void {
+    this.draft.configure({
+      acpId: this.acpId,
+      canEdit: this.explorerEditingAllowed,
+      canPublish: this.canPublishExplorer,
+    });
+  }
+
+  private configureCollections(): void {
+    this.collections.configure({
+      acpId: this.acpId,
+      identity: this.pendingPersonalSessionStorage.resolveIdentityFromToken(
+        this.authService.getToken(),
+      ),
+      perspective: this.getPerspectiveForViewerRequests(),
+      items: this.items,
+      itemsAvailable: !this.itemListLoading && !this.itemListError,
+    });
+  }
+
+  private configurePersonalData(): void {
+    this.personalData.configure({
+      acpId: this.acpId,
+      identity: this.pendingPersonalSessionStorage.resolveIdentityFromToken(
+        this.authService.getToken(),
+      ),
+      perspective: this.getPerspectiveForViewerRequests(),
+      canExportAll: this.hasExplorerEditPermission,
+      perspectiveSwitchBusy: this.perspectiveSwitchBusy,
+    });
+  }
+
+  private configureComments(): void {
+    this.comments.configure({
+      acpId: this.acpId,
+      identity: this.pendingPersonalSessionStorage.resolveIdentityFromToken(
+        this.authService.getToken(),
+      ),
+      loggedIn: this.authService.isLoggedIn,
+      canExport: this.hasExplorerEditPermission,
+    });
   }
 
   get headerViewModel(): ItemExplorerHeaderViewModel {
@@ -1312,27 +1019,21 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   registerPlayerDom(port: ItemExplorerPlayerDomPort): void {
-    this.playerDom = port;
+    this.player.registerPlayerDom(port);
     this.startPlayerIfReady();
   }
 
   unregisterPlayerDom(port: ItemExplorerPlayerDomPort): void {
-    if (this.playerDom !== port) return;
-    port.stopAutoResize();
-    this.playerDom = undefined;
-    this.playerFrameReady = false;
+    this.player.unregisterPlayerDom(port);
   }
 
   playerFrameChanged(hasFrame: boolean): void {
-    if (!hasFrame) {
-      this.playerFrameReady = false;
-      return;
-    }
-    this.startPlayerIfReady();
+    this.player.playerFrameChanged(hasFrame);
+    if (hasFrame) this.startPlayerIfReady();
   }
 
   setFilterText(value: string): void {
-    this.filterText = value;
+    this.table.filterText = value;
   }
 
   setColumnFilter(key: string, value: string): void {
@@ -1344,7 +1045,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   setCodingSearchText(value: string): void {
-    this.codingSearchText = value;
+    this.coding.codingSearchText = value;
   }
 
   setHistoryFilter(
@@ -1355,27 +1056,29 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   setSelectedPreviewTargetId(value: string): void {
-    this.selectedPreviewTargetId = value;
+    this.coding.selectedPreviewTargetId = value;
   }
 
   setCustomPreviewTargetDraft(value: string): void {
-    this.customPreviewTargetDraft = value;
+    this.coding.customPreviewTargetDraft = value;
   }
 
   setPagingMode(value: ItemExplorerFacade['pagingMode']): void {
-    this.pagingMode = value;
+    this.player.pagingMode = value;
   }
 
   setColumnFilterText(value: string): void {
-    this.columnFilterText = value;
+    this.table.columnFilterText = value;
   }
 
   openCollectionDialog(): void {
-    if (this.activeItemCollection) this.showCollectionDialog = true;
+    this.configureCollections();
+    return this.collections.openCollectionDialog();
   }
 
   closeCollectionDialog(): void {
-    if (!this.collectionBusy) this.showCollectionDialog = false;
+    this.configureCollections();
+    return this.collections.closeCollectionDialog();
   }
 
   setMetadataDrawerOpen(open: boolean): void {
@@ -1383,25 +1086,23 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   closeUploadReport(reloadItems = false): void {
-    this.showUploadReport = false;
+    this.imports.closeReport();
     if (reloadItems) this.reloadItems();
   }
 
   closeUploadErrorDialog(): void {
-    this.showErrorDialog = false;
+    this.imports.closeError();
   }
 
   cancelItemParameterUploadWarnings(): void {
-    if (this.uploadWarningBusy) return;
-    this.resetItemParameterUploadWarning();
-    this.restoreFocusAfterOverlayClose();
+    if (this.imports.cancelWarnings()) this.restoreFocusAfterOverlayClose();
   }
 
-  confirmItemParameterUploadWarnings(): void {
-    if (this.uploadWarningBusy || !this.pendingItemParameterUploadFile) return;
-    this.uploadWarningBusy = true;
-    this.uploadWarningError = '';
-    this.uploadItemParameterFile(this.pendingItemParameterUploadFile, true);
+  async confirmItemParameterUploadWarnings(): Promise<void> {
+    if (this.destroyed) return;
+    await this.applyImportResult(
+      await this.imports.confirmWarnings({ acpId: this.acpId, baseVersion: this.explorerVersion }),
+    );
   }
 
   init(
@@ -1450,47 +1151,40 @@ export class ItemExplorerFacade implements OnDestroy {
       .subscribe({
         next: (data) => {
           const fc = data?.featureConfig || {};
+          this.showStudioItemComments = fc.showStudioItemComments === true;
           const commentTargets = Array.isArray(fc.commentTargets) ? fc.commentTargets : [];
-          this.itemCommentsConfigured = Boolean(
+          this.comments.itemCommentsConfigured = Boolean(
             fc.enableCommenting && (commentTargets.length === 0 || commentTargets.includes('ITEM')),
           );
-          this.itemCommentsEnabled = this.itemCommentsConfigured && this.authService.isLoggedIn;
-          this.codingCommentsConfigured = Boolean(
+          this.comments.itemCommentsEnabled =
+            this.comments.itemCommentsConfigured && this.authService.isLoggedIn;
+          this.comments.codingCommentsConfigured = Boolean(
             fc.enableCommenting && commentTargets.includes('CODING'),
           );
-          this.codingCommentsEnabled = this.codingCommentsConfigured && this.authService.isLoggedIn;
+          this.comments.codingCommentsEnabled =
+            this.comments.codingCommentsConfigured && this.authService.isLoggedIn;
           this.enableTags = !!fc.enableItemListTags;
           this.availableTags = fc.availableTags || [];
-          this.showAudioVideoCodingVariables = fc.showAudioVideoCodingVariables !== false;
-          this.showGeneralCodingInstructions = fc.showGeneralCodingInstructions === true;
-          this.preferManualCodingInstructions = fc.preferManualCodingInstructions !== false;
-          this.itemExplorerConditionalVisibilityEnabled =
+          this.coding.showAudioVideoCodingVariables = fc.showAudioVideoCodingVariables !== false;
+          this.coding.showGeneralCodingInstructions = fc.showGeneralCodingInstructions === true;
+          this.coding.preferManualCodingInstructions = fc.preferManualCodingInstructions !== false;
+          this.player.itemExplorerConditionalVisibilityEnabled =
             fc.enableItemExplorerConditionalVisibility === true;
-          this.playerFocusHighlightEnabled = fc.enablePlayerFocusHighlight === true;
+          this.player.playerFocusHighlightEnabled = fc.enablePlayerFocusHighlight === true;
           this.itemExplorerPlayerTargetInfoEnabled = fc.showItemExplorerPlayerTargetInfo === true;
-          this.showOnlyItemsWithEmpiricalDifficulty =
+          this.table.showOnlyItemsWithEmpiricalDifficulty =
             fc.showOnlyItemsWithEmpiricalDifficulty === true;
-          this.itemSubIdLabel = String(fc.itemSubIdLabel || 'Sub-ID').trim() || 'Sub-ID';
-          this.enablePersonalItemData = fc.enablePersonalItemData === true;
-          this.enableItemCollections = fc.enableItemCollections === true;
-          const configuredPersonalCategoryLabel =
-            String(fc.personalItemCategoryLabel || 'Kompetenzstufe').trim() || 'Kompetenzstufe';
-          this.personalItemCategoryLabel =
-            configuredPersonalCategoryLabel.toLocaleLowerCase('de-DE') === 'kompetenzstufe'
-              ? 'Kompetenzstufe (persönlich)'
-              : configuredPersonalCategoryLabel;
-          this.personalItemCategoryValues = this.normalizeStringList(fc.personalItemCategoryValues);
-          this.personalItemTagLabel =
-            String(fc.personalItemTagLabel || 'Markierungen').trim() || 'Markierungen';
-          this.personalItemTags = this.normalizePersonalItemTagConfig(fc.personalItemTags);
+          this.table.itemSubIdLabel = String(fc.itemSubIdLabel || 'Sub-ID').trim() || 'Sub-ID';
+          this.personalData.configureFeatures(fc);
+          this.collections.enableItemCollections = fc.enableItemCollections === true;
           // Explorer uses ACP-shared draft/published state instead of per-user preferences.
           this.persistUserPreferences = false;
           this.useServerPreferences = false;
 
           // Load metadata column settings
-          this.metadataSettings = this.resolveMetadataSettings(fc);
+          this.table.metadataSettings = this.resolveMetadataSettings(fc);
           this.ensureTableColumnDefaults();
-          this.configuredMetadataColumns = this.resolveConfiguredMetadataColumns(fc);
+          this.table.configuredMetadataColumns = this.resolveConfiguredMetadataColumns(fc);
           void this.reloadSharedExplorerStateAndItems();
           this.syncItemCommentCountSession();
           this.syncPersonalItemDataSession();
@@ -1501,7 +1195,7 @@ export class ItemExplorerFacade implements OnDestroy {
           if (this.destroyed) return;
           console.error('Failed to load Item Explorer feature configuration', error);
           this.itemListError = 'Die Konfiguration des Item-Explorers konnte nicht geladen werden.';
-          this.explorerUiStatus = 'ERROR';
+          this.draft.explorerUiStatus = 'ERROR';
         },
       });
   }
@@ -1563,22 +1257,23 @@ export class ItemExplorerFacade implements OnDestroy {
                 }))
               : [],
           }));
-          this.allColumns = this.getAvailableMetadataColumns(result.columns || []);
-          this.columns = this.filterVisibleColumns(this.allColumns);
-          this.itemSubIdLabel = String(result.subIdLabel || this.itemSubIdLabel).trim() || 'Sub-ID';
-          this.hasPartialCredit = this.items.some((item) => !!item.subId);
+          this.table.allColumns = this.getAvailableMetadataColumns(result.columns || []);
+          this.table.columns = this.filterVisibleColumns(this.allColumns);
+          this.table.itemSubIdLabel =
+            String(result.subIdLabel || this.itemSubIdLabel).trim() || 'Sub-ID';
+          this.table.hasPartialCredit = this.items.some((item) => !!item.subId);
           this.hydrateItemTagsFromItems();
           if (expectedExplorerState) {
             this.applySharedExplorerEnvelope(expectedExplorerState);
           } else {
             this.applyExplorerStateToItems();
           }
-          this.hasEmpiricalDifficulty = this.items.some(
+          this.table.hasEmpiricalDifficulty = this.items.some(
             (item: any) =>
               item.empiricalDifficulty !== undefined && item.empiricalDifficulty !== null,
           );
           this.reconcileMeanTaskDifficultyState();
-          this.filteredItems = [...this.items];
+          this.table.filteredItems = [...this.items];
           this.unitMetadataCache = result.unitMetadata || {};
           this.codingSchemeCache = result.codingSchemes || {};
           this.applyFilter(false); // re-apply current filters and sort
@@ -1601,14 +1296,14 @@ export class ItemExplorerFacade implements OnDestroy {
             error?.status === 403
               ? this.getItemListAccessMessage()
               : 'Die Item-Liste konnte nicht geladen werden.';
-          this.allColumns = [];
-          this.columns = [];
+          this.table.allColumns = [];
+          this.table.columns = [];
           this.items = [];
-          this.filteredItems = [];
+          this.table.filteredItems = [];
           this.itemTags = {};
-          this.hasEmpiricalDifficulty = false;
-          this.hasMeanTaskDifficulty = false;
-          this.hasPartialCredit = false;
+          this.table.hasEmpiricalDifficulty = false;
+          this.table.hasMeanTaskDifficulty = false;
+          this.table.hasPartialCredit = false;
           this.unitMetadataCache = {};
           this.codingSchemeCache = {};
           this.clearSelectedItem();
@@ -1620,56 +1315,21 @@ export class ItemExplorerFacade implements OnDestroy {
 
   ngOnDestroy() {
     if (this.destroyed) return;
-    if (this.personalDataSessionIdentity && this.pendingPersonalRowUpdates.size) {
-      this.suspendPendingPersonalSession(this.personalDataSessionIdentity);
-    }
     this.destroyed = true;
     this.itemListLoadToken += 1;
-    this.personalDataSessionVersion += 1;
-    this.collectionSessionVersion += 1;
     this.destroy$.next();
     this.destroy$.complete();
     window.removeEventListener('storage', this.authStorageListener);
-    this.stopCommentAutoRefresh();
     this.authSessionSubscription?.unsubscribe();
     this.authSessionSubscription = null;
-    this.playerDom?.stopAutoResize();
     this.clearItemListSlowTimer();
     this.clearPreviewSlowTimer();
     this.cancelPlayerReadyTiming();
     this.previewCoordinator.clear();
-    this.clearFocusRetryTimer();
-    this.clearLegacyPageNavigationTimers();
-    if (this.playerFrameRefreshTimeout) {
-      clearTimeout(this.playerFrameRefreshTimeout);
-      this.playerFrameRefreshTimeout = null;
-    }
-    if (this.personalSaveTimeout) {
-      clearTimeout(this.personalSaveTimeout);
-      this.personalSaveTimeout = null;
-    }
-    if (this.draftPatchTimeout) {
-      clearTimeout(this.draftPatchTimeout);
-      this.draftPatchTimeout = null;
-    }
-    if (this.saveStatusResetTimeout) {
-      clearTimeout(this.saveStatusResetTimeout);
-      this.saveStatusResetTimeout = null;
-    }
-    if (this.draftSaveMessageResetTimeout) {
-      clearTimeout(this.draftSaveMessageResetTimeout);
-      this.draftSaveMessageResetTimeout = null;
-    }
-    this.personalDataSessionIdentity = null;
-    this.collectionSessionIdentity = null;
-    this.pendingPersonalRowUpdates.clear();
-    this.resolvePersonalSaveWaiters(false);
     this.leaveWithChangesResolver?.(false);
     this.leaveWithChangesResolver = null;
-    this.personalSaveInFlight = false;
     this.shellDom = undefined;
     this.tableDom = undefined;
-    this.playerDom = undefined;
   }
 
   handleBeforeUnload(event: BeforeUnloadEvent) {
@@ -1744,737 +1404,114 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private getAvailableMetadataColumns(sourceColumns: MetadataColumn[]): MetadataColumn[] {
-    const importedIds = new Set(IMPORTED_PARAMETER_COLUMNS.map((column) => column.id));
-    const normalizedSourceColumns = sourceColumns.filter(
-      (column) => !importedIds.has(normalizeItemExplorerMetadataColumnId(column.id)),
-    );
-    const columnsById = new Map<string, MetadataColumn>();
-    normalizedSourceColumns.forEach((column) =>
-      columnsById.set(column.id, { ...column, kind: 'text' as const }),
-    );
-    this.configuredMetadataColumns
-      .filter((column) => !importedIds.has(normalizeItemExplorerMetadataColumnId(column.id)))
-      .forEach((column) =>
-        columnsById.set(column.id, { ...columnsById.get(column.id), ...column, kind: 'text' }),
-      );
-    IMPORTED_PARAMETER_COLUMNS.forEach((column) => columnsById.set(column.id, column));
-    return Array.from(columnsById.values());
+    return this.table.getAvailableMetadataColumns(sourceColumns);
   }
 
   getMetadataColumnDisplayValue(
     item: ReadonlyExplorerItem,
     column: DeepReadonly<MetadataColumn>,
   ): string {
-    if (column.kind === 'booklet') {
-      return (item.bookletOccurrences || []).map((occurrence) => occurrence.booklet).join(' | ');
-    }
-    if (column.kind === 'position') {
-      return (item.bookletOccurrences || [])
-        .map((occurrence) => (occurrence.position === null ? '' : String(occurrence.position)))
-        .join(' | ');
-    }
-    const value = this.getMetadataColumnRawValue(item, column);
-    return value === undefined || value === null ? '' : String(value);
-  }
-
-  private getMetadataColumnRawValue(
-    item: ReadonlyExplorerItem,
-    column: MetadataColumn,
-  ): string | number | undefined {
-    switch (column.id) {
-      case 'bista':
-        return item.bista;
-      case 'infit':
-        return item.infit;
-      case 'discrimination':
-        return item.discrimination;
-      case 'solutionRate':
-        return item.solutionRate;
-      case 'textComplexity':
-        return item.textComplexity;
-      case 'competenceLevel':
-        return item.competenceLevel;
-      case 'itemTimeSeconds':
-        return item.itemTimeSeconds;
-      case 'stimulusTimeSeconds':
-        return item.stimulusTimeSeconds;
-      case 'booklet':
-        return item.bookletOccurrences?.[0]?.booklet;
-      case 'bookletPosition': {
-        const positions = (item.bookletOccurrences || []).flatMap((occurrence) =>
-          occurrence.position === null ? [] : [occurrence.position],
-        );
-        return positions.length ? Math.min(...positions) : undefined;
-      }
-      default:
-        return item.metadata[column.id];
-    }
+    return this.table.getMetadataColumnDisplayValue(item, column);
   }
 
   private syncItemCollectionSession() {
-    const nextIdentity = this.enableItemCollections
-      ? this.pendingPersonalSessionStorage.resolveIdentityFromToken(this.authService.getToken())
-      : null;
-    if (nextIdentity === this.collectionSessionIdentity) {
-      if (nextIdentity && this.collectionLoadState === 'idle') {
-        this.loadItemCollections();
-      } else if (
-        !nextIdentity &&
-        this.enableItemCollections &&
-        this.collectionLoadState === 'idle'
-      ) {
-        this.collectionLoadState = 'error';
-        this.collectionError = 'Für persönliche Auswahllisten ist eine Anmeldung erforderlich.';
-      }
-      return;
-    }
-
-    this.collectionSessionVersion += 1;
-    this.collectionSessionIdentity = nextIdentity;
-    this.itemCollections = [];
-    this.activeCollectionId = null;
-    this.collectionViewMode = 'all';
-    this.collectionBusy = false;
-    this.collectionError = '';
-    this.sharedCollectionsTruncated = false;
-    this.collectionLoadState = 'idle';
-    this.showCollectionDialog = false;
-    this.applyFilter(false);
-    if (nextIdentity) {
-      this.loadItemCollections();
-    } else if (this.enableItemCollections) {
-      this.collectionLoadState = 'error';
-      this.collectionError = 'Für persönliche Auswahllisten ist eine Anmeldung erforderlich.';
-    }
-  }
-
-  private getItemCollectionSession(): { identity: string | null; version: number } {
-    return {
-      identity: this.collectionSessionIdentity,
-      version: this.collectionSessionVersion,
-    };
-  }
-
-  private isCurrentItemCollectionSession(session: {
-    identity: string | null;
-    version: number;
-  }): boolean {
-    return (
-      session.identity !== null &&
-      session.identity === this.collectionSessionIdentity &&
-      session.version === this.collectionSessionVersion
-    );
+    this.configureCollections();
+    return this.collections.syncItemCollectionSession();
   }
 
   loadItemCollections(preserveError = false) {
-    if (!this.enableItemCollections) return;
-    const session = this.getItemCollectionSession();
-    if (!session.identity) {
-      this.collectionLoadState = 'error';
-      this.collectionError = 'Für persönliche Auswahllisten ist eine Anmeldung erforderlich.';
-      return;
-    }
-    this.collectionLoadState = 'loading';
-    if (!preserveError) this.collectionError = '';
-    this.api
-      .getItemCollections(this.acpId, this.getPerspectiveForViewerRequests())
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (payload) => {
-          if (!this.isCurrentItemCollectionSession(session)) return;
-          this.applyItemCollectionsPayload(payload);
-          this.collectionLoadState = 'loaded';
-          if (!this.itemListLoading && !this.itemListError) {
-            this.recalculateCollectionSummaries();
-          }
-        },
-        error: (error) => {
-          if (!this.isCurrentItemCollectionSession(session)) return;
-          this.collectionLoadState = 'error';
-          this.collectionError =
-            error?.status === 401
-              ? 'Für persönliche Auswahllisten ist eine Anmeldung erforderlich.'
-              : 'Auswahllisten konnten nicht geladen werden.';
-        },
-      });
+    this.configureCollections();
+    return this.collections.loadItemCollections(preserveError);
   }
 
   async createCollection(requestedName?: string): Promise<ItemCollection | null> {
-    if (this.collectionBusy) return null;
-    const session = this.getItemCollectionSession();
-    if (!session.identity) {
-      this.collectionError = 'Für persönliche Auswahllisten ist eine Anmeldung erforderlich.';
-      return null;
-    }
-    this.collectionBusy = true;
-    this.collectionError = '';
-    const name =
-      requestedName?.trim() ||
-      (this.itemCollections.filter((collection) => collection.ownedByCurrentUser).length === 0
-        ? 'Meine Auswahlliste'
-        : `Auswahlliste ${
-            this.itemCollections.filter((collection) => collection.ownedByCurrentUser).length + 1
-          }`);
-    try {
-      const payload = await firstValueFrom(
-        this.api.createItemCollection(this.acpId, name, this.getPerspectiveForViewerRequests()),
-      );
-      if (!this.isCurrentItemCollectionSession(session)) return null;
-      this.applyItemCollectionsPayload(payload);
-      return this.activeItemCollection;
-    } catch {
-      if (!this.isCurrentItemCollectionSession(session)) return null;
-      this.collectionError = 'Die Auswahlliste konnte nicht erstellt werden.';
-      return null;
-    } finally {
-      if (this.isCurrentItemCollectionSession(session)) this.collectionBusy = false;
-    }
+    this.configureCollections();
+    return this.collections.createCollection(requestedName);
   }
 
   async activateCollection(collectionId: string | null) {
-    if (this.collectionBusy) return;
-    const session = this.getItemCollectionSession();
-    if (!session.identity) return;
-    this.collectionBusy = true;
-    this.collectionError = '';
-    try {
-      const payload = await firstValueFrom(
-        this.api.activateItemCollection(
-          this.acpId,
-          collectionId || null,
-          this.getPerspectiveForViewerRequests(),
-          this.collectionViewMode,
-        ),
-      );
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.applyItemCollectionsPayload(payload);
-    } catch {
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.collectionError = 'Die aktive Auswahlliste konnte nicht gespeichert werden.';
-    } finally {
-      if (this.isCurrentItemCollectionSession(session)) this.collectionBusy = false;
-    }
+    this.configureCollections();
+    return this.collections.activateCollection(collectionId);
   }
 
   isItemInActiveCollection(item: ReadonlyExplorerItem): boolean {
-    return this.getActiveCollectionRowKeySet().has(item.rowKey);
+    this.configureCollections();
+    return this.collections.isItemInActiveCollection(item);
   }
 
   async toggleItemInActiveCollection(item: ReadonlyExplorerItem) {
-    let collection = this.activeItemCollection;
-    if (!collection) collection = await this.createCollection();
-    if (!collection) return;
-    if (collection.ownedByCurrentUser === false) {
-      this.collectionError = 'Freigegebene Auswahllisten anderer Personen sind schreibgeschützt.';
-      return;
-    }
-    const mutation = this.getActiveCollectionRowKeySet().has(item.rowKey)
-      ? { removeRowKeys: [item.rowKey] }
-      : { addRowKeys: [item.rowKey] };
-    await this.persistActiveCollectionRowsMutation(mutation);
+    this.configureCollections();
+    return this.collections.toggleItemInActiveCollection(item);
   }
 
   async removeRowFromActiveCollection(rowKey: string): Promise<boolean> {
-    return this.removeRowsFromActiveCollection([rowKey]);
+    this.configureCollections();
+    return this.collections.removeRowFromActiveCollection(rowKey);
   }
 
   async removeRowsFromActiveCollection(rowKeys: string[]): Promise<boolean> {
-    if (!rowKeys.length) return true;
-    return this.persistActiveCollectionRowsMutation({ removeRowKeys: rowKeys });
+    this.configureCollections();
+    return this.collections.removeRowsFromActiveCollection(rowKeys);
   }
 
   async clearActiveCollection(): Promise<boolean> {
-    if (!this.activeItemCollection?.rowKeys.length) return true;
-    return this.persistActiveCollectionRowsMutation({ clear: true });
+    this.configureCollections();
+    return this.collections.clearActiveCollection();
   }
 
   async renameActiveCollection(requestedName: string) {
-    const collection = this.activeItemCollection;
-    if (!collection || collection.ownedByCurrentUser === false || this.collectionBusy) return;
-    const name = requestedName.trim();
-    if (!name || name === collection.name) return;
-    await this.persistActiveCollectionUpdate({ name });
+    this.configureCollections();
+    return this.collections.renameActiveCollection(requestedName);
   }
 
   async deleteActiveCollection() {
-    const collection = this.activeItemCollection;
-    if (!collection || collection.ownedByCurrentUser === false || this.collectionBusy) return;
-    if (!window.confirm(`Auswahlliste „${collection.name}“ löschen?`)) return;
-    const session = this.getItemCollectionSession();
-    if (!session.identity) return;
-    this.collectionBusy = true;
-    this.collectionError = '';
-    try {
-      const payload = await firstValueFrom(
-        this.api.deleteItemCollection(
-          this.acpId,
-          collection.id,
-          this.getPerspectiveForViewerRequests(),
-        ),
-      );
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.applyItemCollectionsPayload(payload);
-      this.showCollectionDialog = false;
-    } catch {
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.collectionError = 'Die Auswahlliste konnte nicht gelöscht werden.';
-    } finally {
-      if (this.isCurrentItemCollectionSession(session)) this.collectionBusy = false;
-    }
+    this.configureCollections();
+    return this.collections.deleteActiveCollection();
   }
 
   async exportActiveCollection() {
-    const collection = this.activeItemCollection;
-    if (!collection || this.collectionBusy) return;
-    const session = this.getItemCollectionSession();
-    if (!session.identity) return;
-    this.collectionBusy = true;
-    this.collectionError = '';
-    try {
-      const blob = await firstValueFrom(
-        this.api.exportItemCollectionCsv(
-          this.acpId,
-          collection.id,
-          this.getPerspectiveForViewerRequests(),
-        ),
-      );
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `item-collection-${collection.id}.csv`;
-      anchor.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.collectionError = 'Die Auswahlliste konnte nicht exportiert werden.';
-    } finally {
-      if (this.isCurrentItemCollectionSession(session)) this.collectionBusy = false;
-    }
+    this.configureCollections();
+    return this.collections.exportActiveCollection();
   }
 
   async setActiveCollectionShared(shared: boolean) {
-    const collection = this.activeItemCollection;
-    if (
-      !collection ||
-      collection.ownedByCurrentUser === false ||
-      this.collectionBusy ||
-      collection.shared === shared
-    ) {
-      return;
-    }
-    await this.persistActiveCollectionUpdate({ shared });
+    this.configureCollections();
+    return this.collections.setActiveCollectionShared(shared);
   }
 
   async copyActiveCollection() {
-    const collection = this.activeItemCollection;
-    if (!collection || collection.ownedByCurrentUser !== false || this.collectionBusy) return;
-    const session = this.getItemCollectionSession();
-    if (!session.identity) return;
-    this.collectionBusy = true;
-    this.collectionError = '';
-    try {
-      const payload = await firstValueFrom(
-        this.api.copyItemCollection(
-          this.acpId,
-          collection.id,
-          this.getPerspectiveForViewerRequests(),
-        ),
-      );
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.applyItemCollectionsPayload(payload);
-    } catch {
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.collectionError = 'Die freigegebene Auswahlliste konnte nicht kopiert werden.';
-    } finally {
-      if (this.isCurrentItemCollectionSession(session)) this.collectionBusy = false;
-    }
+    this.configureCollections();
+    return this.collections.copyActiveCollection();
   }
 
   formatDuration(rawSeconds: number): string {
-    const seconds = Math.max(0, Math.round(Number(rawSeconds) || 0));
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return hours > 0
-      ? `${hours}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
-      : `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
-  }
-
-  private async persistActiveCollectionRowsMutation(
-    mutation: { addRowKeys: string[] } | { removeRowKeys: string[] } | { clear: true },
-  ): Promise<boolean> {
-    const collection = this.activeItemCollection;
-    if (!collection || collection.ownedByCurrentUser === false || this.collectionBusy) return false;
-    const session = this.getItemCollectionSession();
-    if (!session.identity) return false;
-    const previous = structuredClone(collection);
-    if ('addRowKeys' in mutation) {
-      const existing = new Set(collection.rowKeys);
-      collection.rowKeys = [
-        ...collection.rowKeys,
-        ...mutation.addRowKeys.filter((rowKey) => !existing.has(rowKey)),
-      ];
-    } else if ('removeRowKeys' in mutation) {
-      const removals = new Set(mutation.removeRowKeys);
-      collection.rowKeys = collection.rowKeys.filter((rowKey) => !removals.has(rowKey));
-      collection.unavailableRowKeys = collection.unavailableRowKeys.filter(
-        (rowKey) => !removals.has(rowKey),
-      );
-    } else {
-      collection.rowKeys = [];
-      collection.unavailableRowKeys = [];
-    }
-    this.recalculateCollectionSummaries();
-    this.applyFilter(false);
-    this.collectionBusy = true;
-    this.collectionError = '';
-    try {
-      const result = await firstValueFrom(
-        this.api.mutateItemCollectionRows(this.acpId, collection.id, {
-          baseVersion: previous.version,
-          perspective: this.getPerspectiveForViewerRequests(),
-          ...mutation,
-        }),
-      );
-      if (!this.isCurrentItemCollectionSession(session)) return false;
-      const updated = this.itemCollections.find((candidate) => candidate.id === collection.id);
-      if (!updated) return false;
-      updated.version = result.version;
-      updated.updatedAt = result.updatedAt;
-      updated.summary = result.summary;
-      return true;
-    } catch (error: any) {
-      if (!this.isCurrentItemCollectionSession(session)) return false;
-      const index = this.itemCollections.findIndex((candidate) => candidate.id === previous.id);
-      if (index >= 0) this.itemCollections[index] = previous;
-      this.applyFilter(false);
-      this.collectionError =
-        error?.status === 409
-          ? 'Die Auswahlliste wurde parallel geändert und wird neu geladen.'
-          : 'Die Auswahlliste konnte nicht gespeichert werden.';
-      if (error?.status === 409) this.loadItemCollections(true);
-      return false;
-    } finally {
-      if (this.isCurrentItemCollectionSession(session)) this.collectionBusy = false;
-    }
-  }
-
-  private async persistActiveCollectionUpdate(update: {
-    name?: string;
-    rowKeys?: string[];
-    shared?: boolean;
-  }) {
-    const collection = this.activeItemCollection;
-    if (!collection || collection.ownedByCurrentUser === false || this.collectionBusy) return;
-    const session = this.getItemCollectionSession();
-    if (!session.identity) return;
-    const previous = structuredClone(collection);
-    if (update.name !== undefined) collection.name = update.name;
-    if (update.rowKeys !== undefined) collection.rowKeys = [...update.rowKeys];
-    if (update.shared !== undefined) collection.shared = update.shared;
-    this.recalculateCollectionSummaries();
-    this.applyFilter(false);
-    this.collectionBusy = true;
-    this.collectionError = '';
-    try {
-      const payload = await firstValueFrom(
-        this.api.updateItemCollection(
-          this.acpId,
-          collection.id,
-          { baseVersion: previous.version, ...update },
-          this.getPerspectiveForViewerRequests(),
-        ),
-      );
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.applyItemCollectionsPayload(payload);
-    } catch (error: any) {
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      const index = this.itemCollections.findIndex((candidate) => candidate.id === previous.id);
-      if (index >= 0) this.itemCollections[index] = previous;
-      this.applyFilter(false);
-      this.collectionError =
-        error?.status === 409
-          ? 'Die Auswahlliste wurde parallel geändert und wird neu geladen.'
-          : 'Die Auswahlliste konnte nicht gespeichert werden.';
-      if (error?.status === 409) this.loadItemCollections(true);
-    } finally {
-      if (this.isCurrentItemCollectionSession(session)) this.collectionBusy = false;
-    }
-  }
-
-  private applyItemCollectionsPayload(payload: {
-    activeCollectionId: string | null;
-    collectionViewMode?: 'all' | 'active';
-    collections: ItemCollection[];
-    sharedCollectionsTruncated?: boolean;
-  }) {
-    this.itemCollections = (payload.collections || []).map((collection) => ({
-      ...collection,
-      shared: collection.shared === true,
-      ownedByCurrentUser: collection.ownedByCurrentUser !== false,
-      ownerLabel: collection.ownerLabel || 'Ich',
-    }));
-    this.activeCollectionId = payload.activeCollectionId || null;
-    this.sharedCollectionsTruncated = payload.sharedCollectionsTruncated === true;
-    this.collectionViewMode =
-      payload.collectionViewMode === 'active' && this.activeCollectionId ? 'active' : 'all';
-    this.collectionLoadState = 'loaded';
-    if (!this.itemListLoading && !this.itemListError) {
-      this.recalculateCollectionSummaries();
-    }
-    this.applyFilter(false);
+    this.configureCollections();
+    return this.collections.formatDuration(rawSeconds);
   }
 
   async setCollectionViewMode(mode: 'all' | 'active') {
-    const nextMode = mode === 'active' && this.activeItemCollection ? 'active' : 'all';
-    if (nextMode === this.collectionViewMode || this.collectionBusy) return;
-    const session = this.getItemCollectionSession();
-    if (!session.identity) return;
-    const previousMode = this.collectionViewMode;
-    this.collectionViewMode = nextMode;
-    this.collectionBusy = true;
-    this.collectionError = '';
-    this.applyFilter(false);
-    try {
-      const payload = await firstValueFrom(
-        this.api.activateItemCollection(
-          this.acpId,
-          this.activeCollectionId,
-          this.getPerspectiveForViewerRequests(),
-          nextMode,
-        ),
-      );
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.applyItemCollectionsPayload(payload);
-    } catch {
-      if (!this.isCurrentItemCollectionSession(session)) return;
-      this.collectionViewMode = previousMode;
-      this.applyFilter(false);
-      this.collectionError = 'Die Ansicht der Auswahlliste konnte nicht gespeichert werden.';
-    } finally {
-      if (this.isCurrentItemCollectionSession(session)) this.collectionBusy = false;
-    }
+    this.configureCollections();
+    return this.collections.setCollectionViewMode(mode);
   }
 
   private recalculateCollectionSummaries() {
-    const itemMap = this.getCollectionItemMap();
-    this.itemCollections = this.itemCollections.map((collection) => {
-      const items = collection.rowKeys
-        .map((rowKey) => itemMap.get(rowKey))
-        .filter((item): item is ExplorerItem => Boolean(item));
-      return {
-        ...collection,
-        unavailableRowKeys: collection.rowKeys.filter((rowKey) => !itemMap.has(rowKey)),
-        summary: this.calculateCollectionSummary(items, collection.rowKeys.length),
-      };
-    });
-  }
-
-  private getCollectionItemMap(): Map<string, ExplorerItem> {
-    if (this.collectionItemMapSource !== this.items) {
-      this.collectionItemMapSource = this.items;
-      this.collectionItemMap = new Map(this.items.map((item) => [item.rowKey, item] as const));
-    }
-    return this.collectionItemMap;
-  }
-
-  private getActiveCollectionRowKeySet(): Set<string> {
-    const rowKeys = this.activeItemCollection?.rowKeys || null;
-    if (this.activeCollectionSetSource !== rowKeys) {
-      this.activeCollectionSetSource = rowKeys;
-      this.activeCollectionRowKeySet = new Set(rowKeys || []);
-    }
-    return this.activeCollectionRowKeySet;
-  }
-
-  private calculateCollectionSummary(
-    items: ExplorerItem[],
-    selectedRowCount = items.length,
-  ): ItemCollectionSummary {
-    const itemsByUuid = new Map<string, ExplorerItem[]>();
-    const itemsByUnit = new Map<string, ExplorerItem[]>();
-    items.forEach((item) => {
-      itemsByUuid.set(item.uuid, [...(itemsByUuid.get(item.uuid) || []), item]);
-      itemsByUnit.set(item.unitId, [...(itemsByUnit.get(item.unitId) || []), item]);
-    });
-    let itemTimeSeconds = 0;
-    let stimulusTimeSeconds = 0;
-    let missingItemTimeCount = 0;
-    let missingStimulusTimeUnitCount = 0;
-    itemsByUuid.forEach((rows) => {
-      const value = rows.map((row) => row.itemTimeSeconds).find((time) => Number.isFinite(time));
-      if (value === undefined) missingItemTimeCount += 1;
-      else itemTimeSeconds += value;
-    });
-    itemsByUnit.forEach((rows) => {
-      const value = rows
-        .map((row) => row.stimulusTimeSeconds)
-        .find((time) => Number.isFinite(time));
-      if (value === undefined) missingStimulusTimeUnitCount += 1;
-      else stimulusTimeSeconds += value;
-    });
-    return {
-      rowCount: selectedRowCount,
-      itemCount: itemsByUuid.size,
-      unitCount: itemsByUnit.size,
-      itemTimeSeconds,
-      stimulusTimeSeconds,
-      testTimeSeconds: itemTimeSeconds + stimulusTimeSeconds,
-      missingItemTimeCount,
-      missingStimulusTimeUnitCount,
-      complete: missingItemTimeCount === 0 && missingStimulusTimeUnitCount === 0,
-    };
+    this.configureCollections();
+    return this.collections.recalculateCollectionSummaries();
   }
 
   // --- Filtering ---
   applyFilter(shouldPersist = true) {
-    const term = this.filterText.toLowerCase();
-    const activeCollectionRowKeys =
-      this.collectionViewMode === 'active' && this.activeItemCollection
-        ? new Set(this.activeItemCollection.rowKeys)
-        : null;
-
-    this.filteredItems = this.items.filter((item) => {
-      if (!this.isItemVisibleByBaseRules(item)) {
-        return false;
-      }
-
-      if (activeCollectionRowKeys && !activeCollectionRowKeys.has(item.rowKey)) {
-        return false;
-      }
-
-      return this.matchesActiveItemFilters(item, term);
-    });
-
-    this.applySort(false);
-    if (shouldPersist) {
-      this.saveUiPreferences();
-    }
+    this.table.applyFilter(this.tableFilterContext(), this.items);
+    this.syncSelectionAfterListMutation();
+    if (shouldPersist) this.saveUiPreferences();
   }
 
   isItemExcluded(item?: ReadonlyExplorerItem | null): boolean {
-    return item?.excluded === true;
-  }
-
-  private isItemVisibleByBaseRules(item: ExplorerItem): boolean {
-    if (!this.showExcludedItems && this.isItemExcluded(item)) {
-      return false;
-    }
-
-    if (
-      this.showOnlyItemsWithEmpiricalDifficulty &&
-      this.hasEmpiricalDifficulty &&
-      (item.empiricalDifficulty === undefined || item.empiricalDifficulty === null)
-    ) {
-      return false;
-    }
-
-    return true;
-  }
-
-  private matchesActiveItemFilters(item: ExplorerItem, term: string): boolean {
-    // 1. Global Filter
-    if (term) {
-      const matchesGlobal =
-        (item.unitId + item.itemId).toLowerCase().includes(term) ||
-        String(item.subId || '')
-          .toLowerCase()
-          .includes(term) ||
-        String(item.subIdDisplay || '')
-          .toLowerCase()
-          .includes(term) ||
-        item.unitLabel.toLowerCase().includes(term) ||
-        item.description.toLowerCase().includes(term) ||
-        Object.values(item.metadata).some((val) => val && val.toLowerCase().includes(term)) ||
-        IMPORTED_PARAMETER_COLUMNS.some((column) =>
-          this.getMetadataColumnDisplayValue(item, column).toLowerCase().includes(term),
-        );
-      if (!matchesGlobal) return false;
-    }
-
-    const bookletFilter = (this.columnFilters['booklet'] || '').trim().toLowerCase();
-    const positionFilter = (this.columnFilters['bookletPosition'] || '').trim();
-    if (bookletFilter || positionFilter) {
-      const matchesOccurrence = (item.bookletOccurrences || []).some((occurrence) => {
-        const matchesBooklet =
-          !bookletFilter || occurrence.booklet.toLowerCase().includes(bookletFilter);
-        const matchesPosition =
-          !positionFilter ||
-          (occurrence.position !== null &&
-            matchesNumericFilter(occurrence.position, positionFilter));
-        return matchesBooklet && matchesPosition;
-      });
-      if (!matchesOccurrence) return false;
-    }
-
-    // 2. Column Filters
-    for (const [colId, filterValue] of Object.entries(this.columnFilters)) {
-      if (!filterValue) continue;
-      const subTerm = filterValue.toLowerCase();
-
-      if (colId === 'itemId') {
-        const combined = (item.unitId + item.itemId).toLowerCase();
-        if (!combined.includes(subTerm)) return false;
-      } else if (colId === 'unitLabel') {
-        if (!item.unitLabel.toLowerCase().includes(subTerm)) return false;
-      } else if (colId === 'subId') {
-        const subIdValue = `${item.subId || ''} ${item.subIdDisplay || ''}`.toLowerCase();
-        if (!subIdValue.includes(subTerm)) return false;
-      } else if (colId === 'tags') {
-        const tags = this.itemTags[item.rowKey] || [];
-        if (!tags.some((t) => t.toLowerCase().includes(subTerm))) return false;
-      } else if (colId === 'empiricalDifficulty') {
-        if (item.empiricalDifficulty === undefined || item.empiricalDifficulty === null)
-          return false;
-        if (!matchesNumericFilter(item.empiricalDifficulty, filterValue)) return false;
-      } else if (colId === 'meanTaskDifficulty') {
-        if (item.meanTaskDifficulty === undefined || item.meanTaskDifficulty === null) return false;
-        if (!matchesNumericFilter(item.meanTaskDifficulty, filterValue)) return false;
-      } else if (colId === 'comments') {
-        if (!this.itemCommentsEnabled || !this.itemCommentCountsAvailable) continue;
-        const count = this.getItemCommentCount(item);
-        if (filterValue === 'with' && count === 0) return false;
-        if (filterValue === 'without' && count > 0) return false;
-      } else if (colId === 'booklet' || colId === 'bookletPosition') {
-        continue;
-      } else {
-        const column = this.allColumns.find((candidate) => candidate.id === colId);
-        if (column?.kind === 'number') {
-          const value = this.getMetadataColumnRawValue(item, column);
-          if (typeof value !== 'number' || !matchesNumericFilter(value, filterValue)) {
-            return false;
-          }
-        } else {
-          const val = column
-            ? this.getMetadataColumnDisplayValue(item, column)
-            : item.metadata[colId] || '';
-          if (!val.toLowerCase().includes(subTerm)) return false;
-        }
-      }
-    }
-
-    if (this.showPersonalItemData) {
-      const categoryFilter = (this.personalColumnFilters['personalCategory'] || '').toLowerCase();
-      const tagFilter = (this.personalColumnFilters['personalTags'] || '').toLowerCase();
-      const noteFilter = (this.personalColumnFilters['personalNote'] || '').toLowerCase();
-      const row = this.personalItemData[item.rowKey];
-      if (categoryFilter && !(row?.category || '').toLowerCase().includes(categoryFilter)) {
-        return false;
-      }
-      if (tagFilter && !(row?.tags || []).some((tag) => tag.toLowerCase().includes(tagFilter))) {
-        return false;
-      }
-      if (noteFilter && !(row?.note || '').toLowerCase().includes(noteFilter)) {
-        return false;
-      }
-    }
-
-    return true;
+    return this.table.isItemExcluded(item);
   }
 
   toggleShowExcludedItems() {
-    this.showExcludedItems = !this.showExcludedItems;
+    this.table.showExcludedItems = !this.showExcludedItems;
     this.applyFilter(false);
   }
 
@@ -2551,326 +1588,72 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   sortBy(field: string) {
-    if (this.sortField === field && !this.sortIsMeta) {
-      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortField = field;
-      this.sortIsMeta = false;
-      this.sortDir = 'asc';
-    }
-    this.applySort();
+    this.table.sortBy(this.tableFilterContext(), field);
+    this.syncSelectionAfterListMutation();
+    this.saveUiPreferences();
   }
 
   sortByMeta(colId: string) {
-    if (this.sortField === colId && this.sortIsMeta) {
-      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortField = colId;
-      this.sortIsMeta = true;
-      this.sortDir = 'asc';
-    }
-    this.applySort();
+    this.table.sortByMeta(this.tableFilterContext(), colId);
+    this.syncSelectionAfterListMutation();
+    this.saveUiPreferences();
   }
 
   private applySort(shouldPersist = true) {
-    this.ensureVisibleSortField();
-    if (this.sortField === '__manual__') {
-      const rank = new Map<string, number>();
-      this.itemOrder.forEach((entry, idx) => rank.set(entry, idx));
-      this.filteredItems.sort((a, b) => {
-        const posA = rank.get(this.getStableRowKey(a)) ?? Number.MAX_SAFE_INTEGER;
-        const posB = rank.get(this.getStableRowKey(b)) ?? Number.MAX_SAFE_INTEGER;
-        return posA - posB;
-      });
-      this.syncSelectionAfterListMutation();
-      if (shouldPersist) {
-        this.saveUiPreferences();
-      }
-      return;
-    }
-
-    this.filteredItems.sort((a, b) => {
-      if (!this.sortIsMeta && this.sortField === 'itemId') {
-        return this.compareVisibleItemIds(a, b, this.sortDir);
-      }
-
-      let aVal: any = '';
-      let bVal: any = '';
-
-      if (this.sortIsMeta) {
-        const column = this.allColumns.find((candidate) => candidate.id === this.sortField);
-        aVal = column ? this.getMetadataColumnRawValue(a, column) : a.metadata[this.sortField];
-        bVal = column ? this.getMetadataColumnRawValue(b, column) : b.metadata[this.sortField];
-      } else if (
-        this.sortField === 'empiricalDifficulty' ||
-        this.sortField === 'meanTaskDifficulty' ||
-        this.sortField === 'commentCount'
-      ) {
-        if (this.sortField === 'commentCount') {
-          aVal = this.getItemCommentCount(a);
-          bVal = this.getItemCommentCount(b);
-        } else {
-          aVal =
-            this.sortField === 'empiricalDifficulty' ? a.empiricalDifficulty : a.meanTaskDifficulty;
-          bVal =
-            this.sortField === 'empiricalDifficulty' ? b.empiricalDifficulty : b.meanTaskDifficulty;
-        }
-      } else {
-        aVal = (a as any)[this.sortField] || '';
-        bVal = (b as any)[this.sortField] || '';
-      }
-
-      const aMissing = aVal === undefined || aVal === null || aVal === '';
-      const bMissing = bVal === undefined || bVal === null || bVal === '';
-      if (aMissing !== bMissing) return aMissing ? 1 : -1;
-      const primaryCmp = this.compareSortValues(aVal, bVal, this.sortDir);
-      if (primaryCmp !== 0) {
-        return primaryCmp;
-      }
-
-      if (!this.sortIsMeta && this.sortField === 'unitLabel') {
-        const unitCmp = this.compareSortText(a.unitId, b.unitId);
-        if (unitCmp !== 0) {
-          return unitCmp;
-        }
-        const itemCmp = this.compareSortText(a.itemId, b.itemId);
-        if (itemCmp !== 0) {
-          return itemCmp;
-        }
-        return this.compareSortText(a.subIdDisplay, b.subIdDisplay);
-      }
-
-      return 0;
-    });
-
+    this.table.applySort(this.tableFilterContext());
     this.syncSelectionAfterListMutation();
-
-    if (shouldPersist) {
-      this.saveUiPreferences();
-    }
+    if (shouldPersist) this.saveUiPreferences();
   }
 
   private ensureVisibleSortField() {
-    if (this.sortField === '__manual__') return;
-    const visibleColumns = this.tableColumns;
-    const currentColumnKey = this.sortIsMeta
-      ? this.getMetadataTableColumnKey(this.sortField)
-      : Object.keys(TABLE_COLUMN_SORT_FIELDS).find(
-          (key) => TABLE_COLUMN_SORT_FIELDS[key] === this.sortField,
-        );
-    if (!currentColumnKey || visibleColumns.some((column) => column.key === currentColumnKey)) {
-      return;
-    }
-    const replacement =
-      visibleColumns.find((column) => column.key === TABLE_COLUMN_KEYS.unitLabel) ||
-      visibleColumns.find((column) => this.isTableColumnSortable(column));
-    if (!replacement) return;
-    if (replacement.source === 'metadata') {
-      this.sortField = replacement.id;
-      this.sortIsMeta = true;
-    } else {
-      this.sortField = TABLE_COLUMN_SORT_FIELDS[replacement.key];
-      this.sortIsMeta = false;
-    }
-    this.sortDir = DEFAULT_EXPLORER_SORT_DIR;
-  }
-
-  private compareSortValues(aVal: unknown, bVal: unknown, direction: 'asc' | 'desc'): number {
-    if (typeof aVal === 'number' && typeof bVal === 'number') {
-      return direction === 'asc' ? aVal - bVal : bVal - aVal;
-    }
-
-    const cmp = this.compareSortText(aVal, bVal);
-    return direction === 'asc' ? cmp : -cmp;
-  }
-
-  private compareSortText(aVal: unknown, bVal: unknown): number {
-    return String(aVal ?? '')
-      .toLowerCase()
-      .localeCompare(String(bVal ?? '').toLowerCase(), undefined, { numeric: true });
-  }
-
-  private compareVisibleItemIds(
-    a: ReadonlyExplorerItem,
-    b: ReadonlyExplorerItem,
-    direction: 'asc' | 'desc',
-  ): number {
-    const comparisons = [
-      this.compareDeterministicSortText(`${a.unitId}${a.itemId}`, `${b.unitId}${b.itemId}`),
-      this.compareDeterministicSortText(a.subId, b.subId),
-      this.compareDeterministicSortText(this.getStableRowKey(a), this.getStableRowKey(b)),
-    ];
-    const cmp = comparisons.find((comparison) => comparison !== 0) ?? 0;
-    return direction === 'asc' ? cmp : -cmp;
-  }
-
-  private compareDeterministicSortText(aVal: unknown, bVal: unknown): number {
-    const naturalCmp = this.compareSortText(aVal, bVal);
-    if (naturalCmp !== 0) {
-      return naturalCmp;
-    }
-
-    const aText = String(aVal ?? '');
-    const bText = String(bVal ?? '');
-    if (aText === bText) {
-      return 0;
-    }
-    return aText < bText ? -1 : 1;
+    return this.table.ensureVisibleSortField(this.tableColumnContext());
   }
 
   // --- CSV Upload Handling ---
   getUploadSuccessFieldSummary(success: ReadonlyItemParameterUploadSuccess): string {
-    const fields = Array.isArray(success.fields) ? success.fields : [];
-    const labels = fields.map((field) => UPLOAD_FIELD_LABELS[field] || field);
-    const difficultyIndex = fields.findIndex(
-      (field) => field === 'est' || field === 'empiricalDifficulty',
-    );
-
-    if (success.value !== undefined && success.value !== null) {
-      const valueLabel = `Empirische Itemschwierigkeit: ${success.value}`;
-      if (difficultyIndex >= 0) labels[difficultyIndex] = valueLabel;
-      else labels.unshift(valueLabel);
-    }
-
-    const hasBookletUpdate =
-      fields.includes('booklet') ||
-      fields.includes('position') ||
-      Array.isArray(success.bookletOccurrences);
-    if (hasBookletUpdate) {
-      const withoutSeparateBookletFields = labels.filter(
-        (label) => label !== 'Booklet' && label !== 'Position im Booklet',
-      );
-      withoutSeparateBookletFields.push(
-        success.bookletOccurrences?.length
-          ? success.bookletOccurrences.some((occurrence) => occurrence.position !== null)
-            ? 'Booklet / Position'
-            : 'Booklet'
-          : 'Booklet / Position gelöscht',
-      );
-      return [...new Set(withoutSeparateBookletFields)].join(', ') || '–';
-    }
-
-    return [...new Set(labels)].join(', ') || '–';
+    return this.imports.getUploadSuccessFieldSummary(success);
   }
 
   getUploadSuccessBookletSummary(success: ReadonlyItemParameterUploadSuccess): string {
-    if (!Array.isArray(success.bookletOccurrences)) {
-      return '–';
-    }
-    if (!success.bookletOccurrences.length) return 'Gelöscht';
-
-    return success.bookletOccurrences
-      .map((occurrence) =>
-        occurrence.position === null
-          ? occurrence.booklet
-          : `${occurrence.booklet} / ${occurrence.position}`,
-      )
-      .join(' | ');
+    return this.imports.getUploadSuccessBookletSummary(success);
   }
 
-  onCsvFileSelected(event: Event) {
+  async onCsvFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-    const file = input.files[0];
-
-    this.uploadItemParameterFile(file, false);
-    input.value = ''; // reset input
+    const file = input.files?.[0];
+    if (!file || this.destroyed) return;
+    input.value = '';
+    await this.applyImportResult(
+      await this.imports.upload(file, { acpId: this.acpId, baseVersion: this.explorerVersion }),
+    );
   }
 
-  private uploadItemParameterFile(file: File, confirmWarnings: boolean): void {
-    this.isUploading = true;
-    this.api
-      .uploadItemParameters(this.acpId, file, {
-        draft: true,
-        baseVersion: this.explorerVersion,
-        ...(confirmWarnings ? { confirmWarnings: true } : {}),
-      })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (result) => {
-          this.isUploading = false;
-          this.uploadWarningBusy = false;
-          if (result.requiresConfirmation) {
-            if (confirmWarnings) {
-              this.uploadWarningError =
-                'Die bestätigte Verarbeitung wurde vom Server nicht akzeptiert. Bitte versuche es erneut.';
-              return;
-            }
-            this.pendingItemParameterUploadFile = file;
-            this.uploadWarningMessages = (result.warnings || []).map((warning) => warning.message);
-            this.rememberFocusBeforeOverlay();
-            this.showUploadWarningDialog = true;
-            return;
-          }
-          this.resetItemParameterUploadWarning();
-          this.uploadResult = result;
-          this.showUploadReport = true;
-          if (typeof result.showOnlyItemsWithEmpiricalDifficulty === 'boolean') {
-            this.showOnlyItemsWithEmpiricalDifficulty = result.showOnlyItemsWithEmpiricalDifficulty;
-          }
-          if (result.explorerState) {
-            this.applySharedExplorerEnvelope(result.explorerState, true);
-          }
-          this.reloadItems();
-        },
-        error: (err) => {
-          console.error(err);
-          this.isUploading = false;
-          if (confirmWarnings && this.showUploadWarningDialog) {
-            if (err?.status === 409) {
-              this.uploadWarningBusy = true;
-              this.uploadWarningError =
-                'Der Explorer-Entwurf wurde zwischenzeitlich geändert und wird neu geladen.';
-              void this.finishItemParameterWarningConflictReload();
-            } else {
-              this.uploadWarningBusy = false;
-              this.uploadWarningError =
-                err.error?.message ||
-                'Fehler beim bestätigten Import. Es wurden keine Itemparameter geändert.';
-            }
-            return;
-          }
-          this.uploadWarningBusy = false;
-          if (err?.status === 409) {
-            this.errorMessage =
-              'Konflikt beim Speichern des Entwurfs. Der Explorer wurde neu geladen.';
-            void this.reloadSharedExplorerStateAndItems();
-          } else {
-            this.errorMessage =
-              err.error?.message ||
-              'Fehler beim Hochladen der CSV-Datei. Bitte prüfe die Spalte "item" und die unterstützten Itemparameter.';
-          }
-          this.showErrorDialog = true;
-        },
-      });
-  }
-
-  private resetItemParameterUploadWarning(): void {
-    this.showUploadWarningDialog = false;
-    this.uploadWarningMessages = [];
-    this.uploadWarningBusy = false;
-    this.uploadWarningError = '';
-    this.pendingItemParameterUploadFile = null;
-  }
-
-  private async finishItemParameterWarningConflictReload(): Promise<void> {
-    let reloaded = false;
+  private async applyImportResult(outcome: ItemExplorerImportResult): Promise<void> {
+    if (this.destroyed || !this.imports.isCurrent(outcome)) return;
     try {
-      reloaded = await this.reloadSharedExplorerStateAndItems();
-    } catch (error) {
-      console.error('Failed to reload after item parameter upload conflict', error);
+      if (outcome.kind === 'warning') {
+        this.rememberFocusBeforeOverlay();
+        this.imports.openWarnings();
+      } else if (outcome.kind === 'imported') {
+        if (typeof outcome.result.showOnlyItemsWithEmpiricalDifficulty === 'boolean') {
+          this.table.showOnlyItemsWithEmpiricalDifficulty =
+            outcome.result.showOnlyItemsWithEmpiricalDifficulty;
+        }
+        if (outcome.result.explorerState)
+          this.applySharedExplorerEnvelope(outcome.result.explorerState, true);
+        this.reloadItems();
+      } else if (outcome.kind === 'conflict') {
+        let reloaded = false;
+        try {
+          reloaded = await this.reloadSharedExplorerStateAndItems();
+        } catch (error) {
+          console.error('Failed to reload after item parameter upload conflict', error);
+        }
+        if (!this.destroyed) this.imports.finishConflict(outcome, reloaded);
+      }
+    } finally {
+      this.imports.finishOperation(outcome);
     }
-    if (this.destroyed || !this.showUploadWarningDialog) return;
-    if (!reloaded) {
-      this.resetItemParameterUploadWarning();
-      this.errorMessage =
-        'Der Explorer konnte nach dem Versionskonflikt nicht neu geladen werden. Bitte lade die Seite neu und starte den Import erneut.';
-      this.showErrorDialog = true;
-      return;
-    }
-    this.uploadWarningBusy = false;
-    this.uploadWarningError =
-      'Der Explorer-Entwurf wurde neu geladen. Bitte bestätige den Import erneut.';
   }
 
   openClearEmpiricalDifficultiesDialog() {
@@ -2891,7 +1674,7 @@ export class ItemExplorerFacade implements OnDestroy {
     if (this.clearEmpiricalDifficultiesBusy) return;
     this.clearEmpiricalDifficultiesBusy = true;
     this.clearEmpiricalDifficultiesError = '';
-    this.lastDraftOperationError = '';
+    this.draft.lastDraftOperationError = '';
 
     this.api
       .clearEmpiricalDifficulties(this.acpId, {
@@ -2914,13 +1697,13 @@ export class ItemExplorerFacade implements OnDestroy {
           if (err?.status === 409) {
             this.clearEmpiricalDifficultiesError =
               'Konflikt beim Speichern des Entwurfs. Der Explorer wurde neu geladen.';
-            this.lastDraftOperationError = this.clearEmpiricalDifficultiesError;
+            this.draft.lastDraftOperationError = this.clearEmpiricalDifficultiesError;
             void this.reloadSharedExplorerStateAndItems();
             return;
           }
           this.clearEmpiricalDifficultiesError =
             err?.error?.message || 'Fehler beim Löschen der Itemschwierigkeiten.';
-          this.lastDraftOperationError = this.clearEmpiricalDifficultiesError;
+          this.draft.lastDraftOperationError = this.clearEmpiricalDifficultiesError;
         },
       });
   }
@@ -3009,32 +1792,23 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   getSortIndicator(field: string): string {
-    if (this.sortField !== field || this.sortIsMeta) return '';
-    return this.sortDir === 'asc' ? '↑' : '↓';
+    return this.table.getSortIndicator(field);
   }
 
   getMetaSortIndicator(colId: string): string {
-    if (this.sortField !== colId || !this.sortIsMeta) return '';
-    return this.sortDir === 'asc' ? '↑' : '↓';
+    return this.table.getMetaSortIndicator(colId);
   }
 
   resetPlayer() {
     this.previewCoordinator.cancel();
-    this.clearFocusRetryTimer();
-    this.clearLegacyPageNavigationTimers();
-    this.playerSrcDoc = null;
-    this.unit = null;
-    this.definitionContent = null;
-    this.playerFrameReady = false;
-    this.activePlayerSessionId = null;
-    this.playerFrameRefreshPending = false;
+    this.player.reset();
     this.previewUserFacingMessage = '';
-    this.correctSolutionPrefill = {
+    this.coding.correctSolutionPrefill = {
       status: 'unavailable',
       responses: [],
       message: 'Die Player-Daten für die Musterlösung werden geladen.',
     };
-    this.restoreResponseDataAfterSolution = false;
+    this.player.restoreResponseDataAfterSolution = false;
   }
 
   private startItemListSlowTimer(): void {
@@ -3099,20 +1873,13 @@ export class ItemExplorerFacade implements OnDestroy {
     if (!reuseLoadedUnit) {
       this.resetPlayer();
     }
-    this.currentPage = 1;
-    this.totalPages = 1;
+    this.player.beginSelection(true);
     this.startPreviewSlowTimer(
       reuseLoadedUnit ? 'gespeicherter Zustand' : 'Aufgabendaten, Player und Definition',
     );
 
-    // Reset response state data
-    this.hasResponseState = false;
-    this.isFallbackState = false;
-    this.currentResponseData = null;
-    this.activePlayerSessionId = null;
-    this.restoreResponseDataAfterSolution = false;
     this.previewUserFacingMessage = '';
-    this.correctSolutionPrefill = {
+    this.coding.correctSolutionPrefill = {
       status: 'unavailable',
       responses: [],
       message: 'Die Kodierung und Player-Daten für die Musterlösung werden geladen.',
@@ -3120,15 +1887,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
     // Load unit metadata and coding scheme from cache
     this.currentUnitMetadata = this.unitMetadataCache[item.unitId] || [];
-    this.currentCodingScheme = this.codingSchemeCache[item.unitId] || null;
-    if (this.currentCodingScheme) {
-      const codings = Array.isArray(this.currentCodingScheme)
-        ? this.currentCodingScheme
-        : this.currentCodingScheme.variableCodings || [];
-      this.currentCodingSchemeAsText = this.createCodingSchemeAsText(codings);
-    } else {
-      this.currentCodingSchemeAsText = null;
-    }
+    this.coding.setScheme(this.codingSchemeCache[item.unitId] || null);
     this.syncPreviewTargetResolution(item);
 
     if (!this.canPreviewItem(item)) {
@@ -3185,41 +1944,19 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private applyPreviewAssets(assets: NonNullable<ItemExplorerPreviewResult['assets']>): void {
-    this.unit = assets.unit;
-    if (!assets.unit) {
-      this.playerSrcDoc = null;
-      this.definitionContent = null;
-      this.syncPreviewTargetResolution(this.selectedItem);
-      return;
-    }
-
-    if (assets.playerHtml === null) {
-      this.playerSrcDoc = null;
-    } else {
-      this.playerSrcDoc = this.sanitizer.bypassSecurityTrustHtml(
-        rewriteGeoGebraAssetUrls(assets.playerHtml),
-      );
-    }
-
-    if (assets.definition === null) {
-      this.definitionContent = null;
-    } else {
-      this.definitionContent = assets.definition;
-    }
+    this.player.applyAssets({
+      unit: assets.unit,
+      srcDoc:
+        assets.unit && assets.playerHtml !== null
+          ? this.sanitizer.bypassSecurityTrustHtml(rewriteGeoGebraAssetUrls(assets.playerHtml))
+          : null,
+      definition: assets.definition,
+    });
     this.syncPreviewTargetResolution(this.selectedItem);
   }
 
   private applyResponseStateResult(result: any): void {
-    if (result?.state?.responseData && Object.keys(result.state.responseData).length > 0) {
-      this.currentResponseData = result.state.responseData;
-      this.hasResponseState = true;
-      this.isFallbackState = !!result.isFallback;
-      return;
-    }
-
-    this.currentResponseData = null;
-    this.hasResponseState = false;
-    this.isFallbackState = false;
+    this.player.applyResponseState(result?.state?.responseData ?? null, !!result?.isFallback);
   }
 
   private hasReusablePreviewUnit(item: ExplorerItem): boolean {
@@ -3276,8 +2013,7 @@ export class ItemExplorerFacade implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.hasResponseState = true;
-          this.isFallbackState = false;
+          this.player.applyResponseState(this.currentResponseData);
           this.confirmDialogState = 'idle';
           this.closeSaveConfirmDialog();
         },
@@ -3311,9 +2047,7 @@ export class ItemExplorerFacade implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.hasResponseState = false;
-          this.isFallbackState = false;
-          this.currentResponseData = null;
+          this.player.applyResponseState(null);
           this.confirmDialogState = 'idle';
           this.closeDeleteConfirmDialog();
         },
@@ -3352,16 +2086,14 @@ export class ItemExplorerFacade implements OnDestroy {
     const wasActive = this.isCorrectSolutionActive;
     this.correctSolutionRequested = !this.correctSolutionRequested;
     const isActive = this.isCorrectSolutionActive;
-    this.restoreResponseDataAfterSolution = wasActive && !isActive;
+    this.player.restoreResponseDataAfterSolution = wasActive && !isActive;
 
     if (wasActive === isActive || this.previewCoordinator.status.kind !== 'ready') return;
-    this.clearFocusRetryTimer();
-    this.clearLegacyPageNavigationTimers();
     this.startPlayerIfReady();
   }
 
   onPreviewTargetSelectionChange() {
-    this.customPreviewTargetDraft = '';
+    this.coding.customPreviewTargetDraft = '';
     this.updatePreviewTargetSelection(this.selectedPreviewTargetId);
   }
 
@@ -3374,13 +2106,13 @@ export class ItemExplorerFacade implements OnDestroy {
       return;
     }
 
-    this.selectedPreviewTargetId = '';
+    this.coding.selectedPreviewTargetId = '';
     this.updatePreviewTargetSelection(customTarget);
   }
 
   resetPreviewTargetSelection() {
-    this.selectedPreviewTargetId = '';
-    this.customPreviewTargetDraft = '';
+    this.coding.selectedPreviewTargetId = '';
+    this.coding.customPreviewTargetDraft = '';
     this.updatePreviewTargetSelection('');
   }
 
@@ -3424,286 +2156,51 @@ export class ItemExplorerFacade implements OnDestroy {
     if (!reuseLoadedUnit) {
       this.resetPlayer();
     }
-    this.hasResponseState = false;
-    this.isFallbackState = false;
-    this.currentResponseData = null;
-    this.activePlayerSessionId = null;
+    this.player.beginSelection();
     this.startPreviewSlowTimer(
       reuseLoadedUnit ? 'gespeicherter Zustand' : 'Aufgabendaten, Player und Definition',
     );
     this.loadPreviewSelection(item, reuseLoadedUnit);
   }
 
-  onPlayerLoaded() {
-    if (!this.unit || !this.playerDom?.hasFrame()) return;
-    this.playerFrameReady = true;
+  onPlayerLoaded(): void {
+    this.player.onPlayerLoaded();
     this.startPlayerIfReady();
   }
 
-  onPagingModeChange() {
-    this.clearFocusRetryTimer();
-    this.clearLegacyPageNavigationTimers();
-    const src = this.playerSrcDoc;
-    this.playerFrameReady = false;
-    this.playerFrameRefreshPending = true;
-    this.playerSrcDoc = null;
-    if (this.playerFrameRefreshTimeout) clearTimeout(this.playerFrameRefreshTimeout);
-    this.playerFrameRefreshTimeout = setTimeout(() => {
-      this.playerFrameRefreshTimeout = null;
-      this.playerSrcDoc = src;
-      this.playerFrameRefreshPending = false;
-    }, 50);
+  onPagingModeChange(): void {
+    this.player.onPagingModeChange();
   }
 
   handlePlayerMessage(msg: unknown): void {
-    if (!msg || typeof msg !== 'object') return;
-    const playerMessage = msg as Record<string, any>;
-
-    switch (playerMessage['type']) {
-      case 'vopStateChangedNotification':
-        if (this.previewCoordinator.status.kind !== 'ready' || !this.activePlayerSessionId) {
-          break;
-        }
-        {
-          const messageSessionId = String(
-            playerMessage['sessionId'] || playerMessage['playerState']?.sessionId || '',
-          ).trim();
-          if (messageSessionId !== this.activePlayerSessionId) {
-            break;
-          }
-        }
-        if (playerMessage['playerState']?.currentPage !== undefined) {
-          this.currentPage = playerMessage['playerState'].currentPage + 1;
-        }
-        if (playerMessage['playerState']?.validPages !== undefined) {
-          this.totalPages = playerMessage['playerState'].validPages.length || this.totalPages;
-        }
-        // Capture response data from unitState.dataParts
-        if (playerMessage['unitState']?.dataParts && !this.isCorrectSolutionActive) {
-          this.currentResponseData = playerMessage['unitState'].dataParts;
-          this.restoreResponseDataAfterSolution = false;
-        }
-        break;
-
-      case 'vopPageNavigationCommand':
-        if (playerMessage['target'] !== undefined) {
-          this.currentPage = playerMessage['target'] + 1;
-        }
-        break;
-
-      case 'vopResizeNotification':
-        if (playerMessage['height'] !== undefined) {
-          this.playerHeight = `${playerMessage['height']}px`;
-        }
-        break;
-    }
+    this.player.handlePlayerMessage(msg, {
+      ready: this.previewCoordinator.status.kind === 'ready',
+      solutionActive: this.isCorrectSolutionActive,
+    });
   }
 
-  private schedulePlayerFocus() {
-    this.clearFocusRetryTimer();
-
-    let attempts = 0;
-    const maxAttempts = 16;
-
-    const run = () => {
-      attempts += 1;
-      const focused = this.tryFocusItemInPlayer();
-      if (focused || attempts >= maxAttempts) {
-        return;
-      }
-      this.focusRetryTimer = setTimeout(run, 250);
-    };
-
-    this.focusRetryTimer = setTimeout(run, 180);
-  }
-
-  private tryFocusItemInPlayer(): boolean {
-    const selectedItem = this.selectedItem;
-    if (!selectedItem || !this.playerDom) return false;
-
-    const variableRef = this.resolveVariableRef(selectedItem);
-    return this.playerDom.focus(
-      this.getFocusSelectors(),
-      [selectedItem.itemId, variableRef, selectedItem.description],
-      this.playerFocusHighlightEnabled,
-    );
-  }
-
-  private startPlayerIfReady() {
-    if (
-      !this.playerFrameReady ||
-      !this.definitionContent ||
-      !this.unit ||
-      !this.selectedItem ||
-      this.previewCoordinator.status.kind !== 'ready'
-    ) {
-      return;
-    }
-
-    const selectedItem = this.selectedItem;
-    const previewTarget = this.getEffectivePlayerTarget(selectedItem);
-    if (!previewTarget) {
-      this.previewCoordinator.markUnavailable(this.getMissingPreviewTargetMessage());
-      this.diagnostics?.finish(this.playerReadyTiming, { outcome: 'missing-target' });
-      this.playerReadyTiming = null;
-      return;
-    }
-    const targetLocation = this.voudService.resolvePlayerTargetLocation(
-      this.definitionContent,
-      previewTarget,
-    );
-    if (!targetLocation) {
+  private startPlayerIfReady(): void {
+    if (!this.selectedItem || this.previewCoordinator.status.kind !== 'ready') return;
+    const target = this.getEffectivePlayerTarget(this.selectedItem);
+    const result = this.player.start({
+      item: this.selectedItem,
+      rowKey: this.getStableRowKey(this.selectedItem),
+      target,
+      printLabels: this.pagingMode === 'print-ids' ? this.buildPrintLabelOverrides() : {},
+      solution: this.isCorrectSolutionActive ? this.correctSolutionPrefill : null,
+    });
+    if (result.kind === 'waiting') return;
+    if (result.kind === 'unavailable') {
       this.previewCoordinator.markUnavailable(
-        `Das Player-Ziel "${previewTarget}" kommt in der Aufgabendefinition nicht vor.`,
+        result.reason === 'missing-target'
+          ? this.getMissingPreviewTargetMessage()
+          : `Das Player-Ziel "${target}" kommt in der Aufgabendefinition nicht vor.`,
       );
-      this.diagnostics?.finish(this.playerReadyTiming, { outcome: 'unresolved-target' });
-      this.playerReadyTiming = null;
-      return;
     }
-    const startPage = targetLocation.scrollPageIndex;
-    const sessionId = `explorer-${this.getStableRowKey(selectedItem) || 'none'}-${this.startSessionCounter + 1}`;
-    const usesPagedNavigation = this.pagingMode !== 'view-all' && this.pagingMode !== 'print-ids';
-    const playerDefinition = this.getPlayerDefinitionContent();
-
-    this.startSessionCounter += 1;
-    this.activePlayerSessionId = sessionId;
-    this.sendToPlayer({
-      type: 'vopStartCommand',
-      sessionId,
-      unitDefinition: playerDefinition,
-      unitState: {
-        dataParts: this.getPlayerStartDataParts(),
-      },
-      playerConfig: {
-        stateReportPolicy: 'none',
-        pagingMode:
-          this.pagingMode === 'view-all' || this.pagingMode === 'print-ids'
-            ? 'concat-scroll'
-            : this.pagingMode,
-        printMode:
-          this.pagingMode === 'view-all'
-            ? 'on'
-            : this.pagingMode === 'print-ids'
-              ? 'on-with-ids'
-              : 'off',
-        logPolicy: 'disabled',
-        directDownloadUrl: GEOGEBRA_PLAYER_RESOURCE_BASE,
-        startPage: startPage !== undefined ? startPage.toString() : undefined,
-        enabledNavigationTargets: ['next', 'previous', 'first', 'last', 'end'],
-      },
+    this.diagnostics?.finish(this.playerReadyTiming, {
+      outcome: result.kind === 'unavailable' ? result.reason : 'started',
     });
-    this.playerDom?.setPrintLabelOverrides(
-      this.pagingMode === 'print-ids' ? this.buildPrintLabelOverrides() : {},
-    );
-    this.diagnostics?.finish(this.playerReadyTiming, { outcome: 'started' });
     this.playerReadyTiming = null;
-    this.scheduleLegacyPageNavigation(sessionId, startPage, usesPagedNavigation);
-
-    if (usesPagedNavigation) {
-      this.playerHeight = '100%';
-      this.playerDom?.stopAutoResize();
-    } else {
-      this.playerHeight = '2000px';
-      this.playerDom?.startAutoResize((height) => {
-        const nextHeight = `${height}px`;
-        if (this.playerHeight !== nextHeight) this.playerHeight = nextHeight;
-      });
-    }
-    this.schedulePlayerFocus();
-  }
-
-  private getPlayerStartDataParts(): Record<string, any> {
-    if (this.isCorrectSolutionActive) {
-      return mergePlayerSolutionIntoDataParts(
-        this.currentResponseData,
-        this.correctSolutionPrefill.responses,
-      );
-    }
-    if (
-      this.currentResponseData &&
-      (this.hasResponseState || this.restoreResponseDataAfterSolution)
-    ) {
-      return this.currentResponseData;
-    }
-    return {};
-  }
-
-  private getPlayerDefinitionContent(): string {
-    if (!this.definitionContent) return '';
-    if (this.itemExplorerConditionalVisibilityEnabled) {
-      return this.definitionContent;
-    }
-    return this.voudService.stripConditionalVisibility(this.definitionContent);
-  }
-
-  private scheduleLegacyPageNavigation(
-    sessionId: string,
-    startPage: number | undefined,
-    enabled: boolean,
-  ) {
-    this.clearLegacyPageNavigationTimers();
-    if (!enabled || startPage === undefined) return;
-
-    const target = startPage.toString();
-    this.legacyPageNavigationDelaysMs.forEach((delayMs) => {
-      const timer = setTimeout(() => {
-        this.sendToPlayer({
-          type: 'vopPageNavigationCommand',
-          sessionId,
-          target,
-        });
-      }, delayMs);
-      this.legacyPageNavigationTimers.push(timer);
-    });
-  }
-
-  private getFocusSelectors(): string[] {
-    const selectedItem = this.selectedItem;
-    if (!selectedItem) return [];
-
-    const selectors: string[] = [];
-
-    for (const itemId of this.getCandidateItemIds()) {
-      const escaped = this.escapeSelectorValue(itemId);
-      if (!escaped) continue;
-      selectors.push(
-        `[data-item-id="${escaped}"]`,
-        `[data-itemid="${escaped}"]`,
-        `[data-id="${escaped}"]`,
-        `[id="${escaped}"]`,
-      );
-    }
-
-    this.getResolvedVariableRefs(selectedItem).forEach((identifier) => {
-      const variableRef = this.escapeSelectorValue(identifier);
-      if (!variableRef) return;
-      selectors.push(
-        `[data-element-id="${variableRef}"]`,
-        `[data-element-alias="${variableRef}"]`,
-        `[data-list-alias="${variableRef}"]`,
-        `[data-variable-id="${variableRef}"]`,
-        `[data-variable="${variableRef}"]`,
-        `[data-alias="${variableRef}"]`,
-        `[data-ref="${variableRef}"]`,
-        `[data-source-variable="${variableRef}"]`,
-        `[name="${variableRef}"]`,
-        `[id="${variableRef}"]`,
-      );
-    });
-
-    return Array.from(new Set(selectors));
-  }
-
-  private getResolvedVariableRefs(item?: ExplorerItem | null): string[] {
-    const variableRef = this.resolveVariableRef(item);
-    if (!variableRef) return [];
-    if (!this.definitionContent) return [variableRef];
-
-    return this.voudService.getFocusIdentifiers(this.definitionContent, variableRef);
-  }
-
-  private resolveVariableRef(item?: ExplorerItem | null): string {
-    return this.getEffectivePlayerTarget(item);
   }
 
   private getPersistedOrDefaultPlayerTarget(item?: ReadonlyExplorerItem | null): string {
@@ -3715,13 +2212,11 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   getPlayerTarget(item?: ReadonlyExplorerItem | null): string {
-    if (!item) return '';
-    return this.getVisiblePlayerTarget(item) || this.getItemCodingTarget(item);
+    return this.coding.getPlayerTarget(item);
   }
 
   private getItemCodingTarget(item?: ReadonlyExplorerItem | null): string {
-    if (!item) return '';
-    return String(item.variableReadOnlyId || item.sourceVariable || item.variableId || '').trim();
+    return this.coding.getItemCodingTarget(item);
   }
 
   private getEffectivePlayerTarget(item?: ReadonlyExplorerItem | null): string {
@@ -3740,703 +2235,30 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private syncPreviewTargetResolution(item?: ReadonlyExplorerItem | null) {
-    const resolution = this.buildPreviewTargetResolution(item);
-    const selectedId = this.getStoredPreviewTargetId(item);
-    this.previewTargetResolution = resolution;
-    const selectedOption = this.findPreviewTargetOption(selectedId, resolution.options);
-    this.selectedPreviewTargetId = selectedOption?.id || '';
-    this.customPreviewTargetDraft = selectedId && !selectedOption ? selectedId : '';
+    return this.coding.syncPreviewTargetResolution(this.definitionContent, item);
   }
 
   private findPreviewTargetOption(
     targetId: string,
     options: PreviewTargetOption[],
   ): PreviewTargetOption | undefined {
-    const normalizedTarget = String(targetId || '')
-      .trim()
-      .toLowerCase();
-    if (!normalizedTarget) return undefined;
-
-    const exactOption = options.find((option) => option.id.toLowerCase() === normalizedTarget);
-    if (exactOption || !this.definitionContent) return exactOption;
-
-    const equivalentIdentifiers = new Set(
-      this.voudService
-        .getFocusIdentifiers(this.definitionContent, targetId)
-        .map((identifier) => identifier.toLowerCase()),
-    );
-    return options.find((option) => equivalentIdentifiers.has(option.id.toLowerCase()));
-  }
-
-  private buildPreviewTargetResolution(
-    item?: ReadonlyExplorerItem | null,
-  ): PreviewTargetResolution {
-    const codingVariables = this.getCurrentCodingVariables();
-    const fallbackOptions = this.getAllPreviewTargetOptions(codingVariables);
-    const itemTarget = this.getItemCodingTarget(item);
-    const visiblePlayerTarget = this.getVisiblePlayerTarget(item);
-    if (!itemTarget) {
-      return {
-        itemTarget: '',
-        isDerived: false,
-        options: fallbackOptions,
-        defaultTargetId: '',
-      };
-    }
-
-    if (!codingVariables.length) {
-      const fallbackTarget = visiblePlayerTarget || itemTarget;
-      return {
-        itemTarget,
-        isDerived: false,
-        options: [this.createFallbackPreviewTargetOption(fallbackTarget)],
-        defaultTargetId: fallbackTarget,
-      };
-    }
-
-    const variableMatch = this.resolveItemCodingVariable(item, codingVariables);
-    if (variableMatch.status !== 'unique' || !variableMatch.variable) {
-      const hasStrictInternalReference = Boolean(String(item?.variableReadOnlyId || '').trim());
-      const blocksAutomaticTarget =
-        variableMatch.status === 'ambiguous' ||
-        (hasStrictInternalReference && variableMatch.status === 'not-found');
-      return {
-        itemTarget,
-        isDerived: false,
-        isAmbiguous: variableMatch.status === 'ambiguous',
-        blocksAutomaticTarget,
-        options: this.dedupePreviewTargetOptions([
-          ...fallbackOptions,
-          this.createFallbackPreviewTargetOption(itemTarget),
-        ]),
-        defaultTargetId: blocksAutomaticTarget ? '' : itemTarget,
-      };
-    }
-
-    const selectedCodingVariable = variableMatch.variable;
-    const resolvedItemTarget = this.getCodingVariableId(selectedCodingVariable, itemTarget);
-    const derivedOptions = this.collectBasePreviewTargetOptions(
-      selectedCodingVariable,
-      codingVariables,
-      visiblePlayerTarget,
-    );
-    const isDerived = this.isDerivedCodingVariable(selectedCodingVariable);
-    const basePlayerTarget = this.resolvePlayerVariableReference(
-      selectedCodingVariable,
-      visiblePlayerTarget,
-    );
-    const defaultTargetId =
-      isDerived && derivedOptions.length ? derivedOptions[0].id : basePlayerTarget;
-
-    return {
-      itemTarget: resolvedItemTarget,
-      isDerived,
-      options: this.dedupePreviewTargetOptions([
-        ...derivedOptions,
-        ...fallbackOptions,
-        this.createPreviewTargetOption(
-          selectedCodingVariable,
-          isDerived ? resolvedItemTarget : basePlayerTarget,
-          !isDerived,
-        ),
-      ]),
-      defaultTargetId,
-    };
-  }
-
-  private getCurrentCodingVariables(): any[] {
-    if (Array.isArray(this.currentCodingScheme)) {
-      return this.currentCodingScheme;
-    }
-    return Array.isArray(this.currentCodingScheme?.variableCodings)
-      ? this.currentCodingScheme.variableCodings
-      : [];
+    return this.coding.findPreviewTargetOption(this.definitionContent, targetId, options);
   }
 
   private refreshCorrectSolutionPrefill(): void {
-    const variables = this.getCurrentCodingVariables();
-    const variableMatch = this.resolveItemCodingVariable(this.selectedItem, variables);
-    if (variableMatch.status !== 'unique' || !variableMatch.variable) {
-      this.correctSolutionPrefill = {
-        status: 'unavailable',
-        responses: [],
-        message: 'Für dieses Item konnte keine eindeutige Kodiervariable ermittelt werden.',
-      };
-      return;
-    }
-    if (!this.definitionContent) {
-      this.correctSolutionPrefill = {
-        status: 'unavailable',
-        responses: [],
-        message: 'Für dieses Item ist keine auswertbare Player-Definition verfügbar.',
-      };
-      return;
-    }
-
-    this.correctSolutionPrefill = derivePlayerSolutionPrefill(
-      variableMatch.variable,
-      variables,
-      (variable) => {
-        const candidates = Array.from(
-          new Set(
-            [variable?.['alias'], variable?.['id']]
-              .map((value) => String(value || '').trim())
-              .filter((value) => value.length > 0),
-          ),
-        );
-        for (const candidate of candidates) {
-          const target = this.voudService.resolvePlayerResponseTarget(
-            this.definitionContent!,
-            candidate,
-          );
-          if (target) return target;
-        }
-        return undefined;
-      },
-    );
-  }
-
-  private createCodingSchemeAsText(codings: any[]): CodingAsText[] {
-    const codingSchemeAsText = CodingSchemeTextFactory.asText(codings);
-    codingSchemeAsText.forEach((coding, index) => {
-      const rawVariable = codings[index];
-      if (!rawVariable) {
-        return;
-      }
-
-      (coding as any).generalInstructionText = this.sanitizeManualInstruction(
-        rawVariable.manualInstruction,
-      );
-      coding.codes.forEach((code) => {
-        const rawCode = rawVariable.codes?.find(
-          (candidate: any) =>
-            String(candidate?.id === null ? 'null' : candidate?.id) === String(code.id),
-        );
-        if (rawCode) {
-          (code as any).manualInstructionText = this.sanitizeManualInstruction(
-            rawCode.manualInstruction,
-          );
-        }
-      });
-    });
-    return codingSchemeAsText;
-  }
-
-  private sanitizeManualInstruction(value: unknown): string | null {
-    if (typeof value !== 'string' || !value.trim()) {
-      return null;
-    }
-
-    const sanitizedHtml = DOMPurify.sanitize(value, {
-      USE_PROFILES: { html: true },
-    }).trim();
-    if (!sanitizedHtml) {
-      return null;
-    }
-
-    const content = document.createElement('div');
-    content.innerHTML = sanitizedHtml;
-    const textContent = (content.textContent || '').replace(/\u00a0/g, ' ').trim();
-    const hasMeaningfulMedia = Boolean(
-      content.querySelector('img, audio, video, svg, math, table'),
-    );
-    return textContent || hasMeaningfulMedia ? sanitizedHtml : null;
-  }
-
-  private resolveItemCodingVariable(
-    item: ReadonlyExplorerItem | null | undefined,
-    variables: any[],
-  ): CodingVariableMatch {
-    if (!item) {
-      return { status: 'missing-target', reference: '', matchIndices: [] };
-    }
-
-    const internalId = String(item.variableReadOnlyId || '').trim();
-    if (internalId) {
-      const internalMatch = this.resolveCodingVariableReference(internalId, variables, false);
-      if (internalMatch.status !== 'not-found') {
-        return internalMatch;
-      }
-
-      const legacyReference = String(item.sourceVariable || item.variableId || '').trim();
-      const legacyMatch = this.resolveUniqueCodingVariableIdentifier(legacyReference, variables);
-      if (legacyMatch.status === 'unique') {
-        return {
-          ...legacyMatch,
-          reference: internalId,
-          usedLegacyFallback: true,
-          requestedInternalId: internalId,
-        };
-      }
-
-      return internalMatch;
-    }
-
-    const legacyReference = String(item.sourceVariable || item.variableId || '').trim();
-    return this.resolveCodingVariableReference(legacyReference, variables, true);
-  }
-
-  private resolveUniqueCodingVariableIdentifier(
-    reference: string,
-    variables: any[],
-  ): CodingVariableMatch {
-    const normalizedReference = String(reference || '')
-      .trim()
-      .toLowerCase();
-    if (!normalizedReference) {
-      return { status: 'missing-target', reference: '', matchIndices: [] };
-    }
-
-    const matchIndices = variables.flatMap((variable, index) =>
-      this.getCodingVariableIdentifiers(variable).some(
-        (identifier) => identifier.toLowerCase() === normalizedReference,
-      )
-        ? [index]
-        : [],
-    );
-    if (matchIndices.length === 1) {
-      const index = matchIndices[0];
-      return {
-        status: 'unique',
-        reference: String(reference).trim(),
-        variable: variables[index],
-        index,
-        matchIndices,
-      };
-    }
-
-    return {
-      status: matchIndices.length ? 'ambiguous' : 'not-found',
-      reference: String(reference).trim(),
-      matchIndices,
-    };
-  }
-
-  private resolveCodingVariableReference(
-    reference: string,
-    variables: any[],
-    allowAliasFallback: boolean,
-  ): CodingVariableMatch {
-    const normalizedReference = String(reference || '')
-      .trim()
-      .toLowerCase();
-    if (!normalizedReference) {
-      return { status: 'missing-target', reference: '', matchIndices: [] };
-    }
-
-    const idMatches = variables.flatMap((variable, index) =>
-      String(variable?.id || '')
-        .trim()
-        .toLowerCase() === normalizedReference
-        ? [index]
-        : [],
-    );
-    if (idMatches.length === 1) {
-      const index = idMatches[0];
-      return {
-        status: 'unique',
-        reference: String(reference).trim(),
-        variable: variables[index],
-        index,
-        matchIndices: idMatches,
-      };
-    }
-    if (idMatches.length > 1) {
-      return {
-        status: 'ambiguous',
-        reference: String(reference).trim(),
-        matchIndices: idMatches,
-      };
-    }
-
-    if (allowAliasFallback) {
-      const aliasMatches = variables.flatMap((variable, index) =>
-        String(variable?.alias || '')
-          .trim()
-          .toLowerCase() === normalizedReference
-          ? [index]
-          : [],
-      );
-      if (aliasMatches.length === 1) {
-        const index = aliasMatches[0];
-        return {
-          status: 'unique',
-          reference: String(reference).trim(),
-          variable: variables[index],
-          index,
-          matchIndices: aliasMatches,
-        };
-      }
-      if (aliasMatches.length > 1) {
-        return {
-          status: 'ambiguous',
-          reference: String(reference).trim(),
-          matchIndices: aliasMatches,
-        };
-      }
-    }
-
-    return {
-      status: 'not-found',
-      reference: String(reference).trim(),
-      matchIndices: [],
-    };
-  }
-
-  private enrichDerivedCodingDisplay(
-    item: ReadonlyExplorerItem | null | undefined,
-    variables: any[],
-    identityMatch: CodingVariableMatch,
-    identityCoding: CodingAsText,
-    codings: CodingAsText[],
-  ): CodingAsText {
-    if (
-      identityMatch.status !== 'unique' ||
-      !identityMatch.variable ||
-      !this.isDerivedCodingVariable(identityMatch.variable)
-    ) {
-      return identityCoding;
-    }
-
-    const visibleReference = this.getVisiblePlayerTarget(item).toLowerCase();
-    if (!visibleReference) return identityCoding;
-
-    for (const sourceReference of this.getCodingVariableSources(identityMatch.variable)) {
-      const sourceMatch = this.resolveCodingVariableReference(sourceReference, variables, true);
-      if (
-        sourceMatch.status !== 'unique' ||
-        !sourceMatch.variable ||
-        sourceMatch.index === undefined
-      ) {
-        continue;
-      }
-
-      const matchesVisibleReference = this.getCodingVariableIdentifiers(sourceMatch.variable).some(
-        (identifier) => identifier.toLowerCase() === visibleReference,
-      );
-      if (!matchesVisibleReference) continue;
-
-      const sourceCoding = codings[sourceMatch.index];
-      if (!sourceCoding) return identityCoding;
-
-      const identityGeneralInstruction = (identityCoding as any).generalInstructionText;
-      const sourceGeneralInstruction = (sourceCoding as any).generalInstructionText;
-      const inheritGeneralInstruction = !identityGeneralInstruction && sourceGeneralInstruction;
-      const inheritCodes = !identityCoding.codes.length && sourceCoding.codes.length;
-      if (!inheritGeneralInstruction && !inheritCodes) return identityCoding;
-
-      return {
-        ...identityCoding,
-        ...(inheritGeneralInstruction
-          ? {
-              generalInstructionText: sourceGeneralInstruction,
-            }
-          : {}),
-        ...(inheritCodes ? { codes: sourceCoding.codes } : {}),
-      } as CodingAsText;
-    }
-
-    return identityCoding;
-  }
-
-  private getAllPreviewTargetOptions(variables: any[]): PreviewTargetOption[] {
-    return this.dedupePreviewTargetOptions(
-      variables.map((variable) => {
-        const playerTarget = this.resolvePlayerVariableReference(variable);
-        return this.createPreviewTargetOption(variable, playerTarget, true);
-      }),
-    );
-  }
-
-  private collectBasePreviewTargetOptions(
-    variable: any,
-    variables: any[],
-    preferredReference = '',
-    visited = new Set<string>(),
-  ): PreviewTargetOption[] {
-    const variableId = this.getCodingVariableId(variable);
-    const visitKey = variableId.toLowerCase();
-    if (visitKey) {
-      if (visited.has(visitKey)) {
-        return [];
-      }
-      visited.add(visitKey);
-    }
-
-    const deriveSources = this.getCodingVariableSources(variable);
-    if (!deriveSources.length) {
-      const playerTarget = this.resolvePlayerVariableReference(variable, variableId);
-      return [this.createPreviewTargetOption(variable, playerTarget, true)];
-    }
-
-    const options = deriveSources.flatMap((sourceId) => {
-      const sourceMatch = this.resolveCodingVariableReference(sourceId, variables, true);
-      if (sourceMatch.status !== 'unique' || !sourceMatch.variable) {
-        return [this.createFallbackPreviewTargetOption(sourceId)];
-      }
-      const sourceVariable = sourceMatch.variable;
-      const sourcePlayerReference = this.getPreferredDerivedSourceReference(
-        sourceVariable,
-        sourceId,
-        preferredReference,
-      );
-      if (!this.isDerivedCodingVariable(sourceVariable)) {
-        const playerTarget = this.resolvePlayerVariableReference(
-          sourceVariable,
-          sourcePlayerReference,
-        );
-        return [this.createPreviewTargetOption(sourceVariable, playerTarget, true)];
-      }
-      return this.collectBasePreviewTargetOptions(
-        sourceVariable,
-        variables,
-        sourcePlayerReference,
-        new Set(visited),
-      );
-    });
-
-    return this.dedupePreviewTargetOptions(options);
-  }
-
-  private getPreferredDerivedSourceReference(
-    sourceVariable: any,
-    sourceReference: string,
-    parentPlayerReference: string,
-  ): string {
-    const sourceId = String(sourceReference || '').trim();
-    const alias = String(sourceVariable?.alias || '').trim();
-    if (!alias) return sourceId;
-
-    const referenceScore = (candidate: string): number => {
-      const normalizedCandidate = candidate.trim().toLowerCase().replace(/^_+/, '');
-      const normalizedParent = parentPlayerReference.trim().toLowerCase().replace(/^_+/, '');
-      if (!normalizedCandidate || !normalizedParent) return 0;
-      if (normalizedCandidate === normalizedParent) return 2;
-      return normalizedCandidate.startsWith(normalizedParent) ? 1 : 0;
-    };
-
-    return referenceScore(alias) > referenceScore(sourceId) ? alias : sourceId;
-  }
-
-  private createPreviewTargetOption(
-    variable: any,
-    fallbackId = '',
-    useFallbackAsTarget = false,
-  ): PreviewTargetOption {
-    const id = useFallbackAsTarget
-      ? String(fallbackId || '').trim() || this.getCodingVariableId(variable)
-      : this.getCodingVariableId(variable, fallbackId);
-    const label = this.getCodingVariableLabel(variable, id);
-    return {
-      id,
-      label: this.formatPreviewTargetLabel(id, label),
-      sourceType: this.getCodingVariableSourceType(variable),
-    };
-  }
-
-  private createFallbackPreviewTargetOption(id: string): PreviewTargetOption {
-    return {
-      id,
-      label: this.formatPreviewTargetLabel(id, id),
-      sourceType: 'BASE',
-    };
-  }
-
-  private dedupePreviewTargetOptions(options: PreviewTargetOption[]): PreviewTargetOption[] {
-    const seen = new Set<string>();
-    const deduped: PreviewTargetOption[] = [];
-
-    options.forEach((option) => {
-      const id = String(option.id || '').trim();
-      if (!id) {
-        return;
-      }
-      const key = id.toLowerCase();
-      if (seen.has(key)) {
-        return;
-      }
-      seen.add(key);
-      deduped.push({
-        ...option,
-        id,
-      });
-    });
-
-    return deduped;
-  }
-
-  private getCodingVariableIdentifiers(variable: any): string[] {
-    return Array.from(
-      new Set(
-        [variable?.id, variable?.alias]
-          .map((value) => String(value || '').trim())
-          .filter((value) => value.length > 0),
-      ),
-    );
+    return this.coding.refreshCorrectSolutionPrefill(this.selectedItem, this.definitionContent);
   }
 
   private buildPrintLabelOverrides(): Record<string, string> {
-    const variables = this.getCurrentCodingVariables();
-    const unitId = String(this.unit?.id || this.selectedItem?.unitId || '').trim();
-    if (!variables.length || !unitId) return {};
-
-    const labelsByIdentifier = new Map<string, Set<string>>();
-    this.items
-      .filter((item) => item.unitId === unitId)
-      .forEach((item) => {
-        const match = this.resolveItemCodingVariable(item, variables);
-        if (match.status !== 'unique' || !match.variable) return;
-
-        const itemLabel = this.formatPrintItemId(item);
-        this.collectBaseCodingVariables(match.variable, variables).forEach((variable) => {
-          const preferredReference =
-            variable === match.variable ? this.getVisiblePlayerTarget(item) : '';
-          const playerReference = this.resolvePlayerVariableReference(variable, preferredReference);
-          if (!playerReference) return;
-
-          const key = playerReference.toLowerCase();
-          const labels = labelsByIdentifier.get(key) || new Set<string>();
-          labels.add(itemLabel);
-          labelsByIdentifier.set(key, labels);
-        });
-      });
-
-    const overrides: Record<string, string> = {};
-    labelsByIdentifier.forEach((labels, identifier) => {
-      if (labels.size === 1) {
-        overrides[identifier] = Array.from(labels)[0];
-      }
-    });
-    return overrides;
-  }
-
-  private collectBaseCodingVariables(
-    variable: any,
-    variables: any[],
-    visited = new Set<string>(),
-  ): any[] {
-    const variableId = this.getCodingVariableId(variable).toLowerCase();
-    if (variableId) {
-      if (visited.has(variableId)) return [];
-      visited.add(variableId);
-    }
-
-    const sources = this.getCodingVariableSources(variable);
-    if (!sources.length) return [variable];
-
-    return sources.flatMap((sourceId) => {
-      const sourceMatch = this.resolveCodingVariableReference(sourceId, variables, true);
-      if (sourceMatch.status !== 'unique' || !sourceMatch.variable) return [];
-      return this.collectBaseCodingVariables(sourceMatch.variable, variables, new Set(visited));
-    });
-  }
-
-  private formatPrintItemId(item: ReadonlyExplorerItem): string {
-    const unitId = String(item.unitId || '').trim();
-    const itemId = String(item.itemId || '').trim();
-    if (!unitId) return itemId;
-    if (item.useUnitAliasAsPrefix === false) return itemId;
-
-    const withoutRepeatedUnit = itemId.toLowerCase().startsWith(unitId.toLowerCase())
-      ? itemId.slice(unitId.length).replace(/^[_-]+/, '')
-      : itemId;
-    return `${unitId}${withoutRepeatedUnit}`;
-  }
-
-  private getVisiblePlayerTarget(item?: ReadonlyExplorerItem | null): string {
-    if (!item) return '';
-    return String(item.sourceVariable || item.variableId || '').trim();
-  }
-
-  private resolvePlayerVariableReference(variable: any, preferredReference = ''): string {
-    const candidates = Array.from(
-      new Set(
-        [preferredReference, variable?.alias, variable?.id]
-          .map((value) => String(value || '').trim())
-          .filter((value) => value.length > 0),
-      ),
+    return this.coding.buildPrintLabelOverrides(
+      this.definitionContent,
+      this.items,
+      String(this.unit?.id || this.selectedItem?.unitId || '').trim(),
     );
-    if (!candidates.length) return '';
-
-    if (this.definitionContent) {
-      const definitionTarget = candidates.find((candidate) =>
-        Boolean(this.voudService.resolvePlayerTargetLocation(this.definitionContent!, candidate)),
-      );
-      if (definitionTarget) return definitionTarget;
-    }
-
-    return candidates[0];
-  }
-
-  private getCodingVariableId(variable: any, fallbackId = ''): string {
-    const directId = String(variable?.id || '').trim();
-    if (directId) {
-      return directId;
-    }
-    const alias = String(variable?.alias || '').trim();
-    return alias || fallbackId;
-  }
-
-  private getCodingVariableLabel(variable: any, fallbackId: string): string {
-    const variableId = this.getCodingVariableId(variable, fallbackId);
-    const variableIndex = this.getCurrentCodingVariables().indexOf(variable);
-    const indexedCoding =
-      variableIndex >= 0 ? this.currentCodingSchemeAsText?.[variableIndex] : undefined;
-    const indexedTextLabel = indexedCoding ? this.getCodingVariableDisplayLabel(indexedCoding) : '';
-    if (indexedTextLabel) {
-      return indexedTextLabel;
-    }
-
-    const textLabel = String(
-      this.currentCodingSchemeAsText?.find((coding) => coding.id === variableId)?.label || '',
-    ).trim();
-    if (textLabel) {
-      return textLabel;
-    }
-
-    const rawLabel = variable?.label;
-    if (typeof rawLabel === 'string' && rawLabel.trim()) {
-      return rawLabel.trim();
-    }
-
-    if (Array.isArray(rawLabel)) {
-      const localizedLabel = rawLabel
-        .map((entry: any) => String(entry?.value || '').trim())
-        .find((value: string) => value.length > 0);
-      if (localizedLabel) {
-        return localizedLabel;
-      }
-    }
-
-    return fallbackId;
-  }
-
-  private getCodingVariableSourceType(variable: any): string {
-    const sourceType = String(variable?.sourceType || '')
-      .trim()
-      .toUpperCase();
-    return sourceType || 'BASE';
-  }
-
-  private getCodingVariableSources(variable: any): string[] {
-    if (!Array.isArray(variable?.deriveSources)) {
-      return [];
-    }
-    return variable.deriveSources
-      .map((value: unknown) => String(value || '').trim())
-      .filter((value: string) => value.length > 0);
-  }
-
-  private isDerivedCodingVariable(variable: any): boolean {
-    return this.getCodingVariableSources(variable).length > 0;
-  }
-
-  private formatPreviewTargetLabel(id: string, label: string): string {
-    return label && label !== id ? `${label} (${id})` : id;
   }
 
   private getStoredPreviewTargetId(item?: ReadonlyExplorerItem | null): string {
-    return String(item?.previewTargetId || '').trim();
+    return this.coding.getStoredPreviewTargetId(item);
   }
 
   private persistPreviewTargetSelection(item: ExplorerItem, targetId: string) {
@@ -4447,7 +2269,7 @@ export class ItemExplorerFacade implements OnDestroy {
     }
     item.previewTargetId = normalizedTargetId || undefined;
 
-    if (!this.canEditExplorer || this.suppressDraftPatch) {
+    if (!this.canEditExplorer || this.draft.patchSuppressed) {
       return;
     }
 
@@ -4464,7 +2286,7 @@ export class ItemExplorerFacade implements OnDestroy {
   private updateItemExclusion(item: ExplorerItem, excluded: boolean) {
     item.excluded = excluded ? true : undefined;
 
-    if (!this.canEditExplorer || this.suppressDraftPatch) {
+    if (!this.canEditExplorer || this.draft.patchSuppressed) {
       return;
     }
 
@@ -4538,249 +2360,69 @@ export class ItemExplorerFacade implements OnDestroy {
     return 'Für dieses Item ist in den Explorer-Daten keine Player-Variable hinterlegt. Sie können ein manuelles Sprungziel setzen.';
   }
 
-  private getCandidateItemIds(): string[] {
-    const selectedItem = this.selectedItem;
-    if (!selectedItem) return [];
-
-    const unitId = String(this.unit?.id || selectedItem.unitId || '').trim();
-    const selectedItemId = String(selectedItem.itemId || '').trim();
-    const resolvedItemId = this.resolveFocusItemId();
-    const withPrefix = (value: string) => (unitId && value ? `${unitId}_${value}` : '');
-
-    const candidates = new Set<string>();
-    for (const candidate of [
-      resolvedItemId,
-      selectedItemId,
-      withPrefix(resolvedItemId),
-      withPrefix(selectedItemId),
-    ]) {
-      if (candidate) {
-        candidates.add(candidate);
-      }
-    }
-
-    if (unitId && selectedItemId.startsWith(`${unitId}_`)) {
-      candidates.add(selectedItemId.slice(unitId.length + 1));
-    }
-
-    return Array.from(candidates);
-  }
-
-  private resolveFocusItemId(): string {
-    const selectedItem = this.selectedItem;
-    if (!selectedItem) return '';
-
-    const selectedItemId = String(selectedItem.itemId || '').trim();
-    const unitItems = Array.isArray(this.unit?.items) ? this.unit.items : [];
-    const unitId = String(this.unit?.id || selectedItem.unitId || '').trim();
-
-    for (const unitItem of unitItems) {
-      const unitItemId = typeof unitItem?.id === 'string' ? unitItem.id : '';
-      if (!unitItemId) continue;
-
-      const prefixedId =
-        unitItem.useUnitAliasAsPrefix !== false ? `${unitId}_${unitItemId}` : unitItemId;
-
-      if (selectedItemId === unitItemId || selectedItemId === prefixedId) {
-        return unitItemId;
-      }
-    }
-
-    if (unitId && selectedItemId.startsWith(`${unitId}_`)) {
-      return selectedItemId.slice(unitId.length + 1);
-    }
-
-    return selectedItemId;
-  }
-
-  private escapeSelectorValue(value: string): string {
-    return String(value || '')
-      .replace(/\\/g, '\\\\')
-      .replace(/"/g, '\\"');
-  }
-
-  private clearFocusRetryTimer() {
-    if (this.focusRetryTimer) {
-      clearTimeout(this.focusRetryTimer);
-      this.focusRetryTimer = null;
-    }
-  }
-
-  private clearLegacyPageNavigationTimers() {
-    this.legacyPageNavigationTimers.forEach((timer) => clearTimeout(timer));
-    this.legacyPageNavigationTimers = [];
-  }
-
-  private sendToPlayer(msg: any) {
-    this.playerDom?.postMessage(msg);
-  }
-
   // --- Personal item working data ---
   get showPersonalItemData(): boolean {
-    return this.enablePersonalItemData && this.personalDataSessionIdentity !== null;
+    this.configurePersonalData();
+    return this.personalData.showPersonalItemData;
   }
 
   get canEditPersonalItemData(): boolean {
-    return this.showPersonalItemData && this.personalDataLoadState === 'loaded';
+    this.configurePersonalData();
+    return this.personalData.canEditPersonalItemData;
   }
 
   get canChangePersonalItemData(): boolean {
-    return this.canEditPersonalItemData && !this.perspectiveSwitchBusy;
+    this.configurePersonalData();
+    return this.personalData.canChangePersonalItemData;
   }
 
   get canExportAllPersonalItemData(): boolean {
-    return this.enablePersonalItemData && this.hasExplorerEditPermission;
-  }
-
-  private loadPersonalItemData(
-    sessionIdentity = this.personalDataSessionIdentity,
-    sessionVersion = this.personalDataSessionVersion,
-  ) {
-    if (!sessionIdentity) return;
-    this.personalDataLoadState = 'loading';
-    this.personalDataError = '';
-    this.api
-      .getViewItemPreferences(this.acpId, this.personalPreferenceViewId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (preferences) => {
-          if (
-            this.personalDataSessionIdentity !== sessionIdentity ||
-            this.personalDataSessionVersion !== sessionVersion
-          ) {
-            return;
-          }
-          this.personalItemData = this.normalizePersonalItemRowData(preferences?.rowData);
-          this.personalDataLoadState = 'loaded';
-          this.restorePendingPersonalSession(sessionIdentity);
-          this.applyFilter(false);
-        },
-        error: (error) => {
-          if (
-            this.personalDataSessionIdentity !== sessionIdentity ||
-            this.personalDataSessionVersion !== sessionVersion
-          ) {
-            return;
-          }
-          console.error('Failed to load personal item working data', error);
-          this.personalDataLoadState = 'error';
-          this.personalDataError =
-            'Persönliche Arbeitsdaten konnten nicht geladen werden. Bearbeitung ist deaktiviert.';
-        },
-      });
+    this.configurePersonalData();
+    return this.personalData.canExportAllPersonalItemData;
   }
 
   retryPersonalItemDataLoad() {
-    if (!this.showPersonalItemData || this.personalSaveInFlight) return;
-    this.loadPersonalItemData();
+    this.configurePersonalData();
+    return this.personalData.retryPersonalItemDataLoad();
   }
 
   setPersonalItemCategory(rowKey: string, value: unknown) {
-    if (!this.canChangePersonalItemData) return;
-    const category = typeof value === 'string' ? value.trim().slice(0, 200) : '';
-    const row = this.getOrCreatePersonalItemRow(rowKey);
-    if (category) row.category = category;
-    else delete row.category;
-    this.compactPersonalItemRow(rowKey);
-    this.queuePersonalItemRowSave(rowKey);
-    this.applyFilter(false);
+    this.configurePersonalData();
+    return this.personalData.setPersonalItemCategory(rowKey, value);
   }
 
   setPersonalItemNote(rowKey: string, value: unknown) {
-    if (!this.canChangePersonalItemData) return;
-    const note = typeof value === 'string' ? value.replace(/\r\n?/g, '\n').slice(0, 10_000) : '';
-    const row = this.getOrCreatePersonalItemRow(rowKey);
-    if (note) row.note = note;
-    else delete row.note;
-    this.compactPersonalItemRow(rowKey);
-    this.queuePersonalItemRowSave(rowKey);
-    this.applyFilter(false);
+    this.configurePersonalData();
+    return this.personalData.setPersonalItemNote(rowKey, value);
   }
 
   addPersonalItemTagToRow(rowKey: string, event: Event) {
-    if (!this.canChangePersonalItemData) return;
-    const select = event.target as HTMLSelectElement;
-    const tag = select.value.trim();
-    select.value = '';
-    if (!tag || !this.personalItemTags.some((entry) => entry.label === tag)) return;
-    const row = this.getOrCreatePersonalItemRow(rowKey);
-    const tags = row.tags || [];
-    if (!tags.includes(tag)) row.tags = [...tags, tag];
-    this.queuePersonalItemRowSave(rowKey);
-    this.applyFilter(false);
+    this.configurePersonalData();
+    return this.personalData.addPersonalItemTagToRow(rowKey, event);
   }
 
   removePersonalItemTagFromRow(rowKey: string, tag: string) {
-    if (!this.canChangePersonalItemData) return;
-    const row = this.personalItemData[rowKey];
-    if (!row?.tags) return;
-    row.tags = row.tags.filter((entry) => entry !== tag);
-    if (!row.tags.length) delete row.tags;
-    this.compactPersonalItemRow(rowKey);
-    this.queuePersonalItemRowSave(rowKey);
-    this.applyFilter(false);
+    this.configurePersonalData();
+    return this.personalData.removePersonalItemTagFromRow(rowKey, tag);
   }
 
   availablePersonalTagsForRow(rowKey: string): PersonalItemTagConfig[] {
-    const selected = new Set(this.personalItemData[rowKey]?.tags || []);
-    return this.personalItemTags.filter((tag) => !selected.has(tag.label));
+    return this.personalData.availablePersonalTagsForRow(rowKey);
   }
 
   getPersonalTagColor(label: string): string {
-    return this.personalItemTags.find((tag) => tag.label === label)?.color || '#6c757d';
+    return this.personalData.getPersonalTagColor(label);
   }
 
   flushPersonalItemDataSave() {
-    this.clearPersonalSaveTimeout();
-    this.saveNextPersonalItemRow();
+    return this.personalData.flushPersonalItemDataSave();
   }
 
   async exportPersonalItemDataXlsx() {
-    if (
-      this.destroyed ||
-      !this.showPersonalItemData ||
-      this.personalDataLoadState !== 'loaded' ||
-      !this.filteredItems.length ||
-      this.personalExportInProgress
-    ) {
-      return;
-    }
-
-    this.personalExportInProgress = true;
-    this.personalExportError = '';
-    try {
-      const saved = await this.flushPersonalItemDataSaveAndWait();
-      if (this.destroyed) return;
-      if (!saved) {
-        this.personalExportError =
-          'Persönliche Änderungen konnten vor dem Export nicht gespeichert werden.';
-        return;
-      }
-
-      const rowKeys = this.filteredItems.map((item) => this.getStableRowKey(item));
-      const blob = await firstValueFrom(
-        this.api.exportViewPersonalItemDataXlsx(
-          this.acpId,
-          rowKeys,
-          this.getPerspectiveForViewerRequests(),
-        ),
-      );
-      if (this.destroyed) return;
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `personal-item-data-${this.acpId}.xlsx`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      if (this.destroyed) return;
-      console.error('Failed to export personal item working data', error);
-      this.personalExportError = 'Persönliche Item-Arbeitsdaten konnten nicht exportiert werden.';
-    } finally {
-      if (!this.destroyed) this.personalExportInProgress = false;
-    }
+    this.configurePersonalData();
+    return this.personalData.exportPersonalItemDataXlsx(
+      this.filteredItems.map((item) => this.getStableRowKey(item)),
+    );
   }
 
   async exportAllPersonalItemDataCsv(scope: 'all' | 'collection' = 'all') {
@@ -4793,454 +2435,48 @@ export class ItemExplorerFacade implements OnDestroy {
         this.collectionLoadState !== 'loaded')
     )
       return;
-    if (
-      this.destroyed ||
-      !this.canExportAllPersonalItemData ||
-      this.allPersonalDataExportInProgress
-    ) {
-      return;
-    }
-
-    this.allPersonalDataExportInProgress = true;
-    this.allPersonalDataExportError = '';
-    this.collectionDataExportError = '';
-    try {
-      const blob = await firstValueFrom(
-        this.api.exportAllViewPersonalItemDataCsv(
-          this.acpId,
-          this.getPerspectiveForViewerRequests(),
-          collection?.id,
-        ),
-      );
-      if (this.destroyed) return;
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      const collectionSuffix = collection
-        ? `-collection-${collection.name.replace(/[^a-zA-Z0-9äöüÄÖÜß_-]+/g, '-').slice(0, 80)}-${collection.id}`
-        : '';
-      anchor.download = `all-participant-item-data-${this.acpId}${collectionSuffix}.csv`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      if (this.destroyed) return;
-      const response = error as { status?: number; error?: unknown };
-      let details = response.error;
-      if (details instanceof Blob) {
-        try {
-          details = JSON.parse(await details.text());
-        } catch {
-          details = undefined;
-        }
-      }
-      if (this.destroyed) return;
-      console.error(
-        'Failed to export all personal item working data',
-        JSON.stringify({ status: response.status, details }),
-      );
-      const message =
-        response.status === 404 && collection
-          ? 'Die Auswahlliste ist nicht mehr verfügbar oder nicht mehr freigegeben. Bitte die Auswahllisten neu laden.'
-          : response.status === 403
-            ? 'Für diesen Export fehlt die Berechtigung oder die benötigte ACP-Funktion ist deaktiviert.'
-            : response.status === 0
-              ? 'Der Server ist nicht erreichbar. Bitte die Verbindung prüfen und den Export erneut versuchen.'
-              : `Die Item-Arbeitsdaten aller Teilnehmenden konnten nicht exportiert werden${response.status ? ` (HTTP ${response.status})` : ''}.`;
-      if (collection) this.collectionDataExportError = message;
-      else this.allPersonalDataExportError = message;
-    } finally {
-      if (!this.destroyed) this.allPersonalDataExportInProgress = false;
-    }
+    this.configurePersonalData();
+    return this.personalData.exportAllPersonalItemDataCsv(collection);
   }
 
   retryPersonalItemDataSave() {
-    if (!this.canEditPersonalItemData || !this.pendingPersonalRowUpdates.size) return;
-    this.personalDataError = '';
-    this.personalDataSaveState = 'pending';
-    this.clearPersonalSaveTimeout();
-    this.saveNextPersonalItemRow();
+    this.configurePersonalData();
+    return this.personalData.retryPersonalItemDataSave();
   }
 
   openDiscardPersonalItemDataDialog() {
-    if (
-      this.personalDataSaveState !== 'error' ||
-      this.personalSaveInFlight ||
-      !this.pendingPersonalRowUpdates.size
-    ) {
-      return;
-    }
-    this.rememberFocusBeforeOverlay();
-    this.showDiscardPersonalItemDataDialog = true;
-  }
-
-  closeDiscardPersonalItemDataDialog() {
-    this.showDiscardPersonalItemDataDialog = false;
-    this.restoreFocusAfterOverlayClose();
-  }
-
-  confirmDiscardPersonalItemDataChanges() {
-    if (
-      this.personalDataSaveState !== 'error' ||
-      this.personalSaveInFlight ||
-      !this.pendingPersonalRowUpdates.size
-    ) {
-      this.closeDiscardPersonalItemDataDialog();
-      return;
-    }
-
-    const sessionIdentity = this.personalDataSessionIdentity;
-    const sessionVersion = this.personalDataSessionVersion;
-    this.showDiscardPersonalItemDataDialog = false;
-    this.clearPersonalSaveTimeout();
-    this.pendingPersonalRowUpdates.clear();
-    this.removePendingPersonalSession();
-    this.personalItemData = {};
-    this.personalDataSaveState = 'idle';
-    this.personalDataError = '';
-    this.resolvePersonalSaveWaiters(false);
-    this.applyFilter(false);
-
-    if (sessionIdentity) {
-      this.loadPersonalItemData(sessionIdentity, sessionVersion);
-    }
-    this.restoreFocusAfterOverlayClose();
-  }
-
-  private queuePersonalItemRowSave(rowKey: string) {
-    if (!this.canChangePersonalItemData) return;
-    const normalizedRow = this.normalizePersonalItemRowData({
-      [rowKey]: this.personalItemData[rowKey],
-    })[rowKey];
-    this.pendingPersonalRowUpdates.set(rowKey, {
-      version: ++this.personalRowUpdateVersion,
-      rowData: normalizedRow || null,
-      perspective: this.getPerspectiveForViewerRequests(),
-    });
-    this.personalDataSaveState = 'pending';
-    this.personalDataError = '';
-    this.clearPersonalSaveTimeout();
-    this.personalSaveTimeout = setTimeout(() => {
-      this.personalSaveTimeout = null;
-      this.saveNextPersonalItemRow();
-    }, this.personalSaveDebounceMs);
-  }
-
-  private saveNextPersonalItemRow() {
-    if (!this.canEditPersonalItemData || this.personalSaveInFlight) return;
-    const nextUpdate = this.pendingPersonalRowUpdates.entries().next().value as
-      | [string, PendingPersonalRowUpdate]
-      | undefined;
-    if (!nextUpdate) {
-      this.personalDataSaveState = 'saved';
-      this.resolvePersonalSaveWaiters(true);
-      return;
-    }
-
-    const [rowKey, update] = nextUpdate;
-    const saveSessionIdentity = this.personalDataSessionIdentity;
-    const saveSessionVersion = this.personalDataSessionVersion;
-    if (!saveSessionIdentity) return;
-    this.personalSaveInFlight = true;
-    this.personalDataSaveState = 'saving';
-    this.api
-      .patchViewItemPreferenceRow(this.acpId, rowKey, update.rowData, update.perspective)
-      .pipe(
-        finalize(() => {
-          if (
-            this.personalDataSessionIdentity !== saveSessionIdentity ||
-            this.personalDataSessionVersion !== saveSessionVersion
-          ) {
-            return;
-          }
-          this.personalSaveInFlight = false;
-          if (this.personalDataSaveState === 'error') {
-            this.resolvePersonalSaveWaiters(false);
-          } else if (this.pendingPersonalRowUpdates.size) {
-            this.saveNextPersonalItemRow();
-          } else {
-            this.personalDataSaveState = 'saved';
-            this.resolvePersonalSaveWaiters(true);
-          }
-        }),
-        takeUntil(this.destroy$),
-      )
-      .subscribe({
-        next: () => {
-          if (
-            this.personalDataSessionIdentity !== saveSessionIdentity ||
-            this.personalDataSessionVersion !== saveSessionVersion
-          ) {
-            return;
-          }
-          const current = this.pendingPersonalRowUpdates.get(rowKey);
-          if (current?.version === update.version) {
-            this.pendingPersonalRowUpdates.delete(rowKey);
-          }
-        },
-        error: (error) => {
-          if (
-            this.personalDataSessionIdentity !== saveSessionIdentity ||
-            this.personalDataSessionVersion !== saveSessionVersion
-          ) {
-            return;
-          }
-          console.error('Failed to save personal item working data', error);
-          this.personalDataSaveState = 'error';
-          this.personalDataError =
-            'Persönliche Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.';
-        },
-      });
-  }
-
-  private syncPersonalItemDataSession() {
-    const nextIdentity = this.enablePersonalItemData
-      ? this.resolvePersonalItemDataSessionIdentity()
-      : null;
-    if (nextIdentity === this.personalDataSessionIdentity) {
-      if (nextIdentity && this.personalDataLoadState === 'idle') {
-        this.loadPersonalItemData(nextIdentity);
-      }
-      return;
-    }
-
-    const previousIdentity = this.personalDataSessionIdentity;
-    if (previousIdentity && !nextIdentity) {
-      this.suspendPendingPersonalSession(previousIdentity);
-    } else if (nextIdentity && nextIdentity !== previousIdentity) {
-      this.discardPendingPersonalSessionUnlessOwnedBy(nextIdentity);
-    }
-
-    this.resetPersonalItemDataSession();
-    this.personalDataSessionIdentity = nextIdentity;
-    if (nextIdentity) {
-      this.loadPersonalItemData(nextIdentity);
-    }
-  }
-
-  private resetPersonalItemDataSession() {
-    this.personalDataSessionIdentity = null;
-    this.personalDataSessionVersion += 1;
-    this.clearPersonalSaveTimeout();
-    this.personalItemData = {};
-    this.personalColumnFilters = {};
-    this.personalDataLoadState = 'idle';
-    this.personalDataSaveState = 'idle';
-    this.personalDataError = '';
-    this.showDiscardPersonalItemDataDialog = false;
-    this.personalSaveInFlight = false;
-    this.pendingPersonalRowUpdates.clear();
-    this.resolvePersonalSaveWaiters(false);
-    this.applyFilter(false);
-  }
-
-  private suspendPendingPersonalSession(identity: string) {
-    if (!this.pendingPersonalRowUpdates.size) return;
-    const snapshot: SuspendedPersonalSession = {
-      identity,
-      updates: Array.from(this.pendingPersonalRowUpdates.entries()).map(([rowKey, update]) => [
-        rowKey,
-        {
-          version: update.version,
-          rowData: update.rowData ? structuredClone(update.rowData) : null,
-          perspective: update.perspective,
-        },
-      ]),
-    };
-    this.pendingPersonalSessionStorage.set(
-      this.personalPendingStorageKey(),
-      JSON.stringify(snapshot),
-    );
-  }
-
-  private restorePendingPersonalSession(identity: string) {
-    const snapshot = this.readPendingPersonalSession();
-    if (!snapshot) return;
-    if (snapshot.identity !== identity) {
-      this.removePendingPersonalSession();
-      return;
-    }
-
-    this.pendingPersonalRowUpdates.clear();
-    for (const [rowKey, update] of snapshot.updates) {
-      this.pendingPersonalRowUpdates.set(rowKey, update);
-      this.personalRowUpdateVersion = Math.max(this.personalRowUpdateVersion, update.version);
-      if (update.rowData) {
-        this.personalItemData[rowKey] = structuredClone(update.rowData);
-      } else {
-        delete this.personalItemData[rowKey];
-      }
-    }
-    this.removePendingPersonalSession();
-    if (this.pendingPersonalRowUpdates.size) {
-      this.personalDataSaveState = 'pending';
-      this.personalDataError = '';
-      this.clearPersonalSaveTimeout();
-      this.personalSaveTimeout = setTimeout(() => {
-        this.personalSaveTimeout = null;
-        this.saveNextPersonalItemRow();
-      }, this.personalSaveDebounceMs);
-    }
-  }
-
-  private discardPendingPersonalSessionUnlessOwnedBy(identity: string) {
-    const snapshot = this.readPendingPersonalSession();
-    if (snapshot && snapshot.identity !== identity) {
-      this.removePendingPersonalSession();
-    }
-  }
-
-  private readPendingPersonalSession(): SuspendedPersonalSession | null {
-    const raw = this.pendingPersonalSessionStorage.get(this.personalPendingStorageKey());
-    if (!raw) return null;
-
-    try {
-      const parsed = JSON.parse(raw) as Partial<SuspendedPersonalSession>;
-      if (typeof parsed.identity !== 'string' || !Array.isArray(parsed.updates)) {
-        throw new Error('Invalid pending personal session');
-      }
-      const updates: Array<[string, PendingPersonalRowUpdate]> = [];
-      for (const entry of parsed.updates) {
-        if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string') continue;
-        const rawUpdate = entry[1] as Partial<PendingPersonalRowUpdate> | null;
-        if (!rawUpdate || !Number.isFinite(rawUpdate.version)) continue;
-        const rowData =
-          rawUpdate.rowData === null
-            ? null
-            : this.normalizePersonalItemRowData({ [entry[0]]: rawUpdate.rowData })[entry[0]] ||
-              null;
-        const perspective =
-          rawUpdate.perspective === 'editor' || rawUpdate.perspective === 'read-only'
-            ? rawUpdate.perspective
-            : 'read-only';
-        updates.push([entry[0], { version: Number(rawUpdate.version), rowData, perspective }]);
-      }
-      return { identity: parsed.identity, updates };
-    } catch {
-      this.removePendingPersonalSession();
-      return null;
-    }
-  }
-
-  private removePendingPersonalSession() {
-    this.pendingPersonalSessionStorage.remove(this.personalPendingStorageKey());
-  }
-
-  private personalPendingStorageKey(): string {
-    return `cp_item_explorer_pending_personal:${this.acpId}`;
-  }
-
-  private resolvePersonalItemDataSessionIdentity(): string | null {
-    return this.pendingPersonalSessionStorage.resolveIdentityFromToken(this.authService.getToken());
-  }
-
-  private flushPersonalItemDataSaveAndWait(): Promise<boolean> {
-    if (!this.hasPendingPersonalItemDataChanges()) {
-      return Promise.resolve(true);
-    }
-    if (!this.canEditPersonalItemData) {
-      return Promise.resolve(false);
-    }
-
-    const result = new Promise<boolean>((resolve) => {
-      this.personalSaveWaiters.push(resolve);
-    });
-    this.personalDataError = '';
-    if (this.pendingPersonalRowUpdates.size) {
-      this.personalDataSaveState = 'pending';
-    }
-    this.clearPersonalSaveTimeout();
-    this.saveNextPersonalItemRow();
+    this.configurePersonalData();
+    const result = this.personalData.openDiscardPersonalItemDataDialog();
+    if (this.showDiscardPersonalItemDataDialog) this.rememberFocusBeforeOverlay();
     return result;
   }
 
+  closeDiscardPersonalItemDataDialog() {
+    this.configurePersonalData();
+    const result = this.personalData.closeDiscardPersonalItemDataDialog();
+    this.restoreFocusAfterOverlayClose();
+    return result;
+  }
+
+  confirmDiscardPersonalItemDataChanges() {
+    this.configurePersonalData();
+    const result = this.personalData.confirmDiscardPersonalItemDataChanges();
+    this.restoreFocusAfterOverlayClose();
+    return result;
+  }
+
+  private syncPersonalItemDataSession() {
+    this.configurePersonalData();
+    return this.personalData.syncPersonalItemDataSession();
+  }
+
+  private flushPersonalItemDataSaveAndWait(): Promise<boolean> {
+    this.configurePersonalData();
+    return this.personalData.flushPersonalItemDataSaveAndWait();
+  }
+
   private hasPendingPersonalItemDataChanges(): boolean {
-    return (
-      this.pendingPersonalRowUpdates.size > 0 ||
-      this.personalSaveInFlight ||
-      this.personalSaveTimeout !== null ||
-      this.personalDataSaveState === 'error'
-    );
-  }
-
-  private resolvePersonalSaveWaiters(saved: boolean) {
-    const waiters = this.personalSaveWaiters;
-    this.personalSaveWaiters = [];
-    waiters.forEach((resolve) => resolve(saved));
-  }
-
-  private clearPersonalSaveTimeout() {
-    if (!this.personalSaveTimeout) return;
-    clearTimeout(this.personalSaveTimeout);
-    this.personalSaveTimeout = null;
-  }
-
-  private getOrCreatePersonalItemRow(rowKey: string): PersonalItemRowData {
-    if (!this.personalItemData[rowKey]) this.personalItemData[rowKey] = {};
-    return this.personalItemData[rowKey];
-  }
-
-  private compactPersonalItemRow(rowKey: string) {
-    const row = this.personalItemData[rowKey];
-    if (row && !row.category && !row.note && !row.tags?.length) {
-      delete this.personalItemData[rowKey];
-    }
-  }
-
-  private normalizePersonalItemRowData(raw: unknown): Record<string, PersonalItemRowData> {
-    if (!this.isRecord(raw)) return {};
-    const normalized: Record<string, PersonalItemRowData> = {};
-    for (const [rawRowKey, rawValue] of Object.entries(raw)) {
-      const rowKey = rawRowKey.trim();
-      if (!rowKey || !this.isRecord(rawValue)) continue;
-      const category =
-        typeof rawValue['category'] === 'string' ? rawValue['category'].trim().slice(0, 200) : '';
-      const note =
-        typeof rawValue['note'] === 'string'
-          ? rawValue['note'].replace(/\r\n?/g, '\n').slice(0, 10_000)
-          : '';
-      const tags = this.normalizeStringList(rawValue['tags']).slice(0, 50);
-      const row: PersonalItemRowData = {};
-      if (category) row.category = category;
-      if (tags.length) row.tags = tags;
-      if (note) row.note = note;
-      if (Object.keys(row).length) normalized[rowKey] = row;
-    }
-    return normalized;
-  }
-
-  private normalizePersonalItemTagConfig(raw: unknown): PersonalItemTagConfig[] {
-    if (!Array.isArray(raw)) return [];
-    const seen = new Set<string>();
-    return raw
-      .map((entry) => {
-        const record = this.isRecord(entry) ? entry : {};
-        const label = typeof record['label'] === 'string' ? record['label'].trim() : '';
-        const colorRaw = typeof record['color'] === 'string' ? record['color'].trim() : '';
-        return {
-          label,
-          color: /^#[0-9a-f]{6}$/i.test(colorRaw) ? colorRaw : '#3498db',
-        };
-      })
-      .filter((tag) => {
-        if (!tag.label || seen.has(tag.label)) return false;
-        seen.add(tag.label);
-        return true;
-      })
-      .slice(0, 50);
-  }
-
-  private normalizeStringList(raw: unknown): string[] {
-    if (!Array.isArray(raw)) return [];
-    return Array.from(
-      new Set(
-        raw
-          .filter((value): value is string => typeof value === 'string')
-          .map((value) => value.trim())
-          .filter(Boolean),
-      ),
-    );
+    return this.personalData.hasPendingPersonalItemDataChanges();
   }
 
   // --- Shared ACP tags ---
@@ -5373,8 +2609,10 @@ export class ItemExplorerFacade implements OnDestroy {
     this.isAcpManager = this.authService.hasAcpRole(this.acpId, 'ACP_MANAGER');
     this.hasExplorerEditPermission = this.latestExplorerState?.canEdit ?? false;
     this.hasExplorerPublishPermission = this.hasExplorerEditPermission;
-    this.itemCommentsEnabled = this.itemCommentsConfigured && this.authService.isLoggedIn;
-    this.codingCommentsEnabled = this.codingCommentsConfigured && this.authService.isLoggedIn;
+    this.comments.itemCommentsEnabled =
+      this.comments.itemCommentsConfigured && this.authService.isLoggedIn;
+    this.comments.codingCommentsEnabled =
+      this.comments.codingCommentsConfigured && this.authService.isLoggedIn;
     const oidcProfileStillLoading =
       this.authService.isLoggedIn &&
       this.authService.isOidcUser &&
@@ -5390,6 +2628,7 @@ export class ItemExplorerFacade implements OnDestroy {
       this.destroyed ||
       !this.canToggleReadOnlyPreview ||
       this.perspectiveSwitchBusy ||
+      this.draft.operationBusy ||
       !this.latestExplorerState
     ) {
       return;
@@ -5401,7 +2640,12 @@ export class ItemExplorerFacade implements OnDestroy {
 
     if (nextPerspective === 'read-only') {
       const flushed = await this.flushDraftPatch();
-      if (!flushed) {
+      if (
+        !flushed ||
+        this.destroyed ||
+        this.draft.operationBusy ||
+        this.draft.hasUnflushedChanges
+      ) {
         return;
       }
     }
@@ -5418,8 +2662,10 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private syncEffectiveExplorerPermissions() {
     const inEditorPerspective = this.viewPerspective === 'editor';
-    this.canEditExplorer = this.hasExplorerEditPermission && inEditorPerspective;
+    this.explorerEditingAllowed = this.hasExplorerEditPermission && inEditorPerspective;
     this.canPublishExplorer = this.hasExplorerPublishPermission && inEditorPerspective;
+    this.configureDraft();
+    this.configurePersonalData();
   }
 
   private getExplorerStateForCurrentPerspective(
@@ -5457,628 +2703,143 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   filterVisibleColumns(allColumns: MetadataColumn[]): MetadataColumn[] {
-    allColumns = allColumns.filter((column) =>
-      this.isReviewerColumnAllowed(this.getMetadataTableColumnKey(column.id)),
-    );
-    if (!this.metadataSettings.configured) {
-      return allColumns.filter((column) => column.visible !== false);
-    }
-
-    // Filter visible columns and maintain order
-    const visibleMap = new Set(this.metadataSettings.visible);
-    const orderedColumns = [];
-
-    // First, add columns in the specified order
-    for (const colId of this.metadataSettings.order || []) {
-      const col = allColumns.find((c) => c.id === colId);
-      if (col && visibleMap.has(colId)) {
-        orderedColumns.push({ ...col, visible: true });
-      }
-    }
-
-    // Then add any remaining visible columns not in the order list
-    for (const col of allColumns) {
-      if (visibleMap.has(col.id) && !orderedColumns.some((c) => c.id === col.id)) {
-        orderedColumns.push({ ...col, visible: true });
-      }
-    }
-
-    return orderedColumns;
+    return this.table.filterVisibleColumns(this.tableColumnContext(), allColumns);
   }
 
   isColumnVisible(column: ItemExplorerTableColumn | MetadataColumn): boolean {
-    const key = 'key' in column ? column.key : this.getMetadataTableColumnKey(column.id);
-    if (!this.isReviewerColumnAllowed(key)) return false;
-    if (key === TABLE_COLUMN_KEYS.itemId && this.reviewerColumnsRestricted) return true;
-    if (!('key' in column)) {
-      return this.metadataSettings.configured
-        ? this.metadataSettings.visible.includes(column.id)
-        : column.visible !== false;
-    }
-    const layout = this.metadataSettings.layout;
-    if (layout?.configured) return layout.visible.includes(column.key);
-    if (column.key === TABLE_COLUMN_KEYS.referenceNumber) return this.referenceNumberVisible;
-    return column.source !== 'metadata' || this.isColumnVisible(column.metadataColumn!);
+    return this.table.isColumnVisible(this.tableColumnContext(), column);
   }
 
   getColumnWidth(column: ItemExplorerTableColumn | MetadataColumn): number {
-    if (!('key' in column)) {
-      return (
-        this.metadataSettings.layout?.widths[this.getMetadataTableColumnKey(column.id)] ||
-        this.metadataSettings.widths[column.id] ||
-        180
-      );
-    }
-    return (
-      this.metadataSettings.layout?.widths[column.key] ||
-      (column.source === 'metadata' ? this.metadataSettings.widths[column.id] : undefined) ||
-      column.defaultWidth
-    );
+    return this.table.getColumnWidth(column);
   }
 
   setColumnWidth(column: ItemExplorerTableColumn | MetadataColumn, value: unknown) {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed)) return;
-    const width = Math.min(600, Math.max(80, Math.round(parsed)));
-    if (!('key' in column)) {
-      this.metadataSettings.widths = {
-        ...this.metadataSettings.widths,
-        [column.id]: width,
-      };
-      return;
-    }
-    this.ensureExplicitTableLayout();
-    this.metadataSettings.layout!.widths = {
-      ...this.metadataSettings.layout!.widths,
-      [column.key]: width,
-    };
-  }
-
-  private ensureExplicitMetadataSelection() {
-    if (this.metadataSettings.configured) return;
-    this.metadataSettings.visible = this.allColumns.map((column) => column.id);
-    this.metadataSettings.order = this.allColumns.map((column) => column.id);
-    this.metadataSettings.configured = true;
-  }
-
-  private ensureExplicitTableLayout() {
-    if (this.metadataSettings.layout?.configured) return;
-    const visible = this.tableColumns.map((column) => column.key);
-    const hidden = this.allTableColumns
-      .map((column) => column.key)
-      .filter((key) => !visible.includes(key));
-    this.metadataSettings.layout = {
-      visible,
-      order: [...visible, ...hidden],
-      configured: true,
-      widths: { ...(this.metadataSettings.layout?.widths || {}) },
-      schemaVersion: TABLE_COLUMN_LAYOUT_SCHEMA_VERSION,
-    };
+    return this.table.setColumnWidth(this.tableColumnContext(), column, value);
   }
 
   private ensureTableColumnDefaults(): void {
-    const layout = this.metadataSettings.layout;
-    if (!layout?.configured || (layout.schemaVersion || 0) >= TABLE_COLUMN_LAYOUT_SCHEMA_VERSION) {
-      return;
-    }
-    const schemaVersion = layout.schemaVersion || 0;
-    const hasExplicitColumns = layout.order.length > 0 || layout.visible.length > 0;
-    if (
-      this.itemCommentsEnabled &&
-      schemaVersion < COMMENT_COLUMN_LAYOUT_SCHEMA_VERSION &&
-      hasExplicitColumns &&
-      !layout.order.includes(TABLE_COLUMN_KEYS.comments)
-    ) {
-      layout.order.push(TABLE_COLUMN_KEYS.comments);
-      layout.visible.push(TABLE_COLUMN_KEYS.comments);
-    }
-    if (!layout.order.includes(TABLE_COLUMN_KEYS.position)) {
-      layout.order.unshift(TABLE_COLUMN_KEYS.position);
-    }
-    if (!layout.visible.includes(TABLE_COLUMN_KEYS.position)) {
-      layout.visible.unshift(TABLE_COLUMN_KEYS.position);
-    }
-    layout.schemaVersion = TABLE_COLUMN_LAYOUT_SCHEMA_VERSION;
-  }
-
-  private syncLegacyMetadataSettingsFromLayout() {
-    const layout = this.metadataSettings.layout;
-    if (!layout?.configured) return;
-    const metadataIds = new Set(this.allColumns.map((column) => column.id));
-    const toMetadataId = (key: string) =>
-      key.startsWith(METADATA_COLUMN_KEY_PREFIX)
-        ? key.slice(METADATA_COLUMN_KEY_PREFIX.length)
-        : '';
-    this.metadataSettings.visible = layout.visible
-      .map(toMetadataId)
-      .filter((id) => metadataIds.has(id));
-    this.metadataSettings.order = layout.order
-      .map(toMetadataId)
-      .filter((id) => metadataIds.has(id));
-    this.metadataSettings.configured = true;
-    this.metadataSettings.referenceNumberVisible = layout.visible.includes(
-      TABLE_COLUMN_KEYS.referenceNumber,
-    );
-    const legacyWidths: Record<string, number> = { ...this.metadataSettings.widths };
-    for (const column of this.allColumns) {
-      const width = layout.widths[this.getMetadataTableColumnKey(column.id)];
-      if (width) legacyWidths[column.id] = width;
-    }
-    this.metadataSettings.widths = legacyWidths;
-    this.columns = this.filterVisibleColumns(this.allColumns);
-  }
-
-  private getMetadataTableColumnKey(id: string): string {
-    return `${METADATA_COLUMN_KEY_PREFIX}${id}`;
+    return this.table.ensureTableColumnDefaults(this.tableColumnContext());
   }
 
   isTableColumnSortable(column: ItemExplorerTableColumn): boolean {
-    return column.source === 'metadata' || Boolean(TABLE_COLUMN_SORT_FIELDS[column.key]);
+    return this.table.isTableColumnSortable(column);
   }
 
   sortTableColumn(column: ItemExplorerTableColumn) {
     if (!this.isTableColumnSortable(column)) return;
-    if (column.source === 'metadata') {
-      this.sortByMeta(column.id);
-      return;
-    }
-    this.sortBy(TABLE_COLUMN_SORT_FIELDS[column.key]);
+    this.table.sortTableColumn(this.tableFilterContext(), column);
+    this.syncSelectionAfterListMutation();
+    this.saveUiPreferences();
   }
 
   getTableColumnSortIndicator(column: ItemExplorerTableColumn): string {
-    if (column.source === 'metadata') return this.getMetaSortIndicator(column.id);
-    const sortField = TABLE_COLUMN_SORT_FIELDS[column.key];
-    return sortField ? this.getSortIndicator(sortField) : '';
+    return this.table.getTableColumnSortIndicator(column);
   }
 
   getTableColumnDisplayValue(
     item: ReadonlyExplorerItem,
     column: DeepReadonly<ItemExplorerTableColumn>,
   ): string {
-    return column.metadataColumn
-      ? String(this.getMetadataColumnDisplayValue(item, column.metadataColumn) ?? '')
-      : '';
+    return this.table.getTableColumnDisplayValue(item, column);
   }
 
   isStickyTableColumn(
     column: DeepReadonly<ItemExplorerTableColumn>,
     _columns: ReadonlyArray<DeepReadonly<ItemExplorerTableColumn>> = this.tableColumns,
   ): boolean {
-    return this.isPinnedTableColumnKey(column.key);
+    return this.table.isStickyTableColumn(column);
   }
 
   getStickyTableColumnLeft(
     column: DeepReadonly<ItemExplorerTableColumn>,
     columns: ReadonlyArray<DeepReadonly<ItemExplorerTableColumn>> = this.tableColumns,
   ): number | null {
-    if (!this.isStickyTableColumn(column, columns)) return null;
-    let left = this.enableItemCollections ? COLLECTION_SELECTION_COLUMN_WIDTH : 0;
-    for (const current of columns) {
-      if (current.key === column.key) return left;
-      if (!this.isPinnedTableColumnKey(current.key)) break;
-      left += this.getColumnWidth(current);
-    }
-    return null;
+    return this.table.getStickyTableColumnLeft(column, columns, this.enableItemCollections);
   }
 
   private clearHiddenTableColumnFilters() {
-    const visibleColumns = this.tableColumns;
-    const sharedFilterKeys = new Set(
-      visibleColumns
-        .filter(
-          (column) =>
-            column.source !== 'personal' && column.key !== TABLE_COLUMN_KEYS.referenceNumber,
-        )
-        .map((column) => column.id),
+    const visiblePersonalFilters = this.table.clearHiddenTableColumnFilters(
+      this.tableColumnContext(),
     );
-    for (const filterKey of Object.keys(this.columnFilters)) {
-      if (!sharedFilterKeys.has(filterKey)) delete this.columnFilters[filterKey];
-    }
-    const personalFilterKeys = new Set(
-      visibleColumns.filter((column) => column.source === 'personal').map((column) => column.id),
-    );
-    for (const filterKey of Object.keys(this.personalColumnFilters)) {
-      if (!personalFilterKeys.has(filterKey)) delete this.personalColumnFilters[filterKey];
-    }
+    this.personalData.retainVisibleColumnFilters(visiblePersonalFilters);
   }
 
   toggleColumnVisibility(column: ItemExplorerTableColumn | MetadataColumn) {
-    const key = 'key' in column ? column.key : this.getMetadataTableColumnKey(column.id);
-    if (!this.isReviewerColumnAllowed(key)) return;
-    if (
-      key === TABLE_COLUMN_KEYS.itemId &&
-      (this.reviewerColumnsRestricted ||
-        this.metadataSettings.restrictReviewerColumnsToManagerSelection)
-    )
-      return;
-    if (!('key' in column)) {
-      this.ensureExplicitMetadataSelection();
-      const colIndex = this.metadataSettings.visible.indexOf(column.id);
-      if (colIndex === -1) {
-        this.metadataSettings.visible.push(column.id);
-        if (!this.metadataSettings.order.includes(column.id)) {
-          this.metadataSettings.order.push(column.id);
-        }
-      } else {
-        this.metadataSettings.visible.splice(colIndex, 1);
-        const orderIndex = this.metadataSettings.order.indexOf(column.id);
-        if (orderIndex !== -1) this.metadataSettings.order.splice(orderIndex, 1);
-      }
-      this.columns = this.filterVisibleColumns(this.allColumns);
-      return;
-    }
-    this.ensureExplicitTableLayout();
-    const layout = this.metadataSettings.layout!;
-    const colIndex = layout.visible.indexOf(column.key);
-    if (colIndex === -1) {
-      layout.visible.push(column.key);
-      if (
-        column.key === TABLE_COLUMN_KEYS.position ||
-        column.key === TABLE_COLUMN_KEYS.referenceNumber
-      ) {
-        layout.order = [column.key, ...layout.order.filter((key) => key !== column.key)];
-      } else if (!layout.order.includes(column.key)) {
-        layout.order.push(column.key);
-      }
-    } else {
-      layout.visible.splice(colIndex, 1);
-      const orderIndex = layout.order.indexOf(column.key);
-      if (orderIndex !== -1) {
-        layout.order.splice(orderIndex, 1);
-      }
-    }
-    this.syncLegacyMetadataSettingsFromLayout();
+    return this.table.toggleColumnVisibility(this.tableColumnContext(), column);
   }
 
   moveColumnUp(column: ItemExplorerTableColumn | MetadataColumn) {
-    if (!('key' in column)) {
-      this.ensureExplicitMetadataSelection();
-      const index = this.metadataSettings.order.indexOf(column.id);
-      if (index > 0) {
-        [this.metadataSettings.order[index], this.metadataSettings.order[index - 1]] = [
-          this.metadataSettings.order[index - 1],
-          this.metadataSettings.order[index],
-        ];
-        this.columns = this.filterVisibleColumns(this.allColumns);
-      }
-      return;
-    }
-    this.moveTableColumn(column, -1);
+    return this.table.moveColumnUp(this.tableColumnContext(), column);
   }
 
   moveColumnDown(column: ItemExplorerTableColumn | MetadataColumn) {
-    if (!('key' in column)) {
-      this.ensureExplicitMetadataSelection();
-      const index = this.metadataSettings.order.indexOf(column.id);
-      if (index >= 0 && index < this.metadataSettings.order.length - 1) {
-        [this.metadataSettings.order[index], this.metadataSettings.order[index + 1]] = [
-          this.metadataSettings.order[index + 1],
-          this.metadataSettings.order[index],
-        ];
-        this.columns = this.filterVisibleColumns(this.allColumns);
-      }
-      return;
-    }
-    this.moveTableColumn(column, 1);
+    return this.table.moveColumnDown(this.tableColumnContext(), column);
   }
 
   canMoveTableColumn(column: DeepReadonly<ItemExplorerTableColumn>, delta: -1 | 1): boolean {
-    if (this.isPinnedTableColumnKey(column.key)) return false;
-    const visibleOrder = this.tableColumns;
-    const visibleIndex = visibleOrder.findIndex((entry) => entry.key === column.key);
-    const neighbor = visibleOrder[visibleIndex + delta];
-    return visibleIndex >= 0 && Boolean(neighbor) && !this.isPinnedTableColumnKey(neighbor.key);
-  }
-
-  private moveTableColumn(column: ItemExplorerTableColumn, delta: -1 | 1) {
-    if (!this.canMoveTableColumn(column, delta)) return;
-    this.ensureExplicitTableLayout();
-    const layout = this.metadataSettings.layout!;
-    const visibleOrder = this.tableColumns.map((entry) => entry.key);
-    const visibleIndex = visibleOrder.indexOf(column.key);
-    const neighborKey = visibleOrder[visibleIndex + delta];
-    if (visibleIndex < 0 || !neighborKey) return;
-
-    for (const key of visibleOrder) {
-      if (!layout.order.includes(key)) layout.order.push(key);
-    }
-    const index = layout.order.indexOf(column.key);
-    const neighborIndex = layout.order.indexOf(neighborKey);
-    [layout.order[index], layout.order[neighborIndex]] = [
-      layout.order[neighborIndex],
-      layout.order[index],
-    ];
-    this.syncLegacyMetadataSettingsFromLayout();
-  }
-
-  private orderPinnedTableColumns(columns: ItemExplorerTableColumn[]): ItemExplorerTableColumn[] {
-    const byKey = new Map(columns.map((column) => [column.key, column]));
-    const pinned = [
-      TABLE_COLUMN_KEYS.position,
-      TABLE_COLUMN_KEYS.referenceNumber,
-      TABLE_COLUMN_KEYS.itemId,
-    ]
-      .map((key) => byKey.get(key))
-      .filter((column): column is ItemExplorerTableColumn => Boolean(column));
-    return [...pinned, ...columns.filter((column) => !this.isPinnedTableColumnKey(column.key))];
-  }
-
-  private isPinnedTableColumnKey(key: string): boolean {
-    return (
-      key === TABLE_COLUMN_KEYS.position ||
-      key === TABLE_COLUMN_KEYS.referenceNumber ||
-      key === TABLE_COLUMN_KEYS.itemId
-    );
+    return this.table.canMoveTableColumn(this.tableColumnContext(), column, delta);
   }
 
   toggleManualOrderMode() {
-    if (this.sortField === '__manual__') {
-      this.sortField = this.sortBeforeManualOrder?.field ?? DEFAULT_EXPLORER_SORT_FIELD;
-      this.sortIsMeta = this.sortBeforeManualOrder?.isMeta ?? false;
-      this.sortDir = this.sortBeforeManualOrder?.direction ?? DEFAULT_EXPLORER_SORT_DIR;
-      this.sortBeforeManualOrder = null;
-      this.applySort();
-      return;
-    }
-
-    this.sortBeforeManualOrder = {
-      field: this.sortField,
-      isMeta: this.sortIsMeta,
-      direction: this.sortDir,
-    };
-    this.sortField = '__manual__';
-    this.sortIsMeta = false;
-    this.sortDir = 'asc';
-    if (!this.itemOrder.length) {
-      this.itemOrder = this.items.map((item) => item.rowKey);
-    }
-    this.applySort();
+    this.table.toggleManualOrderMode(this.tableFilterContext(), this.items);
+    this.syncSelectionAfterListMutation();
+    this.saveUiPreferences();
   }
 
   canMoveSelectedItem(delta: number): boolean {
-    if (!this.canEditExplorer || !this.selectedItem || this.sortField !== '__manual__') {
-      return false;
-    }
-    const order = this.itemOrder.length ? this.itemOrder : this.items.map((item) => item.rowKey);
-    const currentIndex = order.indexOf(this.selectedItem.rowKey);
-    const targetIndex = currentIndex + delta;
-    return currentIndex >= 0 && targetIndex >= 0 && targetIndex < order.length;
+    return (
+      this.canEditExplorer &&
+      !!this.selectedItem &&
+      this.table.canMoveRow(this.items, this.selectedItem.rowKey, delta)
+    );
   }
 
-  moveSelectedItem(delta: number) {
-    if (!this.selectedItem || !this.canMoveSelectedItem(delta)) return;
-    if (!this.itemOrder.length) {
-      this.itemOrder = this.items.map((item) => item.rowKey);
-    }
-    const currentIndex = this.itemOrder.indexOf(this.selectedItem.rowKey);
-    const targetIndex = currentIndex + delta;
-    [this.itemOrder[currentIndex], this.itemOrder[targetIndex]] = [
-      this.itemOrder[targetIndex],
-      this.itemOrder[currentIndex],
-    ];
+  moveSelectedItem(delta: number): void {
+    if (
+      !this.canEditExplorer ||
+      !this.selectedItem ||
+      !this.table.moveRow(this.items, this.selectedItem.rowKey, delta)
+    )
+      return;
     this.applySort(false);
     this.queueDraftPatch('ITEM_ORDER_CHANGED', { itemOrder: [...this.itemOrder] }, true);
   }
 
-  saveMetadataSettings() {
-    if (this.metadataSettings.restrictReviewerColumnsToManagerSelection)
-      this.ensureExplicitTableLayout();
-    this.syncLegacyMetadataSettingsFromLayout();
-    const layout = this.metadataSettings.layout || {
-      visible: [],
-      order: [],
-      configured: false,
-      widths: {},
-      schemaVersion: TABLE_COLUMN_LAYOUT_SCHEMA_VERSION,
-    };
-    this.columns = this.filterVisibleColumns(this.allColumns);
-    this.clearHiddenTableColumnFilters();
-    this.ensureVisibleSortField();
+  saveMetadataSettings(): void {
+    const result = this.table.completeColumnManager(this.tableColumnContext());
+    this.personalData.retainVisibleColumnFilters(result.visiblePersonalFilterKeys);
     this.applyFilter(false);
-    this.columnManagerOriginalSettings = null;
-    this.showColumnManager = false;
     this.restoreFocusAfterOverlayClose();
-    this.queueDraftPatch(
-      'METADATA_COLUMNS_CHANGED',
-      {
-        ui: this.buildUiPreferences(),
-        metadataColumns: {
-          restrictReviewerColumnsToManagerSelection:
-            this.metadataSettings.restrictReviewerColumnsToManagerSelection === true,
-          visible: [...this.metadataSettings.visible],
-          order: [...this.metadataSettings.order],
-          configured: this.metadataSettings.configured,
-          widths: { ...this.metadataSettings.widths },
-          referenceNumberVisible: this.referenceNumberVisible,
-          layout: {
-            visible: [...layout.visible],
-            order: [...layout.order],
-            configured: layout.configured,
-            widths: { ...layout.widths },
-            schemaVersion: TABLE_COLUMN_LAYOUT_SCHEMA_VERSION,
-          },
-        },
-      },
-      true,
-    );
+    this.queueDraftPatch('METADATA_COLUMNS_CHANGED', result.patch, true);
   }
 
   resetToDefault() {
-    const restricted = this.metadataSettings.restrictReviewerColumnsToManagerSelection;
-    this.metadataSettings = {
-      restrictReviewerColumnsToManagerSelection: restricted,
-      visible: [],
-      order: [],
-      configured: false,
-      widths: {},
-      referenceNumberVisible: false,
-      layout: {
-        visible: [],
-        order: [],
-        configured: false,
-        widths: {},
-        schemaVersion: TABLE_COLUMN_LAYOUT_SCHEMA_VERSION,
-      },
-    };
-    this.columns = this.filterVisibleColumns(this.allColumns);
+    return this.table.resetToDefault(this.tableColumnContext());
   }
 
   toggleReferenceNumberVisibility() {
-    const column = this.allTableColumns.find(
-      (entry) => entry.key === TABLE_COLUMN_KEYS.referenceNumber,
-    );
-    if (column) this.toggleColumnVisibility(column);
+    return this.table.toggleReferenceNumberVisibility(this.tableColumnContext());
   }
 
   private resolveMetadataSettings(featureConfig: Record<string, any>): MetadataSettings {
-    const metadataColumns = featureConfig?.['metadataColumns'];
-    if (metadataColumns && typeof metadataColumns === 'object') {
-      const visible = normalizeItemExplorerColumnList(
-        Array.isArray(metadataColumns.visible)
-          ? metadataColumns.visible.filter(
-              (entry: unknown): entry is string => typeof entry === 'string',
-            )
-          : [],
-      );
-      const order = normalizeItemExplorerColumnList(
-        Array.isArray(metadataColumns.order)
-          ? metadataColumns.order.filter(
-              (entry: unknown): entry is string => typeof entry === 'string',
-            )
-          : [],
-      );
-
-      return {
-        visible: visible.length ? visible : order,
-        order: order.length ? order : visible,
-        restrictReviewerColumnsToManagerSelection:
-          metadataColumns.restrictReviewerColumnsToManagerSelection === true,
-        configured: metadataColumns.configured === true || visible.length > 0 || order.length > 0,
-        widths: normalizeItemExplorerColumnRecord(
-          this.normalizeMetadataColumnWidths(metadataColumns.widths),
-        ),
-        referenceNumberVisible: metadataColumns.referenceNumberVisible === true,
-        layout: this.resolveTableColumnLayout(metadataColumns.layout),
-      };
-    }
-
-    const legacyColumns = featureConfig?.['itemListMetadataColumns'];
-    const legacy = normalizeItemExplorerColumnList(
-      Array.isArray(legacyColumns)
-        ? legacyColumns.filter((entry: unknown): entry is string => typeof entry === 'string')
-        : [],
-    );
-
-    return {
-      visible: legacy,
-      order: legacy,
-      configured: legacy.length > 0,
-      widths: {},
-      referenceNumberVisible: false,
-      layout: this.resolveTableColumnLayout(undefined),
-    };
-  }
-
-  private resolveTableColumnLayout(raw: unknown) {
-    const layout = this.isRecord(raw) ? raw : {};
-    const visible = normalizeItemExplorerColumnList(
-      Array.isArray(layout['visible'])
-        ? layout['visible'].filter((entry: unknown): entry is string => typeof entry === 'string')
-        : [],
-      normalizeItemExplorerTableColumnKey,
-    );
-    const order = normalizeItemExplorerColumnList(
-      Array.isArray(layout['order'])
-        ? layout['order'].filter((entry: unknown): entry is string => typeof entry === 'string')
-        : [],
-      normalizeItemExplorerTableColumnKey,
-    );
-    return {
-      visible: layout['configured'] === true ? visible : visible.length ? visible : order,
-      order: order.length ? order : visible,
-      configured: layout['configured'] === true || visible.length > 0 || order.length > 0,
-      widths: normalizeItemExplorerColumnRecord(
-        this.normalizeMetadataColumnWidths(layout['widths']),
-        normalizeItemExplorerTableColumnKey,
-      ),
-      ...(Number.isInteger(Number(layout['schemaVersion']))
-        ? { schemaVersion: Number(layout['schemaVersion']) }
-        : {}),
-    };
+    return this.table.resolveMetadataSettings(featureConfig);
   }
 
   private resolveConfiguredMetadataColumns(featureConfig: Record<string, any>): MetadataColumn[] {
-    const definitions = featureConfig?.['metadataColumns']?.definitions;
-    if (!Array.isArray(definitions)) return [];
-    const seen = new Set<string>();
-    const columns: MetadataColumn[] = [];
-    definitions.forEach((entry: unknown) => {
-      if (!this.isRecord(entry)) return;
-      const id = String(entry['id'] || '').trim();
-      const label = String(entry['label'] || '').trim();
-      if (!id || !label || seen.has(id)) return;
-      seen.add(id);
-      columns.push({ id, label, kind: 'text' });
-    });
-    return columns;
-  }
-
-  private normalizeMetadataColumnWidths(raw: unknown): Record<string, number> {
-    if (!this.isRecord(raw)) return {};
-    const widths: Record<string, number> = {};
-    Object.entries(raw).forEach(([id, value]) => {
-      const width = Number(value);
-      if (!id.trim() || !Number.isFinite(width)) return;
-      widths[id] = Math.min(600, Math.max(80, Math.round(width)));
-    });
-    return widths;
+    return this.table.resolveConfiguredMetadataColumns(featureConfig);
   }
 
   private buildUiPreferences(): Record<string, unknown> {
-    const sharedColumnFilters = Object.fromEntries(
-      Object.entries(this.columnFilters).filter(([key]) => !this.isPersonalColumnFilterKey(key)),
-    );
-    return {
-      sortField: this.sortField,
-      sortIsMeta: this.sortIsMeta,
-      sortDir: this.sortDir,
-      columnFilters: sharedColumnFilters,
-    };
+    return this.table.buildUiPreferences();
   }
 
   private applyUiPreferences(rawUi: unknown) {
-    if (!this.isRecord(rawUi)) return;
-
-    const sortField = rawUi['sortField'];
-    const sortIsMeta = rawUi['sortIsMeta'];
-    const sortDir = rawUi['sortDir'];
-    const columnFilters = rawUi['columnFilters'];
-
-    const normalizedSortIsMeta = typeof sortIsMeta === 'boolean' ? sortIsMeta : this.sortIsMeta;
-    if (typeof sortField === 'string') {
-      this.sortField = normalizedSortIsMeta
-        ? normalizeItemExplorerMetadataColumnId(sortField)
-        : sortField;
-    }
-
-    this.sortIsMeta = normalizedSortIsMeta;
-
-    this.sortDir = sortDir === 'desc' ? 'desc' : 'asc';
-    this.columnFilters = this.isRecord(columnFilters)
-      ? normalizeItemExplorerColumnFilters(
-          Object.fromEntries(
-            Object.entries(columnFilters).filter(([key]) => !this.isPersonalColumnFilterKey(key)),
-          ),
-        )
-      : {};
-  }
-
-  private isPersonalColumnFilterKey(key: string): boolean {
-    return key === 'personalCategory' || key === 'personalTags' || key === 'personalNote';
+    return this.table.applyUiPreferences(rawUi);
   }
 
   private saveUiPreferences() {
-    if (!this.canEditExplorer || this.suppressDraftPatch) {
+    if (!this.canEditExplorer || this.draft.patchSuppressed) {
       return;
     }
     this.queueDraftPatch('UI_STATE_CHANGED', {
@@ -6111,6 +2872,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.leaveWithChangesDialogState = 'saving';
     this.leaveWithChangesDialogError = '';
     const saved = await this.saveExplorerDraft(true);
+    if (this.destroyed) return;
     if (saved) {
       this.resolveLeaveWithChangesDialog(true);
       return;
@@ -6124,6 +2886,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.leaveWithChangesDialogState = 'discarding';
     this.leaveWithChangesDialogError = '';
     const discarded = await this.discardExplorerDraft(true);
+    if (this.destroyed) return;
     if (discarded) {
       this.resolveLeaveWithChangesDialog(true);
       return;
@@ -6154,7 +2917,7 @@ export class ItemExplorerFacade implements OnDestroy {
     } catch (error) {
       if (this.destroyed) return null;
       console.error('Failed to load shared explorer state', error);
-      this.explorerUiStatus = 'ERROR';
+      this.draft.explorerUiStatus = 'ERROR';
       return null;
     }
   }
@@ -6171,8 +2934,8 @@ export class ItemExplorerFacade implements OnDestroy {
         this.reloadItems(resolve, envelope),
       );
       if (outcome === 'loaded' && preserveDraftOperationError) {
-        this.lastDraftOperationError = draftOperationError;
-        this.explorerUiStatus = 'ERROR';
+        this.draft.lastDraftOperationError = draftOperationError;
+        this.draft.explorerUiStatus = 'ERROR';
       }
       if (outcome !== 'version-mismatch') return outcome === 'loaded';
     }
@@ -6180,7 +2943,7 @@ export class ItemExplorerFacade implements OnDestroy {
     if (!this.destroyed) {
       this.itemListError =
         'Der Item-Explorer wurde während des Ladens mehrfach geändert. Bitte erneut laden.';
-      this.explorerUiStatus = 'ERROR';
+      this.draft.explorerUiStatus = 'ERROR';
     }
     return false;
   }
@@ -6206,10 +2969,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private applySharedExplorerEnvelope(envelope: ItemExplorerStateEnvelope, markSaved = false) {
-    this.lastDraftOperationError = '';
-    this.latestExplorerState = envelope;
-    this.explorerVersion = envelope.version;
-    this.explorerPublishedVersion = envelope.publishedVersion;
+    this.draft.acceptEnvelope(envelope, markSaved);
     this.hasExplorerEditPermission = envelope.canEdit;
     this.hasExplorerPublishPermission = envelope.canPublish;
     if (!this.hasExplorerEditPermission) {
@@ -6217,29 +2977,25 @@ export class ItemExplorerFacade implements OnDestroy {
     }
     this.syncEffectiveExplorerPermissions();
 
-    const roleLabel = envelope.updatedByRole ? ` (${envelope.updatedByRole})` : '';
-    const username = envelope.updatedByUsername || 'unbekannt';
-    this.lastExplorerChangeInfo = `${username}${roleLabel} · ${new Date(envelope.updatedAt).toLocaleString()}`;
-
     const activeState = this.getExplorerStateForCurrentPerspective(envelope);
-    this.suppressDraftPatch = true;
+    this.draft.setPatchSuppressed(true);
     try {
       this.applyUiPreferences((activeState as ItemExplorerSharedState).ui);
       this.itemTags = this.normalizeTags((activeState as ItemExplorerSharedState).tags);
-      this.metadataSettings = this.resolveMetadataSettings({
+      this.table.metadataSettings = this.resolveMetadataSettings({
         metadataColumns: (activeState as ItemExplorerSharedState).metadataColumns,
       });
       this.ensureTableColumnDefaults();
-      this.columns = this.filterVisibleColumns(this.allColumns);
+      this.table.columns = this.filterVisibleColumns(this.allColumns);
       this.clearHiddenTableColumnFilters();
       this.ensureVisibleSortField();
-      this.itemOrder = Array.isArray((activeState as ItemExplorerSharedState).itemOrder)
+      this.table.itemOrder = Array.isArray((activeState as ItemExplorerSharedState).itemOrder)
         ? (activeState as ItemExplorerSharedState).itemOrder!.filter(
             (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0,
           )
         : [];
     } finally {
-      this.suppressDraftPatch = false;
+      this.draft.setPatchSuppressed(false);
     }
 
     const previousPreviewTarget = this.selectedItem
@@ -6263,25 +3019,6 @@ export class ItemExplorerFacade implements OnDestroy {
         }
       }
     }
-
-    if (envelope.status === 'DIRTY') {
-      this.explorerUiStatus = 'DIRTY';
-      return;
-    }
-    if (markSaved) {
-      this.explorerUiStatus = 'SAVED';
-      if (this.saveStatusResetTimeout) {
-        clearTimeout(this.saveStatusResetTimeout);
-      }
-      this.saveStatusResetTimeout = setTimeout(() => {
-        this.saveStatusResetTimeout = null;
-        if (!this.hasPendingDraftChanges()) {
-          this.explorerUiStatus = 'CLEAN';
-        }
-      }, 1800);
-      return;
-    }
-    this.explorerUiStatus = 'CLEAN';
   }
 
   private applyExplorerStateToItems() {
@@ -6339,18 +3076,9 @@ export class ItemExplorerFacade implements OnDestroy {
       this.itemTags = { ...this.itemTags, ...stateTags };
     }
 
-    if (!this.itemOrder.length) {
-      this.itemOrder = this.items.map((item) => item.rowKey);
-    } else {
-      const existing = new Set(this.items.map((item) => item.rowKey));
-      const filteredOrder = this.itemOrder.filter((entry) => existing.has(entry));
-      const missing = this.items
-        .map((item) => item.rowKey)
-        .filter((entry) => !filteredOrder.includes(entry));
-      this.itemOrder = [...filteredOrder, ...missing];
-    }
+    this.table.reconcileItemOrder(this.items);
 
-    this.hasEmpiricalDifficulty = this.items.some(
+    this.table.hasEmpiricalDifficulty = this.items.some(
       (item: any) => item.empiricalDifficulty !== undefined && item.empiricalDifficulty !== null,
     );
     this.reconcileMeanTaskDifficultyState();
@@ -6358,23 +3086,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private reconcileMeanTaskDifficultyState(): void {
-    this.hasMeanTaskDifficulty = this.items.some((item) => item.meanTaskDifficulty !== undefined);
-    if (!this.hasMeanTaskDifficulty) {
-      let uiStateChanged = false;
-      if (this.columnFilters['meanTaskDifficulty'] !== undefined) {
-        delete this.columnFilters['meanTaskDifficulty'];
-        uiStateChanged = true;
-      }
-      if (this.sortField === 'meanTaskDifficulty') {
-        this.sortField = DEFAULT_EXPLORER_SORT_FIELD;
-        this.sortIsMeta = false;
-        this.sortDir = DEFAULT_EXPLORER_SORT_DIR;
-        uiStateChanged = true;
-      }
-      if (uiStateChanged) {
-        this.saveUiPreferences();
-      }
-    }
+    if (this.table.reconcileMeanTaskDifficultyState(this.items)) this.saveUiPreferences();
   }
 
   private getItemStateKeys(item: ExplorerItem): string[] {
@@ -6426,167 +3138,95 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   hasPendingDraftChanges(): boolean {
-    return (
-      Boolean(this.pendingDraftPatch) ||
-      this.latestExplorerState?.status === 'DIRTY' ||
-      this.explorerUiStatus === 'DIRTY'
-    );
+    return this.draft.hasPendingDraftChanges();
   }
 
   openSavePreviewDialog() {
-    if (!this.canPublishExplorer || !this.hasPendingDraftChanges()) {
-      return;
-    }
-    this.rememberFocusBeforeOverlay();
-    this.draftPreviewSummary = this.buildDraftPreviewSummary();
-    this.showSavePreviewDialog = true;
+    this.configureDraft();
+    this.draft.openSavePreviewDialog();
+    if (this.showSavePreviewDialog) this.rememberFocusBeforeOverlay();
   }
 
   cancelSavePreviewDialog() {
-    this.showSavePreviewDialog = false;
+    this.configureDraft();
+    this.draft.cancelSavePreviewDialog();
     this.restoreFocusAfterOverlayClose();
   }
 
   confirmSaveExplorerDraft() {
-    this.showSavePreviewDialog = false;
+    this.draft.showSavePreviewDialog = false;
     void this.saveExplorerDraft(true);
   }
 
   openDiscardExplorerDraftDialog() {
-    if (!this.canPublishExplorer || !this.hasPendingDraftChanges()) {
-      return;
-    }
-    this.rememberFocusBeforeOverlay();
-    this.showDiscardDraftDialog = true;
-    this.discardDraftDialogBusy = false;
-    this.discardDraftDialogError = '';
+    this.configureDraft();
+    this.draft.openDiscardExplorerDraftDialog();
+    if (this.showDiscardDraftDialog) this.rememberFocusBeforeOverlay();
   }
 
   closeDiscardDraftDialog() {
-    if (this.discardDraftDialogBusy) return;
-    this.showDiscardDraftDialog = false;
-    this.discardDraftDialogError = '';
-    this.restoreFocusAfterOverlayClose();
+    this.configureDraft();
+    this.draft.closeDiscardDraftDialog();
+    if (!this.showDiscardDraftDialog) this.restoreFocusAfterOverlayClose();
   }
 
   async confirmDiscardDraftDialog() {
     if (this.discardDraftDialogBusy) return;
-    this.discardDraftDialogBusy = true;
-    this.discardDraftDialogError = '';
+    this.draft.discardDraftDialogBusy = true;
+    this.draft.discardDraftDialogError = '';
     const discarded = await this.discardExplorerDraft(true);
-    this.discardDraftDialogBusy = false;
+    if (this.destroyed) return;
+    this.draft.discardDraftDialogBusy = false;
     if (discarded) {
       this.closeDiscardDraftDialog();
       return;
     }
-    this.discardDraftDialogError =
+    this.draft.discardDraftDialogError =
       this.lastDraftOperationError || 'Entwurfsänderungen konnten nicht verworfen werden.';
   }
 
   async saveExplorerDraft(force = false): Promise<boolean> {
-    if (this.destroyed || !this.canPublishExplorer) {
-      return false;
-    }
+    if (this.destroyed || !this.canPublishExplorer || this.draft.operationBusy) return false;
     if (!force) {
       this.openSavePreviewDialog();
       return false;
     }
-
-    const flushed = await this.flushDraftPatch();
-    if (!flushed) {
-      return false;
-    }
-
-    this.lastDraftOperationError = '';
-    this.explorerUiStatus = 'SAVING';
+    this.configureDraft();
     try {
-      const envelope = await firstValueFrom(
-        this.api.saveItemExplorerDraft(this.acpId, this.explorerVersion),
-      );
-      if (this.destroyed) return false;
-      this.applySharedExplorerEnvelope(envelope, true);
-      this.reloadItems();
-      this.lastDraftOperationError = '';
-      this.draftSaveSuccessMessage =
-        'Entwurf gespeichert. Referenznummern können bei Bedarf separat neu vergeben werden.';
-      if (this.draftSaveMessageResetTimeout) {
-        clearTimeout(this.draftSaveMessageResetTimeout);
+      const result = await this.draft.saveExplorerDraft();
+      const saved = await this.applyDraftResult(result);
+      if (
+        saved &&
+        !this.destroyed &&
+        result.kind === 'applied' &&
+        this.draft.canApplyEnvelope(result.envelope)
+      ) {
+        this.reloadItems();
+        if (!this.showLeaveWithChangesDialog) this.restoreFocusAfterOverlayClose();
       }
-      this.draftSaveMessageResetTimeout = setTimeout(() => {
-        this.draftSaveMessageResetTimeout = null;
-        this.draftSaveSuccessMessage = '';
-      }, 5000);
-      if (!this.showLeaveWithChangesDialog) {
-        this.restoreFocusAfterOverlayClose();
-      }
-      return true;
-    } catch (error: any) {
-      if (this.destroyed) return false;
-      console.error('Failed to save draft', error);
-      this.explorerUiStatus = 'ERROR';
-      this.lastDraftOperationError = this.extractDraftErrorMessage(
-        error,
-        'Fehler beim Speichern der Änderungen.',
-      );
-      if (error?.status === 409) {
-        await this.reloadSharedExplorerStateAndItems(true);
-      }
-      return false;
+      return saved && !this.draft.hasUnflushedChanges;
+    } finally {
+      this.draft.finishOperation();
     }
   }
 
   async discardExplorerDraft(skipConfirm = false): Promise<boolean> {
-    if (this.destroyed || !this.canPublishExplorer) {
-      return false;
-    }
+    if (this.destroyed || !this.canPublishExplorer || this.draft.operationBusy) return false;
     if (!skipConfirm) {
       this.openDiscardExplorerDraftDialog();
       return false;
     }
-
-    if (this.draftPatchTimeout) {
-      clearTimeout(this.draftPatchTimeout);
-      this.draftPatchTimeout = null;
-    }
-    this.pendingDraftPatch = null;
-    this.pendingDraftChangeType = 'UI_UPDATE';
-    this.showSavePreviewDialog = false;
-    this.lastDraftOperationError = '';
-
-    this.explorerUiStatus = 'SAVING';
+    this.configureDraft();
     try {
-      const envelope = await firstValueFrom(
-        this.api.discardItemExplorerDraft(this.acpId, this.explorerVersion),
-      );
-      if (this.destroyed) return false;
-      this.applySharedExplorerEnvelope(envelope, true);
-      this.reloadItems();
-      this.lastDraftOperationError = '';
-      if (!this.showLeaveWithChangesDialog) {
-        this.restoreFocusAfterOverlayClose();
+      const saved = await this.applyDraftResult(await this.draft.discardExplorerDraft());
+      if (saved && !this.destroyed) {
+        this.reloadItems();
+        if (!this.showLeaveWithChangesDialog) this.restoreFocusAfterOverlayClose();
       }
-      return true;
-    } catch (error: any) {
-      if (this.destroyed) return false;
-      console.error('Failed to discard draft', error);
-      this.explorerUiStatus = 'ERROR';
-      this.lastDraftOperationError = this.extractDraftErrorMessage(
-        error,
-        'Fehler beim Verwerfen der Änderungen.',
-      );
-      if (error?.status === 409) {
-        await this.reloadSharedExplorerStateAndItems(true);
-      }
-      return false;
+      return saved && !this.draft.hasUnflushedChanges;
+    } finally {
+      this.draft.finishOperation();
     }
-  }
-
-  private extractDraftErrorMessage(error: any, fallback: string): string {
-    if (error?.status === 409) {
-      return 'Konflikt erkannt: Der Explorer wurde zwischenzeitlich geändert. Status wurde neu geladen.';
-    }
-    const message = String(error?.error?.message || '');
-    return message || fallback;
   }
 
   showHistory() {
@@ -6612,7 +3252,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   openCodingOverlay() {
     this.rememberFocusBeforeOverlay();
-    this.codingSearchText = '';
+    this.coding.codingSearchText = '';
     this.showOverlay = 'coding';
   }
 
@@ -6625,45 +3265,14 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   openColumnManager() {
-    if (this.showColumnManager) {
-      return;
-    }
+    if (this.showColumnManager) return;
     this.rememberFocusBeforeOverlay();
-    this.columnManagerOriginalSettings = {
-      restrictReviewerColumnsToManagerSelection:
-        this.metadataSettings.restrictReviewerColumnsToManagerSelection,
-      visible: [...this.metadataSettings.visible],
-      order: [...this.metadataSettings.order],
-      configured: this.metadataSettings.configured,
-      widths: { ...this.metadataSettings.widths },
-      referenceNumberVisible: this.referenceNumberVisible,
-      ...(this.metadataSettings.layout
-        ? {
-            layout: {
-              visible: [...this.metadataSettings.layout.visible],
-              order: [...this.metadataSettings.layout.order],
-              configured: this.metadataSettings.layout.configured,
-              widths: { ...this.metadataSettings.layout.widths },
-              ...(this.metadataSettings.layout.schemaVersion
-                ? { schemaVersion: this.metadataSettings.layout.schemaVersion }
-                : {}),
-            },
-          }
-        : {}),
-    };
-    this.showColumnManager = true;
+    this.table.openColumnManager();
   }
 
   closeColumnManager() {
-    if (!this.showColumnManager) {
-      return;
-    }
-    if (this.columnManagerOriginalSettings) {
-      this.metadataSettings = this.columnManagerOriginalSettings;
-      this.columns = this.filterVisibleColumns(this.allColumns);
-      this.columnManagerOriginalSettings = null;
-    }
-    this.showColumnManager = false;
+    if (!this.showColumnManager) return;
+    this.table.closeColumnManager(this.tableColumnContext());
     this.restoreFocusAfterOverlayClose();
   }
 
@@ -6735,60 +3344,6 @@ export class ItemExplorerFacade implements OnDestroy {
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
-  }
-
-  private buildDraftPreviewSummary(): Array<{ label: string; detail: string }> {
-    const draft = this.latestExplorerState?.draftState;
-    const published = this.latestExplorerState?.publishedState;
-    if (!draft || !published) {
-      return [];
-    }
-
-    const summary: Array<{ label: string; detail: string }> = [];
-
-    if (JSON.stringify(draft.ui || {}) !== JSON.stringify(published.ui || {})) {
-      summary.push({
-        label: 'Filter/Sortierung',
-        detail: 'Globale Filter-, Sortier- oder Spaltenfilter-Einstellungen wurden geändert.',
-      });
-    }
-    if (
-      JSON.stringify(draft.metadataColumns || {}) !==
-      JSON.stringify(published.metadataColumns || {})
-    ) {
-      summary.push({
-        label: 'Metadaten-Spalten',
-        detail: 'Sichtbarkeit oder Reihenfolge der Metadaten-Spalten wurde angepasst.',
-      });
-    }
-    if (JSON.stringify(draft.itemOrder || []) !== JSON.stringify(published.itemOrder || [])) {
-      summary.push({
-        label: 'Item-Reihenfolge',
-        detail: `Manuelle Reihenfolge mit ${Array.isArray(draft.itemOrder) ? draft.itemOrder.length : 0} Positionen wurde geändert.`,
-      });
-    }
-    if (JSON.stringify(draft.tags || {}) !== JSON.stringify(published.tags || {})) {
-      summary.push({
-        label: 'Tags',
-        detail: 'Tag-Zuordnungen für Items wurden verändert.',
-      });
-    }
-    if (
-      JSON.stringify(draft.itemProperties || {}) !== JSON.stringify(published.itemProperties || {})
-    ) {
-      const draftCount = this.isRecord(draft.itemProperties)
-        ? Object.keys(draft.itemProperties).length
-        : 0;
-      const publishedCount = this.isRecord(published.itemProperties)
-        ? Object.keys(published.itemProperties).length
-        : 0;
-      summary.push({
-        label: 'Item-Werte',
-        detail: `Item-Eigenschaften (z.B. empirische Schwierigkeit, Vorschauziele oder Ausschlüsse) geändert: ${publishedCount} → ${draftCount} Einträge.`,
-      });
-    }
-
-    return summary;
   }
 
   private selectFilteredItemAt(index: number, shouldScroll = false) {
@@ -6870,19 +3425,16 @@ export class ItemExplorerFacade implements OnDestroy {
     this.selectedItem = null;
     this.selectedIndex = -1;
     this.currentUnitMetadata = [];
-    this.currentCodingScheme = null;
-    this.currentCodingSchemeAsText = null;
-    this.currentResponseData = null;
-    this.hasResponseState = false;
-    this.isFallbackState = false;
-    this.correctSolutionPrefill = {
+    this.coding.setScheme(null);
+    this.player.applyResponseState(null);
+    this.coding.correctSolutionPrefill = {
       status: 'unavailable',
       responses: [],
       message: 'Für dieses Item wurde noch keine Musterlösung ermittelt.',
     };
-    this.restoreResponseDataAfterSolution = false;
-    this.selectedPreviewTargetId = '';
-    this.customPreviewTargetDraft = '';
+    this.player.restoreResponseDataAfterSolution = false;
+    this.coding.selectedPreviewTargetId = '';
+    this.coding.customPreviewTargetDraft = '';
     this.syncPreviewTargetResolution(null);
     this.resetPlayer();
   }
@@ -6974,12 +3526,12 @@ export class ItemExplorerFacade implements OnDestroy {
       return true;
     }
     if (this.showErrorDialog) {
-      this.showErrorDialog = false;
+      this.imports.closeError();
       this.restoreFocusAfterOverlayClose();
       return true;
     }
     if (this.showUploadReport) {
-      this.showUploadReport = false;
+      this.imports.closeReport();
       this.restoreFocusAfterOverlayClose();
       return true;
     }
@@ -6999,179 +3551,13 @@ export class ItemExplorerFacade implements OnDestroy {
     patch: Record<string, unknown>,
     flushImmediately = false,
   ) {
-    if (!this.canEditExplorer || this.suppressDraftPatch) {
-      return;
-    }
-
-    this.pendingDraftPatch = this.mergeDraftPatches(this.pendingDraftPatch, patch);
-    this.pendingDraftChangeType = changeType;
-    this.explorerUiStatus = 'DIRTY';
-    this.draftSaveSuccessMessage = '';
-
-    if (this.draftPatchTimeout) {
-      clearTimeout(this.draftPatchTimeout);
-      this.draftPatchTimeout = null;
-    }
-
-    if (flushImmediately) {
-      void this.flushDraftPatch();
-      return;
-    }
-
-    this.draftPatchTimeout = setTimeout(() => {
-      this.draftPatchTimeout = null;
-      void this.flushDraftPatch();
-    }, this.draftPatchDebounceMs);
+    this.configureDraft();
+    this.draft.queueDraftPatch(changeType, patch, flushImmediately);
   }
 
-  private mergeDraftPatches(
-    current: Record<string, unknown> | null,
-    incoming: Record<string, unknown>,
-  ): Record<string, unknown> {
-    const merged: Record<string, unknown> = { ...(current || {}) };
-    for (const [key, value] of Object.entries(incoming || {})) {
-      if (key === 'ui' && this.isRecord(value) && this.isRecord(merged['ui'])) {
-        merged['ui'] = {
-          ...merged['ui'],
-          ...value,
-        };
-      } else if (key === 'itemPropertiesPatch' && this.isRecord(value)) {
-        merged[key] = this.mergeItemPropertiesPatches(merged[key], value);
-      } else {
-        merged[key] = value;
-      }
-    }
-    return merged;
-  }
-
-  private mergeItemPropertiesPatches(
-    current: unknown,
-    incoming: Record<string, unknown>,
-  ): Record<string, unknown> {
-    const merged = this.isRecord(current) ? { ...current } : {};
-    for (const [itemKey, propertyPatch] of Object.entries(incoming)) {
-      if (propertyPatch === null) {
-        merged[itemKey] = null;
-      } else if (this.isRecord(propertyPatch)) {
-        merged[itemKey] = this.isRecord(merged[itemKey])
-          ? { ...merged[itemKey], ...propertyPatch }
-          : { ...propertyPatch };
-      } else {
-        merged[itemKey] = propertyPatch;
-      }
-    }
-    return merged;
-  }
-
-  private flushDraftPatch(): Promise<boolean> {
-    if (this.destroyed) return Promise.resolve(false);
-    if (this.draftPatchFlushInFlight) {
-      return this.draftPatchFlushInFlight;
-    }
-    if (!this.canEditExplorer || !this.pendingDraftPatch) {
-      return Promise.resolve(true);
-    }
-
-    const drain = this.drainDraftPatches();
-    const trackedDrain = drain.finally(() => {
-      if (this.draftPatchFlushInFlight === trackedDrain) {
-        this.draftPatchFlushInFlight = null;
-      }
-    });
-    this.draftPatchFlushInFlight = trackedDrain;
-    return trackedDrain;
-  }
-
-  private async drainDraftPatches(): Promise<boolean> {
-    while (this.pendingDraftPatch) {
-      if (this.destroyed || !this.canEditExplorer) return false;
-      if (!(await this.performDraftPatch())) return false;
-    }
-    return !this.destroyed;
-  }
-
-  private async performDraftPatch(): Promise<boolean> {
-    if (this.destroyed || !this.canEditExplorer || !this.pendingDraftPatch) {
-      return !this.destroyed;
-    }
-
-    if (this.draftPatchTimeout) {
-      clearTimeout(this.draftPatchTimeout);
-      this.draftPatchTimeout = null;
-    }
-
-    const patch = this.pendingDraftPatch;
-    const changeType = this.pendingDraftChangeType;
-    this.pendingDraftPatch = null;
-    this.pendingDraftChangeType = 'UI_UPDATE';
-
-    this.explorerUiStatus = 'SAVING';
-    try {
-      const envelope = await firstValueFrom(
-        this.api.patchItemExplorerDraft(this.acpId, {
-          changeType,
-          patch: patch as ItemExplorerSharedState,
-          baseVersion: this.explorerVersion,
-        }),
-      );
-      if (this.destroyed) return false;
-      if (this.pendingDraftPatch) {
-        // A newer optimistic change is already visible locally. Only adopt the
-        // server version here so the next serialized patch does not overwrite
-        // that newer UI state with this response's older snapshot.
-        this.latestExplorerState = envelope;
-        this.explorerVersion = envelope.version;
-        this.explorerPublishedVersion = envelope.publishedVersion;
-        this.explorerUiStatus = 'DIRTY';
-      } else {
-        this.applySharedExplorerEnvelope(envelope);
-      }
-      return true;
-    } catch (error: any) {
-      if (this.destroyed) return false;
-      console.error('Failed to patch draft', error);
-      this.explorerUiStatus = 'ERROR';
-      if (error?.status === 409) {
-        this.lastDraftOperationError =
-          'Konflikt beim Aktualisieren des Entwurfs. Der Explorer wurde neu geladen.';
-        this.pendingDraftPatch = null;
-        this.pendingDraftChangeType = 'UI_UPDATE';
-        await this.reloadSharedExplorerStateAndItems(true);
-        return false;
-      }
-      this.lastDraftOperationError = this.extractDraftErrorMessage(
-        error,
-        'Fehler beim Aktualisieren des Entwurfs.',
-      );
-      const patchQueuedWhileSaving = this.pendingDraftPatch;
-      const queuedChangeType = this.pendingDraftChangeType;
-      const tagUpdateFailed = Object.prototype.hasOwnProperty.call(patch, 'tags');
-      const retryPatch = this.mergeDraftPatches(
-        this.withoutDraftPatchField(patch, tagUpdateFailed ? 'tags' : ''),
-        this.withoutDraftPatchField(patchQueuedWhileSaving, tagUpdateFailed ? 'tags' : ''),
-      );
-      this.pendingDraftPatch = Object.keys(retryPatch).length ? retryPatch : null;
-      this.pendingDraftChangeType = this.pendingDraftPatch
-        ? patchQueuedWhileSaving
-          ? queuedChangeType
-          : changeType
-        : 'UI_UPDATE';
-      if (tagUpdateFailed) {
-        this.rollbackItemTagsToLatestExplorerState();
-      }
-      return false;
-    }
-  }
-
-  private withoutDraftPatchField(
-    patch: Record<string, unknown> | null,
-    field: string,
-  ): Record<string, unknown> {
-    if (!patch) return {};
-    if (!field) return { ...patch };
-    const result = { ...patch };
-    delete result[field];
-    return result;
+  private async flushDraftPatch(): Promise<boolean> {
+    this.configureDraft();
+    return this.applyDraftResult(await this.draft.flushDraftPatch());
   }
 
   private rollbackItemTagsToLatestExplorerState(): void {
@@ -7225,73 +3611,9 @@ export class ItemExplorerFacade implements OnDestroy {
     return tags;
   }
 
-  private resolveItemCommentCountKey(
-    unitId: string,
-    itemId: string,
-    counts: Record<string, number>,
-  ): string {
-    const exactKey = this.itemCommentTargetKey(unitId, itemId);
-    if (Object.prototype.hasOwnProperty.call(counts, exactKey)) return exactKey;
-    const prefix = `${unitId}_`;
-    // Match the backend: exact canonical ID first, then a unit-prefixed request alias.
-    if (!itemId.startsWith(prefix)) return exactKey;
-    const alternateKey = this.itemCommentTargetKey(unitId, itemId.slice(prefix.length));
-    return Object.prototype.hasOwnProperty.call(counts, alternateKey) ? alternateKey : exactKey;
-  }
-
-  private itemCommentTargetKey(unitId: string, itemId: string): string {
-    return `${unitId}\u0000${itemId}`;
-  }
-
   private syncItemCommentCountSession(): void {
-    const nextIdentity =
-      this.itemCommentsEnabled || this.codingCommentsEnabled
-        ? this.pendingPersonalSessionStorage.resolveIdentityFromToken(this.authService.getToken())
-        : null;
-    if (nextIdentity === this.itemCommentCountSessionIdentity) return;
-
-    this.stopCommentAutoRefresh();
-    this.itemCommentCountSessionIdentity = nextIdentity;
-    this.itemCommentSessionToken += 1;
-    this.itemCommentCountsRequestToken += 1;
-    this.itemCommentRefreshToken += 1;
-    this.itemCommentCountsLoading = false;
-    this.itemCommentCountsAvailable = false;
-    this.itemCommentCounts = {};
-    this.codingCommentCounts = {};
-    this.itemCommentCountsError = '';
-    this.itemCommentCountStateVersion += 1;
-    this.itemCommentCountChangeVersions.clear();
-    this.codingCommentCountChangeVersions.clear();
-    this.applyFilter(false);
-
-    if (nextIdentity) {
-      this.ensureTableColumnDefaults();
-      this.refreshItemComments(false);
-      document.addEventListener('visibilitychange', this.commentVisibilityListener);
-      window.addEventListener('focus', this.commentVisibilityListener);
-      this.commentRefreshTimer = setInterval(() => this.refreshVisibleItemComments(), 5_000);
-    }
-  }
-
-  private refreshVisibleItemComments(): void {
-    if (
-      this.destroyed ||
-      document.visibilityState !== 'visible' ||
-      (!this.itemCommentsEnabled && !this.codingCommentsEnabled) ||
-      !this.authService.isLoggedIn ||
-      !this.itemCommentCountSessionIdentity ||
-      this.itemCommentCountsLoading
-    )
-      return;
-    this.refreshItemComments();
-  }
-
-  private stopCommentAutoRefresh(): void {
-    document.removeEventListener('visibilitychange', this.commentVisibilityListener);
-    window.removeEventListener('focus', this.commentVisibilityListener);
-    if (this.commentRefreshTimer !== null) clearInterval(this.commentRefreshTimer);
-    this.commentRefreshTimer = null;
+    this.configureComments();
+    return this.comments.syncItemCommentCountSession();
   }
 
   private selectInitialCommentTarget(): void {
@@ -7313,11 +3635,11 @@ export class ItemExplorerFacade implements OnDestroy {
       (entry) => this.getStableRowKey(entry) === this.getStableRowKey(item),
     );
     if (index < 0) {
-      this.filterText = '';
-      this.columnFilters = {};
-      this.personalColumnFilters = {};
-      this.collectionViewMode = 'all';
-      if (this.isItemExcluded(item)) this.showExcludedItems = true;
+      this.table.filterText = '';
+      this.table.columnFilters = {};
+      this.personalData.personalColumnFilters = {};
+      this.collections.collectionViewMode = 'all';
+      if (this.isItemExcluded(item)) this.table.showExcludedItems = true;
       this.applyFilter(false);
       index = this.filteredItems.findIndex(
         (entry) => this.getStableRowKey(entry) === this.getStableRowKey(item),
@@ -7330,31 +3652,6 @@ export class ItemExplorerFacade implements OnDestroy {
     } finally {
       this.selectingInitialCommentTarget = false;
     }
-  }
-
-  private downloadCommentExport(request: Observable<Blob>, fileName: string): void {
-    if (this.commentExportInProgress) return;
-    this.commentExportInProgress = true;
-    this.commentExportError = '';
-    request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: (blob) => {
-        this.commentExportInProgress = false;
-        if (!blob?.size) {
-          this.commentExportError = 'Der Kommentar-Export war leer.';
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = fileName;
-        anchor.click();
-        URL.revokeObjectURL(url);
-      },
-      error: () => {
-        this.commentExportInProgress = false;
-        this.commentExportError = 'Kommentare konnten nicht exportiert werden.';
-      },
-    });
   }
 
   private isRecord(value: unknown): value is Record<string, any> {

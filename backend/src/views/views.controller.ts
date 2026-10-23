@@ -803,11 +803,6 @@ export class ViewsController {
       unknown
     >;
     if (
-      featureKey === "enableItemList" &&
-      hasCapability(req?.acpCapabilities || [], "item-explorer:view")
-    )
-      return true;
-    if (
       ["enableUnitView", "enableSequenceNavigation"].includes(featureKey) &&
       featureConfig.enableReview === true &&
       req?.user?.sub

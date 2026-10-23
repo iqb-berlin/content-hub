@@ -422,4 +422,74 @@ describe("Published reviewer column boundary (HTTP)", () => {
       .expect(200);
     expect(unrestricted.body.items[0].bista).toBe(123457);
   });
+  it("applies booklet label visibility to start-page, sequence-list and detail endpoints", async () => {
+    await db
+      .getRepository(AcpAccessConfig)
+      .update(configId, { accessModel: "CREDENTIALS_LIST" as any });
+    const acp = await db.getRepository(Acp).findOneByOrFail({ id: acpId });
+    await db.getRepository(Acp).update(acpId, {
+      acpIndex: {
+        ...acp.acpIndex,
+        assessmentParts: [
+          {
+            id: "part",
+            bookletModules: [
+              { id: "M", name: "HIDDEN_MODULE_TITLE", units: [{ id: "U" }] },
+            ],
+          },
+        ],
+      },
+    });
+    const manifests = app.get(ReviewManifestService);
+    const original = manifests.getManifest;
+    manifests.getManifest = async () => ({
+      booklets: [
+        {
+          id: "B",
+          name: "HIDDEN_BOOKLET_TITLE",
+          definitionId: "HIDDEN_BOOKLET_TITLE.xml",
+          children: [],
+          units: [],
+        },
+      ],
+      units: [],
+      issues: [],
+    });
+    try {
+      for (const visible of [false, true]) {
+        await patch(
+          true,
+          visible ? ["system:itemId", "metadata:booklet"] : ["system:itemId"],
+        );
+        await publish();
+        for (const actor of ["reader", "credential"]) {
+          for (const suffix of [
+            "",
+            "/sequences",
+            "/sequences/B?kind=booklet",
+            "/sequences/M",
+          ]) {
+            const response = await request(server)
+              .get(`/api/view/acp/${acpId}${suffix}`)
+              .set(headers(actor))
+              .expect(200);
+            expect(
+              /HIDDEN_BOOKLET_TITLE|HIDDEN_MODULE_TITLE/.test(response.text),
+            ).toBe(visible);
+            const sequence =
+              suffix === ""
+                ? response.body.sequences[0]
+                : suffix === "/sequences"
+                  ? response.body[0]
+                  : response.body;
+            expect(sequence.id).toBe(suffix === "/sequences/M" ? "M" : "B");
+            if (suffix === "/sequences/M")
+              expect(sequence.units).toEqual([{ id: "U" }]);
+          }
+        }
+      }
+    } finally {
+      manifests.getManifest = original;
+    }
+  });
 });

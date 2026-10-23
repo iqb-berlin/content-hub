@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { AccessReason } from '../core/services/access.service';
+
+import { ApiService } from '../core/services/api.service';
+import { Subject, catchError, map, of, switchMap, takeUntil } from 'rxjs';
 
 type AccessContext = 'admin' | 'acp' | 'view' | 'manage' | null;
 
@@ -75,11 +78,13 @@ type AccessContext = 'admin' | 'acp' | 'view' | 'manage' | null;
     `,
   ],
 })
-export class AccessComponent implements OnInit {
+export class AccessComponent implements OnInit, OnDestroy {
   reason: AccessReason = 'insufficient_rights';
   context: AccessContext = null;
   nextUrl = '';
   acpId = '';
+  acpName = '';
+  private readonly destroyed$ = new Subject<void>();
 
   title = 'Kein Zugriff';
   subtitle = 'Sie haben aktuell keine Berechtigung für diese Seite.';
@@ -89,6 +94,7 @@ export class AccessComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly auth: AuthService,
+    private readonly api: ApiService,
   ) {}
 
   get showLoginButton(): boolean {
@@ -104,19 +110,39 @@ export class AccessComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.route.queryParamMap.subscribe((params) => {
-      const reason = params.get('reason');
-      const context = params.get('context');
-      const next = params.get('next');
-      const acpId = params.get('acpId');
+    this.route.queryParamMap
+      .pipe(
+        switchMap((params) => {
+          const reason = params.get('reason');
+          const context = params.get('context');
+          const next = params.get('next');
+          const acpId = params.get('acpId');
 
-      this.reason = this.parseReason(reason);
-      this.context = this.parseContext(context);
-      this.nextUrl = this.normalizeNextUrl(next);
-      this.acpId = acpId?.trim() || '';
+          this.reason = this.parseReason(reason);
+          this.context = this.parseContext(context);
+          this.nextUrl = this.normalizeNextUrl(next);
+          this.acpId = acpId?.trim() || '';
 
-      this.applyTexts();
-    });
+          this.acpName = '';
+          this.applyTexts();
+          return this.reason === 'login_required' && this.acpId
+            ? this.api.getPublicAcps().pipe(
+                map((acps) => acps.find((acp) => acp.id === this.acpId)?.name?.trim() || ''),
+                catchError(() => of('')),
+              )
+            : of('');
+        }),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe((name) => {
+        this.acpName = name;
+        this.applyTexts();
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroyed$.next();
+    this.destroyed$.complete();
   }
 
   goToLogin() {
@@ -140,7 +166,7 @@ export class AccessComponent implements OnInit {
         this.title = 'Anmeldung erforderlich';
         this.subtitle = 'Bitte melden Sie sich an, um auf diese Seite zuzugreifen.';
         this.detail = this.acpId
-          ? `Für das Paket "${this.acpId}" kann je nach Konfiguration ein separater ACP-Zugang erforderlich sein.`
+          ? `Für ${this.acpName ? `das Paket "${this.acpName}"` : 'dieses Paket'} kann je nach Konfiguration ein separater ACP-Zugang erforderlich sein.`
           : '';
         break;
       case 'session_expired':

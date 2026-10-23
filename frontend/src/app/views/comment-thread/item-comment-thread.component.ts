@@ -12,6 +12,8 @@ import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, takeUntil, timeout } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { Comment, CommentThreadSnapshot, ReviewCommentTarget } from '../../core/models/api.models';
+import { CommentThreadDrafts } from './comment-thread-drafts';
+import { unitLabel } from '../../shared/unit-label';
 
 interface CommentThreadGroup {
   id: string;
@@ -30,11 +32,14 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   @Input() acpId = '';
   @Input() targetType: ReviewCommentTarget['targetType'] = 'ITEM';
   @Input() bookletId = '';
+  @Input() bookletName = '';
   @Input() unitId = '';
+  @Input() unitName = '';
   @Input() itemId = '';
   @Input() enabled = false;
   @Input() refreshToken = 0;
   @Input() sessionToken = 0;
+  @Input() drafts = new CommentThreadDrafts();
   @Input() initiallyOpen = false;
   @Input() hideToggle = false;
   @Output() countChanged = new EventEmitter<{
@@ -58,10 +63,31 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     this.operationError = value;
   }
   snapshot: CommentThreadSnapshot | null = null;
-  replyingTo: string | null = null;
-  editingCommentId: string | null = null;
-  editText = '';
-  private editingComment: Comment | null = null;
+  get replyingTo(): string | null {
+    return this.drafts.replyTargets.get(this.targetKey) || null;
+  }
+
+  set replyingTo(value: string | null) {
+    if (value) this.drafts.replyTargets.set(this.targetKey, value);
+    else this.drafts.replyTargets.delete(this.targetKey);
+  }
+
+  get editingCommentId(): string | null {
+    return this.editingComment?.id || null;
+  }
+
+  get editText(): string {
+    return this.drafts.edits.get(this.targetKey)?.text || '';
+  }
+
+  set editText(value: string) {
+    const edit = this.drafts.edits.get(this.targetKey);
+    if (edit) edit.text = value;
+  }
+
+  private get editingComment(): Comment | null {
+    return this.drafts.edits.get(this.targetKey)?.comment || null;
+  }
 
   private requestToken = 0;
   private threadLoadError = '';
@@ -69,11 +95,58 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   private threadRequest: Subscription | null = null;
   private readonly destroy$ = new Subject<void>();
   private readonly sessionChanged$ = new Subject<void>();
-  private readonly newDrafts = new Map<string, string>();
-  private readonly replyDrafts = new Map<string, string>();
-  private readonly expandedByTarget = new Map<string, Set<string>>();
+  private get newDrafts() {
+    return this.drafts.newComments;
+  }
+  private get replyDrafts() {
+    return this.drafts.replies;
+  }
+  private get expandedByTarget() {
+    return this.drafts.expandedThreads;
+  }
 
-  selectedGroupId = '';
+  get selectedGroupId(): string {
+    return this.drafts.selectedGroups.get(this.targetKey) || '';
+  }
+
+  set selectedGroupId(value: string) {
+    this.drafts.selectedGroups.set(this.targetKey, value);
+  }
+  get selectedCategoryId(): string {
+    return this.drafts.selectedCategories.get(this.targetKey) || '';
+  }
+
+  set selectedCategoryId(value: string) {
+    this.drafts.selectedCategories.set(this.targetKey, value);
+  }
+
+  get editCategoryId(): string {
+    return this.drafts.edits.get(this.targetKey)?.categoryId || '';
+  }
+
+  set editCategoryId(value: string) {
+    const edit = this.drafts.edits.get(this.targetKey);
+    if (edit) edit.categoryId = value;
+  }
+
+  get availableCategories() {
+    return (this.snapshot?.categories || []).filter((category) => !category.archived);
+  }
+
+  unavailableCategoryName(id: string): string {
+    if (!id || this.availableCategories.some((category) => category.id === id)) return '';
+    const category = this.snapshot?.categories?.find((entry) => entry.id === id);
+    return category ? `${category.name} (archiviert)` : 'Kategorie nicht mehr verfügbar';
+  }
+
+  replyCategoryId(rootId: string): string {
+    return this.drafts.replyCategories.get(this.replyDraftKey(rootId)) || '';
+  }
+
+  setReplyCategoryId(rootId: string, value: string): void {
+    this.drafts.replyCategories.set(this.replyDraftKey(rootId), value);
+  }
+
   private accessDenied = false;
   private readonly poll = setInterval(() => {
     if (this.hasTarget && !this.loading && !this.busy) this.loadThread(true);
@@ -93,9 +166,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     if (sessionChanged) {
       this.sessionChanged$.next();
       this.busy = false;
-      this.newDrafts.clear();
-      this.replyDrafts.clear();
-      this.expandedByTarget.clear();
+      if (!sessionChanged.firstChange) this.drafts.clear();
     }
     if (targetChanged || sessionChanged) {
       this.requestToken += 1;
@@ -103,9 +174,6 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
       this.threadRequest = null;
       this.loading = false;
       this.snapshot = null;
-      this.selectedGroupId = '';
-      this.replyingTo = null;
-      this.cancelEdit();
       this.error = '';
       this.threadLoadError = '';
       if (this.initiallyOpen && !this.initialOpenConsumed) {
@@ -138,15 +206,16 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   }
 
   get contextLabel(): string {
-    if (this.targetType === 'BOOKLET') return `Testheft ${this.bookletId}`;
-    if (this.targetType === 'UNIT') return `Unit ${this.unitId}`;
+    if (this.targetType === 'BOOKLET') return `Testheft ${this.bookletName || this.bookletId}`;
+    if (this.targetType === 'UNIT')
+      return `Aufgabe ${unitLabel({ id: this.unitId, name: this.unitName })}`;
     if (this.targetType === 'CODING') return `Kodierung ${this.unitId} · ${this.itemId}`;
     return `Item ${this.unitId} · ${this.itemId}`;
   }
 
   get commentHeading(): string {
-    if (this.targetType === 'BOOKLET') return `Kommentare zum Testheft ${this.bookletId}`;
-    if (this.targetType === 'UNIT') return `Kommentare zur Unit ${this.unitId}`;
+    if (this.targetType === 'BOOKLET') return `Kommentare zum ${this.contextLabel}`;
+    if (this.targetType === 'UNIT') return `Kommentare zur ${this.contextLabel}`;
     if (this.targetType === 'CODING') {
       return `Kommentare zur Kodierung ${this.unitId} · ${this.itemId}`;
     }
@@ -159,8 +228,8 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
 
   get newCommentPlaceholder(): string {
     if (this.targetType === 'ITEM') return 'Kommentar zu diesem Item …';
-    if (this.targetType === 'BOOKLET') return `Kommentar zum Testheft ${this.bookletId} …`;
-    if (this.targetType === 'UNIT') return `Kommentar zur Unit ${this.unitId} …`;
+    if (this.targetType === 'BOOKLET') return `Kommentar zum ${this.contextLabel} …`;
+    if (this.targetType === 'UNIT') return `Kommentar zur ${this.contextLabel} …`;
     return `Kommentar zur Kodierung ${this.unitId} · ${this.itemId} …`;
   }
 
@@ -299,6 +368,13 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
       this.error = 'Bitte die Review-Gruppe für diesen Entwurf wählen.';
       return;
     }
+    const categoryId = parentCommentId
+      ? this.replyCategoryId(parentCommentId)
+      : this.selectedCategoryId;
+    if (categoryId && !this.availableCategories.some((category) => category.id === categoryId)) {
+      this.error = 'Bitte eine verfügbare Kategorie oder „Ohne Kategorie“ wählen.';
+      return;
+    }
     const targetKey = this.targetKey;
     const acpId = this.acpId;
     const replyDraftKey = parentCommentId ? this.replyDraftKey(parentCommentId, targetKey) : '';
@@ -307,6 +383,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     this.busy = true;
     const input = {
       commentText: text.trim(),
+      ...(categoryId ? { categoryId } : {}),
       ...(!parentCommentId && this.snapshot?.visibilityMode === 'GROUP' && this.selectedGroupId
         ? { groupId: this.selectedGroupId }
         : {}),
@@ -324,10 +401,12 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
       next: () => {
         if (parentCommentId) {
           this.replyDrafts.delete(replyDraftKey);
+          this.drafts.replyCategories.delete(replyDraftKey);
           this.expandedThreadsFor(targetKey).add(parentCommentId);
-          if (targetKey === this.targetKey) this.replyingTo = null;
+          this.drafts.replyTargets.delete(targetKey);
         } else {
           this.newDrafts.delete(targetKey);
+          this.drafts.selectedCategories.delete(targetKey);
         }
         this.busy = false;
         if (targetKey === this.targetKey) this.loadThread();
@@ -354,15 +433,15 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   }
 
   startEdit(comment: Comment): void {
-    this.editingComment = { ...comment };
-    this.editingCommentId = comment.id;
-    this.editText = comment.commentText;
+    this.drafts.edits.set(this.targetKey, {
+      comment: { ...comment },
+      text: comment.commentText,
+      categoryId: comment.categoryId || '',
+    });
   }
 
   cancelEdit(): void {
-    this.editingComment = null;
-    this.editingCommentId = null;
-    this.editText = '';
+    this.drafts.edits.delete(this.targetKey);
   }
 
   saveEdit(comment: Comment): void {
@@ -375,16 +454,17 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     this.api
       .updateItemComment(this.acpId, comment.id, {
         commentText: this.editText.trim(),
+        ...(this.editCategoryId !== (this.editingComment?.categoryId || '')
+          ? { categoryId: this.editCategoryId || null }
+          : {}),
         version,
       })
       .pipe(takeUntil(this.destroy$), takeUntil(this.sessionChanged$))
       .subscribe({
         next: () => {
           this.busy = false;
-          if (targetKey === this.targetKey) {
-            this.cancelEdit();
-            this.loadThread();
-          }
+          this.drafts.edits.delete(targetKey);
+          if (targetKey === this.targetKey) this.loadThread();
         },
         error: (error) => {
           this.busy = false;

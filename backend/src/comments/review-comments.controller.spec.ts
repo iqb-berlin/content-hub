@@ -110,6 +110,7 @@ describe("ReviewCommentsController", () => {
       "Neu",
       2,
       expect.objectContaining({ userId: "user-1", isManager: true }),
+      undefined,
     );
 
     await expect(

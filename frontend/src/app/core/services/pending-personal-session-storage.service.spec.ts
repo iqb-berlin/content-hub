@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PendingPersonalSessionStorageService } from './pending-personal-session-storage.service';
 
 function createJwt(sub: string, type = 'user', acpId = ''): string {
@@ -22,17 +22,22 @@ describe('PendingPersonalSessionStorageService', () => {
     vi.restoreAllMocks();
   });
 
+  afterEach(() => vi.restoreAllMocks());
+
   it('uses its in-memory copy when session storage is unavailable', () => {
     sessionStorage.setItem('pending', '{"value":"old"}');
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    vi.spyOn(sessionStorage, 'setItem').mockImplementation(() => {
       throw new DOMException('Storage unavailable', 'QuotaExceededError');
     });
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    vi.spyOn(sessionStorage, 'getItem').mockImplementation(() => {
       throw new DOMException('Storage unavailable', 'SecurityError');
     });
     const service = new PendingPersonalSessionStorageService();
 
+    expect(service.get('unread')).toBeNull();
+    expect(sessionStorage.getItem).toHaveBeenCalledWith('unread');
     service.set('pending', '{"value":1}');
+    expect(sessionStorage.setItem).toHaveBeenCalledWith('pending', '{"value":1}');
 
     expect(service.get('pending')).toBe('{"value":1}');
     service.remove('pending');
@@ -100,5 +105,60 @@ describe('PendingPersonalSessionStorageService', () => {
     expect(
       service.resolveIdentityFromToken(createJwt('credential-1', 'credential', 'acp-a')),
     ).not.toBe(service.resolveIdentityFromToken(createJwt('credential-1', 'credential', 'acp-b')));
+  });
+  it('does not resurrect a removed snapshot when browser deletion fails', () => {
+    sessionStorage.setItem('pending', 'stale');
+    const service = new PendingPersonalSessionStorageService();
+    const remove = vi.spyOn(sessionStorage, 'removeItem').mockImplementation(() => {
+      throw new DOMException('Blocked', 'SecurityError');
+    });
+    service.remove('pending');
+    expect(remove).toHaveBeenCalledWith('pending');
+    expect(sessionStorage.getItem('pending')).toBe('stale');
+    expect(service.get('pending')).toBeNull();
+    remove.mockRestore();
+    service.set('pending', 'new');
+    expect(service.get('pending')).toBe('new');
+  });
+
+  it('removes another identity from memory even when browser enumeration fails', () => {
+    const service = new PendingPersonalSessionStorageService();
+    const key = 'cp_item_explorer_pending_personal:acp-a';
+    service.set(
+      key,
+      JSON.stringify({ identity: service.resolveIdentityFromToken(createJwt('a')) }),
+    );
+    const enumerate = vi.spyOn(sessionStorage, 'key').mockImplementation(() => {
+      throw new DOMException('Blocked', 'SecurityError');
+    });
+    service.activateIdentityFromToken(createJwt('b'));
+    expect(enumerate).toHaveBeenCalled();
+    expect(service.get(key)).toBeNull();
+  });
+
+  it.each(['{broken', '{}', '{"identity":42}', ''])('removes corrupt snapshots: %s', (raw) => {
+    const key = 'cp_item_explorer_pending_personal:acp-a';
+    sessionStorage.setItem(key, raw);
+    const service = new PendingPersonalSessionStorageService();
+    service.activateIdentityFromToken(createJwt('user-a'));
+    expect(service.get(key)).toBeNull();
+  });
+
+  it.each([null, '', 'invalid', 'header.%%%.signature', createJwt('  ')])(
+    'ignores invalid identity tokens without deleting recoverable changes: %s',
+    (token) => {
+      const service = new PendingPersonalSessionStorageService();
+      const key = 'cp_item_explorer_pending_personal:acp-a';
+      service.set(key, 'recoverable');
+      expect(service.resolveIdentityFromToken(token)).toBeNull();
+      service.activateIdentityFromToken(token);
+      expect(service.get(key)).toBe('recoverable');
+    },
+  );
+
+  it('does not activate an expired identity', () => {
+    const service = new PendingPersonalSessionStorageService();
+    const token = `header.${btoa(JSON.stringify({ sub: 'a', exp: 1 }))}.signature`;
+    expect(service.resolveIdentityFromToken(token)).toBeNull();
   });
 });

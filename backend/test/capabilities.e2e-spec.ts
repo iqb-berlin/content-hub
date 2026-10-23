@@ -99,6 +99,113 @@ describe("Capability and import API integration", () => {
     if (app) await app.close();
   });
 
+  it("blocks participant Explorer access when disabled without removing stored grants", async () => {
+    const config = await db
+      .getRepository(AcpAccessConfig)
+      .findOneByOrFail({ id: configId });
+    await db
+      .getRepository(AcpUserRole)
+      .update({ acpId, userId }, { capabilities: [...ACP_CAPABILITIES] });
+    await db
+      .getRepository(AcpCredential)
+      .update(credentialId, { capabilities: [...ACP_CAPABILITIES] });
+    try {
+      await db.getRepository(AcpAccessConfig).update(configId, {
+        featureConfig: { ...config.featureConfig, enableItemList: false },
+      });
+      for (const token of [userToken, credentialToken]) {
+        const get = (path: string) =>
+          request(server)
+            .get(path)
+            .set("Authorization", "Bearer " + token);
+        for (const path of [
+          `/api/view/acp/${acpId}/items`,
+          `/api/acp/${acpId}/items`,
+          `/api/acp/${acpId}/files/item-list`,
+          `/api/view/acp/${acpId}/item-explorer/state`,
+          `/api/view/acp/${acpId}/items/preferences`,
+          `/api/view/acp/${acpId}/items/collections`,
+        ])
+          await get(path).expect(403);
+        const response = await get(
+          `/api/view/acp/${acpId}/capabilities`,
+        ).expect(200);
+        expect(response.body).toMatchObject({
+          canViewExplorer: false,
+          canEditExplorer: false,
+        });
+        expect(response.body.capabilities).toEqual([...ACP_CAPABILITIES]);
+        await request(server)
+          .put(`/api/acp/${acpId}/items/tags`)
+          .set("Authorization", "Bearer " + token)
+          .send({})
+          .expect(403);
+      }
+      await request(server)
+        .get(`/api/view/acp/${acpId}/items`)
+        .set("Authorization", "Bearer " + adminToken)
+        .expect(200);
+    } finally {
+      await db
+        .getRepository(AcpAccessConfig)
+        .save({ id: configId, featureConfig: config.featureConfig });
+    }
+    await request(server)
+      .get(`/api/view/acp/${acpId}/items`)
+      .set("Authorization", "Bearer " + userToken)
+      .expect(200);
+  });
+
+  it("keeps migrated item-only commenting usable without activating booklet review", async () => {
+    const config = await db
+      .getRepository(AcpAccessConfig)
+      .findOneByOrFail({ id: configId });
+    await db
+      .getRepository(AcpUserRole)
+      .update({ acpId, userId }, { capabilities: ["review:participate"] });
+    await db
+      .getRepository(AcpCredential)
+      .update(credentialId, { capabilities: ["review:participate"] });
+    try {
+      await db.getRepository(AcpAccessConfig).save({
+        id: configId,
+        featureConfig: { ...config.featureConfig, enableReview: false },
+      });
+      for (const token of [userToken, credentialToken]) {
+        const auth = { Authorization: "Bearer " + token };
+        const created = await request(server)
+          .post(`/api/acp/${acpId}/comments`)
+          .set(auth)
+          .send({
+            targetType: "ITEM",
+            targetId: "U_I",
+            commentText: "Existing item-only workflow",
+          })
+          .expect(201);
+        const mine = await request(server)
+          .get(`/api/acp/${acpId}/comments/mine`)
+          .set(auth)
+          .expect(200);
+        expect(
+          mine.body.some((comment: any) => comment.id === created.body.id),
+        ).toBe(true);
+        await request(server)
+          .get(`/api/acp/${acpId}/review/comments`)
+          .query({ targetType: "ITEM", unitId: "U", itemId: "I" })
+          .set(auth)
+          .expect(200);
+        await request(server)
+          .get(`/api/view/acp/${acpId}/review`)
+          .set(auth)
+          .expect(403);
+      }
+    } finally {
+      await db
+        .getRepository(AcpAccessConfig)
+        .save({ id: configId, featureConfig: config.featureConfig });
+    }
+  });
+
   for (const type of ["oidc", "credential"]) {
     for (let mask = 0; mask < 16; mask++) {
       const grants = ACP_CAPABILITIES.filter((_, i) => mask & (1 << i));

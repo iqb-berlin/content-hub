@@ -153,6 +153,12 @@ export class ReviewerColumnsInterceptor implements NestInterceptor {
             ? response
             : policy.projectReviewBooklet(response);
         }
+        if (
+          controller === "ViewsController" &&
+          ["getSequences", "getSequence"].includes(handler)
+        ) {
+          return policy.projectResponse(response, "sequences");
+        }
         if (controller === "FilesController" && handler === "getUnitView") {
           return policy.projectResponse(response, "units");
         }

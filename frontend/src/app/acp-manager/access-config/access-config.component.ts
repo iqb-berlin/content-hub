@@ -2,11 +2,18 @@ import {
   CapabilitiesComponent,
   capabilityLabels,
 } from '../../shared/capabilities/capabilities.component';
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { AccessModel, Credential } from '../../core/models/api.models';
+import {
+  AccessModel,
+  Credential,
+  CredentialEntry,
+  CredentialUploadMode,
+  FeatureConfig,
+  UpdateAccessConfigRequest,
+} from '../../core/models/api.models';
 import { AcpManagerContextComponent } from '../shared/acp-manager-context.component';
 
 @Component({
@@ -127,37 +134,53 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
             <h4 style="margin: 0 0 12px 0; font-size: 0.95rem;">ACP-Zugang hinzufügen</h4>
             <div class="form-row">
               <div class="form-group">
-                <label>Benutzername</label>
+                <label for="new-credential-username">Benutzername</label>
                 <input
+                  id="new-credential-username"
                   type="text"
                   [(ngModel)]="newUsername"
+                  [disabled]="addingCredential()"
                   placeholder="Benutzername"
                   maxlength="50"
                 />
               </div>
               <div class="form-group">
-                <label>Kennwort</label>
+                <label for="new-credential-password">Kennwort</label>
                 <input
+                  id="new-credential-password"
                   type="password"
                   [(ngModel)]="newPassword"
+                  [disabled]="addingCredential()"
+                  aria-describedby="credential-password-hint"
+                  autocomplete="new-password"
                   placeholder="Kennwort"
                   minlength="12"
                 />
+                <span id="credential-password-hint" class="help-text">{{
+                  strongPasswordHint
+                }}</span>
               </div>
             </div>
-            <app-capabilities [(value)]="newCapabilities" />
+            <app-capabilities [(value)]="newCapabilities" [disabled]="addingCredential()" />
             @if (addError) {
-              <div class="alert alert-error" style="margin-top: 8px;">{{ addError }}</div>
+              <div class="alert alert-error" role="alert" style="margin-top: 8px;">
+                {{ addError }}
+              </div>
+            }
+            @if (addSuccess()) {
+              <div class="alert alert-success" role="status" style="margin-top: 8px;">
+                {{ addSuccess() }}
+              </div>
             }
             <button
               class="btn btn-accent"
+              type="button"
               style="margin-top: 8px;"
               (click)="addCredential()"
-              [disabled]="
-                !newUsername.trim() || !newPassword.trim() || !isStrongPassword(newPassword)
-              "
+              [disabled]="addingCredential()"
+              [attr.aria-busy]="addingCredential()"
             >
-              Hinzufügen
+              {{ addingCredential() ? 'Wird hinzugefügt …' : 'Hinzufügen' }}
             </button>
           </div>
 
@@ -495,6 +518,14 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
         <div class="explorer-options">
           <details class="settings-details">
             <summary>Inhalte und Darstellung</summary>
+            <label class="feature-toggle">
+              <input type="checkbox" [(ngModel)]="featureConfig.showStudioItemComments" />
+              <span>Studio-Kommentare im Item-Explorer anzeigen</span>
+            </label>
+            <p class="help-text">
+              Zeigt importierte Item-Kommentare aus dem Studio schreibgeschützt bei der Vorschau.
+              Diese Hinweise sind unabhängig von Review-Kommentaren.
+            </p>
             <label class="feature-toggle">
               <input
                 type="checkbox"
@@ -1135,7 +1166,7 @@ export class AccessConfigComponent implements OnInit {
     skip: 'Unverändert lassen',
   };
   private readonly strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
-  private readonly strongPasswordHint =
+  readonly strongPasswordHint =
     'Kennwort muss mindestens 12 Zeichen lang sein und Groß-/Kleinbuchstaben, Zahl und Sonderzeichen enthalten.';
   readonly showAudioVideoCodingVariablesKey = 'showAudioVideoCodingVariables';
   readonly showGeneralCodingInstructionsKey = 'showGeneralCodingInstructions';
@@ -1161,7 +1192,7 @@ export class AccessConfigComponent implements OnInit {
   private readonly DATETIME_LOCAL_FORMAT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
   credentialCount = 0;
   dateError = '';
-  featureConfig: Record<string, any> = {};
+  featureConfig: FeatureConfig = {};
   commentTargets: string[] = [];
   availableTags: string[] = [];
   newTag = '';
@@ -1209,9 +1240,11 @@ export class AccessConfigComponent implements OnInit {
   newUsername = '';
   newPassword = '';
   addError = '';
+  readonly addingCredential = signal(false);
+  readonly addSuccess = signal('');
 
   // CSV upload
-  csvMode: 'replace' | 'append' | 'upsert' = 'replace';
+  csvMode: CredentialUploadMode = 'replace';
   csvPreview: {
     filename: string;
     total: number;
@@ -1220,9 +1253,9 @@ export class AccessConfigComponent implements OnInit {
     toSkip: number;
     duplicates: string[];
     conflicts: string[];
-    credentials: any[];
+    credentials: CredentialEntry[];
   } | null = null;
-  pendingCSVUpload: any[] = [];
+  pendingCSVUpload: CredentialEntry[] = [];
 
   // Edit dialog
   editingCredential: Credential | null = null;
@@ -1274,7 +1307,7 @@ export class AccessConfigComponent implements OnInit {
     this.loadCredentials();
   }
 
-  private toDateTimeLocalString(isoDateString: string | undefined): string {
+  private toDateTimeLocalString(isoDateString: string | null | undefined): string {
     if (!isoDateString) return '';
     // Parse the UTC date from backend and convert to local datetime-local format
     const utcDate = new Date(isoDateString);
@@ -1327,18 +1360,16 @@ export class AccessConfigComponent implements OnInit {
         this.applyFeatureConfigDefaults();
         this.validFrom = this.toDateTimeLocalString(config.validFrom);
         this.validUntil = this.toDateTimeLocalString(config.validUntil);
-        this.commentTargets = (this.featureConfig['commentTargets'] as string[]) || [];
-        this.availableTags = (this.featureConfig['availableTags'] as string[]) || [];
+        this.commentTargets = this.featureConfig['commentTargets'] || [];
+        this.availableTags = this.featureConfig['availableTags'] || [];
         this.itemSubIdLabelEntries = Object.entries(
-          (this.featureConfig[this.itemSubIdLabelsKey] as Record<string, string>) || {},
+          this.featureConfig[this.itemSubIdLabelsKey] || {},
         ).map(([value, label]) => ({ value, label }));
-        this.personalItemCategoryValues = Array.isArray(
-          this.featureConfig[this.personalItemCategoryValuesKey],
-        )
-          ? [...this.featureConfig[this.personalItemCategoryValuesKey]]
-          : [];
-        this.personalItemTags = Array.isArray(this.featureConfig[this.personalItemTagsKey])
-          ? this.featureConfig[this.personalItemTagsKey].map((tag: any) => ({
+        const categoryValues = this.featureConfig[this.personalItemCategoryValuesKey];
+        this.personalItemCategoryValues = Array.isArray(categoryValues) ? [...categoryValues] : [];
+        const personalTags = this.featureConfig[this.personalItemTagsKey];
+        this.personalItemTags = Array.isArray(personalTags)
+          ? personalTags.map((tag) => ({
               label: String(tag?.label || ''),
               color: /^#[0-9a-f]{6}$/i.test(String(tag?.color || ''))
                 ? String(tag.color)
@@ -1347,7 +1378,7 @@ export class AccessConfigComponent implements OnInit {
           : [];
         const metadataColumns = this.featureConfig['metadataColumns'];
         this.metadataColumnDefinitions = Array.isArray(metadataColumns?.definitions)
-          ? metadataColumns.definitions.map((entry: any) => ({
+          ? metadataColumns.definitions.map((entry) => ({
               id: String(entry?.id || ''),
               label: String(entry?.label || ''),
             }))
@@ -1441,7 +1472,7 @@ export class AccessConfigComponent implements OnInit {
     };
     this.featureConfig['commentTargets'] = this.commentTargets;
     this.featureConfig['availableTags'] = this.availableTags;
-    const data: any = {
+    const data: UpdateAccessConfigRequest = {
       accessModel: this.accessModel,
       allowRegistered: this.allowRegistered,
       featureConfig: this.featureConfig,
@@ -1507,6 +1538,7 @@ export class AccessConfigComponent implements OnInit {
 
     this.featureConfig[this.showGeneralCodingInstructionsKey] =
       this.featureConfig[this.showGeneralCodingInstructionsKey] === true;
+    this.featureConfig.showStudioItemComments = this.featureConfig.showStudioItemComments === true;
     this.featureConfig[this.preferManualCodingInstructionsKey] =
       this.featureConfig[this.preferManualCodingInstructionsKey] !== false;
 
@@ -1574,7 +1606,9 @@ export class AccessConfigComponent implements OnInit {
 
   // Manual credential management
   addCredential() {
+    if (this.addingCredential()) return;
     this.addError = '';
+    this.addSuccess.set('');
     const username = this.newUsername.trim();
     const password = this.newPassword;
 
@@ -1591,15 +1625,19 @@ export class AccessConfigComponent implements OnInit {
       return;
     }
 
+    this.addingCredential.set(true);
     this.api.createCredential(this.acpId, username, password, this.newCapabilities).subscribe({
       next: (cred) => {
         this.credentials.push(cred);
         this.newUsername = '';
         this.newPassword = '';
         this.credentialCount = this.credentials.length;
+        this.addSuccess.set(`ACP-Zugang „${cred.username}“ wurde hinzugefügt.`);
+        this.addingCredential.set(false);
       },
       error: (err) => {
         this.addError = err.error?.message || 'Fehler beim Hinzufügen.';
+        this.addingCredential.set(false);
       },
     });
   }

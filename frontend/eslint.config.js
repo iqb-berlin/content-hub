@@ -50,4 +50,20 @@ module.exports = defineConfig([
     extends: [angular.configs.templateRecommended],
     rules: {},
   },
+  {
+    files: [
+      'src/app/core/guards/*.ts',
+      'src/app/core/services/acp-navigation.service.ts',
+      'src/app/core/services/pending-personal-session-storage.service.ts',
+    ],
+    ignores: ['**/*.spec.ts'],
+    languageOptions: {
+      parserOptions: { project: './tsconfig.app.json', tsconfigRootDir: __dirname },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
 ]);

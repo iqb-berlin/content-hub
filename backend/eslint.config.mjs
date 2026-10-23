@@ -30,4 +30,19 @@ export default tseslint.config(
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
+  {
+    files: ['src/**/*.ts'],
+    ignores: ['**/*.spec.ts', 'src/testing/**'],
+    languageOptions: {
+      parserOptions: { project: './tsconfig.build.json', tsconfigRootDir: import.meta.dirname },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
+      '@typescript-eslint/no-misused-promises': 'error',
+    },
+  },
+  {
+    files: ['src/acp/acp.service.ts', 'src/acp/acp-credentials.service.ts', 'src/acp/dto/**/*.ts'],
+    rules: { '@typescript-eslint/no-explicit-any': 'error' },
+  },
 );

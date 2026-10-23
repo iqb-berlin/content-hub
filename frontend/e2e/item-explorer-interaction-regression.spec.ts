@@ -55,6 +55,60 @@ async function openExplorer(page: Page) {
   await expect(page.locator('.explorer-table tbody tr').first()).toBeVisible();
 }
 
+test('accepts another draft edit after a conflict reload fails', async ({ page }) => {
+  await openExplorer(page);
+
+  let draftPatches = 0;
+  let stateReloads = 0;
+  await page.route(`**/api/view/acp/${ACP_ID}/item-explorer/state*`, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    stateReloads += 1;
+    if (stateReloads === 1) {
+      return route.fulfill({ status: 503, json: { message: 'Simulated reload failure' } });
+    }
+    return route.continue();
+  });
+  await page.route(`**/api/acp/${ACP_ID}/item-explorer/draft`, async (route) => {
+    if (route.request().method() !== 'PATCH') return route.continue();
+    draftPatches += 1;
+    return route.fulfill({ status: 409, json: { message: 'Simulated version conflict' } });
+  });
+
+  const changeTaskColumnWidth = async (width: number) => {
+    await page.getByRole('button', { name: /Spalten verwalten/ }).click();
+    const dialog = page.locator('.column-manager-dialog');
+    await dialog.getByLabel('Breite für Aufgabe').fill(String(width));
+    await dialog.getByRole('button', { name: /Speichern/ }).click();
+    await expect(dialog).toBeHidden();
+  };
+
+  await page.getByRole('button', { name: /Spalten verwalten/ }).click();
+  const dialog = page.locator('.column-manager-dialog');
+  const initialWidth = Number(await dialog.getByLabel('Breite für Aufgabe').inputValue());
+  expect(initialWidth).toBeGreaterThanOrEqual(80);
+  const delta = initialWidth < 570 ? 10 : -10;
+  await dialog.getByLabel('Breite für Aufgabe').fill(String(initialWidth + delta));
+  await dialog.getByRole('button', { name: /Speichern/ }).click();
+  await expect(dialog).toBeHidden();
+
+  await expect.poll(() => draftPatches).toBe(1);
+  await expect.poll(() => stateReloads).toBe(1);
+  await expect(
+    page.getByText(
+      'Konflikt beim Aktualisieren des Entwurfs. Der Explorer konnte nicht neu geladen werden. Bitte erneut versuchen.',
+    ),
+  ).toBeVisible();
+
+  await changeTaskColumnWidth(initialWidth + 2 * delta);
+
+  await expect.poll(() => draftPatches).toBe(2);
+  await expect.poll(() => stateReloads).toBe(2);
+  await expect(
+    page.getByText('Konflikt beim Aktualisieren des Entwurfs. Der Explorer wurde neu geladen.'),
+  ).toBeVisible();
+  await expect(page.locator('.explorer-table tbody tr').first()).toBeVisible();
+});
+
 test('shows only the existing player preview in fullscreen and restores the explorer state', async ({
   page,
 }) => {

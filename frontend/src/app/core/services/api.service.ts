@@ -3,6 +3,17 @@ import { HttpClient, HttpEvent, HttpResponse } from '@angular/common/http';
 import { Observable, catchError, of, throwError } from 'rxjs';
 import {
   Acp,
+  CreateAcpRequest,
+  UpdateAcpRequest,
+  AcpRoleAssignment,
+  AssignAcpRoleRequest,
+  AssignableAcpUser,
+  UpdateAccessConfigRequest,
+  UpdateMetadataColumnsRequest,
+  CredentialEntry,
+  CredentialUploadMode,
+  CredentialUploadResponse,
+  CredentialDeletionResponse,
   AccessConfig,
   AcpSnapshot,
   SnapshotCurrentDiff,
@@ -163,10 +174,10 @@ export class ApiService {
   getAcp(id: string): Observable<Acp> {
     return this.http.get<Acp>(`${this.API}/acp/${id}`);
   }
-  createAcp(data: any): Observable<Acp> {
+  createAcp(data: CreateAcpRequest): Observable<Acp> {
     return this.http.post<Acp>(`${this.API}/acp`, data);
   }
-  updateAcp(id: string, data: any): Observable<Acp> {
+  updateAcp(id: string, data: UpdateAcpRequest): Observable<Acp> {
     return this.http.patch<Acp>(`${this.API}/acp/${id}`, data);
   }
   deleteAcp(id: string): Observable<void> {
@@ -188,23 +199,30 @@ export class ApiService {
   }
 
   // ACP Roles
-  getAcpRoles(id: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.API}/acp/${id}/roles`);
+  getAcpRoles(id: string): Observable<AcpRoleAssignment[]> {
+    return this.http.get<AcpRoleAssignment[]>(`${this.API}/acp/${id}/roles`);
   }
-  assignAcpRole(id: string, data: any): Observable<any> {
-    return this.http.post(`${this.API}/acp/${id}/roles`, data);
+  assignAcpRole(id: string, data: AssignAcpRoleRequest): Observable<AcpRoleAssignment> {
+    return this.http.post<AcpRoleAssignment>(`${this.API}/acp/${id}/roles`, data);
   }
   removeAcpRole(acpId: string, userId: string): Observable<void> {
     return this.http.delete<void>(`${this.API}/acp/${acpId}/roles/${userId}`);
   }
-  getAssignableUsers(acpId: string): Observable<User[]> {
-    return this.http.get<User[]>(`${this.API}/acp/${acpId}/assignable-users`);
+  getAssignableUsers(acpId: string): Observable<AssignableAcpUser[]> {
+    return this.http.get<AssignableAcpUser[]>(`${this.API}/acp/${acpId}/assignable-users`);
   }
 
-  updateRoleCapabilities(acpId: string, userId: string, capabilities: string[]): Observable<any> {
-    return this.http.patch(`${this.API}/acp/${acpId}/roles/${userId}/capabilities`, {
-      capabilities,
-    });
+  updateRoleCapabilities(
+    acpId: string,
+    userId: string,
+    capabilities: string[],
+  ): Observable<AcpRoleAssignment> {
+    return this.http.patch<AcpRoleAssignment>(
+      `${this.API}/acp/${acpId}/roles/${userId}/capabilities`,
+      {
+        capabilities,
+      },
+    );
   }
   getCapabilities(acpId: string): Observable<any> {
     return this.http.get(`${this.API}/view/acp/${acpId}/capabilities`);
@@ -261,15 +279,18 @@ export class ApiService {
   getAccessConfig(id: string): Observable<AccessConfig> {
     return this.http.get<AccessConfig>(`${this.API}/acp/${id}/access`);
   }
-  updateAccessConfig(id: string, data: any): Observable<AccessConfig> {
+  updateAccessConfig(id: string, data: UpdateAccessConfigRequest): Observable<AccessConfig> {
     return this.http.put<AccessConfig>(`${this.API}/acp/${id}/access`, data);
   }
   uploadCredentials(
     id: string,
-    credentials: any[],
-    mode: 'replace' | 'append' | 'upsert' = 'replace',
-  ): Observable<any> {
-    return this.http.post(`${this.API}/acp/${id}/access/credentials?mode=${mode}`, { credentials });
+    credentials: CredentialEntry[],
+    mode: CredentialUploadMode = 'replace',
+  ): Observable<CredentialUploadResponse> {
+    return this.http.post<CredentialUploadResponse>(
+      `${this.API}/acp/${id}/access/credentials?mode=${mode}`,
+      { credentials },
+    );
   }
   getCredentials(id: string): Observable<Credential[]> {
     return this.http.get<Credential[]>(`${this.API}/acp/${id}/access/credentials`);
@@ -296,10 +317,12 @@ export class ApiService {
       data,
     );
   }
-  deleteCredential(acpId: string, credentialId: string): Observable<void> {
-    return this.http.delete<void>(`${this.API}/acp/${acpId}/access/credentials/${credentialId}`);
+  deleteCredential(acpId: string, credentialId: string): Observable<CredentialDeletionResponse> {
+    return this.http.delete<CredentialDeletionResponse>(
+      `${this.API}/acp/${acpId}/access/credentials/${credentialId}`,
+    );
   }
-  updateMetadataColumns(id: string, data: any): Observable<AccessConfig> {
+  updateMetadataColumns(id: string, data: UpdateMetadataColumnsRequest): Observable<AccessConfig> {
     return this.http.put<AccessConfig>(`${this.API}/acp/${id}/metadata-columns`, data);
   }
 
@@ -528,20 +551,26 @@ export class ApiService {
       commentText: string;
       parentCommentId?: string;
       groupId?: string;
+      categoryId?: string | null;
     },
   ): Observable<Comment> {
     return this.http.post<Comment>(`${this.API}/acp/${acpId}/review/comments`, data);
   }
   createReviewComment(
     acpId: string,
-    data: ReviewCommentTarget & { commentText: string; parentCommentId?: string; groupId?: string },
+    data: ReviewCommentTarget & {
+      commentText: string;
+      parentCommentId?: string;
+      groupId?: string;
+      categoryId?: string | null;
+    },
   ): Observable<Comment> {
     return this.http.post<Comment>(`${this.API}/acp/${acpId}/review/comments`, data);
   }
   updateItemComment(
     acpId: string,
     commentId: string,
-    data: { commentText: string; version: number },
+    data: { commentText: string; version: number; categoryId?: string | null },
   ): Observable<Comment> {
     return this.http.patch<Comment>(`${this.API}/acp/${acpId}/review/comments/${commentId}`, data);
   }

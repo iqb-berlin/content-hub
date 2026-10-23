@@ -51,6 +51,26 @@ describe("ReviewPolicyService", () => {
     ).toBe(true);
   });
 
+  it.each([
+    [
+      { displayName: "Person Name", username: "person@example.org" },
+      "Person Name",
+    ],
+    [{ displayName: "person@example.org", username: "person" }, "person"],
+    [{ displayName: "  ", username: "person" }, "person"],
+    [{ username: "person@example.org" }, "Unbekannt"],
+    [
+      {
+        type: "credential",
+        displayName: "Not the credential",
+        username: "Kuerzel",
+      },
+      "Kuerzel",
+    ],
+  ])("uses a name instead of email for actor %j", (user, expected) => {
+    expect(policy.resolveActor({ user }).authorLabel).toBe(expected);
+  });
+
   it("keeps review participation behind its own request policy", () => {
     expect(() =>
       policy.assertCanParticipateRequest({
@@ -96,6 +116,44 @@ describe("ReviewPolicyService", () => {
       }),
     ).rejects.toThrow(ForbiddenException);
   });
+
+  it.each([false, undefined])(
+    "retains legacy comments with enableReview=%s",
+    async (enableReview) => {
+      accessConfigRepository.findOne.mockResolvedValue({
+        featureConfig: {
+          enableReview,
+          enableCommenting: true,
+          commentTargets: ["ITEM", "UNIT"],
+          commentVisibilityMode: "PRIVATE",
+        },
+      });
+      for (const identity of [
+        { userId: "user-1" },
+        { credentialId: "credential-1" },
+      ]) {
+        const actor = {
+          ...identity,
+          authorLabel: "Existing participant",
+          isManager: false,
+        };
+        for (const target of [CommentTargetType.ITEM, CommentTargetType.UNIT]) {
+          await expect(
+            policy.assertCommentAccess("acp-1", actor, target),
+          ).resolves.toBe("PRIVATE");
+        }
+        await expect(policy.prepareVisibility("acp-1", actor)).resolves.toBe(
+          "PRIVATE",
+        );
+        await expect(
+          policy.assertItemAndCodingCountAccess("acp-1", actor),
+        ).resolves.toMatchObject({ targetTypes: [CommentTargetType.ITEM] });
+        expect(
+          policy.canViewComment("PRIVATE", actor, { userId: "other" } as any),
+        ).toBe(false);
+      }
+    },
+  );
 
   it("uses stable IDs exclusively for ownership", () => {
     const comment = {

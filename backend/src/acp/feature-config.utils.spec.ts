@@ -1,6 +1,15 @@
 import { normalizeFeatureConfig } from "./feature-config.utils";
 
 describe("normalizeFeatureConfig", () => {
+  it.each([undefined, false, "true", 1, true])(
+    "only explicitly enables Studio comments for boolean true (%s)",
+    (value) => {
+      expect(
+        normalizeFeatureConfig({ showStudioItemComments: value })
+          .showStudioItemComments,
+      ).toBe(value === true);
+    },
+  );
   it("normalizes personal item working-data configuration", () => {
     expect(
       normalizeFeatureConfig({

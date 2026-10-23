@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { AcpCredentialsService } from "./acp-credentials.service";
 import { AcpService } from "./acp.service";
 import { AcpController } from "./acp.controller";
 import {
@@ -29,7 +30,7 @@ import { AdminModule } from "../admin/admin.module";
     AdminModule,
   ],
   controllers: [AcpController],
-  providers: [AcpService],
+  providers: [AcpService, AcpCredentialsService],
   exports: [AcpService],
 })
 export class AcpModule {}

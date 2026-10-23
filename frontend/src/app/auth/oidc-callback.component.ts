@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AuthService } from '../core/services/auth.service';
+import { AuthService, OidcLoginStateError } from '../core/services/auth.service';
 
 @Component({
   selector: 'app-oidc-callback',
@@ -72,7 +72,13 @@ export class OidcCallbackComponent implements OnInit {
       this.router.navigate(['/login'], {
         queryParams: { error: 'OIDC Authentifizierung fehlgeschlagen: Kein Token erhalten' },
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof OidcLoginStateError) {
+        // Start a fresh authorization flow; never exchange an unverified code.
+        const next = this.normalizeRedirectUrl(sessionStorage.getItem('oidc_redirect_url') || '/');
+        this.router.navigate(['/login'], { queryParams: { next }, replaceUrl: true });
+        return;
+      }
       this.router.navigate(['/login'], {
         queryParams: { error: 'OIDC Authentifizierung fehlgeschlagen' },
       });

@@ -240,6 +240,7 @@ export class ItemParameterImportPipeline {
       if (!line) continue;
 
       const row = this.parseCsvLine(line);
+      if (row.every((cell) => cell.trim() === "")) continue;
       const itemValRaw = row[itemIdx]?.trim() || "";
       const subId = subIdIdx >= 0 ? normalizeItemSubId(row[subIdIdx]) : "";
       if (!itemValRaw) {

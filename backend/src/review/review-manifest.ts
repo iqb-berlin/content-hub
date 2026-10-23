@@ -63,7 +63,7 @@ export function buildReviewManifest(
     })),
     issues: [],
   };
-  const knownUnits = new Set(result.units.map((unit) => unit.id));
+  const unitsById = new Map(result.units.map((unit) => [unit.id, unit]));
   const bookletIds = new Set<string>();
   const error = (path: string, message: string) =>
     result.issues.push({ severity: "error", path, message });
@@ -78,11 +78,11 @@ export function buildReviewManifest(
         if (node.kind === "BLOCK")
           walk(node.children || [], [...labels, node.label]);
         else {
-          if (!knownUnits.has(node.id))
+          if (!unitsById.has(node.id))
             error(node.path, `Unbekannte Unit: ${node.id}`);
           booklet.units.push({
             id: node.id,
-            name: node.label,
+            name: unitsById.get(node.id)?.name || node.id,
             alias: node.alias,
             occurrenceId: `${encodeURIComponent(booklet.id)}:${node.path}`,
             blockPath: labels,
@@ -116,9 +116,7 @@ export function buildReviewManifest(
               .map((unit, i) => ({
                 kind: "UNIT" as const,
                 id: reference(unit),
-                label:
-                  result.units.find((entry) => entry.id === reference(unit))
-                    ?.name || reference(unit),
+                label: unitsById.get(reference(unit))?.name || reference(unit),
                 alias: unit?.alias,
                 path: `${modulePath}.units[${i}]`,
               })),

@@ -6,7 +6,12 @@ import { FormsModule } from '@angular/forms';
 import { JsonPipe } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Acp } from '../../core/models/api.models';
+import {
+  Acp,
+  AcpRoleAssignment,
+  AcpRoleName,
+  AssignableAcpUser,
+} from '../../core/models/api.models';
 import { AcpManagerContextComponent } from '../shared/acp-manager-context.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { BookletSelectionComponent } from '../../shared/components/booklet-selection.component';
@@ -672,8 +677,8 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
 export class DashboardComponent implements OnInit {
   sequenceLabel = sequenceLabel;
   acp: Acp | null = null;
-  roles: any[] = [];
-  allUsers: any[] = [];
+  roles: AcpRoleAssignment[] = [];
+  allUsers: AssignableAcpUser[] = [];
   contentData: any = null;
   contentError = '';
   @ViewChild('indexDialog') indexDialog?: ElementRef<HTMLDialogElement>;
@@ -689,8 +694,8 @@ export class DashboardComponent implements OnInit {
     this.indexTrigger?.nativeElement.focus();
   }
   selectedUserId = '';
-  selectedRole = 'READ_ONLY';
-  roleEdits: Record<string, string | undefined> = {};
+  selectedRole: AcpRoleName = 'READ_ONLY';
+  roleEdits: Record<string, AcpRoleName | undefined> = {};
   capabilityEdits: Record<string, string[] | undefined> = {};
   roleBusy = false;
   roleError = '';
@@ -700,7 +705,7 @@ export class DashboardComponent implements OnInit {
     return this.auth.isAdmin;
   }
 
-  get availableUsers(): any[] {
+  get availableUsers(): AssignableAcpUser[] {
     return this.allUsers.filter((user) => !this.roles.some((role) => role.userId === user.id));
   }
 
@@ -834,7 +839,7 @@ export class DashboardComponent implements OnInit {
   }
 
   newCapabilities: string[] = [];
-  hasAssignmentChanges(role: any): boolean {
+  hasAssignmentChanges(role: AcpRoleAssignment): boolean {
     const nextRole = this.roleEdits[role.userId] ?? role.role;
     const nextCapabilities = this.capabilityEdits[role.userId] ?? role.capabilities ?? [];
     return (
@@ -842,7 +847,7 @@ export class DashboardComponent implements OnInit {
     );
   }
 
-  saveAssignment(assignment: any) {
+  saveAssignment(assignment: AcpRoleAssignment) {
     if (!this.hasAssignmentChanges(assignment)) return;
     this.persistRole(
       assignment.userId,
@@ -851,7 +856,7 @@ export class DashboardComponent implements OnInit {
     );
   }
 
-  private persistRole(userId: string, role: string, capabilities: string[]) {
+  private persistRole(userId: string, role: AcpRoleName, capabilities: string[]) {
     if (!this.acp || this.roleBusy) return;
     this.roleBusy = true;
     this.roleError = '';

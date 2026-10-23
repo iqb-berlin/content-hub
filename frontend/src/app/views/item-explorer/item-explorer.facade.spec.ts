@@ -1,3 +1,12 @@
+import { ItemExplorerImportService } from './item-explorer-import.service';
+import { ItemExplorerTableService } from './item-explorer-table.service';
+import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerCodingService } from './item-explorer-coding.service';
+import { ItemExplorerDraftService } from './item-explorer-draft.service';
+import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
+import { ItemExplorerPersonalDataService } from './item-explorer-personal-data.service';
+import { ItemExplorerCommentsService } from './item-explorer-comments.service';
+import { ItemExplorerBrowser } from './item-explorer-browser.service';
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { Observable, of, Subject, throwError } from 'rxjs';
 import { ItemExplorerFacade } from './item-explorer.facade';
@@ -108,19 +117,38 @@ function createFacade(options?: {
   const component = new ItemExplorerFacade(
     api as any,
     sanitizer as any,
-    voudService as any,
     authService as any,
     options?.pendingPersonalSessionStorage || new PendingPersonalSessionStorageService(),
     previewCoordinator,
+    new ItemExplorerCommentsService(api as any, new ItemExplorerBrowser()),
+    new ItemExplorerPersonalDataService(
+      api as any,
+      options?.pendingPersonalSessionStorage || new PendingPersonalSessionStorageService(),
+      new ItemExplorerBrowser(),
+    ),
+    new ItemExplorerCollectionsService(api as any, new ItemExplorerBrowser()),
+    new ItemExplorerDraftService(api as any),
+    new ItemExplorerCodingService(voudService as any),
+    new ItemExplorerPlayerService(voudService as any),
+    new ItemExplorerTableService(),
+    new ItemExplorerImportService(api as any),
     diagnostics as any,
   );
-  (component as any).personalDataSessionIdentity = (
-    component as any
-  ).resolvePersonalItemDataSessionIdentity();
-  (component as any).collectionSessionIdentity = (
-    component as any
-  ).resolvePersonalItemDataSessionIdentity();
+  (component.personalData as any).personalDataSessionIdentity =
+    new PendingPersonalSessionStorageService().resolveIdentityFromToken(authService.getToken());
+  (component.collections as any).collectionSessionIdentity =
+    new PendingPersonalSessionStorageService().resolveIdentityFromToken(authService.getToken());
   return component;
+}
+
+function destroyFacade(facade: ItemExplorerFacade): void {
+  facade.ngOnDestroy();
+  facade.comments.ngOnDestroy();
+  facade.personalData.ngOnDestroy();
+  facade.collections.ngOnDestroy();
+  facade.draft.ngOnDestroy();
+  facade.player.ngOnDestroy();
+  facade.imports.ngOnDestroy();
 }
 
 function registerPlayerDom(component: ItemExplorerFacade, postMessage = vi.fn()) {
@@ -191,7 +219,7 @@ describe('ItemExplorerFacade role initialization', () => {
       },
     });
 
-    (component as any).latestExplorerState = { canEdit };
+    (component as any).draft.latestExplorerState = { canEdit };
     component.checkUserRole();
 
     expect(component.viewPerspective).toBe(canEdit ? 'editor' : 'read-only');
@@ -201,19 +229,19 @@ describe('ItemExplorerFacade role initialization', () => {
   it('synchronizes coding comments with login and logout', () => {
     const component = createFacade();
     const authService = (component as any).authService;
-    (component as any).itemCommentsConfigured = false;
-    (component as any).codingCommentsConfigured = true;
+    (component.comments as any).itemCommentsConfigured = false;
+    (component.comments as any).codingCommentsConfigured = true;
 
     authService.isLoggedIn = true;
     component.checkUserRole();
 
-    expect(component.itemCommentsEnabled).toBe(false);
-    expect(component.codingCommentsEnabled).toBe(true);
+    expect(component.comments.itemCommentsEnabled).toBe(false);
+    expect(component.comments.codingCommentsEnabled).toBe(true);
 
     authService.isLoggedIn = false;
     component.checkUserRole();
 
-    expect(component.codingCommentsEnabled).toBe(false);
+    expect(component.comments.codingCommentsEnabled).toBe(false);
   });
 });
 
@@ -229,21 +257,21 @@ describe('ItemExplorerFacade automatic comment refresh', () => {
       authService: { isLoggedIn: true },
     });
     component.acpId = 'acp-1';
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     (component as any).syncItemCommentCountSession();
   });
   afterEach(() => {
-    component.ngOnDestroy();
+    destroyFacade(component);
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
   it('refreshes counts and the selected thread every five seconds', () => {
-    const token = component.itemCommentRefreshToken;
-    const sessionToken = component.itemCommentSessionToken;
+    const token = component.comments.itemCommentRefreshToken;
+    const sessionToken = component.comments.itemCommentSessionToken;
     vi.advanceTimersByTime(5000);
     expect(getCounts).toHaveBeenCalledTimes(2);
-    expect(component.itemCommentRefreshToken).toBe(token + 1);
-    expect(component.itemCommentSessionToken).toBe(sessionToken);
+    expect(component.comments.itemCommentRefreshToken).toBe(token + 1);
+    expect(component.comments.itemCommentSessionToken).toBe(sessionToken);
   });
   it('pauses hidden tabs and refreshes immediately on return or focus', () => {
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
@@ -264,28 +292,28 @@ describe('ItemExplorerFacade automatic comment refresh', () => {
     window.dispatchEvent(new Event('focus'));
     expect(getCounts).toHaveBeenCalledTimes(2);
     response.next({ revision: 'latest', counts: [{ unitId: 'U', itemId: 'I', count: 2 }] });
-    expect(component.itemCommentCounts['U\u0000I']).toBe(2);
+    expect(component.comments.itemCommentCounts['U\u0000I']).toBe(2);
   });
   it('recovers automatically after a failed batch', () => {
     getCounts.mockReturnValueOnce(throwError(() => new Error('offline')));
     vi.advanceTimersByTime(5000);
-    expect(component.itemCommentCountsError).not.toBe('');
+    expect(component.comments.itemCommentCountsError).not.toBe('');
     vi.advanceTimersByTime(5000);
-    expect(component.itemCommentCountsError).toBe('');
+    expect(component.comments.itemCommentCountsError).toBe('');
     expect(getCounts).toHaveBeenCalledTimes(3);
   });
   it('stops polling and listeners on logout and destruction', () => {
-    const sessionToken = component.itemCommentSessionToken;
-    component.itemCommentsEnabled = false;
+    const sessionToken = component.comments.itemCommentSessionToken;
+    component.comments.itemCommentsEnabled = false;
     (component as any).syncItemCommentCountSession();
-    expect(component.itemCommentSessionToken).toBe(sessionToken + 1);
+    expect(component.comments.itemCommentSessionToken).toBe(sessionToken + 1);
     vi.advanceTimersByTime(10000);
     window.dispatchEvent(new Event('focus'));
     expect(getCounts).toHaveBeenCalledTimes(1);
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     (component as any).syncItemCommentCountSession();
     expect(getCounts).toHaveBeenCalledTimes(2);
-    component.ngOnDestroy();
+    destroyFacade(component);
     vi.advanceTimersByTime(10000);
     document.dispatchEvent(new Event('visibilitychange'));
     expect(getCounts).toHaveBeenCalledTimes(2);
@@ -320,12 +348,12 @@ describe('ItemExplorerFacade comment counts', () => {
       },
     });
     component.acpId = 'acp-1';
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     component.items = [item('prefixed', 'unit-1_item-1')];
     component.refreshItemComments(false);
     expect(component.getItemCommentCount(component.items[0])).toBe(0);
     component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'unit-1_item-1', count: 0 });
-    expect(component.itemCommentCounts['unit-1\u0000item-1']).toBe(2);
+    expect(component.comments.itemCommentCounts['unit-1\u0000item-1']).toBe(2);
     component.columnFilters['comments'] = 'with';
     component.applyFilter(false);
     expect(component.filteredItems).toEqual([]);
@@ -338,7 +366,7 @@ describe('ItemExplorerFacade comment counts', () => {
     const response = new Subject<any>();
     const component = createFacade({ api: { getItemCommentCounts: () => response } });
     component.acpId = 'acp-1';
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     component.items = [item('prefixed', 'unit-1_item-1')];
     component.refreshItemComments(false);
     component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'unit-1_item-1', count: 0 });
@@ -350,20 +378,26 @@ describe('ItemExplorerFacade comment counts', () => {
       ],
     });
     expect(component.getItemCommentCount(component.items[0])).toBe(0);
-    expect(component.itemCommentCounts['unit-1\u0000item-1']).toBe(2);
+    expect(component.comments.itemCommentCounts['unit-1\u0000item-1']).toBe(2);
   });
 
   it('keeps distinct raw and prefixed item IDs separate', () => {
     const component = createFacade();
     component.items = [item('raw', 'item-1'), item('prefixed', 'unit-1_item-1')];
-    component.itemCommentCounts = { 'unit-1\u0000item-1': 2, 'unit-1\u0000unit-1_item-1': 0 };
+    component.comments.itemCommentCounts = {
+      'unit-1\u0000item-1': 2,
+      'unit-1\u0000unit-1_item-1': 0,
+    };
     expect(component.getItemCommentCount(component.items[1])).toBe(0);
   });
 
   it('loading an empty colliding item does not erase another item count', () => {
     const component = createFacade();
     component.items = [item('raw', 'item-1'), item('prefixed', 'unit-1_item-1')];
-    component.itemCommentCounts = { 'unit-1\u0000item-1': 2, 'unit-1\u0000unit-1_item-1': 0 };
+    component.comments.itemCommentCounts = {
+      'unit-1\u0000item-1': 2,
+      'unit-1\u0000unit-1_item-1': 0,
+    };
     component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'unit-1_item-1', count: 0 });
     expect(component.getItemCommentCount(component.items[0])).toBe(2);
   });
@@ -374,7 +408,7 @@ describe('ItemExplorerFacade comment counts', () => {
       const response = new Subject<any>();
       const component = createFacade({ api: { getItemCommentCounts: () => response } });
       component.acpId = 'acp-1';
-      component.itemCommentsEnabled = true;
+      component.comments.itemCommentsEnabled = true;
       component.refreshItemComments(false);
       component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'item-1', count: 0 });
       response.next({
@@ -389,8 +423,8 @@ describe('ItemExplorerFacade comment counts', () => {
     const response = new Subject<any>();
     const component = createFacade({ api: { getItemCommentCounts: () => response } });
     component.acpId = 'acp-1';
-    component.itemCommentsEnabled = true;
-    component.itemCommentCounts = { 'unit-1\u0000item-1': 1 };
+    component.comments.itemCommentsEnabled = true;
+    component.comments.itemCommentCounts = { 'unit-1\u0000item-1': 1 };
     component.refreshItemComments(false);
     component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'item-1', count: 1 });
     response.next({ revision: 'old', counts: [] });
@@ -401,7 +435,7 @@ describe('ItemExplorerFacade comment counts', () => {
     const response = new Subject<any>();
     const component = createFacade({ api: { getItemCommentCounts: () => response } });
     component.acpId = 'acp-1';
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     component.items = [item('raw', 'item-1'), item('prefixed', 'unit-1_item-1')];
     component.refreshItemComments(false);
     component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'unit-1_item-1', count: 0 });
@@ -412,14 +446,14 @@ describe('ItemExplorerFacade comment counts', () => {
 
   it('shares one item count across partial-credit rows and filters by status', () => {
     const component = createFacade();
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     component.items = [
       item('row-a', 'item-1', '0'),
       item('row-b', 'item-1', '1'),
       item('row-c', 'item-2'),
     ];
-    component.filteredItems = [...component.items];
-    component.itemCommentCountsAvailable = true;
+    component.table.filteredItems = [...component.items];
+    component.comments.itemCommentCountsAvailable = true;
 
     component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'item-1', count: 3 });
 
@@ -443,20 +477,20 @@ describe('ItemExplorerFacade comment counts', () => {
     );
     const component = createFacade({ api: { getItemCommentCounts } });
     component.acpId = 'acp-1';
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
 
     component.refreshItemComments();
 
     expect(getItemCommentCounts).toHaveBeenCalledWith('acp-1');
-    expect(component.itemCommentRefreshToken).toBe(1);
-    expect(component.itemCommentCounts).toEqual({ 'unit-1\u0000item-1': 2 });
+    expect(component.comments.itemCommentRefreshToken).toBe(1);
+    expect(component.comments.itemCommentCounts).toEqual({ 'unit-1\u0000item-1': 2 });
   });
 
   it('does not apply a persisted comment filter when comments are unavailable', () => {
     const component = createFacade();
     component.items = [item('row-a', 'item-1')];
     component.columnFilters['comments'] = 'with';
-    component.itemCommentsEnabled = false;
+    component.comments.itemCommentsEnabled = false;
 
     component.applyFilter(false);
 
@@ -469,13 +503,13 @@ describe('ItemExplorerFacade comment counts', () => {
       api: { getItemCommentCounts: vi.fn().mockReturnValue(response) },
     });
     component.acpId = 'acp-1';
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     component.refreshItemComments(false);
 
     component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'item-1', count: 1 });
     response.next({ revision: 'old', counts: [] });
 
-    expect(component.itemCommentCounts).toEqual({ 'unit-1\u0000item-1': 1 });
+    expect(component.comments.itemCommentCounts).toEqual({ 'unit-1\u0000item-1': 1 });
   });
 
   it('keeps comment filters inactive when the initial count request fails', () => {
@@ -485,14 +519,14 @@ describe('ItemExplorerFacade comment counts', () => {
       },
     });
     component.acpId = 'acp-1';
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     component.items = [item('row-a', 'item-1')];
     component.columnFilters['comments'] = 'with';
 
     component.refreshItemComments(false);
 
-    expect(component.itemCommentCountsAvailable).toBe(false);
-    expect(component.itemCommentCountsError).toContain('nicht geladen');
+    expect(component.comments.itemCommentCountsAvailable).toBe(false);
+    expect(component.comments.itemCommentCountsError).toContain('nicht geladen');
     expect(component.filteredItems).toHaveLength(1);
   });
 
@@ -512,32 +546,32 @@ describe('ItemExplorerFacade comment counts', () => {
       },
     });
     component.acpId = 'acp-1';
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
 
     (component as any).syncItemCommentCountSession();
     token = createJwt('user-b');
     (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
 
-    expect(component.itemCommentCounts).toEqual({});
-    expect(component.itemCommentCountsAvailable).toBe(false);
+    expect(component.comments.itemCommentCounts).toEqual({});
+    expect(component.comments.itemCommentCountsAvailable).toBe(false);
     expect(getItemCommentCounts).toHaveBeenCalledTimes(2);
 
     firstResponse.next({
       revision: 'old-user',
       counts: [{ unitId: 'unit-1', itemId: 'item-1', count: 4 }],
     });
-    expect(component.itemCommentCounts).toEqual({});
+    expect(component.comments.itemCommentCounts).toEqual({});
 
     secondResponse.next({
       revision: 'new-user',
       counts: [{ unitId: 'unit-1', itemId: 'item-2', count: 1 }],
     });
-    expect(component.itemCommentCounts).toEqual({ 'unit-1\u0000item-2': 1 });
+    expect(component.comments.itemCommentCounts).toEqual({ 'unit-1\u0000item-2': 1 });
   });
 
   it('ignores a thread count emitted for an earlier comment refresh session', () => {
     const component = createFacade();
-    component.itemCommentRefreshToken = 2;
+    component.comments.itemCommentRefreshToken = 2;
 
     component.updateItemCommentCount({
       unitId: 'unit-1',
@@ -546,12 +580,12 @@ describe('ItemExplorerFacade comment counts', () => {
       refreshToken: 1,
     });
 
-    expect(component.itemCommentCounts).toEqual({});
+    expect(component.comments.itemCommentCounts).toEqual({});
   });
 
   it('adds the comment column after hydrating a configured shared layout', () => {
     const component = createFacade();
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     const envelope = createExplorerEnvelope();
     envelope.draftState.metadataColumns = {
       layout: {
@@ -570,7 +604,7 @@ describe('ItemExplorerFacade comment counts', () => {
 
   it('keeps position visible when migrating an explicitly empty legacy column selection', () => {
     const component = createFacade();
-    component.itemCommentsEnabled = true;
+    component.comments.itemCommentsEnabled = true;
     const envelope = createExplorerEnvelope();
     envelope.draftState.metadataColumns = {
       layout: {
@@ -594,7 +628,7 @@ describe('ItemExplorerFacade comment counts', () => {
     const target = item('row-target', 'item-1');
     const other = item('row-other', 'item-2');
     component.items = [target, other];
-    component.filterText = 'does-not-match';
+    component.table.filterText = 'does-not-match';
     component.applyFilter(false);
     component.commentThreadInitiallyOpen = true;
     (component as any).initialCommentTarget = {
@@ -687,11 +721,11 @@ describe('ItemExplorerFacade', () => {
     expect(getAcpStartPage).toHaveBeenCalledWith('');
     expect(getFileItemList).not.toHaveBeenCalled();
 
-    startPage$.next({ featureConfig: { enableItemListTags: true } });
+    startPage$.next({ featureConfig: { enableItemListTags: true, showStudioItemComments: true } });
     explorerState$.next(createExplorerEnvelope());
     await vi.waitFor(() => expect(getFileItemList).toHaveBeenCalledOnce());
 
-    component.ngOnDestroy();
+    destroyFacade(component);
     itemList$.next({
       items: [
         {
@@ -710,10 +744,11 @@ describe('ItemExplorerFacade', () => {
     currentUser$.next(null);
 
     expect(component.enableTags).toBe(true);
+    expect(component.showStudioItemComments).toBe(true);
     expect(component.itemExplorerPlayerTargetInfoEnabled).toBe(false);
     expect(component.items).toEqual([]);
-    expect((component as any).personalDataSessionIdentity).toBeNull();
-    expect((component as any).collectionSessionIdentity).toBeNull();
+    expect((component.personalData as any).personalDataSessionIdentity).toBeNull();
+    expect((component.collections as any).collectionSessionIdentity).toBeNull();
   });
 
   it('shows a visible error and skips dependent loads when feature configuration fails', () => {
@@ -735,7 +770,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.itemListError).toBe(
       'Die Konfiguration des Item-Explorers konnte nicht geladen werden.',
     );
-    expect(component.explorerUiStatus).toBe('ERROR');
+    expect(component.draft.explorerUiStatus).toBe('ERROR');
     expect(getItemExplorerState).not.toHaveBeenCalled();
     expect(getFileItemList).not.toHaveBeenCalled();
     consoleError.mockRestore();
@@ -766,7 +801,7 @@ describe('ItemExplorerFacade', () => {
         },
       });
       component.acpId = 'acp-1';
-      component.latestExplorerState = null;
+      component.draft.latestExplorerState = null;
       component.hasExplorerEditPermission = false;
       component.viewPerspective = perspective;
       expect(await (component as any).reloadSharedExplorerStateAndItems()).toBe(true);
@@ -843,14 +878,14 @@ describe('ItemExplorerFacade', () => {
       authService: { isLoggedIn: true },
     });
     component.acpId = 'acp-1';
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.setPersonalItemNote('uuid::1', 'Später speichern');
 
-    component.ngOnDestroy();
+    destroyFacade(component);
 
     expect(patchViewItemPreferenceRow).not.toHaveBeenCalled();
-    expect((component as any).pendingPersonalRowUpdates.size).toBe(0);
+    expect((component.personalData as any).pendingPersonalRowUpdates.size).toBe(0);
     expect(sessionStorage.getItem('cp_item_explorer_pending_personal:acp-1')).toContain(
       'Später speichern',
     );
@@ -873,9 +908,9 @@ describe('ItemExplorerFacade', () => {
       authService: { isLoggedIn: true },
     });
     component.acpId = 'acp-1';
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
-    component.personalItemTags = [{ label: 'Prüfen', color: '#ff0000' }];
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
+    component.personalData.personalItemTags = [{ label: 'Prüfen', color: '#ff0000' }];
 
     component.setPersonalItemCategory('uuid-1::2', 'II');
     component.addPersonalItemTagToRow('uuid-1::2', {
@@ -910,8 +945,8 @@ describe('ItemExplorerFacade', () => {
       authService: { isLoggedIn: true },
     });
     component.acpId = 'acp-1';
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.items = [
       {
         itemId: 'item-2',
@@ -934,9 +969,9 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ];
-    component.sortField = '__manual__';
-    component.itemOrder = ['uuid-2::1', 'uuid-1::1'];
-    component.filteredItems = [...component.items];
+    component.table.sortField = '__manual__';
+    component.table.itemOrder = ['uuid-2::1', 'uuid-1::1'];
+    component.table.filteredItems = [...component.items];
     component.setPersonalItemNote('uuid-1::1', 'Noch zu speichern');
 
     await component.exportPersonalItemDataXlsx();
@@ -955,10 +990,10 @@ describe('ItemExplorerFacade', () => {
     expect(createObjectUrl).toHaveBeenCalled();
     expect(click).toHaveBeenCalled();
     expect(revokeObjectUrl).toHaveBeenCalledWith('blob:export');
-    expect(component.personalExportError).toBe('');
-    expect(component.personalExportInProgress).toBe(false);
+    expect(component.personalData.personalExportError).toBe('');
+    expect(component.personalData.personalExportInProgress).toBe(false);
 
-    component.ngOnDestroy();
+    destroyFacade(component);
     createObjectUrl.mockRestore();
     revokeObjectUrl.mockRestore();
     click.mockRestore();
@@ -973,7 +1008,7 @@ describe('ItemExplorerFacade', () => {
       .mockImplementation(() => undefined);
     const component = createFacade({ api: { exportAllViewPersonalItemDataCsv } });
     component.acpId = 'acp-1';
-    component.enablePersonalItemData = true;
+    component.personalData.enablePersonalItemData = true;
     component.hasExplorerEditPermission = true;
     component.viewPerspective = 'editor';
 
@@ -984,12 +1019,12 @@ describe('ItemExplorerFacade', () => {
     expect(createObjectUrl).toHaveBeenCalled();
     expect(click).toHaveBeenCalled();
     expect(revokeObjectUrl).toHaveBeenCalledWith('blob:all-export');
-    expect(component.allPersonalDataExportError).toBe('');
-    expect(component.allPersonalDataExportInProgress).toBe(false);
+    expect(component.personalData.allPersonalDataExportError).toBe('');
+    expect(component.personalData.allPersonalDataExportInProgress).toBe(false);
 
     component.hasExplorerEditPermission = false;
     expect(component.canExportAllPersonalItemData).toBe(false);
-    component.ngOnDestroy();
+    destroyFacade(component);
     createObjectUrl.mockRestore();
     revokeObjectUrl.mockRestore();
     click.mockRestore();
@@ -1010,9 +1045,11 @@ describe('ItemExplorerFacade', () => {
     const component = createFacade({ api: { exportAllViewPersonalItemDataCsv } });
     Object.assign(component, {
       acpId: 'acp-1',
-      enablePersonalItemData: true,
       hasExplorerEditPermission: true,
       viewPerspective: 'editor',
+    });
+    Object.assign(component.personalData, { enablePersonalItemData: true });
+    Object.assign(component.collections, {
       enableItemCollections: true,
       collectionLoadState: 'loaded',
       activeCollectionId: 'shared-1',
@@ -1028,10 +1065,10 @@ describe('ItemExplorerFacade', () => {
     await component.exportAllPersonalItemDataCsv('collection');
     expect(exportAllViewPersonalItemDataCsv).toHaveBeenCalledWith('acp-1', 'editor', 'shared-1');
     expect(filename).toContain('collection-Auswahl-A-shared-1.csv');
-    component.activeCollectionId = 'removed';
+    component.collections.activeCollectionId = 'removed';
     await component.exportAllPersonalItemDataCsv('collection');
     expect(exportAllViewPersonalItemDataCsv).toHaveBeenCalledTimes(1);
-    component.ngOnDestroy();
+    destroyFacade(component);
     createObjectUrl.mockRestore();
     revokeObjectUrl.mockRestore();
     click.mockRestore();
@@ -1046,26 +1083,25 @@ describe('ItemExplorerFacade', () => {
           .mockReturnValue(throwError(() => ({ status: 404 }))),
       },
     });
-    Object.assign(component, {
-      acpId: 'acp-1',
-      enablePersonalItemData: true,
-      hasExplorerEditPermission: true,
+    Object.assign(component, { acpId: 'acp-1', hasExplorerEditPermission: true });
+    Object.assign(component.personalData, { enablePersonalItemData: true });
+    Object.assign(component.collections, {
       enableItemCollections: true,
       collectionLoadState: 'loaded',
       activeCollectionId: 'removed',
       itemCollections: [{ id: 'removed', name: 'Removed', rowKeys: [] }],
     });
     await component.exportAllPersonalItemDataCsv('collection');
-    expect(component.collectionDataExportError).toContain('nicht mehr verfügbar');
-    expect(component.allPersonalDataExportError).toBe('');
-    expect(component.allPersonalDataExportInProgress).toBe(false);
-    component.ngOnDestroy();
+    expect(component.personalData.collectionDataExportError).toContain('nicht mehr verfügbar');
+    expect(component.personalData.allPersonalDataExportError).toBe('');
+    expect(component.personalData.allPersonalDataExportInProgress).toBe(false);
+    destroyFacade(component);
     log.mockRestore();
   });
 
   it('does not expose personal working-data controls to anonymous visitors', () => {
     const component = createFacade({ authService: { isLoggedIn: false } });
-    component.enablePersonalItemData = true;
+    component.personalData.enablePersonalItemData = true;
 
     expect(component.showPersonalItemData).toBe(false);
   });
@@ -1077,8 +1113,8 @@ describe('ItemExplorerFacade', () => {
       authService: { isLoggedIn: true },
     });
     component.acpId = 'acp-1';
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.hasExplorerEditPermission = true;
     component.viewPerspective = 'editor';
 
@@ -1100,8 +1136,8 @@ describe('ItemExplorerFacade', () => {
       authService: { isLoggedIn: true },
     });
     component.acpId = 'acp-1';
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.hasExplorerEditPermission = true;
     component.viewPerspective = 'editor';
 
@@ -1122,25 +1158,25 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow: vi.fn().mockReturnValue(of({ rowData: {} })) },
       authService: { isLoggedIn: true },
     });
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.perspectiveSwitchBusy = true;
 
     component.setPersonalItemNote('uuid-1', 'Nicht übernehmen');
 
     expect(component.canChangePersonalItemData).toBe(false);
-    expect(component.personalItemData).toEqual({});
-    expect((component as any).pendingPersonalRowUpdates.size).toBe(0);
+    expect(component.personalData.personalItemData).toEqual({});
+    expect((component.personalData as any).pendingPersonalRowUpdates.size).toBe(0);
   });
 
   it('keeps local search and personal filters out of the shared Explorer UI state', () => {
     const component = createFacade({ authService: { isLoggedIn: true } });
-    component.filterText = 'lokale Suche';
-    component.columnFilters = {
+    component.table.filterText = 'lokale Suche';
+    component.table.columnFilters = {
       unitLabel: 'Mathematik',
       personalNote: 'vertraulich',
     };
-    component.personalColumnFilters = { personalNote: 'vertraulich' };
+    component.personalData.personalColumnFilters = { personalNote: 'vertraulich' };
 
     const sharedUi = (component as any).buildUiPreferences();
     expect(sharedUi).not.toHaveProperty('filterText');
@@ -1154,7 +1190,7 @@ describe('ItemExplorerFacade', () => {
     });
     expect(component.filterText).toBe('lokale Suche');
     expect(component.columnFilters).toEqual({ unitLabel: 'Deutsch' });
-    expect(component.personalColumnFilters).toEqual({ personalNote: 'vertraulich' });
+    expect(component.personalData.personalColumnFilters).toEqual({ personalNote: 'vertraulich' });
   });
 
   it('disables personal edits after a load failure without clearing known data', () => {
@@ -1166,15 +1202,94 @@ describe('ItemExplorerFacade', () => {
       },
       authService: { isLoggedIn: true },
     });
-    component.enablePersonalItemData = true;
-    component.personalItemData = { 'uuid::1': { note: 'bestehend' } };
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalItemData = { 'uuid::1': { note: 'bestehend' } };
 
-    (component as any).loadPersonalItemData();
+    (component.personalData as any).loadPersonalItemData();
     component.setPersonalItemNote('uuid::1', 'überschrieben');
 
-    expect(component.personalDataLoadState).toBe('error');
-    expect(component.personalItemData).toEqual({ 'uuid::1': { note: 'bestehend' } });
+    expect(component.personalData.personalDataLoadState).toBe('error');
+    expect(component.personalData.personalItemData).toEqual({ 'uuid::1': { note: 'bestehend' } });
     expect(patchViewItemPreferenceRow).not.toHaveBeenCalled();
+  });
+
+  it('keeps the newest edit after an older save succeeds and retries it after a failure', async () => {
+    const first = new Subject<unknown>();
+    const second = new Subject<unknown>();
+    const retry = new Subject<unknown>();
+    const patch = vi
+      .fn()
+      .mockReturnValueOnce(first)
+      .mockReturnValueOnce(second)
+      .mockReturnValueOnce(retry);
+    const component = createFacade({
+      api: { patchViewItemPreferenceRow: patch },
+      authService: { isLoggedIn: true },
+    });
+    component.acpId = 'acp-1';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
+    try {
+      component.setPersonalItemNote('row-1', 'first');
+      component.flushPersonalItemDataSave();
+      component.setPersonalItemNote('row-1', 'latest');
+      component.flushPersonalItemDataSave();
+      expect(patch).toHaveBeenCalledTimes(1);
+      first.next({});
+      first.complete();
+      expect(patch).toHaveBeenNthCalledWith(2, 'acp-1', 'row-1', { note: 'latest' }, 'read-only');
+      const leaving = component.canDeactivate();
+      second.error(new Error('offline'));
+      await expect(leaving).resolves.toBe(false);
+      expect(component.personalData.personalItemData['row-1'].note).toBe('latest');
+      const retriedNavigation = component.canDeactivate();
+      expect(patch).toHaveBeenNthCalledWith(3, 'acp-1', 'row-1', { note: 'latest' }, 'read-only');
+      retry.next({});
+      retry.complete();
+      await expect(retriedNavigation).resolves.toBe(true);
+      expect(component.personalData.personalDataSaveState).toBe('saved');
+      expect(component.personalData.personalItemData['row-1'].note).toBe('latest');
+    } finally {
+      destroyFacade(component);
+    }
+  });
+
+  it.each(['success', 'error'])('ignores a late save %s from the previous identity', (outcome) => {
+    let token = createJwt('user-a');
+    const oldSave = new Subject<unknown>();
+    const newSave = new Subject<unknown>();
+    const patch = vi.fn().mockReturnValueOnce(oldSave).mockReturnValueOnce(newSave);
+    const component = createFacade({
+      api: { patchViewItemPreferenceRow: patch, getViewItemPreferences: () => of({ rowData: {} }) },
+      authService: { isLoggedIn: true, getToken: () => token },
+    });
+    component.acpId = 'acp-1';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
+    try {
+      component.setPersonalItemNote('row-1', 'private A');
+      component.flushPersonalItemDataSave();
+      token = createJwt('user-b');
+      (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+      component.setPersonalItemNote('row-1', 'private B');
+      component.flushPersonalItemDataSave();
+      expect(patch).toHaveBeenCalledTimes(2);
+      if (outcome === 'success') {
+        oldSave.next({});
+        oldSave.complete();
+      } else {
+        oldSave.error(new Error('late failure'));
+      }
+      expect(component.personalData.personalItemData).toEqual({ 'row-1': { note: 'private B' } });
+      expect(component.personalData.personalDataSaveState).toBe('saving');
+      expect(component.personalData.personalDataError).toBe('');
+      newSave.next({});
+      newSave.complete();
+      expect(component.personalData.personalDataSaveState).toBe('saved');
+      expect(component.canDeactivate()).toBe(true);
+    } finally {
+      destroyFacade(component);
+    }
   });
 
   it('blocks navigation while a personal autosave keeps failing', async () => {
@@ -1184,12 +1299,12 @@ describe('ItemExplorerFacade', () => {
       },
       authService: { isLoggedIn: true },
     });
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.setPersonalItemNote('uuid::1', 'ungespeichert');
     component.flushPersonalItemDataSave();
 
-    expect(component.personalDataSaveState).toBe('error');
+    expect(component.personalData.personalDataSaveState).toBe('error');
     await expect(component.canDeactivate()).resolves.toBe(false);
   });
 
@@ -1209,18 +1324,18 @@ describe('ItemExplorerFacade', () => {
       authService: { isLoggedIn: true },
     });
     component.acpId = 'acp-1';
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.setPersonalItemNote('uuid::1', 'Ungespeicherter Stand');
     component.flushPersonalItemDataSave();
 
     component.openDiscardPersonalItemDataDialog();
-    expect(component.showDiscardPersonalItemDataDialog).toBe(true);
+    expect(component.personalData.showDiscardPersonalItemDataDialog).toBe(true);
 
     component.confirmDiscardPersonalItemDataChanges();
 
-    expect((component as any).pendingPersonalRowUpdates.size).toBe(0);
-    expect(component.personalItemData).toEqual({
+    expect((component.personalData as any).pendingPersonalRowUpdates.size).toBe(0);
+    expect(component.personalData.personalItemData).toEqual({
       'uuid::1': { note: 'Gespeicherter Stand' },
     });
     expect(getViewItemPreferences).toHaveBeenCalledWith('acp-1', 'item-explorer');
@@ -1232,13 +1347,13 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow: vi.fn().mockReturnValue(of({ rowData: {} })) },
       authService: { isLoggedIn: true },
     });
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.setPersonalItemNote('uuid::1', 'ungespeichert');
-    (component as any).personalDataSessionIdentity = null;
+    (component.personalData as any).personalDataSessionIdentity = null;
 
     await expect(component.canDeactivate()).resolves.toBe(false);
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('clears personal data before loading a different session identity', () => {
@@ -1255,19 +1370,19 @@ describe('ItemExplorerFacade', () => {
         getToken: () => token,
       },
     });
-    component.enablePersonalItemData = true;
+    component.personalData.enablePersonalItemData = true;
     (component as any).syncPersonalItemDataSession();
-    expect(component.personalItemData).toEqual({ 'uuid::1': { note: 'Nur A' } });
+    expect(component.personalData.personalItemData).toEqual({ 'uuid::1': { note: 'Nur A' } });
 
     token = createJwt('user-b');
     (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
 
-    expect(component.personalItemData).toEqual({});
-    expect(component.personalDataLoadState).toBe('loading');
+    expect(component.personalData.personalItemData).toEqual({});
+    expect(component.personalData.personalDataLoadState).toBe('loading');
 
     secondLoad.next({ rowData: { 'uuid::1': { note: 'Nur B' } } });
     secondLoad.complete();
-    expect(component.personalItemData).toEqual({ 'uuid::1': { note: 'Nur B' } });
+    expect(component.personalData.personalItemData).toEqual({ 'uuid::1': { note: 'Nur B' } });
   });
 
   it('restores pending personal changes after the same identity logs in again', () => {
@@ -1286,24 +1401,24 @@ describe('ItemExplorerFacade', () => {
       },
     });
     component.acpId = 'acp-1';
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.hasExplorerEditPermission = true;
     component.viewPerspective = 'read-only';
     component.setPersonalItemNote('uuid::1', 'Noch nicht gespeichert');
 
     token = null;
     (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
-    expect(component.personalItemData).toEqual({});
+    expect(component.personalData.personalItemData).toEqual({});
 
     token = createJwt('user-a');
     (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
 
-    expect(component.personalItemData).toEqual({
+    expect(component.personalData.personalItemData).toEqual({
       'uuid::1': { note: 'Noch nicht gespeichert' },
     });
-    expect((component as any).pendingPersonalRowUpdates.size).toBe(1);
-    expect(component.personalDataSaveState).toBe('pending');
+    expect((component.personalData as any).pendingPersonalRowUpdates.size).toBe(1);
+    expect(component.personalData.personalDataSaveState).toBe('pending');
     component.viewPerspective = 'editor';
     component.flushPersonalItemDataSave();
     expect(patchViewItemPreferenceRow).toHaveBeenCalledWith(
@@ -1312,60 +1427,80 @@ describe('ItemExplorerFacade', () => {
       { note: 'Noch nicht gespeichert' },
       'read-only',
     );
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('restores pending changes from memory when session storage is unavailable', () => {
-    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    const setItem = vi.spyOn(sessionStorage, 'setItem').mockImplementation(() => {
       throw new DOMException('Storage unavailable', 'QuotaExceededError');
     });
-    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    const getItem = vi.spyOn(sessionStorage, 'getItem').mockImplementation(() => {
       throw new DOMException('Storage unavailable', 'SecurityError');
     });
-    const removeItem = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+    const removeItem = vi.spyOn(sessionStorage, 'removeItem').mockImplementation(() => {
       throw new DOMException('Storage unavailable', 'SecurityError');
     });
-    const pendingStorage = new PendingPersonalSessionStorageService();
-    let firstToken: string | null = createJwt('user-a');
-    const firstComponent = createFacade({
-      api: { patchViewItemPreferenceRow: vi.fn().mockReturnValue(of({ rowData: {} })) },
-      authService: {
-        isLoggedIn: true,
-        getToken: () => firstToken,
-      },
-      pendingPersonalSessionStorage: pendingStorage,
-    });
-    firstComponent.acpId = 'acp-1';
-    firstComponent.enablePersonalItemData = true;
-    firstComponent.personalDataLoadState = 'loaded';
-    firstComponent.setPersonalItemNote('uuid::1', 'Fallback-Notiz');
-    firstToken = null;
-    (firstComponent as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
-    firstComponent.ngOnDestroy();
+    try {
+      const pendingStorage = new PendingPersonalSessionStorageService();
+      let firstToken: string | null = createJwt('user-a');
+      const firstComponent = createFacade({
+        api: { patchViewItemPreferenceRow: vi.fn().mockReturnValue(of({ rowData: {} })) },
+        authService: {
+          isLoggedIn: true,
+          getToken: () => firstToken,
+        },
+        pendingPersonalSessionStorage: pendingStorage,
+      });
+      firstComponent.acpId = 'acp-1';
+      firstComponent.personalData.enablePersonalItemData = true;
+      firstComponent.personalData.personalDataLoadState = 'loaded';
+      firstComponent.setPersonalItemNote('uuid::1', 'Fallback-Notiz');
+      firstToken = null;
+      (firstComponent as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+      firstComponent.comments.ngOnDestroy();
+      firstComponent.personalData.ngOnDestroy();
+      firstComponent.collections.ngOnDestroy();
+      firstComponent.draft.ngOnDestroy();
+      firstComponent.comments.ngOnDestroy();
+      firstComponent.personalData.ngOnDestroy();
+      firstComponent.collections.ngOnDestroy();
+      firstComponent.ngOnDestroy();
 
-    const secondComponent = createFacade({
-      api: {
-        getViewItemPreferences: vi.fn().mockReturnValue(of({ rowData: {} })),
-        patchViewItemPreferenceRow: vi.fn().mockReturnValue(of({ rowData: {} })),
-      },
-      authService: {
-        isLoggedIn: true,
-        getToken: () => createJwt('user-a'),
-      },
-      pendingPersonalSessionStorage: pendingStorage,
-    });
-    secondComponent.acpId = 'acp-1';
-    secondComponent.enablePersonalItemData = true;
-    (secondComponent as any).syncPersonalItemDataSession();
+      const secondComponent = createFacade({
+        api: {
+          getViewItemPreferences: vi.fn().mockReturnValue(of({ rowData: {} })),
+          patchViewItemPreferenceRow: vi.fn().mockReturnValue(of({ rowData: {} })),
+        },
+        authService: {
+          isLoggedIn: true,
+          getToken: () => createJwt('user-a'),
+        },
+        pendingPersonalSessionStorage: pendingStorage,
+      });
+      secondComponent.acpId = 'acp-1';
+      secondComponent.personalData.enablePersonalItemData = true;
+      (secondComponent as any).syncPersonalItemDataSession();
 
-    expect(secondComponent.personalItemData).toEqual({
-      'uuid::1': { note: 'Fallback-Notiz' },
-    });
-    expect((secondComponent as any).pendingPersonalRowUpdates.size).toBe(1);
-    secondComponent.ngOnDestroy();
-    setItem.mockRestore();
-    getItem.mockRestore();
-    removeItem.mockRestore();
+      expect(secondComponent.personalData.personalItemData).toEqual({
+        'uuid::1': { note: 'Fallback-Notiz' },
+      });
+      expect((secondComponent as any).personalData.pendingPersonalRowUpdates.size).toBe(1);
+      secondComponent.comments.ngOnDestroy();
+      secondComponent.personalData.ngOnDestroy();
+      secondComponent.collections.ngOnDestroy();
+      secondComponent.draft.ngOnDestroy();
+      secondComponent.comments.ngOnDestroy();
+      secondComponent.personalData.ngOnDestroy();
+      secondComponent.collections.ngOnDestroy();
+      secondComponent.ngOnDestroy();
+      expect(setItem).toHaveBeenCalled();
+      expect(getItem).not.toHaveBeenCalled();
+      expect(removeItem).toHaveBeenCalled();
+    } finally {
+      setItem.mockRestore();
+      getItem.mockRestore();
+      removeItem.mockRestore();
+    }
   });
 
   it('discards suspended personal changes when a different identity logs in', () => {
@@ -1383,8 +1518,8 @@ describe('ItemExplorerFacade', () => {
       },
     });
     component.acpId = 'acp-1';
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
     component.setPersonalItemNote('uuid::1', 'Nur A');
 
     token = null;
@@ -1392,10 +1527,10 @@ describe('ItemExplorerFacade', () => {
     token = createJwt('user-b');
     (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
 
-    expect(component.personalItemData).toEqual({ 'uuid::1': { note: 'Nur B' } });
-    expect((component as any).pendingPersonalRowUpdates.size).toBe(0);
+    expect(component.personalData.personalItemData).toEqual({ 'uuid::1': { note: 'Nur B' } });
+    expect((component.personalData as any).pendingPersonalRowUpdates.size).toBe(0);
     expect(sessionStorage.getItem('cp_item_explorer_pending_personal:acp-1')).toBeNull();
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('reapplies an active personal note filter when a note changes', () => {
@@ -1403,9 +1538,9 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow: vi.fn().mockReturnValue(of({ rowData: {} })) },
       authService: { isLoggedIn: true },
     });
-    component.enablePersonalItemData = true;
-    component.personalDataLoadState = 'loaded';
-    component.personalColumnFilters = { personalNote: 'prüfen' };
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalDataLoadState = 'loaded';
+    component.personalData.personalColumnFilters = { personalNote: 'prüfen' };
     component.items = [
       {
         itemId: 'ITEM_1',
@@ -1440,9 +1575,9 @@ describe('ItemExplorerFacade', () => {
   describe('manual sorting toggle', () => {
     function createSortingFacade() {
       const component = createFacade();
-      component.canEditExplorer = true;
-      component.allColumns = [{ id: 'level', label: 'Level', kind: 'number' }];
-      component.columns = [...component.allColumns];
+      (component as any).explorerEditingAllowed = true;
+      component.table.allColumns = [{ id: 'level', label: 'Level', kind: 'number' }];
+      component.table.columns = [...component.allColumns];
       component.items = [1, 2, 3].map((index) => ({
         itemId: `ITEM_${index}`,
         uuid: `uuid-${index}`,
@@ -1453,8 +1588,8 @@ describe('ItemExplorerFacade', () => {
         variableId: '',
         metadata: { level: index },
       }));
-      component.filteredItems = [...component.items];
-      component.itemOrder = ['uuid-2', 'uuid-1', 'uuid-3'];
+      component.table.filteredItems = [...component.items];
+      component.table.itemOrder = ['uuid-2', 'uuid-1', 'uuid-3'];
       vi.spyOn(component as any, 'syncSelectionAfterListMutation').mockImplementation(() => {});
       const queueDraftPatch = vi
         .spyOn(component as any, 'queueDraftPatch')
@@ -1571,7 +1706,7 @@ describe('ItemExplorerFacade', () => {
 
     it('initializes an absent manual order only once', () => {
       const { component } = createSortingFacade();
-      component.itemOrder = [];
+      component.table.itemOrder = [];
       component.toggleManualOrderMode();
       const order = component.itemOrder;
       component.toggleManualOrderMode();
@@ -1589,11 +1724,11 @@ describe('ItemExplorerFacade', () => {
       component.selectedItem = component.items[0];
       expect(component.canMoveSelectedItem(-1)).toBe(true);
       expect(component.canMoveSelectedItem(1)).toBe(true);
-      component.canEditExplorer = false;
+      (component as any).explorerEditingAllowed = false;
       expect(component.canMoveSelectedItem(-1)).toBe(false);
       expect(component.canMoveSelectedItem(1)).toBe(false);
 
-      component.canEditExplorer = true;
+      (component as any).explorerEditingAllowed = true;
       component.toggleManualOrderMode();
       expect(component.canMoveSelectedItem(-1)).toBe(false);
       expect(component.canMoveSelectedItem(1)).toBe(false);
@@ -1620,11 +1755,11 @@ describe('ItemExplorerFacade', () => {
       const { component } = createSortingFacade();
       component.toggleManualOrderMode();
       component.selectedItem = component.items[0];
-      component.itemOrder = ['uuid-2'];
+      component.table.itemOrder = ['uuid-2'];
       expect(component.canMoveSelectedItem(-1)).toBe(false);
       expect(component.canMoveSelectedItem(1)).toBe(false);
 
-      component.itemOrder = [];
+      component.table.itemOrder = [];
       expect(component.canMoveSelectedItem(-1)).toBe(false);
       expect(component.canMoveSelectedItem(1)).toBe(true);
       component.items = [component.selectedItem];
@@ -1659,7 +1794,7 @@ describe('ItemExplorerFacade', () => {
 
   it('filters and sorts partial-credit rows independently by Sub-ID label', () => {
     const component = createFacade();
-    component.hasPartialCredit = true;
+    component.table.hasPartialCredit = true;
     component.items = [
       {
         itemId: 'ITEM_1',
@@ -1688,7 +1823,7 @@ describe('ItemExplorerFacade', () => {
         empiricalDifficulty: 0.2,
       },
     ];
-    component.filteredItems = [...component.items];
+    component.table.filteredItems = [...component.items];
 
     component.sortBy('subIdDisplay');
     expect(component.filteredItems.map((item) => item.rowKey)).toEqual(['uuid-1::1', 'uuid-1::2']);
@@ -1725,7 +1860,7 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ];
-    component.filteredItems = [...component.items];
+    component.table.filteredItems = [...component.items];
 
     component.sortBy('itemId');
     expect(component.filteredItems.map((item) => [item.rowKey, item.rowNumber])).toEqual([
@@ -1733,7 +1868,7 @@ describe('ItemExplorerFacade', () => {
       ['uuid-10', 8],
     ]);
 
-    component.filterText = '10';
+    component.table.filterText = '10';
     component.applyFilter(false);
     expect(component.filteredItems.map((item) => [item.rowKey, item.rowNumber])).toEqual([
       ['uuid-10', 8],
@@ -1816,7 +1951,7 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ];
-    component.filteredItems = [...component.items];
+    component.table.filteredItems = [...component.items];
     (component as any).applyUiPreferences({
       sortField: 'itemId',
       sortDir: 'asc',
@@ -1851,8 +1986,8 @@ describe('ItemExplorerFacade', () => {
 
   it('falls back to task sorting when the saved reference-number sort is hidden', () => {
     const component = createFacade();
-    component.sortField = 'rowNumber';
-    component.sortDir = 'desc';
+    component.table.sortField = 'rowNumber';
+    component.table.sortDir = 'desc';
     component.metadataSettings.referenceNumberVisible = false;
     component.items = [
       {
@@ -1913,7 +2048,7 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ];
-    component.filteredItems = [...component.items];
+    component.table.filteredItems = [...component.items];
 
     component.sortBy('rowNumber');
 
@@ -1951,7 +2086,7 @@ describe('ItemExplorerFacade', () => {
       component.getStickyTableColumnLeft(component.tableColumns[0], component.tableColumns),
     ).toBe(0);
 
-    component.enableItemCollections = true;
+    component.collections.enableItemCollections = true;
     component.toggleReferenceNumberVisibility();
 
     const visibleColumns = component.tableColumns;
@@ -1990,7 +2125,7 @@ describe('ItemExplorerFacade', () => {
 
   it('offsets sticky table columns by the collection selection column when enabled', () => {
     const component = createFacade();
-    component.enableItemCollections = true;
+    component.collections.enableItemCollections = true;
 
     const itemIdColumn = component.tableColumns.find((column) => column.id === 'itemId')!;
     expect(component.getStickyTableColumnLeft(itemIdColumn, component.tableColumns)).toBe(110);
@@ -2006,7 +2141,7 @@ describe('ItemExplorerFacade', () => {
 
   it('normalizes persisted layouts to keep reference number and Item-ID pinned first', () => {
     const component = createFacade();
-    component.metadataSettings = {
+    component.table.metadataSettings = {
       visible: [],
       order: [],
       configured: true,
@@ -2037,7 +2172,7 @@ describe('ItemExplorerFacade', () => {
 
   it('restores column settings when the column manager is cancelled', () => {
     const component = createFacade();
-    component.metadataSettings = {
+    component.table.metadataSettings = {
       visible: ['subject'],
       order: ['subject'],
       configured: true,
@@ -2062,12 +2197,12 @@ describe('ItemExplorerFacade', () => {
 
   it('distinguishes the default column set from an explicitly empty selection', () => {
     const component = createFacade();
-    component.allColumns = [
+    component.table.allColumns = [
       { id: 'subject', label: 'Fach' },
       { id: 'custom', label: 'Eigene Spalte' },
     ];
 
-    component.metadataSettings = {
+    component.table.metadataSettings = {
       visible: [],
       order: [],
       configured: false,
@@ -2081,7 +2216,7 @@ describe('ItemExplorerFacade', () => {
 
   it('adds access-configured columns and clamps widths without changing the default selection', () => {
     const component = createFacade();
-    (component as any).configuredMetadataColumns = [
+    component.table.configuredMetadataColumns = [
       { id: 'custom', label: 'Eigene Spalte', kind: 'text' },
     ];
     const columns = (component as any).getAvailableMetadataColumns([
@@ -2103,7 +2238,7 @@ describe('ItemExplorerFacade', () => {
 
   it('offers VOMD time metadata only through the canonical numeric columns', () => {
     const component = createFacade();
-    (component as any).configuredMetadataColumns = [
+    component.table.configuredMetadataColumns = [
       { id: 'iqb_time_item', label: 'Konfigurierte Itemzeit', kind: 'text' },
       { id: 'iqb_item_time', label: 'Konfigurierte alte Itemzeit', kind: 'text' },
       { id: 'iqb_time_stimulus', label: 'Konfigurierte Stimuluszeit', kind: 'text' },
@@ -2143,7 +2278,7 @@ describe('ItemExplorerFacade', () => {
     const itemTimeColumn = columns.find(
       (column: { id: string }) => column.id === 'itemTimeSeconds',
     );
-    component.allColumns = columns;
+    component.table.allColumns = columns;
     component.items = [
       {
         itemId: 'item-1',
@@ -2168,7 +2303,7 @@ describe('ItemExplorerFacade', () => {
         itemTimeSeconds: 0,
       },
     ];
-    component.columnFilters = { itemTimeSeconds: '40' };
+    component.table.columnFilters = { itemTimeSeconds: '40' };
 
     expect(component.getMetadataColumnDisplayValue(component.items[0], itemTimeColumn)).toBe('40');
     expect(component.getMetadataColumnDisplayValue(component.items[1], itemTimeColumn)).toBe('0');
@@ -2178,11 +2313,11 @@ describe('ItemExplorerFacade', () => {
 
   it('materializes the default column order before moving a column', () => {
     const component = createFacade();
-    component.allColumns = [
+    component.table.allColumns = [
       { id: 'first', label: 'Zuerst' },
       { id: 'second', label: 'Danach' },
     ];
-    component.metadataSettings = {
+    component.table.metadataSettings = {
       visible: [],
       order: [],
       configured: false,
@@ -2201,14 +2336,14 @@ describe('ItemExplorerFacade', () => {
 
   it('enforces published reviewer columns against stale layouts and direct toggle calls', () => {
     const component = createFacade();
-    component.canEditExplorer = false;
-    component.allColumns = [
+    (component as any).explorerEditingAllowed = false;
+    component.table.allColumns = [
       { id: 'secret', label: 'Secret' },
       { id: 'skill', label: 'Skill' },
     ];
-    component.enablePersonalItemData = true;
-    (component as any).personalDataSessionIdentity = 'oidc:reader';
-    (component as any).latestExplorerState = {
+    component.personalData.enablePersonalItemData = true;
+    (component.personalData as any).personalDataSessionIdentity = 'oidc:reader';
+    (component as any).draft.latestExplorerState = {
       publishedState: {
         metadataColumns: {
           restrictReviewerColumnsToManagerSelection: true,
@@ -2236,7 +2371,7 @@ describe('ItemExplorerFacade', () => {
 
   it('materializes the manager selection and cancels restriction changes with the dialog', () => {
     const component = createFacade();
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.openColumnManager();
     component.setRestrictReviewerColumns(true);
     expect(component.metadataSettings.restrictReviewerColumnsToManagerSelection).toBe(true);
@@ -2248,12 +2383,12 @@ describe('ItemExplorerFacade', () => {
 
   it('offers fixed, configured, and personal columns in one configurable table layout', () => {
     const component = createFacade();
-    component.allColumns = [{ id: 'customQuality', label: 'Eigene Qualitätsspalte' }];
-    component.columns = [...component.allColumns];
+    component.table.allColumns = [{ id: 'customQuality', label: 'Eigene Qualitätsspalte' }];
+    component.table.columns = [...component.allColumns];
     component.enableTags = true;
-    component.enablePersonalItemData = true;
-    component.personalItemCategoryLabel = 'Kompetenzstufe';
-    (component as any).personalDataSessionIdentity = 'oidc:test-user';
+    component.personalData.enablePersonalItemData = true;
+    component.personalData.personalItemCategoryLabel = 'Kompetenzstufe';
+    (component.personalData as any).personalDataSessionIdentity = 'oidc:test-user';
 
     expect(component.allTableColumns.map((column) => column.label)).toEqual([
       'Position',
@@ -2303,9 +2438,9 @@ describe('ItemExplorerFacade', () => {
 
   it('keeps Item-ID pinned while moving other visible columns', () => {
     const component = createFacade();
-    component.hasPartialCredit = false;
+    component.table.hasPartialCredit = false;
     component.enableTags = true;
-    component.metadataSettings = {
+    component.table.metadataSettings = {
       visible: [],
       order: [],
       configured: true,
@@ -2366,9 +2501,9 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ];
-    component.columnFilters = { unitLabel: 'Alpha' };
-    component.sortField = 'unitLabel';
-    component.filteredItems = [...component.items];
+    component.table.columnFilters = { unitLabel: 'Alpha' };
+    component.table.sortField = 'unitLabel';
+    component.table.filteredItems = [...component.items];
     component.applyFilter(false);
     expect(component.filteredItems.map((item) => item.itemId)).toEqual(['ITEM_1']);
     const queueDraftPatch = vi.spyOn(component as any, 'queueDraftPatch');
@@ -2395,18 +2530,18 @@ describe('ItemExplorerFacade', () => {
 
   it('keeps legacy metadata-only column settings compatible with the unified layout', () => {
     const component = createFacade();
-    component.allColumns = [
+    component.table.allColumns = [
       { id: 'first', label: 'Erste Metadatenspalte' },
       { id: 'second', label: 'Zweite Metadatenspalte' },
     ];
-    component.metadataSettings = (component as any).resolveMetadataSettings({
+    component.table.metadataSettings = (component as any).resolveMetadataSettings({
       metadataColumns: {
         visible: ['second'],
         order: ['second'],
         widths: { second: 260 },
       },
     });
-    component.columns = component.filterVisibleColumns(component.allColumns);
+    component.table.columns = component.filterVisibleColumns(component.allColumns);
 
     expect(component.metadataSettings.layout?.configured).toBe(false);
     expect(component.tableColumns.map((column) => column.id)).toEqual([
@@ -2420,7 +2555,7 @@ describe('ItemExplorerFacade', () => {
 
   it('normalizes legacy VOMD time settings without writing a draft', () => {
     const component = createFacade();
-    component.allColumns = (component as any).getAvailableMetadataColumns([
+    component.table.allColumns = (component as any).getAvailableMetadataColumns([
       { id: 'iqb_time_item', label: 'Itemzeit' },
       { id: 'iqb_time_stimulus', label: 'Stimuluszeit' },
     ]);
@@ -2498,9 +2633,9 @@ describe('ItemExplorerFacade', () => {
 
   it('honors legacy VOMD time keys in restricted published reviewer layouts', () => {
     const component = createFacade();
-    component.canEditExplorer = false;
-    component.allColumns = (component as any).getAvailableMetadataColumns([]);
-    (component as any).latestExplorerState = {
+    (component as any).explorerEditingAllowed = false;
+    component.table.allColumns = (component as any).getAvailableMetadataColumns([]);
+    (component as any).draft.latestExplorerState = {
       publishedState: {
         metadataColumns: {
           restrictReviewerColumnsToManagerSelection: true,
@@ -2527,7 +2662,7 @@ describe('ItemExplorerFacade', () => {
 
   it('allows an explicitly empty selection to be reset to defaults', () => {
     const component = createFacade();
-    component.metadataSettings = {
+    component.table.metadataSettings = {
       visible: [],
       order: [],
       configured: true,
@@ -2541,8 +2676,8 @@ describe('ItemExplorerFacade', () => {
 
   it('keeps an empty tag tombstone visible in the draft state immediately', () => {
     const component = createFacade();
-    component.canEditExplorer = true;
-    (component as any).suppressDraftPatch = true;
+    (component as any).explorerEditingAllowed = true;
+    (component as any).draft.suppressDraftPatch = true;
     component.items = [
       {
         itemId: 'ITEM_1',
@@ -2646,7 +2781,7 @@ describe('ItemExplorerFacade', () => {
       });
       expect(component.itemListSlow).toBe(false);
     } finally {
-      component.ngOnDestroy();
+      destroyFacade(component);
       vi.useRealTimers();
     }
   });
@@ -2655,8 +2790,8 @@ describe('ItemExplorerFacade', () => {
     const recalculateItemRowNumbers = vi.fn(() => of({ renumberedCount: 1 }));
     const component = createFacade({ api: { recalculateItemRowNumbers } });
     component.acpId = 'acp-1';
-    component.canEditExplorer = true;
-    component.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
+    (component as any).explorerEditingAllowed = true;
+    component.draft.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
     const reloadItems = vi.spyOn(component, 'reloadItems').mockImplementation(() => undefined);
 
     component.openRenumberDialog();
@@ -2676,7 +2811,7 @@ describe('ItemExplorerFacade', () => {
     );
     const component = createFacade({ api: { recalculateItemRowNumbers } });
     component.acpId = 'acp-1';
-    component.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
+    component.draft.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
     component.showRenumberDialog = true;
     const reloadSharedExplorerStateAndItems = vi
       .spyOn(component as any, 'reloadSharedExplorerStateAndItems')
@@ -2696,9 +2831,9 @@ describe('ItemExplorerFacade', () => {
       },
     });
     component.acpId = 'acp-1';
-    component.canEditExplorer = true;
-    component.explorerVersion = 3;
-    (component as any).pendingDraftPatch = { tags: { 'row-1': ['QA'] } };
+    (component as any).explorerEditingAllowed = true;
+    component.draft.explorerVersion = 3;
+    (component as any).draft.pendingDraftPatch = { tags: { 'row-1': ['QA'] } };
     const reloadItems = vi
       .spyOn(component, 'reloadItems')
       .mockImplementation((onSettled) => onSettled?.('loaded'));
@@ -2707,10 +2842,10 @@ describe('ItemExplorerFacade', () => {
     const flushed = await (component as any).flushDraftPatch();
 
     expect(flushed).toBe(false);
-    expect(component.lastDraftOperationError).toBe(
+    expect(component.draft.lastDraftOperationError).toBe(
       'Konflikt beim Aktualisieren des Entwurfs. Der Explorer wurde neu geladen.',
     );
-    expect(component.explorerUiStatus).toBe('ERROR');
+    expect(component.draft.explorerUiStatus).toBe('ERROR');
     expect(reloadItems).toHaveBeenCalledTimes(1);
     consoleError.mockRestore();
   });
@@ -2730,9 +2865,9 @@ describe('ItemExplorerFacade', () => {
       .mockReturnValueOnce(secondPatch$);
     const component = createFacade({ api: { patchItemExplorerDraft, saveItemExplorerDraft } });
     component.acpId = 'acp-1';
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.canPublishExplorer = true;
-    component.explorerVersion = 3;
+    component.draft.explorerVersion = 3;
     vi.spyOn(component, 'reloadItems').mockImplementation(() => undefined);
 
     component.setFilterText('lokale Suche');
@@ -2806,9 +2941,9 @@ describe('ItemExplorerFacade', () => {
 
     await vi.waitFor(() => expect(saveItemExplorerDraft).toHaveBeenCalledWith('acp-1', 5));
     await expect(savePromise).resolves.toBe(true);
-    expect(component.explorerVersion).toBe(6);
+    expect(component.draft.explorerVersion).toBe(6);
     expect(component.filterText).toBe('aktualisierte lokale Suche');
-    expect(component.lastDraftOperationError).toBe('');
+    expect(component.draft.lastDraftOperationError).toBe('');
   });
 
   it('restores a removed tag when saving the optimistic change fails', async () => {
@@ -2826,9 +2961,9 @@ describe('ItemExplorerFacade', () => {
       },
     });
     component.acpId = 'acp-1';
-    component.canEditExplorer = true;
-    component.explorerVersion = 3;
-    component.latestExplorerState = envelope;
+    (component as any).explorerEditingAllowed = true;
+    component.draft.explorerVersion = 3;
+    component.draft.latestExplorerState = envelope;
     component.items = [
       {
         itemId: 'ITEM_1',
@@ -2854,8 +2989,8 @@ describe('ItemExplorerFacade', () => {
     expect(flushed).toBe(false);
     expect(component.itemTags['row-1']).toEqual(['Alt']);
     expect(component.items[0].tags).toEqual(['Alt']);
-    expect((component as any).pendingDraftPatch).toBeNull();
-    expect(component.lastDraftOperationError).toBe('Tag konnte nicht gespeichert werden');
+    expect((component as any).draft.pendingDraftPatch).toBeNull();
+    expect(component.draft.lastDraftOperationError).toBe('Tag konnte nicht gespeichert werden');
     consoleError.mockRestore();
   });
 
@@ -2864,8 +2999,8 @@ describe('ItemExplorerFacade', () => {
 
     for (const status of ['DIRTY', 'SAVING'] as const) {
       const component = createFacade({ api: { recalculateItemRowNumbers } });
-      component.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
-      component.explorerUiStatus = status;
+      component.draft.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
+      component.draft.explorerUiStatus = status;
 
       expect(component.isRenumberingBlocked()).toBe(true);
       expect(component.getRenumberingActionTitle()).toMatch(
@@ -2892,7 +3027,7 @@ describe('ItemExplorerFacade', () => {
     component.openRenumberDialog();
     expect(component.showRenumberDialog).toBe(false);
 
-    component.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
+    component.draft.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
     component.perspectiveSwitchBusy = true;
     expect(component.isRenumberingBlocked()).toBe(true);
     expect(component.getRenumberingActionTitle()).toMatch(/Ansichtswechsel/i);
@@ -2936,9 +3071,9 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ];
-    component.filteredItems = [...component.items];
-    component.itemOrder = ['uuid-1::2', 'uuid-1::1'];
-    component.sortField = '__manual__';
+    component.table.filteredItems = [...component.items];
+    component.table.itemOrder = ['uuid-1::2', 'uuid-1::1'];
+    component.table.sortField = '__manual__';
 
     (component as any).applySort(false);
 
@@ -2980,9 +3115,9 @@ describe('ItemExplorerFacade', () => {
       diagnostics,
     });
     component.acpId = 'acp-1';
-    component.unit = { id: 'UNIT_1', dependencies: [] };
-    component.playerSrcDoc = '<html>cached player</html>';
-    (component as any).definitionContent = '{"pages":[]}';
+    component.player.unit = { id: 'UNIT_1', dependencies: [] };
+    component.player.playerSrcDoc = '<html>cached player</html>';
+    component.player.definitionContent = '{"pages":[]}';
     const item = {
       itemId: 'ITEM_2',
       uuid: 'uuid-2',
@@ -2993,7 +3128,7 @@ describe('ItemExplorerFacade', () => {
       variableId: 'VAR_2',
       metadata: {},
     } as any;
-    component.filteredItems = [item];
+    component.table.filteredItems = [item];
 
     component.selectItem(item, 0);
     await vi.waitFor(() => expect(getResponseStateWithFallback).toHaveBeenCalledOnce());
@@ -3012,11 +3147,11 @@ describe('ItemExplorerFacade', () => {
       previewLoader,
     });
     component.acpId = 'acp-1';
-    component.unit = { id: 'UNIT_1', dependencies: [] };
-    component.playerSrcDoc = '<html>cached player</html>';
-    (component as any).definitionContent = '{"pages":[]}';
+    component.player.unit = { id: 'UNIT_1', dependencies: [] };
+    component.player.playerSrcDoc = '<html>cached player</html>';
+    component.player.definitionContent = '{"pages":[]}';
     setPreviewStatus(component, 'ready');
-    (component as any).activePlayerSessionId = 'old-session';
+    component.player.activePlayerSessionId = 'old-session';
     component.selectedItem = {
       itemId: 'ITEM_1',
       uuid: 'uuid-1',
@@ -3037,7 +3172,7 @@ describe('ItemExplorerFacade', () => {
       variableId: 'VAR_2',
       metadata: {},
     } as any;
-    component.filteredItems = [component.selectedItem, nextItem] as any;
+    component.table.filteredItems = [component.selectedItem, nextItem] as any;
 
     component.selectItem(nextItem, 1);
     expect(component.previewUpdateInProgress).toBe(true);
@@ -3060,13 +3195,13 @@ describe('ItemExplorerFacade', () => {
     });
     responseState$.complete();
     await vi.waitFor(() => expect(component.currentResponseData).toEqual({ current: true }));
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('accepts player state only from the active Verona session', () => {
     const component = createFacade();
     setPreviewStatus(component, 'ready');
-    (component as any).activePlayerSessionId = 'active-session';
+    component.player.activePlayerSessionId = 'active-session';
 
     component.handlePlayerMessage({
       type: 'vopStateChangedNotification',
@@ -3087,7 +3222,7 @@ describe('ItemExplorerFacade', () => {
     });
 
     expect(component.currentResponseData).toEqual({ current: true });
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('cancels stale unit and response-state results after a newer selection', async () => {
@@ -3131,7 +3266,7 @@ describe('ItemExplorerFacade', () => {
       unitLabel: 'Unit 2',
       variableId: 'VAR_2',
     };
-    component.filteredItems = [firstItem, secondItem];
+    component.table.filteredItems = [firstItem, secondItem];
 
     component.selectItem(firstItem, 0);
     component.selectItem(secondItem, 1);
@@ -3165,7 +3300,7 @@ describe('ItemExplorerFacade', () => {
     await vi.waitFor(() => expect(component.unit?.id).toBe('UNIT_2'));
     expect(component.selectedItem?.itemId).toBe('ITEM_2');
     expect(component.currentResponseData).toEqual({ current: true });
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('cancels in-flight preview requests when the next item has no player target', () => {
@@ -3209,7 +3344,7 @@ describe('ItemExplorerFacade', () => {
       rowKey: 'uuid-2',
       variableId: '',
     };
-    component.filteredItems = [previewableItem, itemWithoutTarget];
+    component.table.filteredItems = [previewableItem, itemWithoutTarget];
 
     component.selectItem(previewableItem, 0);
     component.selectItem(itemWithoutTarget, 1);
@@ -3219,7 +3354,7 @@ describe('ItemExplorerFacade', () => {
     expect(previewLoader.load).toHaveBeenCalledOnce();
     expect(component.selectedItem?.itemId).toBe('ITEM_2');
     expect(component.previewUnavailableReason).toContain('keine Player-Variable');
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('cancels in-flight preview requests when the selection is cleared', () => {
@@ -3255,7 +3390,7 @@ describe('ItemExplorerFacade', () => {
       variableId: 'VAR_1',
       metadata: {},
     } as any;
-    component.filteredItems = [item];
+    component.table.filteredItems = [item];
 
     component.selectItem(item, 0);
     (component as any).clearSelectedItem();
@@ -3265,7 +3400,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.selectedItem).toBeNull();
     expect(component.selectedIndex).toBe(-1);
     expect(component.loadingUnit).toBe(false);
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('shows and clears the slow hint for a delayed same-unit response state', async () => {
@@ -3276,9 +3411,9 @@ describe('ItemExplorerFacade', () => {
       previewLoader: { load: vi.fn(), clear: vi.fn() },
     });
     component.acpId = 'acp-1';
-    component.unit = { id: 'UNIT_1', dependencies: [] };
-    component.playerSrcDoc = '<html>cached player</html>';
-    (component as any).definitionContent = '{"pages":[]}';
+    component.player.unit = { id: 'UNIT_1', dependencies: [] };
+    component.player.playerSrcDoc = '<html>cached player</html>';
+    component.player.definitionContent = '{"pages":[]}';
     const item = {
       itemId: 'ITEM_2',
       uuid: 'uuid-2',
@@ -3289,7 +3424,7 @@ describe('ItemExplorerFacade', () => {
       variableId: 'VAR_2',
       metadata: {},
     } as any;
-    component.filteredItems = [item];
+    component.table.filteredItems = [item];
 
     try {
       component.selectItem(item, 0);
@@ -3303,7 +3438,7 @@ describe('ItemExplorerFacade', () => {
       expect(component.previewSlow).toBe(false);
       expect(component.previewLoadPhase).toBe('');
     } finally {
-      component.ngOnDestroy();
+      destroyFacade(component);
       vi.useRealTimers();
     }
   });
@@ -3352,7 +3487,7 @@ describe('ItemExplorerFacade', () => {
       startMark: 'player-ready-3',
     };
     (component as any).playerReadyTiming = pendingDestruction;
-    component.ngOnDestroy();
+    destroyFacade(component);
 
     expect(diagnostics.finish).toHaveBeenCalledWith(pendingDestruction, {
       outcome: 'cancelled',
@@ -3377,7 +3512,7 @@ describe('ItemExplorerFacade', () => {
       previewTargetId: 'BASE_A',
     } as any;
     component.items = [item];
-    component.filteredItems = [item];
+    component.table.filteredItems = [item];
 
     const envelope = createExplorerEnvelope();
     envelope.draftState.tags = {
@@ -3416,8 +3551,8 @@ describe('ItemExplorerFacade', () => {
 
   it('hides items without empirical difficulty when the ACP filter is enabled', () => {
     const component = createFacade();
-    component.showOnlyItemsWithEmpiricalDifficulty = true;
-    component.hasEmpiricalDifficulty = true;
+    component.table.showOnlyItemsWithEmpiricalDifficulty = true;
+    component.table.hasEmpiricalDifficulty = true;
     component.items = [
       {
         itemId: 'ITEM_1',
@@ -3447,8 +3582,8 @@ describe('ItemExplorerFacade', () => {
 
   it('keeps all items visible when no empirical difficulties were imported yet', () => {
     const component = createFacade();
-    component.showOnlyItemsWithEmpiricalDifficulty = true;
-    component.hasEmpiricalDifficulty = false;
+    component.table.showOnlyItemsWithEmpiricalDifficulty = true;
+    component.table.hasEmpiricalDifficulty = false;
     component.items = [
       {
         itemId: 'ITEM_1',
@@ -3477,7 +3612,7 @@ describe('ItemExplorerFacade', () => {
 
   it('sorts by task label and then item id by default', () => {
     const component = createFacade();
-    component.filteredItems = [
+    component.table.filteredItems = [
       {
         itemId: 'ITEM_20',
         uuid: 'uuid-20',
@@ -3581,7 +3716,7 @@ describe('ItemExplorerFacade', () => {
         excluded: true,
       },
     ] as any;
-    component.filterText = 'alpha';
+    component.table.filterText = 'alpha';
 
     component.applyFilter(false);
 
@@ -3593,8 +3728,8 @@ describe('ItemExplorerFacade', () => {
 
   it('reports mutually exclusive base-visibility reasons', () => {
     const component = createFacade();
-    component.showOnlyItemsWithEmpiricalDifficulty = true;
-    component.hasEmpiricalDifficulty = true;
+    component.table.showOnlyItemsWithEmpiricalDifficulty = true;
+    component.table.hasEmpiricalDifficulty = true;
     component.items = [
       { uuid: 'excluded-missing', excluded: true },
       { uuid: 'visible-missing' },
@@ -3610,8 +3745,8 @@ describe('ItemExplorerFacade', () => {
 
   it('counts only items with empirical difficulty when that visibility rule is active', () => {
     const component = createFacade();
-    component.showOnlyItemsWithEmpiricalDifficulty = true;
-    component.hasEmpiricalDifficulty = true;
+    component.table.showOnlyItemsWithEmpiricalDifficulty = true;
+    component.table.hasEmpiricalDifficulty = true;
     component.items = [
       {
         itemId: 'ITEM_1',
@@ -3642,7 +3777,7 @@ describe('ItemExplorerFacade', () => {
 
   it('excludes the selected item and moves selection to the next visible entry', () => {
     const component = createFacade();
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.items = [
       {
         itemId: 'ITEM_1',
@@ -3672,7 +3807,7 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ] as any;
-    component.filteredItems = [...component.items];
+    component.table.filteredItems = [...component.items];
     component.selectedItem = component.items[0];
     component.selectedIndex = 0;
     const queueDraftPatch = vi
@@ -3699,7 +3834,7 @@ describe('ItemExplorerFacade', () => {
 
   it('shows audio/video coding variables by default', () => {
     const component = createFacade();
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'AUDIO_VAR', label: 'Audio prompt', codes: [] },
       { id: 'TEXT_VAR', label: 'Text prompt', codes: [] },
       { id: 'VIDEO_VAR', label: 'Video prompt', codes: [] },
@@ -3712,8 +3847,8 @@ describe('ItemExplorerFacade', () => {
 
   it('hides audio/video coding variables when disabled', () => {
     const component = createFacade();
-    component.showAudioVideoCodingVariables = false;
-    component.currentCodingSchemeAsText = [
+    component.coding.showAudioVideoCodingVariables = false;
+    component.coding.currentCodingSchemeAsText = [
       { id: 'AUDIO_VAR', label: 'Prompt', codes: [] },
       { id: 'TEXT_VAR', label: 'Text prompt', codes: [] },
       { id: 'VAR_01', label: 'Video answer', codes: [] },
@@ -3737,7 +3872,7 @@ describe('ItemExplorerFacade', () => {
       sourceVariable: 'result_alias',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: 'BASE_A', sourceType: 'BASE', deriveSources: [] },
         {
@@ -3748,11 +3883,11 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'BASE_A', label: 'Teil A', codes: [] },
       { id: 'RESULT_ALIAS', label: 'Ergebnis', codes: [] },
     ] as any;
-    component.codingSearchText = 'does-not-match';
+    component.coding.codingSearchText = 'does-not-match';
 
     expect(component.codingVariableFocus).toMatchObject({
       status: 'unique',
@@ -3777,7 +3912,7 @@ describe('ItemExplorerFacade', () => {
       variableId: '',
       metadata: {},
     } as any;
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'VAR_A', label: 'A', codes: [] },
       { id: 'VAR_B', label: 'B', codes: [] },
     ] as any;
@@ -3801,7 +3936,7 @@ describe('ItemExplorerFacade', () => {
       variableId: 'BASE_A',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: 'BASE_A', sourceType: 'BASE' },
         {
@@ -3812,7 +3947,7 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'BASE_A', label: 'Basiswert', codes: [] },
       { id: 'BASE_A', label: 'Gesamtscore', codes: [] },
     ] as any;
@@ -3835,7 +3970,7 @@ describe('ItemExplorerFacade', () => {
       variableId: '01',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: '01', alias: '_01', sourceType: 'BASE' },
         {
@@ -3850,7 +3985,7 @@ describe('ItemExplorerFacade', () => {
         { id: '_source01', alias: '_source01', sourceType: 'BASE_NO_VALUE' },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: '_01', label: 'Variable 01', codes: [] },
       { id: '01', label: 'Aggregat', codes: [] },
       { id: '_button01', label: '', codes: [] },
@@ -3882,7 +4017,7 @@ describe('ItemExplorerFacade', () => {
       variableReadOnlyId: '01_1',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         {
           id: '01',
@@ -3913,7 +4048,7 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       {
         id: '_01',
         label: 'Variable 01',
@@ -3941,7 +4076,7 @@ describe('ItemExplorerFacade', () => {
     expect(
       component.shouldShowAutomaticCodingRules(component.filteredCodingSchemeAsText[0].codes[0]),
     ).toBe(true);
-    component.showGeneralCodingInstructions = true;
+    component.coding.showGeneralCodingInstructions = true;
     expect(
       component.shouldShowGeneralCodingInstruction(component.filteredCodingSchemeAsText[0]),
     ).toBe(true);
@@ -3969,7 +4104,7 @@ describe('ItemExplorerFacade', () => {
       variableReadOnlyId: 'internal-04',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         {
           id: 'internal-04',
@@ -3979,7 +4114,7 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    (component as any).definitionContent = '{"pages":[]}';
+    component.player.definitionContent = '{"pages":[]}';
 
     (component as any).syncPreviewTargetResolution(component.selectedItem);
 
@@ -4004,7 +4139,7 @@ describe('ItemExplorerFacade', () => {
       variableReadOnlyId: '05',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         {
           id: '05',
@@ -4014,8 +4149,10 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    component.currentCodingSchemeAsText = [{ id: '06', label: 'Aufgabe 6', codes: [] }] as any;
-    (component as any).definitionContent = '{"pages":[]}';
+    component.coding.currentCodingSchemeAsText = [
+      { id: '06', label: 'Aufgabe 6', codes: [] },
+    ] as any;
+    component.player.definitionContent = '{"pages":[]}';
 
     (component as any).syncPreviewTargetResolution(component.selectedItem);
 
@@ -4054,18 +4191,18 @@ describe('ItemExplorerFacade', () => {
         variableReadOnlyId: '11',
         metadata: {},
       } as any;
-      component.currentCodingScheme = {
+      component.coding.currentCodingScheme = {
         variableCodings: [
           { id: '07', alias: '04', sourceType: 'BASE', deriveSources: [] },
           { id: '11', alias: '07', sourceType: 'BASE', deriveSources: [] },
         ],
       };
-      component.currentCodingSchemeAsText = [
+      component.coding.currentCodingSchemeAsText = [
         { id: '04', label: 'Item 4', codes: [] },
         { id: '07', label: 'Item 11', codes: [] },
       ] as any;
-      component.unit = { id: 'DHB003', dependencies: [] } as any;
-      (component as any).definitionContent = JSON.stringify({
+      component.player.unit = { id: 'DHB003', dependencies: [] } as any;
+      component.player.definitionContent = JSON.stringify({
         pages: [
           { sections: [{ elements: [{ id: '07', alias: '04' }] }] },
           { sections: [{ elements: [{ id: '11', alias: '07' }] }] },
@@ -4073,7 +4210,7 @@ describe('ItemExplorerFacade', () => {
       });
       (component as any).syncPreviewTargetResolution(component.selectedItem);
       registerPlayerDom(component, postMessage);
-      (component as any).playerFrameReady = true;
+      component.player.playerFrameReady = true;
       setPreviewStatus(component, 'ready');
 
       (component as any).startPlayerIfReady();
@@ -4083,10 +4220,9 @@ describe('ItemExplorerFacade', () => {
         type: 'vopStartCommand',
         playerConfig: expect.objectContaining({ startPage: '1' }),
       });
-      expect((component as any).getResolvedVariableRefs(component.selectedItem)).toEqual([
-        '07',
-        '11',
-      ]);
+      expect(
+        component.player.getFocusSelectors(component.selectedItem, component.selectedPreviewTarget),
+      ).toEqual(expect.arrayContaining(['[data-variable-id="07"]', '[data-variable-id="11"]']));
     } finally {
       vi.runAllTimers();
       vi.useRealTimers();
@@ -4125,7 +4261,7 @@ describe('ItemExplorerFacade', () => {
       variableReadOnlyId: 'text-field_1765284526968_1',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         {
           id: 'text-area_1769771943595_1',
@@ -4135,8 +4271,10 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    component.currentCodingSchemeAsText = [{ id: '01', label: 'Aufgabe 1', codes: [] }] as any;
-    (component as any).definitionContent = '{"pages":[]}';
+    component.coding.currentCodingSchemeAsText = [
+      { id: '01', label: 'Aufgabe 1', codes: [] },
+    ] as any;
+    component.player.definitionContent = '{"pages":[]}';
 
     (component as any).syncPreviewTargetResolution(component.selectedItem);
 
@@ -4166,7 +4304,7 @@ describe('ItemExplorerFacade', () => {
       variableReadOnlyId: 'stale-internal-id',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: '01', alias: 'PLAYER_A', sourceType: 'BASE', deriveSources: [] },
         { id: 'internal-b', alias: '01', sourceType: 'BASE', deriveSources: [] },
@@ -4192,7 +4330,7 @@ describe('ItemExplorerFacade', () => {
       variableReadOnlyId: 'TOTAL',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         {
           id: 'BASE_A',
@@ -4209,7 +4347,7 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       {
         id: 'BASE_A',
         label: 'Source',
@@ -4257,7 +4395,7 @@ describe('ItemExplorerFacade', () => {
       variableReadOnlyId: '04',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         {
           id: '04a',
@@ -4273,7 +4411,7 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    (component as any).definitionContent = '{"pages":[]}';
+    component.player.definitionContent = '{"pages":[]}';
 
     (component as any).syncPreviewTargetResolution(component.selectedItem);
 
@@ -4293,7 +4431,7 @@ describe('ItemExplorerFacade', () => {
       variableReadOnlyId: 'missing-internal-id',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         {
           id: 'different-internal-id',
@@ -4303,7 +4441,7 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'missing-internal-id', label: 'Wrong alias match', codes: [] },
     ] as any;
 
@@ -4334,10 +4472,10 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [{ id: '01', sourceType: 'BASE' }],
     };
-    component.currentCodingSchemeAsText = [coding];
+    component.coding.currentCodingSchemeAsText = [coding];
     component.selectedItem = {
       itemId: '13',
       uuid: 'DLB01313',
@@ -4347,12 +4485,12 @@ describe('ItemExplorerFacade', () => {
       metadata: {},
     } as any;
 
-    component.showGeneralCodingInstructions = false;
-    component.preferManualCodingInstructions = true;
+    component.coding.showGeneralCodingInstructions = false;
+    component.coding.preferManualCodingInstructions = true;
     expect(component.shouldShowGeneralCodingInstruction(coding)).toBe(false);
     expect(component.shouldShowAutomaticCodingRules(coding.codes[0])).toBe(true);
 
-    component.showGeneralCodingInstructions = true;
+    component.coding.showGeneralCodingInstructions = true;
     expect(component.shouldShowGeneralCodingInstruction(coding)).toBe(true);
     expect(component.shouldShowAutomaticCodingRules(coding.codes[0])).toBe(true);
   });
@@ -4367,10 +4505,10 @@ describe('ItemExplorerFacade', () => {
       ruleSetDescriptions: ["Übereinstimmung (numerisch) mit '3'"],
     } as any;
 
-    component.preferManualCodingInstructions = true;
+    component.coding.preferManualCodingInstructions = true;
     expect(component.shouldShowAutomaticCodingRules(code)).toBe(false);
 
-    component.preferManualCodingInstructions = false;
+    component.coding.preferManualCodingInstructions = false;
     expect(component.shouldShowAutomaticCodingRules(code)).toBe(true);
   });
 
@@ -4385,7 +4523,7 @@ describe('ItemExplorerFacade', () => {
       variableId: 'TOTAL',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: 'BASE_A', sourceType: 'BASE' },
         {
@@ -4396,7 +4534,7 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'BASE_A', label: 'Basiswert', codes: [] },
       { id: 'BASE_A', label: 'Gesamtscore', codes: [] },
     ] as any;
@@ -4413,114 +4551,9 @@ describe('ItemExplorerFacade', () => {
     ]);
   });
 
-  it('keeps general variable hints and manual code instructions when the coding uses an alias', () => {
-    const component = createFacade();
-    const codings = (component as any).createCodingSchemeAsText([
-      {
-        id: 'INTERNAL_ID',
-        alias: 'VISIBLE_ALIAS',
-        label: 'Visible result',
-        sourceType: 'BASE',
-        manualInstruction: '<p>Text <img src="figure.png"></p>',
-        codes: [
-          {
-            id: 1,
-            score: 1,
-            label: 'Correct',
-            manualInstruction: '<p>Inspect figure</p>',
-            ruleSets: [],
-          },
-        ],
-      },
-    ]);
-
-    expect(codings[0].id).toBe('VISIBLE_ALIAS');
-    expect(codings[0].generalInstructionText).toContain('<img');
-    expect(codings[0].codes[0].manualInstructionText).toContain('Inspect figure');
-  });
-
-  it('sanitizes general variable hints and manual code instructions while preserving graphics', () => {
-    const component = createFacade();
-    const codings = (component as any).createCodingSchemeAsText([
-      {
-        id: 'INTERNAL_ID',
-        alias: 'VISIBLE_ALIAS',
-        sourceType: 'BASE',
-        manualInstruction:
-          '<p>Text <img src="figure.png" onerror="alert(1)"></p><script>alert(2)</script>',
-        codes: [
-          {
-            id: 1,
-            score: 1,
-            label: 'Correct',
-            manualInstruction:
-              '<a href="javascript:alert(3)" onclick="alert(4)">Inspect figure</a>',
-            ruleSets: [],
-          },
-        ],
-      },
-    ]);
-
-    expect(codings[0].generalInstructionText).toContain('<img src="figure.png">');
-    expect(codings[0].generalInstructionText).not.toContain('onerror');
-    expect(codings[0].generalInstructionText).not.toContain('<script');
-    expect(codings[0].codes[0].manualInstructionText).toContain('Inspect figure');
-    expect(codings[0].codes[0].manualInstructionText).not.toContain('javascript:');
-    expect(codings[0].codes[0].manualInstructionText).not.toContain('onclick');
-  });
-
-  it('keeps general instructions paired by position for a valid alias shadow', () => {
-    const component = createFacade();
-    const codings = (component as any).createCodingSchemeAsText([
-      {
-        id: 'BASE_A',
-        sourceType: 'BASE',
-        manualInstruction: '<p>Base instruction</p>',
-        codes: [],
-      },
-      {
-        id: 'TOTAL',
-        alias: 'BASE_A',
-        sourceType: 'SUM_SCORE',
-        deriveSources: ['BASE_A'],
-        manualInstruction: '<p>Aggregate instruction</p>',
-        codes: [],
-      },
-    ]);
-
-    expect(codings.map((coding: any) => coding.generalInstructionText)).toEqual([
-      '<p>Base instruction</p>',
-      '<p>Aggregate instruction</p>',
-    ]);
-  });
-
-  it('treats semantically empty instruction HTML as absent', () => {
-    const component = createFacade();
-    const codings = (component as any).createCodingSchemeAsText([
-      {
-        id: '01',
-        sourceType: 'BASE',
-        manualInstruction: '<p>&nbsp;</p>',
-        codes: [
-          {
-            id: 1,
-            score: 1,
-            manualInstruction: '<div><br></div>',
-            ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['3'] }] }],
-          },
-        ],
-      },
-    ]);
-
-    expect(codings[0].generalInstructionText).toBeNull();
-    expect(codings[0].codes[0].manualInstructionText).toBeNull();
-    component.preferManualCodingInstructions = true;
-    expect(component.shouldShowAutomaticCodingRules(codings[0].codes[0])).toBe(true);
-  });
-
   it('clears a previous coding search when the overlay is opened', () => {
     const component = createFacade();
-    component.codingSearchText = 'old search';
+    component.coding.codingSearchText = 'old search';
 
     component.openCodingOverlay();
 
@@ -4530,7 +4563,7 @@ describe('ItemExplorerFacade', () => {
 
   it('adds the player highlight class when player focus highlighting is enabled', () => {
     const component = createFacade();
-    component.playerFocusHighlightEnabled = true;
+    component.player.playerFocusHighlightEnabled = true;
     component.selectedItem = {
       itemId: 'ITEM_1',
       rowKey: 'row-1',
@@ -4543,14 +4576,14 @@ describe('ItemExplorerFacade', () => {
     };
     const playerDom = registerPlayerDom(component);
 
-    (component as any).tryFocusItemInPlayer();
+    component.player.tryFocusItemInPlayer(component.selectedItem, component.selectedPreviewTarget);
 
     expect(playerDom.focus).toHaveBeenCalledWith(expect.any(Array), expect.any(Array), true);
   });
 
   it('keeps player focus without the highlight class when the ACP flag disables it', () => {
     const component = createFacade();
-    component.playerFocusHighlightEnabled = false;
+    component.player.playerFocusHighlightEnabled = false;
     component.selectedItem = {
       itemId: 'ITEM_1',
       rowKey: 'row-1',
@@ -4563,7 +4596,7 @@ describe('ItemExplorerFacade', () => {
     };
     const playerDom = registerPlayerDom(component);
 
-    (component as any).tryFocusItemInPlayer();
+    component.player.tryFocusItemInPlayer(component.selectedItem, component.selectedPreviewTarget);
 
     expect(playerDom.focus).toHaveBeenCalledWith(expect.any(Array), expect.any(Array), false);
   });
@@ -4585,12 +4618,12 @@ describe('ItemExplorerFacade', () => {
     expect(component.isPreviewLoading).toBe(true);
     expect(component.shouldRenderPlayerFrame).toBe(false);
 
-    component.playerSrcDoc = '<html></html>';
+    component.player.playerSrcDoc = '<html></html>';
 
     expect(component.isPreviewLoading).toBe(true);
     expect(component.shouldRenderPlayerFrame).toBe(false);
 
-    (component as any).definitionContent = '{"pages":[]}';
+    component.player.definitionContent = '{"pages":[]}';
     setPreviewStatus(component, 'ready');
 
     expect(component.isPreviewLoading).toBe(false);
@@ -4629,8 +4662,8 @@ describe('ItemExplorerFacade', () => {
         variableId: 'VAR_3',
         metadata: {},
       } as any;
-      component.playerSrcDoc = '<html></html>';
-      (component as any).definitionContent = '{"pages":[]}';
+      component.player.playerSrcDoc = '<html></html>';
+      component.player.definitionContent = '{"pages":[]}';
       setPreviewStatus(component, 'ready');
 
       component.onPagingModeChange();
@@ -4664,9 +4697,9 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       };
       registerPlayerDom(component, postMessage);
-      (component as any).unit = { id: 'UNIT_1', dependencies: [] };
-      (component as any).definitionContent = JSON.stringify({ pages: [] });
-      (component as any).playerFrameReady = true;
+      component.player.unit = { id: 'UNIT_1', dependencies: [] };
+      component.player.definitionContent = JSON.stringify({ pages: [] });
+      component.player.playerFrameReady = true;
       setPreviewStatus(component, 'loading-response');
 
       (component as any).startPlayerIfReady();
@@ -4730,7 +4763,7 @@ describe('ItemExplorerFacade', () => {
         variableId: 'A1',
         metadata: {},
       };
-      component.currentCodingScheme = {
+      component.coding.currentCodingScheme = {
         variableCodings: [
           {
             id: 'A1',
@@ -4748,11 +4781,11 @@ describe('ItemExplorerFacade', () => {
           },
         ],
       };
-      component.currentResponseData = persistedDataParts;
-      component.hasResponseState = true;
-      (component as any).unit = { id: 'UNIT_1', dependencies: [] };
-      (component as any).definitionContent = JSON.stringify({ pages: [] });
-      (component as any).playerFrameReady = true;
+      component.player.currentResponseData = persistedDataParts;
+      component.player.hasResponseState = true;
+      component.player.unit = { id: 'UNIT_1', dependencies: [] };
+      component.player.definitionContent = JSON.stringify({ pages: [] });
+      component.player.playerFrameReady = true;
       setPreviewStatus(component, 'ready');
       (component as any).refreshCorrectSolutionPrefill();
       registerPlayerDom(component, postMessage);
@@ -4803,7 +4836,7 @@ describe('ItemExplorerFacade', () => {
       variableId: 'A1',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         {
           id: 'A1',
@@ -4818,7 +4851,7 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    (component as any).definitionContent = JSON.stringify({ pages: [] });
+    component.player.definitionContent = JSON.stringify({ pages: [] });
     (component as any).startPlayerIfReady = startPlayerIfReady;
     setPreviewStatus(component, 'ready');
     (component as any).refreshCorrectSolutionPrefill();
@@ -4865,10 +4898,10 @@ describe('ItemExplorerFacade', () => {
       variableId: 'B1',
       description: 'Second item',
     };
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [solutionVariable('A1', '1'), solutionVariable('B1', '2')],
     };
-    (component as any).definitionContent = JSON.stringify({ pages: [] });
+    component.player.definitionContent = JSON.stringify({ pages: [] });
     component.correctSolutionRequested = true;
 
     component.selectedItem = firstItem;
@@ -4919,8 +4952,8 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       };
       registerPlayerDom(component, postMessage);
-      (component as any).unit = { id: 'UNIT_2', dependencies: [] };
-      (component as any).definitionContent = JSON.stringify({
+      component.player.unit = { id: 'UNIT_2', dependencies: [] };
+      component.player.definitionContent = JSON.stringify({
         pages: [
           {
             alwaysVisible: true,
@@ -4934,7 +4967,7 @@ describe('ItemExplorerFacade', () => {
           },
         ],
       });
-      (component as any).playerFrameReady = true;
+      component.player.playerFrameReady = true;
       setPreviewStatus(component, 'ready');
 
       (component as any).startPlayerIfReady();
@@ -4993,8 +5026,8 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       };
       registerPlayerDom(component, postMessage);
-      (component as any).unit = { id: 'UNIT_2', dependencies: [] };
-      (component as any).definitionContent = JSON.stringify({
+      component.player.unit = { id: 'UNIT_2', dependencies: [] };
+      component.player.definitionContent = JSON.stringify({
         pages: [
           {
             alwaysVisible: true,
@@ -5005,7 +5038,7 @@ describe('ItemExplorerFacade', () => {
           },
         ],
       });
-      (component as any).playerFrameReady = true;
+      component.player.playerFrameReady = true;
       setPreviewStatus(component, 'ready');
 
       (component as any).startPlayerIfReady();
@@ -5045,9 +5078,9 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       } as any;
       registerPlayerDom(component, postMessage);
-      (component as any).unit = { id: 'UNIT_1', dependencies: [] };
-      (component as any).definitionContent = 'original-definition';
-      (component as any).playerFrameReady = true;
+      component.player.unit = { id: 'UNIT_1', dependencies: [] };
+      component.player.definitionContent = 'original-definition';
+      component.player.playerFrameReady = true;
       setPreviewStatus(component, 'ready');
 
       (component as any).startPlayerIfReady();
@@ -5074,7 +5107,7 @@ describe('ItemExplorerFacade', () => {
     const postMessage = vi.fn();
 
     try {
-      component.itemExplorerConditionalVisibilityEnabled = true;
+      component.player.itemExplorerConditionalVisibilityEnabled = true;
       component.selectedItem = {
         itemId: 'ITEM_1',
         uuid: 'uuid-1',
@@ -5085,9 +5118,9 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       } as any;
       registerPlayerDom(component, postMessage);
-      (component as any).unit = { id: 'UNIT_1', dependencies: [] };
-      (component as any).definitionContent = 'original-definition';
-      (component as any).playerFrameReady = true;
+      component.player.unit = { id: 'UNIT_1', dependencies: [] };
+      component.player.definitionContent = 'original-definition';
+      component.player.playerFrameReady = true;
       setPreviewStatus(component, 'ready');
 
       (component as any).startPlayerIfReady();
@@ -5107,7 +5140,7 @@ describe('ItemExplorerFacade', () => {
   it('shows player target diagnostics for privileged users when enabled', () => {
     const component = createFacade();
 
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.itemExplorerPlayerTargetInfoEnabled = true;
 
     expect(component.showPlayerTargetInfo).toBe(true);
@@ -5116,7 +5149,7 @@ describe('ItemExplorerFacade', () => {
   it('hides player target diagnostics for read-only users', () => {
     const component = createFacade();
 
-    component.canEditExplorer = false;
+    (component as any).explorerEditingAllowed = false;
     component.itemExplorerPlayerTargetInfoEnabled = true;
 
     expect(component.showPlayerTargetInfo).toBe(false);
@@ -5125,7 +5158,7 @@ describe('ItemExplorerFacade', () => {
   it('hides the draft status bar for read-only users', () => {
     const component = createFacade();
 
-    component.canEditExplorer = false;
+    (component as any).explorerEditingAllowed = false;
 
     expect(component.showExplorerDraftStatus).toBe(false);
   });
@@ -5133,7 +5166,7 @@ describe('ItemExplorerFacade', () => {
   it('shows the draft status bar for editors', () => {
     const component = createFacade();
 
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
 
     expect(component.showExplorerDraftStatus).toBe(true);
   });
@@ -5141,7 +5174,7 @@ describe('ItemExplorerFacade', () => {
   it('hides keyboard hints for read-only users', () => {
     const component = createFacade();
 
-    component.canEditExplorer = false;
+    (component as any).explorerEditingAllowed = false;
 
     expect(component.showExplorerKeyboardHints).toBe(false);
   });
@@ -5149,7 +5182,7 @@ describe('ItemExplorerFacade', () => {
   it('shows keyboard hints for editors', () => {
     const component = createFacade();
 
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
 
     expect(component.showExplorerKeyboardHints).toBe(true);
   });
@@ -5167,7 +5200,7 @@ describe('ItemExplorerFacade', () => {
       },
     });
     component.acpId = 'acp-1';
-    component.filterText = 'lokale Suche';
+    component.table.filterText = 'lokale Suche';
 
     (component as any).applySharedExplorerEnvelope(envelope);
     expect(component.filterText).toBe('lokale Suche');
@@ -5200,7 +5233,7 @@ describe('ItemExplorerFacade', () => {
       },
     });
     component.acpId = 'acp-1';
-    component.filterText = 'lokale Suche';
+    component.table.filterText = 'lokale Suche';
 
     (component as any).applySharedExplorerEnvelope(envelope);
     (component as any).flushDraftPatch = vi.fn().mockResolvedValue(true);
@@ -5267,7 +5300,7 @@ describe('ItemExplorerFacade', () => {
         subId: undefined,
       },
     ];
-    component.filteredItems = [...component.items];
+    component.table.filteredItems = [...component.items];
     (component as any).applySharedExplorerEnvelope(envelope);
 
     await component.toggleReadOnlyPreview();
@@ -5300,10 +5333,96 @@ describe('ItemExplorerFacade', () => {
     expect(getFileItemList).not.toHaveBeenCalled();
   });
 
+  it('keeps the editor open and flushes newer edits after an ongoing publication', async () => {
+    const publication = new Subject<any>();
+    const envelope = createExplorerEnvelope();
+    const published = { ...envelope, version: 4, status: 'CLEAN' as const };
+    const patchItemExplorerDraft = vi.fn(() => of({ ...envelope, version: 5 }));
+    const getItemExplorerState = vi.fn(() => of(published));
+    const component = createFacade({
+      api: {
+        saveItemExplorerDraft: vi.fn(() => publication),
+        patchItemExplorerDraft,
+        getItemExplorerState,
+        getFileItemList: vi.fn(() => of({ columns: [], items: [] })),
+      },
+    });
+    component.acpId = 'acp-1';
+    (component as any).applySharedExplorerEnvelope(envelope);
+    const saved = component.saveExplorerDraft(true);
+    await Promise.resolve();
+    await Promise.resolve();
+    (component as any).queueDraftPatch('UI_UPDATE', { ui: { filterText: 'new edit' } });
+
+    expect(await (component as any).flushDraftPatch()).toBe(false);
+    await component.toggleReadOnlyPreview();
+    expect(component.isReadOnlyPreview).toBe(false);
+    expect(getItemExplorerState).not.toHaveBeenCalled();
+    expect(patchItemExplorerDraft).not.toHaveBeenCalled();
+
+    publication.next(published);
+    expect(await saved).toBe(false);
+    await vi.waitFor(() => expect(patchItemExplorerDraft).toHaveBeenCalledOnce());
+    expect(patchItemExplorerDraft).toHaveBeenCalledWith(
+      'acp-1',
+      expect.objectContaining({
+        baseVersion: 4,
+        patch: { ui: { filterText: 'new edit' } },
+      }),
+    );
+    expect(component.canEditExplorer).toBe(true);
+    expect(component.hasPendingDraftChanges()).toBe(true);
+    destroyFacade(component);
+  });
+
+  it('computes cell geometry without consulting the user session for every cell', () => {
+    const getToken = vi.fn(() => null);
+    const component = createFacade({ authService: { getToken } });
+    const column = {
+      key: 'system:itemId',
+      id: 'itemId',
+      label: 'Item-ID',
+      source: 'system' as const,
+      defaultWidth: 220,
+    };
+    getToken.mockClear();
+    expect(component.isStickyTableColumn(column, [column])).toBe(true);
+    expect(component.getStickyTableColumnLeft(column, [column])).toBe(0);
+    expect(getToken).not.toHaveBeenCalled();
+    destroyFacade(component);
+  });
+
+  it('does not switch perspective when an edit arrives between flush completion and result application', async () => {
+    const patch = new Subject<any>();
+    const envelope = createExplorerEnvelope();
+    const getItemExplorerState = vi.fn(() => of(envelope));
+    const component = createFacade({
+      api: {
+        patchItemExplorerDraft: vi.fn(() => patch),
+        getItemExplorerState,
+        getFileItemList: vi.fn(() => of({ columns: [], items: [] })),
+      },
+    });
+    component.acpId = 'acp-1';
+    (component as any).applySharedExplorerEnvelope(envelope);
+    component.draft.queueDraftPatch('UI_UPDATE', { ui: { sortField: 'itemId' } });
+    const flush = component.draft.flushDraftPatch();
+    void flush.then(() =>
+      component.draft.queueDraftPatch('UI_UPDATE', { ui: { sortField: 'unitLabel' } }),
+    );
+    const switching = component.toggleReadOnlyPreview();
+    patch.next({ ...envelope, version: 4 });
+    await switching;
+    expect(component.isReadOnlyPreview).toBe(false);
+    expect(getItemExplorerState).not.toHaveBeenCalled();
+    expect(component.hasPendingDraftChanges()).toBe(true);
+    destroyFacade(component);
+  });
+
   it('hides player target diagnostics when the ACP flag is disabled', () => {
     const component = createFacade();
 
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.itemExplorerPlayerTargetInfoEnabled = false;
 
     expect(component.showPlayerTargetInfo).toBe(false);
@@ -5341,7 +5460,7 @@ describe('ItemExplorerFacade', () => {
   it('shows an explanatory message when the player target is missing in the definition', () => {
     const component = createFacade({ resolvePlayerTargetLocation: () => undefined });
     const postMessage = vi.fn();
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.itemExplorerPlayerTargetInfoEnabled = true;
 
     component.selectedItem = {
@@ -5354,9 +5473,9 @@ describe('ItemExplorerFacade', () => {
       metadata: {},
     } as any;
     registerPlayerDom(component, postMessage);
-    (component as any).unit = { id: 'UNIT_3', dependencies: [] };
-    (component as any).definitionContent = JSON.stringify({ pages: [] });
-    (component as any).playerFrameReady = true;
+    component.player.unit = { id: 'UNIT_3', dependencies: [] };
+    component.player.definitionContent = JSON.stringify({ pages: [] });
+    component.player.playerFrameReady = true;
     setPreviewStatus(component, 'ready');
 
     (component as any).startPlayerIfReady();
@@ -5378,7 +5497,7 @@ describe('ItemExplorerFacade', () => {
       variableId: 'TOTAL',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: 'BASE_A', label: 'Teil A', sourceType: 'BASE', deriveSources: [] },
         { id: 'BASE_B', label: 'Teil B', sourceType: 'BASE', deriveSources: [] },
@@ -5386,7 +5505,7 @@ describe('ItemExplorerFacade', () => {
         { id: 'TOTAL', sourceType: 'SUM_SCORE', deriveSources: ['GROUP'] },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'BASE_A', label: 'Teil A', codes: [] },
       { id: 'BASE_B', label: 'Teil B', codes: [] },
       { id: 'GROUP', label: 'Zwischensumme', codes: [] },
@@ -5438,7 +5557,7 @@ describe('ItemExplorerFacade', () => {
         variableReadOnlyId: internalId,
         metadata: {},
       } as any;
-      component.currentCodingScheme = {
+      component.coding.currentCodingScheme = {
         variableCodings: [
           {
             id: visibleAlias,
@@ -5460,7 +5579,7 @@ describe('ItemExplorerFacade', () => {
           },
         ],
       };
-      component.currentCodingSchemeAsText = [
+      component.coding.currentCodingSchemeAsText = [
         { id: wrongBaseAlias, label: 'Falsche Basisvariable', codes: [] },
         ...sources.map((source) => ({ id: source, label: source, codes: [] })),
         { id: visibleAlias, label: 'Summenvariable', codes: [] },
@@ -5482,7 +5601,7 @@ describe('ItemExplorerFacade', () => {
 
   it('maps Aspect print aliases to the fachliche DLB013 item ids', () => {
     const component = createFacade();
-    component.unit = { id: 'DLB013' };
+    component.player.unit = { id: 'DLB013' };
     component.items = [
       {
         itemId: '03',
@@ -5507,7 +5626,7 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ] as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: 'internal-04', alias: '04', sourceType: 'BASE', deriveSources: [] },
         { id: 'internal-05', alias: '05', sourceType: 'BASE', deriveSources: [] },
@@ -5522,7 +5641,7 @@ describe('ItemExplorerFacade', () => {
 
   it('keeps unprefixed item ids unchanged in Aspect print labels', () => {
     const component = createFacade();
-    component.unit = { id: 'MDB007', dependencies: [] } as any;
+    component.player.unit = { id: 'MDB007', dependencies: [] } as any;
     component.items = [
       {
         itemId: '01',
@@ -5537,7 +5656,7 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ] as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [{ id: '01_1', alias: '01', sourceType: 'BASE', deriveSources: [] }],
     };
 
@@ -5558,13 +5677,13 @@ describe('ItemExplorerFacade', () => {
       variableId: '',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: 'BASE_A', label: 'Teil A', sourceType: 'BASE', deriveSources: [] },
         { id: 'BASE_B', label: 'Teil B', sourceType: 'BASE', deriveSources: [] },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'BASE_A', label: 'Teil A', codes: [] },
       { id: 'BASE_B', label: 'Teil B', codes: [] },
     ] as any;
@@ -5598,7 +5717,7 @@ describe('ItemExplorerFacade', () => {
       previewTargetId: textVariableId,
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         {
           id: markingVariableId,
@@ -5615,12 +5734,12 @@ describe('ItemExplorerFacade', () => {
         },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: markingVariableId, label: 'Markierungsbereich', codes: [] },
       { id: '02a', label: 'Satz 2', codes: [] },
       { id: '02', label: 'Satzkorrektur 2', codes: [] },
     ] as any;
-    (component as any).definitionContent = JSON.stringify({
+    component.player.definitionContent = JSON.stringify({
       pages: [
         {
           sections: [
@@ -5650,7 +5769,7 @@ describe('ItemExplorerFacade', () => {
     const queueDraftPatch = vi.fn();
     const startPlayerIfReady = vi.fn();
 
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.selectedItem = {
       itemId: 'ITEM_6',
       uuid: 'uuid-6',
@@ -5660,19 +5779,19 @@ describe('ItemExplorerFacade', () => {
       variableId: 'TOTAL',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: 'BASE_A', sourceType: 'BASE', deriveSources: [] },
         { id: 'BASE_B', sourceType: 'BASE', deriveSources: [] },
         { id: 'TOTAL', sourceType: 'SUM_SCORE', deriveSources: ['BASE_A', 'BASE_B'] },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'BASE_A', label: 'Teil A', codes: [] },
       { id: 'BASE_B', label: 'Teil B', codes: [] },
       { id: 'TOTAL', label: 'Gesamtsumme', codes: [] },
     ] as any;
-    (component as any).latestExplorerState = {
+    (component as any).draft.latestExplorerState = {
       activeState: {
         itemProperties: {
           UNIT_6_ITEM_6: {
@@ -5686,7 +5805,7 @@ describe('ItemExplorerFacade', () => {
     setPreviewStatus(component, 'loading-unit');
 
     (component as any).syncPreviewTargetResolution(component.selectedItem);
-    component.selectedPreviewTargetId = 'BASE_B';
+    component.coding.selectedPreviewTargetId = 'BASE_B';
     component.onPreviewTargetSelectionChange();
 
     expect(component.selectedItem?.previewTargetId).toBe('BASE_B');
@@ -5708,7 +5827,7 @@ describe('ItemExplorerFacade', () => {
     const component = createFacade();
     const queueDraftPatch = vi.fn();
 
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.selectedItem = {
       itemId: 'ITEM_6',
       uuid: 'uuid-6',
@@ -5718,7 +5837,7 @@ describe('ItemExplorerFacade', () => {
       variableId: 'TOTAL',
       metadata: {},
     } as any;
-    (component as any).latestExplorerState = {
+    (component as any).draft.latestExplorerState = {
       activeState: {
         itemProperties: {
           UNIT_6_ITEM_6: {
@@ -5730,7 +5849,7 @@ describe('ItemExplorerFacade', () => {
     (component as any).queueDraftPatch = queueDraftPatch;
     setPreviewStatus(component, 'loading-unit');
 
-    component.customPreviewTargetDraft = '  alias.custom.target  ';
+    component.coding.customPreviewTargetDraft = '  alias.custom.target  ';
     component.applyCustomPreviewTarget();
 
     expect(component.selectedItem?.previewTargetId).toBe('alias.custom.target');
@@ -5753,7 +5872,7 @@ describe('ItemExplorerFacade', () => {
     const component = createFacade();
     const queueDraftPatch = vi.fn();
 
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.selectedItem = {
       itemId: 'ITEM_6',
       uuid: 'uuid-6',
@@ -5764,7 +5883,7 @@ describe('ItemExplorerFacade', () => {
       previewTargetId: 'BASE_B',
       metadata: {},
     } as any;
-    (component as any).latestExplorerState = {
+    (component as any).draft.latestExplorerState = {
       activeState: {
         itemProperties: {
           UNIT_6_ITEM_6: {
@@ -5817,16 +5936,16 @@ describe('ItemExplorerFacade', () => {
     };
 
     component.items = [item];
-    component.filteredItems = [item];
+    component.table.filteredItems = [item];
     component.selectedItem = item;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [
         { id: 'BASE_A', sourceType: 'BASE', deriveSources: [] },
         { id: 'BASE_B', sourceType: 'BASE', deriveSources: [] },
         { id: 'TOTAL', sourceType: 'SUM_SCORE', deriveSources: ['BASE_A', 'BASE_B'] },
       ],
     };
-    component.currentCodingSchemeAsText = [
+    component.coding.currentCodingSchemeAsText = [
       { id: 'BASE_A', label: 'Teil A', codes: [] },
       { id: 'BASE_B', label: 'Teil B', codes: [] },
       { id: 'TOTAL', label: 'Gesamtsumme', codes: [] },
@@ -5875,13 +5994,13 @@ describe('ItemExplorerFacade', () => {
     } as any;
     component.acpId = 'acp-1';
     component.items = [item];
-    component.filteredItems = [item];
+    component.table.filteredItems = [item];
     component.selectedItem = item;
     component.selectedIndex = 0;
-    component.unit = { id: 'UNIT_6', dependencies: [] };
-    component.playerSrcDoc = '<html>cached player</html>';
-    (component as any).definitionContent = '{"pages":[]}';
-    (component as any).playerFrameReady = true;
+    component.player.unit = { id: 'UNIT_6', dependencies: [] };
+    component.player.playerSrcDoc = '<html>cached player</html>';
+    component.player.definitionContent = '{"pages":[]}';
+    component.player.playerFrameReady = true;
     (component as any).previewCoordinator.markUnavailable(
       'Das Player-Ziel "VAR_BAD" kommt in der Aufgabendefinition nicht vor.',
     );
@@ -5900,7 +6019,7 @@ describe('ItemExplorerFacade', () => {
     expect(getResponseStateWithFallback).toHaveBeenCalledOnce();
     expect(previewLoader.load).not.toHaveBeenCalled();
     expect(component.previewUpdateInProgress).toBe(true);
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('restarts the preview when a different base variable is chosen', () => {
@@ -5924,24 +6043,24 @@ describe('ItemExplorerFacade', () => {
         variableId: 'TOTAL',
         metadata: {},
       } as any;
-      component.currentCodingScheme = {
+      component.coding.currentCodingScheme = {
         variableCodings: [
           { id: 'BASE_A', sourceType: 'BASE', deriveSources: [] },
           { id: 'BASE_B', sourceType: 'BASE', deriveSources: [] },
           { id: 'TOTAL', sourceType: 'SUM_SCORE', deriveSources: ['BASE_A', 'BASE_B'] },
         ],
       };
-      component.currentCodingSchemeAsText = [
+      component.coding.currentCodingSchemeAsText = [
         { id: 'BASE_A', label: 'Teil A', codes: [] },
         { id: 'BASE_B', label: 'Teil B', codes: [] },
         { id: 'TOTAL', label: 'Gesamtsumme', codes: [] },
       ] as any;
       (component as any).syncPreviewTargetResolution(component.selectedItem);
       registerPlayerDom(component, postMessage);
-      (component as any).unit = { id: 'UNIT_6', dependencies: [] };
-      component.playerSrcDoc = '<html></html>';
-      (component as any).definitionContent = JSON.stringify({ pages: [] });
-      (component as any).playerFrameReady = true;
+      component.player.unit = { id: 'UNIT_6', dependencies: [] };
+      component.player.playerSrcDoc = '<html></html>';
+      component.player.definitionContent = JSON.stringify({ pages: [] });
+      component.player.playerFrameReady = true;
       setPreviewStatus(component, 'ready');
 
       (component as any).startPlayerIfReady();
@@ -5954,7 +6073,7 @@ describe('ItemExplorerFacade', () => {
       });
 
       postMessage.mockClear();
-      component.selectedPreviewTargetId = 'BASE_B';
+      component.coding.selectedPreviewTargetId = 'BASE_B';
       component.onPreviewTargetSelectionChange();
 
       expect(postMessage.mock.calls[0][0]).toMatchObject({
@@ -5990,15 +6109,17 @@ describe('ItemExplorerFacade', () => {
       variableId: '',
       metadata: {},
     } as any;
-    component.currentCodingScheme = {
+    component.coding.currentCodingScheme = {
       variableCodings: [{ id: 'BASE_A', label: 'Teil A', sourceType: 'BASE', deriveSources: [] }],
     };
-    component.currentCodingSchemeAsText = [{ id: 'BASE_A', label: 'Teil A', codes: [] }] as any;
+    component.coding.currentCodingSchemeAsText = [
+      { id: 'BASE_A', label: 'Teil A', codes: [] },
+    ] as any;
     component.selectedIndex = 0;
     (component as any).unitLoadToken = 7;
     (component as any).syncPreviewTargetResolution(component.selectedItem);
 
-    component.customPreviewTargetDraft = 'BASE_A';
+    component.coding.customPreviewTargetDraft = 'BASE_A';
     component.applyCustomPreviewTarget();
 
     expect(getResponseStateWithFallback).toHaveBeenCalledWith('acp-1', 'ITEM_9', 'UNIT_9', []);
@@ -6041,15 +6162,17 @@ describe('ItemExplorerFacade', () => {
       metadata: {},
     } as any;
     component.selectedItem = item;
-    component.filteredItems = [item];
-    component.currentCodingScheme = {
+    component.table.filteredItems = [item];
+    component.coding.currentCodingScheme = {
       variableCodings: [{ id: 'BASE_A', label: 'Teil A', sourceType: 'BASE', deriveSources: [] }],
     };
-    component.currentCodingSchemeAsText = [{ id: 'BASE_A', label: 'Teil A', codes: [] }] as any;
+    component.coding.currentCodingSchemeAsText = [
+      { id: 'BASE_A', label: 'Teil A', codes: [] },
+    ] as any;
     component.selectedIndex = 0;
     (component as any).syncPreviewTargetResolution(component.selectedItem);
 
-    component.customPreviewTargetDraft = 'BASE_A';
+    component.coding.customPreviewTargetDraft = 'BASE_A';
     component.applyCustomPreviewTarget();
     expect(previewLoader.load).toHaveBeenCalledWith('acp-1', 'read-only', 'UNIT_9');
     expect(component.loadingUnit).toBe(true);
@@ -6060,7 +6183,7 @@ describe('ItemExplorerFacade', () => {
     expect(cancelResponseState).toHaveBeenCalledOnce();
     expect(component.loadingUnit).toBe(false);
     expect(component.previewUnavailableReason).toContain('keine Player-Variable');
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('reuses same-unit assets when a manual target enables the preview', () => {
@@ -6083,27 +6206,27 @@ describe('ItemExplorerFacade', () => {
       metadata: {},
     } as any;
     component.selectedItem = item;
-    component.filteredItems = [item];
+    component.table.filteredItems = [item];
     component.selectedIndex = 0;
-    component.unit = { id: 'UNIT_9', dependencies: [] };
-    component.playerSrcDoc = '<html>cached player</html>';
-    (component as any).definitionContent = '{"pages":[]}';
+    component.player.unit = { id: 'UNIT_9', dependencies: [] };
+    component.player.playerSrcDoc = '<html>cached player</html>';
+    component.player.definitionContent = '{"pages":[]}';
     (component as any).syncPreviewTargetResolution(item);
 
-    component.customPreviewTargetDraft = 'BASE_A';
+    component.coding.customPreviewTargetDraft = 'BASE_A';
     component.applyCustomPreviewTarget();
 
     expect(getResponseStateWithFallback).toHaveBeenCalledOnce();
     expect(previewLoader.load).not.toHaveBeenCalled();
     expect(component.playerSrcDoc).toBe('<html>cached player</html>');
     expect(component.previewUpdateInProgress).toBe(true);
-    component.ngOnDestroy();
+    destroyFacade(component);
   });
 
   it('uses a generic preview warning when diagnostics are hidden', () => {
     const component = createFacade();
 
-    component.canEditExplorer = false;
+    (component as any).explorerEditingAllowed = false;
     component.itemExplorerPlayerTargetInfoEnabled = true;
     (component as any).previewCoordinator.markUnavailable(
       'Das Player-Ziel "VAR_404" kommt in der Aufgabendefinition nicht vor.',
@@ -6129,9 +6252,12 @@ describe('ItemExplorerFacade', () => {
       variableId: 'alias-1',
       metadata: {},
     } as any;
-    (component as any).definitionContent = JSON.stringify({ pages: [] });
+    component.player.definitionContent = JSON.stringify({ pages: [] });
 
-    const selectors = (component as any).getFocusSelectors();
+    const selectors = component.player.getFocusSelectors(
+      component.selectedItem,
+      component.selectedPreviewTarget,
+    );
 
     expect(selectors).toContain('[data-element-id="element-id-1"]');
     expect(selectors).toContain('[data-element-alias="alias-1"]');
@@ -6141,7 +6267,7 @@ describe('ItemExplorerFacade', () => {
 
   it('supports keyboard navigation in the item list', () => {
     const component = createFacade();
-    component.filteredItems = [
+    component.table.filteredItems = [
       {
         itemId: 'ITEM_1',
         uuid: 'uuid-1',
@@ -6199,7 +6325,7 @@ describe('ItemExplorerFacade', () => {
 
   it('leaves modified navigation keys to the browser', () => {
     const component = createFacade();
-    component.filteredItems = [{}] as any;
+    component.table.filteredItems = [{}] as any;
     for (const modifiers of [
       { altKey: true },
       { shiftKey: true },
@@ -6214,7 +6340,7 @@ describe('ItemExplorerFacade', () => {
 
   it('routes manual ordering shortcuts to moveSelectedItem', () => {
     const component = createFacade();
-    component.filteredItems = [
+    component.table.filteredItems = [
       {
         itemId: 'ITEM_1',
         uuid: 'uuid-1',
@@ -6241,17 +6367,17 @@ describe('ItemExplorerFacade', () => {
   it('keeps review and discard closed when there are no unpublished changes', () => {
     const component = createFacade();
     component.canPublishExplorer = true;
-    component.explorerUiStatus = 'CLEAN';
-    component.latestExplorerState = { status: 'CLEAN' } as any;
+    component.draft.explorerUiStatus = 'CLEAN';
+    component.draft.latestExplorerState = { status: 'CLEAN' } as any;
     expect(component.explorerStatusLabel).toBe('Keine unveröffentlichten Änderungen');
     expect(component.hasPendingDraftChanges()).toBe(false);
     component.openSavePreviewDialog();
     component.openDiscardExplorerDraftDialog();
-    expect(component.showSavePreviewDialog).toBe(false);
-    expect(component.showDiscardDraftDialog).toBe(false);
+    expect(component.draft.showSavePreviewDialog).toBe(false);
+    expect(component.draft.showDiscardDraftDialog).toBe(false);
     const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
     component.handleWindowKeydown(event);
-    expect(component.showSavePreviewDialog).toBe(false);
+    expect(component.draft.showSavePreviewDialog).toBe(false);
   });
 
   it('opens the draft save preview with Ctrl/Cmd+S', () => {
@@ -6417,12 +6543,12 @@ describe('ItemExplorerFacade', () => {
         ],
       },
     ];
-    component.allColumns = [
+    component.table.allColumns = [
       { id: 'infit', label: 'Infit', kind: 'number' },
       { id: 'booklet', label: 'Booklet', kind: 'booklet' },
       { id: 'bookletPosition', label: 'Position', kind: 'position' },
     ];
-    component.columnFilters = {
+    component.table.columnFilters = {
       infit: '1,0..1,1',
       booklet: 'B1',
       bookletPosition: '1..3',
@@ -6435,14 +6561,14 @@ describe('ItemExplorerFacade', () => {
     component.applyFilter(false);
     expect(component.filteredItems).toHaveLength(1);
 
-    component.columnFilters = { booklet: 'B3' };
+    component.table.columnFilters = { booklet: 'B3' };
     component.applyFilter(false);
     expect(component.filteredItems.map((item) => item.itemId)).toEqual(['item-1']);
     expect(
       component.getMetadataColumnDisplayValue(component.items[0], component.allColumns[2]),
     ).toBe('5 | 2 | ');
 
-    component.columnFilters = { booklet: 'B3', bookletPosition: '1..10' };
+    component.table.columnFilters = { booklet: 'B3', bookletPosition: '1..10' };
     component.applyFilter(false);
     expect(component.filteredItems).toEqual([]);
   });
@@ -6486,7 +6612,7 @@ describe('ItemExplorerFacade', () => {
         stimulusTimeSeconds: 5,
       },
     ];
-    component.itemCollections = [
+    component.collections.itemCollections = [
       {
         id: 'collection-1',
         name: 'Auswahl',
@@ -6498,7 +6624,7 @@ describe('ItemExplorerFacade', () => {
         summary: {} as any,
       },
     ];
-    component.activeCollectionId = 'collection-1';
+    component.collections.activeCollectionId = 'collection-1';
 
     (component as any).recalculateCollectionSummaries();
 
@@ -6554,7 +6680,7 @@ describe('ItemExplorerFacade', () => {
     };
     component.acpId = 'acp-1';
     component.items = [item];
-    component.itemCollections = [
+    component.collections.itemCollections = [
       {
         id: 'collection-1',
         name: 'Auswahl',
@@ -6566,8 +6692,8 @@ describe('ItemExplorerFacade', () => {
         summary: { ...summary, rowCount: 0 },
       },
     ];
-    component.activeCollectionId = 'collection-1';
-    component.collectionLoadState = 'loaded';
+    component.collections.activeCollectionId = 'collection-1';
+    component.collections.collectionLoadState = 'loaded';
 
     await component.toggleItemInActiveCollection(item);
 
@@ -6593,7 +6719,7 @@ describe('ItemExplorerFacade', () => {
       metadata: {},
     };
     component.items = [item];
-    component.itemCollections = [
+    component.collections.itemCollections = [
       {
         id: 'collection-1',
         name: 'Auswahl',
@@ -6605,7 +6731,7 @@ describe('ItemExplorerFacade', () => {
         summary: {} as any,
       },
     ];
-    component.activeCollectionId = 'collection-1';
+    component.collections.activeCollectionId = 'collection-1';
 
     const firstEntries = component.activeCollectionItems;
     expect(component.activeCollectionItems).toBe(firstEntries);
@@ -6644,7 +6770,7 @@ describe('ItemExplorerFacade', () => {
       authService: { isLoggedIn: true },
     });
     component.acpId = 'acp-1';
-    component.itemCollections = [
+    component.collections.itemCollections = [
       {
         id: 'collection-1',
         name: 'Auswahl',
@@ -6656,12 +6782,12 @@ describe('ItemExplorerFacade', () => {
         summary,
       },
     ];
-    component.activeCollectionId = 'collection-1';
+    component.collections.activeCollectionId = 'collection-1';
 
     await expect(component.removeRowsFromActiveCollection(['row-1', 'row-2'])).resolves.toBe(false);
     expect(component.activeItemCollection?.rowKeys).toEqual(['row-1', 'row-2']);
     expect(component.activeItemCollection?.unavailableRowKeys).toEqual(['row-2']);
-    expect(component.collectionError).toContain('konnte nicht gespeichert werden');
+    expect(component.collections.collectionError).toContain('konnte nicht gespeichert werden');
 
     await expect(component.clearActiveCollection()).resolves.toBe(true);
     expect(mutateItemCollectionRows).toHaveBeenLastCalledWith('acp-1', 'collection-1', {
@@ -6728,9 +6854,9 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ];
-    component.itemCollections = payload.collections;
-    component.activeCollectionId = 'collection-1';
-    component.collectionLoadState = 'loaded';
+    component.collections.itemCollections = payload.collections;
+    component.collections.activeCollectionId = 'collection-1';
+    component.collections.collectionLoadState = 'loaded';
 
     await component.setCollectionViewMode('active');
 
@@ -6760,7 +6886,7 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ];
-    component.itemCollections = [
+    component.collections.itemCollections = [
       {
         id: 'collection-1',
         name: 'Auswahl',
@@ -6772,14 +6898,14 @@ describe('ItemExplorerFacade', () => {
         summary: {} as any,
       },
     ];
-    component.activeCollectionId = 'collection-1';
+    component.collections.activeCollectionId = 'collection-1';
     component.applyFilter(false);
 
     await component.setCollectionViewMode('active');
 
-    expect(component.collectionViewMode).toBe('all');
+    expect(component.collections.collectionViewMode).toBe('all');
     expect(component.filteredItems).toHaveLength(1);
-    expect(component.collectionError).toContain('konnte nicht gespeichert werden');
+    expect(component.collections.collectionError).toContain('konnte nicht gespeichert werden');
   });
 
   it('keeps the collection conflict visible while reloading the latest version', async () => {
@@ -6802,17 +6928,19 @@ describe('ItemExplorerFacade', () => {
       authService: { isLoggedIn: true },
     });
     component.acpId = 'acp-1';
-    component.enableItemCollections = true;
-    component.itemCollections = [{ ...freshCollection, name: 'Lokale Auswahl', version: 1 }];
-    component.activeCollectionId = 'collection-1';
-    component.collectionLoadState = 'loaded';
+    component.collections.enableItemCollections = true;
+    component.collections.itemCollections = [
+      { ...freshCollection, name: 'Lokale Auswahl', version: 1 },
+    ];
+    component.collections.activeCollectionId = 'collection-1';
+    component.collections.collectionLoadState = 'loaded';
 
-    await (component as any).persistActiveCollectionUpdate({ name: 'Geändert' });
+    await component.renameActiveCollection('Geändert');
 
     expect(getItemCollections).toHaveBeenCalledWith('acp-1', 'read-only');
     expect(component.activeItemCollection?.name).toBe('Server-Auswahl');
-    expect(component.collectionLoadState).toBe('loaded');
-    expect(component.collectionError).toBe(
+    expect(component.collections.collectionLoadState).toBe('loaded');
+    expect(component.collections.collectionError).toBe(
       'Die Auswahlliste wurde parallel geändert und wird neu geladen.',
     );
   });
@@ -6843,13 +6971,13 @@ describe('ItemExplorerFacade', () => {
         empiricalDifficulty: 2,
       },
     ];
-    component.hasEmpiricalDifficulty = true;
-    component.columnFilters = { empiricalDifficulty: '-2..0' };
+    component.table.hasEmpiricalDifficulty = true;
+    component.table.columnFilters = { empiricalDifficulty: '-2..0' };
 
     component.applyFilter(false);
     expect(component.filteredItems.map((item) => item.itemId)).toEqual(['negative']);
 
-    component.columnFilters = {};
+    component.table.columnFilters = {};
     component.applyFilter(false);
     component.sortBy('empiricalDifficulty');
     expect(component.filteredItems.map((item) => item.itemId)).toEqual([
@@ -6920,7 +7048,7 @@ describe('ItemExplorerFacade', () => {
     ]);
     expect(component.items[4].meanTaskDifficulty).toBeUndefined();
 
-    component.columnFilters = { meanTaskDifficulty: '0.3..0.5' };
+    component.table.columnFilters = { meanTaskDifficulty: '0.3..0.5' };
     component.applyFilter(false);
     expect(component.filteredItems.map((item) => item.unitId)).toEqual([
       'unit-1',
@@ -6928,7 +7056,7 @@ describe('ItemExplorerFacade', () => {
       'unit-1',
     ]);
 
-    component.columnFilters = {};
+    component.table.columnFilters = {};
     component.applyFilter(false);
     component.sortBy('meanTaskDifficulty');
     expect(component.filteredItems.map((item) => item.unitId)).toEqual([
@@ -6942,7 +7070,7 @@ describe('ItemExplorerFacade', () => {
 
   it('removes a hidden mean task difficulty filter after all difficulties are cleared', () => {
     const component = createFacade();
-    component.canEditExplorer = true;
+    (component as any).explorerEditingAllowed = true;
     component.items = [
       {
         itemId: 'item-1',
@@ -6957,10 +7085,10 @@ describe('ItemExplorerFacade', () => {
         meanTaskDifficulty: 0.5,
       },
     ];
-    component.columnFilters = { meanTaskDifficulty: '0..1' };
-    component.sortField = 'meanTaskDifficulty';
-    component.sortIsMeta = false;
-    component.sortDir = 'desc';
+    component.table.columnFilters = { meanTaskDifficulty: '0..1' };
+    component.table.sortField = 'meanTaskDifficulty';
+    component.table.sortIsMeta = false;
+    component.table.sortDir = 'desc';
     const queueDraftPatch = vi.spyOn(component as any, 'queueDraftPatch');
 
     (component as any).reconcileMeanTaskDifficultyState();
@@ -7013,7 +7141,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.filterVisibleColumns(columns)).not.toContain(bistaColumn);
     expect(component.isColumnVisible(bistaColumn)).toBe(false);
 
-    component.metadataSettings = {
+    component.table.metadataSettings = {
       visible: ['bista'],
       order: ['bista'],
       configured: true,
@@ -7051,8 +7179,8 @@ describe('ItemExplorerFacade', () => {
         bista: 499,
       },
     ];
-    component.allColumns = columns;
-    component.columnFilters = { bista: '500..504' };
+    component.table.allColumns = columns;
+    component.table.columnFilters = { bista: '500..504' };
 
     expect(bistaColumn).toEqual({
       id: 'bista',
@@ -7063,7 +7191,7 @@ describe('ItemExplorerFacade', () => {
     component.applyFilter(false);
     expect(component.filteredItems.map((item) => item.itemId)).toEqual(['item-1']);
 
-    component.columnFilters = {};
+    component.table.columnFilters = {};
     component.applyFilter(false);
     component.sortBy('bista');
     expect(component.filteredItems.map((item) => item.bista)).toEqual([499, 503.25]);
@@ -7099,8 +7227,8 @@ describe('ItemExplorerFacade', () => {
         textComplexity: 'niedrig',
       },
     ];
-    component.allColumns = columns;
-    component.columnFilters = { textComplexity: 'ANSPRUCH' };
+    component.table.allColumns = columns;
+    component.table.columnFilters = { textComplexity: 'ANSPRUCH' };
 
     expect(textComplexityColumn).toEqual({
       id: 'textComplexity',
@@ -7144,8 +7272,8 @@ describe('ItemExplorerFacade', () => {
         competenceLevel: 'II',
       },
     ];
-    component.allColumns = columns;
-    component.columnFilters = { competenceLevel: 'IV' };
+    component.table.allColumns = columns;
+    component.table.columnFilters = { competenceLevel: 'IV' };
 
     expect(competenceLevelColumn).toEqual({
       id: 'competenceLevel',
@@ -7155,7 +7283,7 @@ describe('ItemExplorerFacade', () => {
     component.applyFilter(false);
     expect(component.filteredItems.map((item) => item.itemId)).toEqual(['item-1']);
 
-    component.columnFilters = {};
+    component.table.columnFilters = {};
     component.applyFilter(false);
     component.sortBy('competenceLevel');
     expect(component.filteredItems.map((item) => item.competenceLevel)).toEqual(['II', 'IV']);
@@ -7200,7 +7328,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.getUploadSuccessBookletSummary({ value: -0.4 })).toBe('–');
   });
 
-  it('applies the item-list visibility returned by a wide difficulty import', () => {
+  it('applies the item-list visibility returned by a wide difficulty import', async () => {
     const uploadItemParameters = vi.fn().mockReturnValue(
       of({
         updated: 1,
@@ -7216,12 +7344,12 @@ describe('ItemExplorerFacade', () => {
       api: { uploadItemParameters, getFileItemList },
     });
     component.acpId = 'acp-1';
-    component.explorerVersion = 7;
-    component.showOnlyItemsWithEmpiricalDifficulty = false;
+    component.draft.explorerVersion = 7;
+    component.table.showOnlyItemsWithEmpiricalDifficulty = false;
     const file = new File(['item;est\nI1;-0.4'], 'parameters.csv', { type: 'text/csv' });
     const input = { files: [file], value: 'parameters.csv' };
 
-    component.onCsvFileSelected({ target: input } as unknown as Event);
+    await component.onCsvFileSelected({ target: input } as unknown as Event);
 
     expect(uploadItemParameters).toHaveBeenCalledWith('acp-1', file, {
       draft: true,
@@ -7231,7 +7359,56 @@ describe('ItemExplorerFacade', () => {
     expect(input.value).toBe('');
   });
 
-  it('requires confirmation before importing parameters with skipped booklet data', () => {
+  it('ignores an import response after the explorer is destroyed', async () => {
+    const response = new Subject<any>();
+    const component = createFacade({ api: { uploadItemParameters: vi.fn(() => response) } });
+    const reload = vi.spyOn(component as any, 'reloadItems');
+    const apply = vi.spyOn(component as any, 'applySharedExplorerEnvelope');
+    const pending = component.onCsvFileSelected({
+      target: { files: [new File(['item;est'], 'parameters.csv')], value: 'parameters.csv' },
+    } as unknown as Event);
+
+    destroyFacade(component);
+    response.next({ updated: 1, failed: [], successes: [], explorerState: {} });
+    await pending;
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(apply).not.toHaveBeenCalled();
+    expect(component.showUploadReport).toBe(false);
+  });
+
+  it('waits for an initial import conflict reload before accepting another file', async () => {
+    let finishReload!: (reloaded: boolean) => void;
+    const reload = new Promise<boolean>((resolve) => {
+      finishReload = resolve;
+    });
+    const uploadItemParameters = vi.fn(() => throwError(() => ({ status: 409 })));
+    const component = createFacade({ api: { uploadItemParameters } });
+    const reloadSpy = vi
+      .spyOn(component as any, 'reloadSharedExplorerStateAndItems')
+      .mockReturnValue(reload);
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const event = {
+      target: { files: [new File(['item;est'], 'parameters.csv')], value: 'parameters.csv' },
+    } as unknown as Event;
+    let finished = false;
+    const pending = component.onCsvFileSelected(event).then(() => {
+      finished = true;
+    });
+    await vi.waitFor(() => expect(reloadSpy).toHaveBeenCalledOnce());
+
+    await component.onCsvFileSelected(event);
+    expect(uploadItemParameters).toHaveBeenCalledOnce();
+    expect(finished).toBe(false);
+    expect(component.isUploading).toBe(true);
+    finishReload(true);
+    await pending;
+    expect(component.isUploading).toBe(false);
+    consoleError.mockRestore();
+    destroyFacade(component);
+  });
+
+  it('requires confirmation before importing parameters with skipped booklet data', async () => {
     const uploadItemParameters = vi
       .fn()
       .mockReturnValueOnce(
@@ -7267,12 +7444,12 @@ describe('ItemExplorerFacade', () => {
       .mockReturnValue(of({ items: [], columns: [], unitMetadata: {}, codingSchemes: {} }));
     const component = createFacade({ api: { uploadItemParameters, getFileItemList } });
     component.acpId = 'acp-1';
-    component.explorerVersion = 7;
+    component.draft.explorerVersion = 7;
     const file = new File(['item;est;position\nI1;0.5;4'], 'parameters.csv', {
       type: 'text/csv',
     });
 
-    component.onCsvFileSelected({
+    await component.onCsvFileSelected({
       target: { files: [file], value: 'parameters.csv' },
     } as unknown as Event);
 
@@ -7280,7 +7457,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.showUploadReport).toBe(false);
     expect(getFileItemList).not.toHaveBeenCalled();
 
-    component.confirmItemParameterUploadWarnings();
+    await component.confirmItemParameterUploadWarnings();
 
     expect(uploadItemParameters).toHaveBeenLastCalledWith('acp-1', file, {
       draft: true,
@@ -7296,7 +7473,7 @@ describe('ItemExplorerFacade', () => {
   it('treats the parameter warning as the topmost keyboard-controlled overlay', () => {
     const component = createFacade();
     component.canPublishExplorer = true;
-    component.showUploadWarningDialog = true;
+    component.imports.showUploadWarningDialog = true;
     const openSavePreviewDialog = vi
       .spyOn(component, 'openSavePreviewDialog')
       .mockImplementation(() => {});
@@ -7355,17 +7532,18 @@ describe('ItemExplorerFacade', () => {
       .mockReturnValueOnce(throwError(() => ({ status: 409 })));
     const component = createFacade({ api: { uploadItemParameters } });
     component.acpId = 'acp-1';
-    component.explorerVersion = 7;
+    component.draft.explorerVersion = 7;
     vi.spyOn(component as any, 'reloadSharedExplorerStateAndItems').mockReturnValue(reload);
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const file = new File(['item;est;position\nI1;0.5;4'], 'parameters.csv', {
       type: 'text/csv',
     });
 
-    component.onCsvFileSelected({
+    await component.onCsvFileSelected({
       target: { files: [file], value: 'parameters.csv' },
     } as unknown as Event);
-    component.confirmItemParameterUploadWarnings();
+    const confirmed = component.confirmItemParameterUploadWarnings();
+    await vi.waitFor(() => expect(component.uploadWarningError).toContain('wird neu geladen'));
 
     expect(component.uploadWarningBusy).toBe(true);
     expect(component.uploadWarningError).toContain('wird neu geladen');
@@ -7373,8 +7551,7 @@ describe('ItemExplorerFacade', () => {
     expect(uploadItemParameters).toHaveBeenCalledTimes(2);
 
     finishReload(true);
-    await reload;
-    await Promise.resolve();
+    await confirmed;
 
     expect(component.uploadWarningBusy).toBe(false);
     expect(component.uploadWarningError).toContain('Bitte bestätige den Import erneut');
@@ -7401,23 +7578,23 @@ describe('ItemExplorerFacade', () => {
       .mockReturnValueOnce(throwError(() => ({ status: 409 })));
     const component = createFacade({ api: { uploadItemParameters } });
     component.acpId = 'acp-1';
-    component.explorerVersion = 7;
+    component.draft.explorerVersion = 7;
     vi.spyOn(component as any, 'reloadSharedExplorerStateAndItems').mockResolvedValue(false);
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const file = new File(['item;est;position\nI1;0.5;4'], 'parameters.csv', {
       type: 'text/csv',
     });
 
-    component.onCsvFileSelected({
+    await component.onCsvFileSelected({
       target: { files: [file], value: 'parameters.csv' },
     } as unknown as Event);
-    component.confirmItemParameterUploadWarnings();
+    await component.confirmItemParameterUploadWarnings();
     await Promise.resolve();
 
     expect(component.showUploadWarningDialog).toBe(false);
     expect(component.showErrorDialog).toBe(true);
     expect(component.errorMessage).toContain('Bitte lade die Seite neu');
-    component.confirmItemParameterUploadWarnings();
+    await component.confirmItemParameterUploadWarnings();
     expect(uploadItemParameters).toHaveBeenCalledTimes(2);
     consoleError.mockRestore();
   });
@@ -7456,7 +7633,7 @@ describe('ItemExplorerFacade', () => {
       api: { getItemCollections },
       authService: { getToken: () => token },
     });
-    component.enableItemCollections = true;
+    component.collections.enableItemCollections = true;
     component.itemListLoading = true;
 
     (component as any).syncItemCollectionSession();
@@ -7477,21 +7654,21 @@ describe('ItemExplorerFacade', () => {
       api: { getItemCollections },
       authService: { getToken: () => token },
     });
-    component.enableItemCollections = true;
+    component.collections.enableItemCollections = true;
 
     (component as any).syncItemCollectionSession();
-    expect(component.collectionLoadState).toBe('loading');
+    expect(component.collections.collectionLoadState).toBe('loading');
 
     token = null;
     (component as any).syncItemCollectionSession();
-    expect(component.itemCollections).toEqual([]);
-    expect(component.collectionLoadState).toBe('error');
+    expect(component.collections.itemCollections).toEqual([]);
+    expect(component.collections.collectionLoadState).toBe('error');
 
     userAResponse.next({
       activeCollectionId: 'collection-a',
       collections: [{ id: 'collection-a', name: 'User A', rowKeys: [] }],
     });
-    expect(component.itemCollections).toEqual([]);
+    expect(component.collections.itemCollections).toEqual([]);
 
     token = createJwt('user-b');
     (component as any).syncItemCollectionSession();
@@ -7499,10 +7676,10 @@ describe('ItemExplorerFacade', () => {
       activeCollectionId: 'collection-b',
       collections: [{ id: 'collection-b', name: 'User B', rowKeys: [] }],
     });
-    expect(component.itemCollections).toEqual([
+    expect(component.collections.itemCollections).toEqual([
       expect.objectContaining({ id: 'collection-b', name: 'User B' }),
     ]);
-    expect(component.activeCollectionId).toBe('collection-b');
+    expect(component.collections.activeCollectionId).toBe('collection-b');
   });
 
   it('immediately removes the previous identity collection filter on logout', () => {
@@ -7510,7 +7687,7 @@ describe('ItemExplorerFacade', () => {
     const component = createFacade({
       authService: { getToken: () => token },
     });
-    component.enableItemCollections = true;
+    component.collections.enableItemCollections = true;
     component.items = [
       {
         itemId: 'ITEM_1',
@@ -7533,22 +7710,110 @@ describe('ItemExplorerFacade', () => {
         metadata: {},
       },
     ];
-    component.itemCollections = [
+    component.collections.itemCollections = [
       {
         id: 'collection-a',
         name: 'User A',
         rowKeys: ['uuid-1'],
       } as any,
     ];
-    component.activeCollectionId = 'collection-a';
-    component.collectionViewMode = 'active';
+    component.collections.activeCollectionId = 'collection-a';
+    component.collections.collectionViewMode = 'active';
     component.applyFilter(false);
     expect(component.filteredItems.map((item) => item.rowKey)).toEqual(['uuid-1']);
 
     token = null;
     (component as any).syncItemCollectionSession();
 
-    expect(component.collectionViewMode).toBe('all');
+    expect(component.collections.collectionViewMode).toBe('all');
     expect(component.filteredItems.map((item) => item.rowKey)).toEqual(['uuid-1', 'uuid-2']);
+  });
+});
+
+describe('ItemExplorer draft coordination', () => {
+  it('keeps saving blocked until automatic conflict recovery has reloaded the version', async () => {
+    const patch = new Subject<any>();
+    const saveItemExplorerDraft = vi.fn(() => of({}));
+    const component = createFacade({
+      api: { patchItemExplorerDraft: () => patch, saveItemExplorerDraft },
+    });
+    component.acpId = 'a';
+    (component as any).explorerEditingAllowed = true;
+    component.canPublishExplorer = true;
+    let finishReload!: (loaded: boolean) => void;
+    vi.spyOn(component as any, 'reloadSharedExplorerStateAndItems').mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finishReload = resolve;
+        }),
+    );
+
+    (component as any).queueDraftPatch('UI_UPDATE', { ui: {} });
+    const flushing = (component as any).flushDraftPatch();
+    patch.error({ status: 409 });
+    await vi.waitFor(() => expect(finishReload).toBeTypeOf('function'));
+
+    let saveFinished = false;
+    const saving = component.saveExplorerDraft(true).then((saved) => {
+      saveFinished = true;
+      return saved;
+    });
+    await Promise.resolve();
+
+    expect(saveFinished).toBe(false);
+    expect(saveItemExplorerDraft).not.toHaveBeenCalled();
+
+    finishReload(true);
+    expect(await saving).toBe(false);
+    expect(await flushing).toBe(false);
+    expect(saveItemExplorerDraft).not.toHaveBeenCalled();
+    destroyFacade(component);
+  });
+
+  it('waits for conflict reload before finishing discard, and reloads once for shared flush results', async () => {
+    const patch = new Subject<any>();
+    const component = createFacade({ api: { patchItemExplorerDraft: () => patch } });
+    component.acpId = 'a';
+    (component as any).explorerEditingAllowed = true;
+    component.canPublishExplorer = true;
+    let finishReload!: (loaded: boolean) => void;
+    const reload = vi
+      .spyOn(component as any, 'reloadSharedExplorerStateAndItems')
+      .mockImplementation(
+        () =>
+          new Promise<boolean>((resolve) => {
+            finishReload = resolve;
+          }),
+      );
+    (component as any).queueDraftPatch('UI_UPDATE', { ui: {} });
+    const flushing = (component as any).flushDraftPatch();
+    const discarding = component.discardExplorerDraft(true);
+    let finished = false;
+    void discarding.then(() => {
+      finished = true;
+    });
+    patch.error({ status: 409 });
+    await vi.waitFor(() => expect(reload).toHaveBeenCalledOnce());
+    expect(finished).toBe(false);
+    expect(component.draft.discarding).toBe(true);
+    finishReload(true);
+    expect(await discarding).toBe(false);
+    expect(await flushing).toBe(false);
+    expect(reload).toHaveBeenCalledOnce();
+    expect(component.draft.discarding).toBe(false);
+    destroyFacade(component);
+  });
+  it('does not update a discard dialog after its provider scope has been destroyed', async () => {
+    const response = new Subject<any>();
+    const component = createFacade({ api: { discardItemExplorerDraft: () => response } });
+    component.acpId = 'a';
+    component.canPublishExplorer = true;
+    const pending = component.confirmDiscardDraftDialog();
+    destroyFacade(component);
+    const errorAfterDestroy = component.discardDraftDialogError;
+    response.next({ version: 9 });
+    await pending;
+    expect(component.discardDraftDialogError).toBe(errorAfterDestroy);
+    expect(component.explorerVersion).toBe(1);
   });
 });

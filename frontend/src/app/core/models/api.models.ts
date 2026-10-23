@@ -73,23 +73,58 @@ export interface CredentialLoginResponse {
   username: string;
 }
 
+export type AcpRoleName = 'ACP_MANAGER' | 'READ_ONLY';
+
 export interface AcpRole {
   acpId: string;
   acpName?: string;
-  role: 'ACP_MANAGER' | 'READ_ONLY';
+  role: AcpRoleName;
 }
 
 export interface UserProfile extends User {
   acpRoles: AcpRole[];
 }
 
+export interface CreateAcpRequest {
+  packageId: string;
+  name: string;
+  description?: string;
+}
+
+export interface UpdateAcpRequest {
+  name?: string;
+  description?: string;
+}
+
+export interface AssignAcpRoleRequest {
+  capabilities?: string[];
+  userId: string;
+  role: AcpRoleName;
+}
+
+export interface AssignableAcpUser {
+  id: string;
+  username: string;
+  displayName?: string | null;
+}
+
+export interface AcpRoleAssignment {
+  capabilities?: string[];
+  id: string;
+  acpId: string;
+  userId: string;
+  role: AcpRoleName;
+  // Included by the list endpoint; assignment writes return the role alone.
+  user?: AssignableAcpUser;
+}
+
 export interface Acp {
   id: string;
   packageId: string;
   name: string;
-  description?: string;
-  acpIndex: Record<string, any>;
-  settings: Record<string, any>;
+  description?: string | null;
+  acpIndex: Record<string, unknown>;
+  settings: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -363,8 +398,40 @@ export interface AccessConfig {
   accessModel: AccessModel;
   allowRegistered?: boolean;
   featureConfig: FeatureConfig;
-  validFrom?: string;
-  validUntil?: string;
+  validFrom?: string | null;
+  validUntil?: string | null;
+}
+
+export interface UpdateAccessConfigRequest {
+  accessModel: AccessModel;
+  allowRegistered?: boolean;
+  featureConfig?: FeatureConfig;
+  validFrom?: string | null;
+  validUntil?: string | null;
+}
+
+export interface UpdateMetadataColumnsRequest {
+  visibleColumns: string[];
+  columnOrder?: string[];
+}
+
+export type CredentialUploadMode = 'replace' | 'append' | 'upsert';
+
+export interface CredentialEntry {
+  username: string;
+  password: string;
+}
+
+export interface CredentialUploadResponse {
+  message: string;
+  added: number;
+  updated: number;
+  skipped: number;
+  duplicates: string[];
+}
+
+export interface CredentialDeletionResponse {
+  message: string;
 }
 
 export interface Credential {
@@ -392,11 +459,15 @@ export interface ItemExplorerTableColumnLayout {
 }
 
 export interface FeatureConfig {
+  showStudioItemComments?: boolean;
+  // Preserve extension keys while requiring callers to narrow unknown values.
+  [key: string]: unknown;
   allowIndexDownload?: boolean;
   allowUnitDownload?: boolean;
   allowFileDownload?: boolean;
   enableUnitView?: boolean;
   showMetadata?: boolean;
+  hideReviewDeveloperNames?: boolean;
   showRichText?: boolean;
   showCodingScheme?: boolean;
   enableUnitListNavigation?: boolean;
@@ -407,7 +478,7 @@ export interface FeatureConfig {
   showIndexOnStartPage?: boolean;
   enableCommenting?: boolean;
   commentTargets?: string[];
-  commentVisibilityMode?: 'PRIVATE' | 'SHARED';
+  commentVisibilityMode?: 'PRIVATE' | 'SHARED' | 'GROUP';
   enableItemList?: boolean;
   metadataColumns?: MetadataColumnsConfig;
   // Legacy key (read-only compatibility)
@@ -437,11 +508,26 @@ export interface FeatureConfig {
 
 export type CommentTargetType = 'BOOKLET' | 'UNIT' | 'ITEM' | 'CODING' | 'TASK_SEQUENCE';
 
+export interface StudioItemComment {
+  id: number;
+  body: string;
+  userName?: string;
+  createdAt?: string;
+  parentId?: number;
+  hidden: boolean;
+}
+
 export interface ReviewCommentTarget {
   targetType: Exclude<CommentTargetType, 'TASK_SEQUENCE'>;
   bookletId?: string;
   unitId?: string;
   itemId?: string;
+}
+
+export interface CommentCategory {
+  id: string;
+  name: string;
+  archived: boolean;
 }
 
 export interface Comment {
@@ -459,6 +545,8 @@ export interface Comment {
   parentVisible?: boolean;
   groupId?: string | null;
   groupName?: string | null;
+  categoryId?: string | null;
+  categoryName?: string | null;
   commentText: string;
   authorLabel?: string;
   createdAt: string;
@@ -479,6 +567,7 @@ export interface CommentThreadSnapshot {
   visibilityMode: 'PRIVATE' | 'SHARED' | 'GROUP';
   defaultGroupId?: string | null;
   groups?: { id: string; name: string; archived: boolean }[];
+  categories?: CommentCategory[];
   comments: Comment[];
 }
 

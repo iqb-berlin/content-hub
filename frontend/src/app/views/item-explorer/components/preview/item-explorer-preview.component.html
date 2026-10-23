@@ -204,6 +204,10 @@
       }
     </div>
 
+    @if (vm.showStudioItemComments && vm.selectedItem.studioComments?.length) {
+      <app-studio-item-comments [comments]="vm.selectedItem.studioComments!" />
+    }
+
     <!-- Player -->
     <div
       #playerContainer

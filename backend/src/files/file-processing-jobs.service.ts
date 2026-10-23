@@ -89,7 +89,10 @@ export class FileProcessingJobsService {
     });
     job = await this.jobRepository.save(job);
     this.emit(job);
-    void this.runJob(job.id);
+    this.runJob(job.id).catch((error: unknown) => {
+      this.logger.error("Failed to persist processing job status", error);
+      this.ensureStream(job.id).error(error);
+    });
     return this.toSnapshot(job);
   }
 
@@ -151,7 +154,10 @@ export class FileProcessingJobsService {
     });
     job = await this.jobRepository.save(job);
     this.emit(job);
-    void this.runJob(job.id);
+    this.runJob(job.id).catch((error: unknown) => {
+      this.logger.error("Failed to persist processing job status", error);
+      this.ensureStream(job.id).error(error);
+    });
     return this.toSnapshot(job);
   }
 
@@ -469,6 +475,8 @@ export class FileProcessingJobsService {
 
     const next = new ReplaySubject<FileProcessingJobSnapshot>(1);
     this.streams.set(jobId, next);
+    // bootstrapStream forwards lookup failures to the stream itself.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     void this.bootstrapStream(jobId, next);
     return next;
   }

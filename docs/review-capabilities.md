@@ -26,6 +26,10 @@ breiteres Rollenmodell. Ein Rollback ist daher kein Ersatz für einen Rechteentz
 - Explorer-Endpunkte für Daten, Zustand, Präferenzen und persönliche Listen prüfen
   Lesen. Änderungen am gemeinsamen Explorer (einschließlich Tags, Antwortzuständen,
   Importparametern und Entwürfen) prüfen Bearbeiten.
+- `enableItemList=false` sperrt Explorer-Zugriffe für Teilnehmer auch bei vorhandenen
+  Lese-/Bearbeitungs-Grants. Die Grants bleiben gespeichert und werden nach erneuter
+  Aktivierung wieder wirksam. ACP-Manager und App-Admins behalten ihren bisherigen
+  Verwaltungszugriff.
 - Persönliche Präferenzen und Listen bleiben mit Lesezugriff bearbeitbar.
 - Review-Lesen erfordert Teilnahme oder Management; eigene Mutationen erfordern
   Teilnahme. Ownership-Prüfungen bleiben bestehen.
@@ -33,7 +37,10 @@ breiteres Rollenmodell. Ein Rollback ist daher kein Ersatz für einen Rechteentz
   `/view/:acpId/review` bietet den Einstieg und die Aktivierung für Verantwortliche.
 - Bestehende Kommentar-APIs einschließlich `/comments` bleiben verfügbar, prüfen
   aber explizite Review-Grants. Bestehende Kommentierungs-Features bleiben getrennt
-  von der Aktivierung des neuen Review-Einstiegs.
+  von der Aktivierung des neuen Review-Einstiegs: Item-/Aufgabenkommentare bleiben
+  mit `enableCommenting=true` und Teilnahme-Grant auch bei `enableReview=false`
+  nutzbar, insbesondere für ACPs ohne Testheft. Der Booklet-Einstieg und Abstimmungen
+  benötigen weiterhin die Review-Aktivierung.
 - Öffentliche Explorer-Lesezugriffe bleiben bestehen. Auf einem öffentlichen ACP
   kann ein Nutzer daher auch ohne persönlichen Explorer-Grant öffentlich lesen.
 - Gemeinsame ACP-Inhalte (Index, Booklets, Player-Dateien) bleiben über die
@@ -84,3 +91,23 @@ Parserfehler, öffentliche Zugriffe, Admin-Semantik und Rechteentzug ab. Die
 API-Integrationstests in `backend/test/capabilities.e2e-spec.ts` prüfen dieselbe
 Matrix mit echten Guards, Controllern und PostgreSQL sowie Import und Migration.
 Nur gegen eine isolierte Testdatenbank ausführen; die Tests erzeugen Testdaten.
+
+## Upgrade mit Schemasynchronisierung
+
+Beim Entwicklungsstart mit `DB_SYNCHRONIZE=true` werden bestehende Rollen- und
+Credential-Grants beim erstmaligen Anlegen der jeweiligen Capability-Spalte
+übernommen. Die Kommentarziele werden vor der Schemasynchronisierung nach den
+Migrationsregeln zugeordnet. Scheitert diese Vorbereitung, wird sie vollständig
+zurückgerollt. Nachfolgende Starts überschreiben keine bewusst geleerten Grants
+und keine vorhandene `enableReview`-Einstellung. Review-Revisions- und
+Vote-Cleanup-Trigger werden auch für neu synchronisierte Datenbanken installiert.
+
+Bereits durch einen früheren Synchronisierungsstart erzeugte leere Grants lassen
+sich nicht von bewusst entzogenen Rechten unterscheiden. Sie werden daher nicht
+nachträglich automatisch aufgefüllt; betroffene Zugänge müssen anhand der vorherigen
+Berechtigungen geprüft und explizit freigegeben werden.
+
+`backend/test/synchronize-upgrade.e2e-spec.ts` prüft das Upgrade vom Schema 0.5.0,
+den Fehler-/Rollback-Pfad und einen erneuten Start nach Rechteentzug. Der Test
+benötigt eine isolierte PostgreSQL-Testinstanz und ein Testkonto mit `CREATEDB`;
+er erzeugt und entfernt eine eigene Datenbank.

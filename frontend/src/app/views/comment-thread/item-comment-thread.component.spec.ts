@@ -36,6 +36,73 @@ function createComponent() {
 }
 
 describe('ItemCommentThreadComponent', () => {
+  it('keeps category drafts per target and reply, and retains them after a failed request', () => {
+    const { component, api } = createComponent();
+    component.loadThread();
+    component.snapshot!.categories = [{ id: 'category', name: 'Fachlich', archived: false }];
+    component.selectedCategoryId = 'category';
+    component.newCommentText = 'Root draft';
+    component.setReplyText('root', 'Reply draft');
+    component.setReplyCategoryId('root', 'category');
+    component.itemId = 'item-2';
+    expect(component.selectedCategoryId).toBe('');
+    expect(component.replyCategoryId('root')).toBe('');
+    component.itemId = 'item-1';
+    api.createItemComment.mockReturnValue(throwError(() => ({ error: { message: 'Offline' } })));
+    component.submitComment();
+    expect(api.createItemComment).toHaveBeenCalledWith(
+      'acp-1',
+      expect.objectContaining({ categoryId: 'category' }),
+    );
+    expect(component.selectedCategoryId).toBe('category');
+    expect(component.newCommentText).toBe('Root draft');
+    component.snapshot!.categories[0].archived = true;
+    component.submitComment('root');
+    expect(api.createItemComment).toHaveBeenCalledTimes(1);
+    expect(component.replyCategoryId('root')).toBe('category');
+    expect(component.error).toContain('verfügbare Kategorie');
+    component.setReplyCategoryId('root', '');
+    api.createItemComment.mockReturnValue(of({}));
+    component.submitComment('root');
+    expect(api.createItemComment).toHaveBeenCalledTimes(2);
+    expect(component.replyCategoryId('root')).toBe('');
+    component.ngOnDestroy();
+  });
+
+  it('retains an archived assignment during text edits and sends null only when removing it', () => {
+    const { component, api } = createComponent();
+    const comment = {
+      id: 'own',
+      commentText: 'Original',
+      version: 1,
+      categoryId: 'archived',
+    } as any;
+    component.startEdit(comment);
+    component.editText = 'New text';
+    component.saveEdit(comment);
+    expect(api.updateItemComment).toHaveBeenLastCalledWith('acp-1', 'own', {
+      commentText: 'New text',
+      version: 1,
+    });
+    component.startEdit(comment);
+    component.editCategoryId = '';
+    component.saveEdit(comment);
+    expect(api.updateItemComment).toHaveBeenLastCalledWith('acp-1', 'own', {
+      commentText: 'Original',
+      version: 1,
+      categoryId: null,
+    });
+    component.startEdit(comment);
+    component.editCategoryId = 'active';
+    component.saveEdit(comment);
+    expect(api.updateItemComment).toHaveBeenLastCalledWith('acp-1', 'own', {
+      commentText: 'Original',
+      version: 1,
+      categoryId: 'active',
+    });
+    component.ngOnDestroy();
+  });
+
   it('sets, switches and removes votes while retaining drafts and refreshing the snapshot', () => {
     const { component, api } = createComponent();
     component.loadThread();
@@ -173,6 +240,7 @@ describe('ItemCommentThreadComponent', () => {
       throwError(() => ({ status: 409, error: { message: 'Konflikt' } })),
     );
     api.getItemCommentThread.mockReturnValueOnce(throwError(() => new Error('offline')));
+    component.startEdit({ id: 'c-1', version: 1, commentText: 'Original' } as any);
     component.editText = 'Entwurf';
     component.saveEdit({ id: 'c-1', version: 1 } as any);
     component.loadThread(true);
@@ -479,6 +547,7 @@ describe('ItemCommentThreadComponent', () => {
       throwError(() => ({ status: 409, error: { message: 'Konflikt' } })),
     );
     const loadSpy = vi.spyOn(component, 'loadThread');
+    component.startEdit({ id: 'c-1', version: 2, commentText: 'Original' } as any);
     component.editText = 'Neue Fassung';
 
     component.saveEdit({ id: 'c-1', version: 2 } as any);

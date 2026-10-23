@@ -1,4 +1,4 @@
-import { CallHandler, ExecutionContext } from "@nestjs/common";
+import { CallHandler, ExecutionContext, Logger } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { lastValueFrom, of, throwError } from "rxjs";
 import { SERVER_API_AUDIT_KEY } from "./server-api-audit.decorator";
@@ -126,4 +126,35 @@ describe("ServerApiAuditInterceptor", () => {
       }),
     );
   });
+  it.each([true, false])(
+    "preserves the request result when audit persistence fails (success: %s)",
+    async (success) => {
+      reflector.getAllAndOverride.mockReturnValue({
+        action: "acp.files.read",
+        resourceType: "file",
+      });
+      const failure = new Error("audit unavailable");
+      const requestFailure = new Error("request failed");
+      auditService.log.mockRejectedValue(failure);
+      const log = jest
+        .spyOn(Logger.prototype, "error")
+        .mockImplementation(() => undefined);
+      try {
+        const result = lastValueFrom(
+          interceptor.intercept(createContext({}, {}), {
+            handle: () =>
+              success ? of({ ok: true }) : throwError(() => requestFailure),
+          }),
+        );
+        if (success) await expect(result).resolves.toEqual({ ok: true });
+        else await expect(result).rejects.toBe(requestFailure);
+        expect(log).toHaveBeenCalledWith(
+          "Failed to persist server API audit entry",
+          failure,
+        );
+      } finally {
+        log.mockRestore();
+      }
+    },
+  );
 });
