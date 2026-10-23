@@ -29,6 +29,20 @@ import { ItemCommentThreadComponent } from '../comment-thread/item-comment-threa
 import { CommentThreadDrafts } from '../comment-thread/comment-thread-drafts';
 import { AuthService } from '../../core/services/auth.service';
 import { PendingPersonalSessionStorageService } from '../../core/services/pending-personal-session-storage.service';
+import { VoudService } from '../../core/services/voud.service';
+import {
+  CodingVariableLike,
+  mergePlayerSolutionIntoDataParts,
+} from '../item-explorer/item-explorer-solution-prefill';
+import { deriveReviewSolution, ReviewSolution } from './review-solution';
+
+type ReviewCodingAsText = Omit<CodingAsText, 'codes'> & {
+  manualInstructionText?: string;
+  codes: (CodingAsText['codes'][number] & {
+    manualInstructionText?: string;
+    description?: string;
+  })[];
+};
 
 type UnitPagingMode =
   | 'buttons'
@@ -79,6 +93,15 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
             </button>
           }
           @if (reviewMode) {
+            <button
+              class="btn btn-outline btn-sm btn-state"
+              type="button"
+              (click)="toggleSolution()"
+              [disabled]="codingSchemeLoading || !definitionContent || !playerSessionId"
+              [attr.aria-pressed]="solutionVisible"
+            >
+              {{ solutionVisible ? 'Musterlösung ausblenden' : 'Musterlösung anzeigen' }}
+            </button>
             <button
               class="btn btn-outline btn-sm btn-state"
               type="button"
@@ -357,6 +380,23 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
 
           @if (activeTab === 'coding') {
             <div class="coding-content">
+              @if (reviewMode && !codingSchemeLoading) {
+                <div class="solution-info" role="status">
+                  <strong>{{
+                    solutionVisible ? 'Musterlösung eingeblendet' : 'Musterlösung'
+                  }}</strong>
+                  <p>{{ reviewSolution.prefill.message }}</p>
+                  @if (reviewSolution.unavailableVariables.length) {
+                    <p>
+                      Ohne eindeutige Player-Lösung:
+                      {{ reviewSolution.unavailableVariables.join(', ') }}
+                    </p>
+                  }
+                  @if (solutionVisible) {
+                    <p>Beim Ausblenden werden die eigenen Eingaben wiederhergestellt.</p>
+                  }
+                </div>
+              }
               @if (codingSchemeLoading) {
                 <p class="help-text">Kodierung wird geladen...</p>
               } @else if (codingSchemeAsText?.length) {
@@ -381,24 +421,61 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                 @if (visibleCodingSchemeAsText.length) {
                   @for (coding of visibleCodingSchemeAsText; track coding.id) {
                     <section class="coding-variable">
-                      <h4>{{ coding.label || coding.id }}</h4>
-                      @if ($any(coding).manualInstructionText) {
+                      <h4>
+                        {{ reviewMode ? coding.id : coding.label || coding.id }}
+                        @if (reviewMode && coding.label && coding.label !== coding.id) {
+                          <span> – {{ coding.label }}</span>
+                        }
+                      </h4>
+                      @if (reviewMode && coding.source) {
+                        <p class="help-text">{{ coding.source }}</p>
+                      }
+                      @if (reviewMode && coding.processing) {
+                        <p class="help-text">{{ coding.processing }}</p>
+                      }
+                      @if (coding.manualInstructionText) {
                         <div class="coding-instruction">
                           <strong>Variablenanweisung</strong>
-                          <div [innerHTML]="$any(coding).manualInstructionText"></div>
+                          <div [innerHTML]="coding.manualInstructionText"></div>
                         </div>
                       }
                       <div class="coding-codes">
                         @for (code of coding.codes; track code.id) {
                           <div class="coding-code">
-                            <strong>{{ code.id }}</strong>
-                            <span class="coding-score">({{ code.score }})</span>
+                            <strong>{{ reviewMode ? 'Code ' : '' }}{{ code.id }}</strong>
+                            <span class="coding-score"
+                              >({{ code.score
+                              }}{{
+                                reviewMode ? (code.score === 1 ? ' Punkt' : ' Punkte') : ''
+                              }})</span
+                            >
                             <span>{{ code.label }}</span>
                           </div>
-                          @if ($any(code).manualInstructionText) {
+                          @if (reviewMode && code.description && code.description !== code.label) {
+                            <p>{{ code.description }}</p>
+                          }
+                          @if (code.manualInstructionText) {
                             <div class="coding-instruction code-instruction">
                               <strong>Kodieranweisung</strong>
-                              <div [innerHTML]="$any(code).manualInstructionText"></div>
+                              <div [innerHTML]="code.manualInstructionText"></div>
+                            </div>
+                          }
+                          @if (reviewMode && code.ruleSetDescriptions.length) {
+                            <div class="coding-instruction code-instruction">
+                              <strong>
+                                Kodierregeln:
+                                {{
+                                  code.ruleSetOperatorAnd
+                                    ? 'Alle folgenden Bedingungen müssen'
+                                    : 'Mindestens eine der folgenden Bedingungen muss'
+                                }}
+                                zutreffen
+                              </strong>
+                              <ul>
+                                @for (rule of code.ruleSetDescriptions; track $index) {
+                                  <li>{{ rule }}</li>
+                                }
+                              </ul>
                             </div>
                           }
                         }
@@ -447,6 +524,16 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         gap: 8px;
         align-items: center;
         flex-wrap: wrap;
+      }
+      .solution-info {
+        margin-bottom: 16px;
+        padding: 12px;
+        border-left: 3px solid var(--color-primary);
+        background: var(--color-bg);
+        overflow-wrap: anywhere;
+      }
+      .solution-info p {
+        margin: 8px 0 0;
       }
       .panel-mode-select {
         min-width: 150px;
@@ -723,6 +810,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
       }
       .coding-code {
         display: flex;
+        flex-wrap: wrap;
         align-items: baseline;
         gap: 8px;
       }
@@ -731,6 +819,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         font-weight: 600;
       }
       .coding-instruction {
+        overflow-wrap: anywhere;
         margin: 8px 0;
         padding: 8px;
         border-left: 3px solid #f39c12;
@@ -839,7 +928,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   currentPage = 1;
   totalPages = 1;
   private playerPageIds: (string | number)[] = [];
-  private playerSessionId: string | null = null;
+  playerSessionId: string | null = null;
 
   // Panel state
   panelVisible = false;
@@ -891,11 +980,18 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   unitMetadata: FilePreviewVomdData['unitProfiles'] = [];
   metadataLoading = false;
   metadataError = '';
-  codingSchemeAsText: CodingAsText[] | null = null;
+  codingSchemeAsText: ReviewCodingAsText[] | null = null;
   codingSchemeLoading = false;
   codingSchemeError = '';
+  solutionVisible = false;
+  reviewSolution: ReviewSolution = deriveReviewSolution([], [], () => undefined);
+  private codingVariables: CodingVariableLike[] = [];
+  private responseData: Record<string, unknown> = {};
+  private responseDataTimes: Record<string, number> = {};
+  private readonly voud = new VoudService();
+  private playerRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private definitionContent: string | null = null;
+  definitionContent: string | null = null;
   private playerFrameReady = false;
   private unitLoadToken = 0;
   private initialized = false;
@@ -966,7 +1062,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  get visibleCodingSchemeAsText(): CodingAsText[] {
+  get visibleCodingSchemeAsText(): ReviewCodingAsText[] {
     const visibleCodings =
       !this.reviewMode && this.showAllCodingVariables
         ? this.availableCodingSchemeAsText
@@ -988,7 +1084,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         ...coding.codes.flatMap((code) => [
           code.id,
           code.label,
+          code.description,
           (code as any).manualInstructionText,
+          ...(this.reviewMode ? code.ruleSetDescriptions : []),
         ]),
       ]
         .filter(Boolean)
@@ -1008,7 +1106,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     return this.unit ? (this.reviewMode ? unitLabel(this.unit) : this.unit.name) : '';
   }
 
-  private get availableCodingSchemeAsText(): CodingAsText[] {
+  private get availableCodingSchemeAsText(): ReviewCodingAsText[] {
     const codings = this.codingSchemeAsText || [];
     const hideAudioVideoVariables = this.reviewMode || !this.showAudioVideoCodingVariables;
     return hideAudioVideoVariables
@@ -1179,6 +1277,12 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.codingSchemeAsText = null;
     this.codingSchemeLoading = false;
     this.codingSchemeError = '';
+    this.codingVariables = [];
+    this.solutionVisible = false;
+    this.responseData = {};
+    this.responseDataTimes = {};
+    this.reviewSolution = deriveReviewSolution([], [], () => undefined);
+    this.clearPlayerRefresh();
     this.codingFilterText = '';
     this.showAllCodingVariables = false;
     this.unitRequest = this.api.getViewUnit(this.acpId, this.unitId).subscribe((u) => {
@@ -1219,6 +1323,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
     this.unitAbortController?.abort();
+    this.clearPlayerRefresh();
     this.stopReviewPanelResize();
     window.removeEventListener('resize', this.resizeHandler);
     window.removeEventListener('message', this.messageHandler);
@@ -1233,13 +1338,32 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   onPagingModeChange() {
     const src = this.playerSrcDoc;
     if (!src) return;
+    this.clearPlayerRefresh();
     this.playerFrameReady = false;
     this.playerSessionId = null;
-    this.initializePageNavigation();
+    if (!this.reviewMode) this.initializePageNavigation();
     this.playerSrcDoc = null;
-    setTimeout(() => {
+    this.changeDetector.markForCheck();
+    this.playerRefreshTimer = setTimeout(() => {
+      this.playerRefreshTimer = null;
       this.playerSrcDoc = src;
+      this.changeDetector.markForCheck();
     }, 50);
+  }
+
+  toggleSolution() {
+    if (!this.reviewMode || !this.playerSessionId) return;
+    this.activeTab = 'coding';
+    this.reviewPanelCollapsed = false;
+    this.changeDetector.markForCheck();
+    if (!this.solutionVisible && this.reviewSolution.prefill.status !== 'available') return;
+    this.solutionVisible = !this.solutionVisible;
+    this.onPagingModeChange();
+  }
+
+  private clearPlayerRefresh() {
+    if (this.playerRefreshTimer) clearTimeout(this.playerRefreshTimer);
+    this.playerRefreshTimer = null;
   }
 
   private onPlayerMessage(event: MessageEvent) {
@@ -1257,6 +1381,24 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         break;
       }
       case 'vopStateChangedNotification': {
+        if (
+          this.reviewMode &&
+          this.playerSessionId &&
+          msg.sessionId === this.playerSessionId &&
+          !this.solutionVisible &&
+          msg.unitState?.dataParts &&
+          typeof msg.unitState.dataParts === 'object' &&
+          !Array.isArray(msg.unitState.dataParts)
+        ) {
+          const time = Date.parse(msg.timeStamp);
+          for (const [key, value] of Object.entries(msg.unitState.dataParts)) {
+            if (typeof value !== 'string') continue;
+            if (Number.isFinite(time) && time < (this.responseDataTimes[key] ?? -Infinity))
+              continue;
+            this.responseData[key] = value;
+            if (Number.isFinite(time)) this.responseDataTimes[key] = time;
+          }
+        }
         const pages = msg.playerState?.validPages;
         if (pages && typeof pages === 'object') {
           // Verona 6 uses ordered { id, label } entries; older players use a map.
@@ -1406,6 +1548,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .then((definition) => {
         if (token !== this.unitLoadToken) return;
         this.definitionContent = definition;
+        this.updateReviewSolution();
         this.initializePageNavigation();
         this.startPlayerIfReady();
         this.changeDetector.markForCheck();
@@ -1470,6 +1613,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         if (token !== this.unitLoadToken) return;
         this.codingSchemeLoading = false;
         this.codingSchemeError = 'Kodierung konnte nicht geladen werden.';
+        this.changeDetector.markForCheck();
       });
   }
 
@@ -1484,11 +1628,15 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
           ? (codingScheme as any).variableCodings
           : [];
       const codingSchemeAsText = CodingSchemeTextFactory.asText(variableCodings);
-      if (codingSchemeAsText.some((coding) => typeof coding.id !== 'string' || !coding.id.trim())) {
+      if (
+        codingSchemeAsText.some((coding) => typeof coding.id !== 'string' || !coding.id.trim()) ||
+        new Set(codingSchemeAsText.map((coding) => coding.id.toLowerCase())).size !==
+          codingSchemeAsText.length
+      ) {
         throw new Error('Coding variables require a non-empty ID');
       }
-      codingSchemeAsText.forEach((coding) => {
-        const rawVariable = variableCodings.find((variable: any) => variable.id === coding.id);
+      codingSchemeAsText.forEach((coding, index) => {
+        const rawVariable = variableCodings[index];
         if (!rawVariable) return;
         (coding as any).manualInstructionText = rawVariable.manualInstruction;
         coding.codes.forEach((code) => {
@@ -1496,17 +1644,54 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
             (candidate: any) =>
               (candidate.id === null ? 'null' : candidate.id?.toString(10)) === code.id,
           );
-          if (rawCode) (code as any).manualInstructionText = rawCode.manualInstruction;
+          code.ruleSetDescriptions ??= [];
+          if (rawCode) {
+            (code as any).manualInstructionText = rawCode.manualInstruction;
+            (code as any).description = rawCode.label;
+            if (
+              !code.ruleSetDescriptions.length &&
+              ['RESIDUAL', 'RESIDUAL_AUTO'].includes(rawCode.type)
+            ) {
+              code.ruleSetDescriptions = ['Alle anderen Antworten.'];
+            }
+          }
         });
       });
       this.codingSchemeAsText = codingSchemeAsText;
+      this.codingVariables = variableCodings;
+      this.updateReviewSolution();
       this.codingSchemeError = '';
     } catch {
       this.codingSchemeAsText = null;
+      this.codingVariables = [];
+      this.updateReviewSolution();
       this.codingSchemeError = 'Kodierung konnte nicht gelesen werden.';
     } finally {
       this.codingSchemeLoading = false;
+      this.changeDetector.markForCheck();
     }
+  }
+
+  private updateReviewSolution() {
+    const relevantVariables = this.codingVariables.filter((_, index) => {
+      const coding = this.codingSchemeAsText?.[index];
+      return (
+        coding && !this.isAudioVideoCodingVariable(coding) && this.isRelevantCodingVariable(coding)
+      );
+    });
+    this.reviewSolution = deriveReviewSolution(
+      this.codingVariables,
+      relevantVariables,
+      (variable) => {
+        if (!this.definitionContent) return undefined;
+        for (const id of [variable.alias, variable.id]) {
+          if (typeof id !== 'string' || !id.trim()) continue;
+          const target = this.voud.resolvePlayerResponseTarget(this.definitionContent, id);
+          if (target) return target;
+        }
+        return undefined;
+      },
+    );
   }
 
   private startPlayerIfReady() {
@@ -1519,9 +1704,15 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       type: 'vopStartCommand',
       sessionId: this.playerSessionId,
       unitDefinition: this.definitionContent,
-      unitState: { dataParts: {} },
+      unitState: {
+        dataParts:
+          this.solutionVisible && this.reviewSolution.prefill.status === 'available'
+            ? mergePlayerSolutionIntoDataParts({}, this.reviewSolution.prefill.responses)
+            : { ...this.responseData },
+      },
       playerConfig: {
         stateReportPolicy: 'none',
+        startPage: String(this.playerPageIds[this.currentPage - 1] ?? this.currentPage - 1),
         pagingMode:
           this.pagingMode === 'view-all' || this.pagingMode === 'print-ids'
             ? 'concat-scroll'

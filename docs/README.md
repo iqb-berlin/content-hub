@@ -60,6 +60,8 @@ For ACP managers who need a task-oriented user guide, see:
   How ACPs are created, populated, configured, versioned, and reviewed.
 - [Item Explorer](features/item-explorer.md)
   Shared draft state, publish/discard flow, metadata columns, tags, and empirical difficulty workflows.
+- [Musterlösung und Kodierinformation im Booklet-Review](review-solutions.md)
+  Reversible Musterlösungsanzeige und lesbare Anweisungen für offene Antwortformate.
 - [Integrations and API](features/integrations-and-api.md)
   Public view endpoints, management endpoints, server-to-server API tokens, scopes, and transfer workflows.
 
