@@ -521,49 +521,75 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
         </p>
         <div class="explorer-options">
           @if (configLoaded) {
-            <details class="settings-details">
-              <summary>Reduzierte Ansicht des Item-Explorers</summary>
+            <p class="help-text reviewer-view-intro">
+              Vereinfachen Sie den Item-Explorer für Reviewer: Blenden Sie nicht benötigte
+              Schaltflächen, die Leiste über der Tabelle oder die Item- und Player-Vorschau aus. Die
+              Tabelle nutzt den frei werdenden Platz.
+            </p>
+            <details class="settings-details reviewer-view-settings">
+              <summary>Ansicht für Reviewer vereinfachen</summary>
               <p class="help-text">
-                Gilt nur für Reviewer und die Leseansicht. Manager behalten die vollständige
-                Bearbeitungsansicht. Nach „Änderungen speichern“ gilt die Darstellung bei neuen
-                Aufrufen sofort. Explorer-Veröffentlichung und das Verwerfen eines Entwurfs ändern
-                sie nicht.
+                Diese Vorgaben gelten für Reviewer und für die „Leseansicht“ im Item-Explorer. Ihre
+                Bearbeitungsansicht bleibt vollständig. Daten und Berechtigungen bleiben
+                unverändert.
+              </p>
+              <p class="help-text">
+                Wählen Sie ein Ausgangsprofil. Danach können Sie die sichtbaren Bereiche einzeln
+                anpassen.
               </p>
               <div
-                class="button-group"
+                class="reviewer-view-profiles"
                 role="group"
-                aria-label="Ausgangsprofil für die reduzierte Ansicht"
+                aria-label="Ausgangsprofil für die Reviewer-Ansicht"
               >
                 <button
                   type="button"
                   class="btn btn-outline btn-sm"
                   (click)="applyReducedViewProfile('full')"
+                  aria-label="Vollständig"
+                  aria-describedby="reviewer-profile-full-description"
                 >
-                  Vollständig
+                  <strong>Vollständig</strong>
+                  <span id="reviewer-profile-full-description"
+                    >Alle bisherigen Bereiche anzeigen.</span
+                  >
                 </button>
                 <button
                   type="button"
                   class="btn btn-outline btn-sm"
                   (click)="applyReducedViewProfile('review')"
+                  aria-label="Review mit Vorschau"
+                  aria-describedby="reviewer-profile-review-description"
                 >
-                  Review mit Vorschau
+                  <strong>Review mit Vorschau</strong>
+                  <span id="reviewer-profile-review-description"
+                    >Tabellenleiste ausblenden; Item und Player bleiben sichtbar.</span
+                  >
                 </button>
                 <button
                   type="button"
                   class="btn btn-outline btn-sm"
                   (click)="applyReducedViewProfile('table')"
+                  aria-label="Nur Tabelle"
+                  aria-describedby="reviewer-profile-table-description"
                 >
-                  Nur Tabelle
+                  <strong>Nur Tabelle</strong>
+                  <span id="reviewer-profile-table-description"
+                    >Titelkopf, Tabellenleiste und Vorschaubereich ausblenden.</span
+                  >
                 </button>
               </div>
               <label class="feature-toggle">
                 <input type="checkbox" [(ngModel)]="reducedView.enabled" />
-                <span>Reduzierte Ansicht aktivieren</span>
+                <span>Vereinfachte Ansicht für Reviewer aktivieren</span>
               </label>
               @if (reducedView.enabled) {
+                <p class="help-text">
+                  Angehakte Bereiche und Aktionen bleiben für Reviewer sichtbar.
+                </p>
                 <label class="feature-toggle">
                   <input type="checkbox" [(ngModel)]="reducedView.showHeader" />
-                  <span>Header: Titel und optionale Aktionen anzeigen</span>
+                  <span>Titel und optionale Aktionen im Kopfbereich anzeigen</span>
                 </label>
                 @for (action of reducedViewActions; track action.id) {
                   <label class="feature-toggle">
@@ -580,9 +606,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
                 }
                 <p class="help-text">
                   Vollbild sowie erlaubte Sortier-, Download- und Speicheraktionen bleiben
-                  erreichbar. Verwaltungsaktionen bleiben ohne Berechtigung verborgen. Manager
-                  können die Leseansicht immer verlassen. Neue Aktionen werden bei ihrer Einführung
-                  einzeln bewertet.
+                  erreichbar. Manager können die Leseansicht jederzeit verlassen.
                 </p>
                 <label class="feature-toggle">
                   <input type="checkbox" [(ngModel)]="reducedView.showTableToolbarArea" />
@@ -612,6 +636,11 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
                   erhalten.
                 </p>
               }
+              <p class="help-text">
+                „Änderungen speichern“ übernimmt die Vorgaben ACP-weit für neue Aufrufe. Eine
+                Veröffentlichung des Explorers ist dafür nicht nötig. Prüfen Sie das Ergebnis
+                anschließend im Item-Explorer über „Leseansicht“.
+              </p>
             </details>
           }
           <details class="settings-details">
@@ -1032,6 +1061,32 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
         padding: 0;
         margin: 0;
         min-width: 0;
+      }
+      .reviewer-view-profiles {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 12px 0;
+      }
+      .reviewer-view-profiles .btn {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 12px;
+        white-space: normal;
+        text-align: left;
+      }
+      .reviewer-view-profiles .btn span {
+        font-size: 0.82rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--color-text-secondary);
+      }
+      @media (max-width: 700px) {
+        .reviewer-view-profiles {
+          grid-template-columns: 1fr;
+        }
       }
       .save-bar {
         position: sticky;
