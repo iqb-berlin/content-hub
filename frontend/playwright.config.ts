@@ -36,13 +36,13 @@ export default defineConfig({
     {
       name: 'firefox',
       testMatch:
-        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression)\.spec\.ts/,
+        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression|review-navigation-metadata)\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
       testMatch:
-        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression)\.spec\.ts/,
+        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression|review-navigation-metadata)\.spec\.ts/,
       use: { ...devices['Desktop Safari'] },
     },
   ],

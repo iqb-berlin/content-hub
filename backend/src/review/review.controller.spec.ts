@@ -62,6 +62,7 @@ describe("ReviewController stale memberships", () => {
       );
       expect(result).toEqual({
         enableReview: false,
+        hideReviewDeveloperNames: false,
         visibilityMode: "GROUP",
         configVersion: 2,
         groups: [
@@ -246,4 +247,53 @@ describe("deleting review groups", () => {
     ).rejects.toThrow("bestätigt");
     expect(manager.save).not.toHaveBeenCalled();
   });
+});
+
+describe("review developer metadata visibility", () => {
+  it.each([true, false, undefined])(
+    "persists %s and preserves the setting for older clients that omit it",
+    async (hideReviewDeveloperNames) => {
+      const config = {
+        reviewConfigVersion: 1,
+        reviewRevision: "0",
+        featureConfig: {
+          enableReview: true,
+          hideReviewDeveloperNames: true,
+          showMetadata: true,
+        },
+        reviewGroups: [],
+      };
+      const manager: any = {
+        findOne: jest.fn(async () => config),
+        save: jest.fn(async (value) => value),
+        transaction: async (fn: any) => fn(manager),
+      };
+      const capabilities = { assert: jest.fn() };
+      const controller = new ReviewController(
+        capabilities as any,
+        {} as any,
+        { manager, findOne: async () => config } as any,
+        {} as any,
+      );
+      const result = await controller.configure(
+        "acp",
+        {
+          enableReview: true,
+          visibilityMode: "PRIVATE",
+          configVersion: 1,
+          hideReviewDeveloperNames,
+        },
+        {},
+      );
+      expect(result.hideReviewDeveloperNames).toBe(
+        hideReviewDeveloperNames ?? true,
+      );
+      expect(config.featureConfig.showMetadata).toBe(true);
+      expect(
+        (await controller.getConfig("acp", {})).hideReviewDeveloperNames,
+      ).toBe(hideReviewDeveloperNames ?? true);
+      expect(capabilities.assert).toHaveBeenCalledWith({}, "review:manage");
+      expect(manager.save).toHaveBeenCalledWith(config);
+    },
+  );
 });

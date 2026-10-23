@@ -20,6 +20,7 @@ interface ReviewGroup {
 }
 interface ReviewConfig {
   enableReview: boolean;
+  hideReviewDeveloperNames?: boolean;
   visibilityMode: 'PRIVATE' | 'SHARED' | 'GROUP';
   configVersion: number;
   groups: ReviewGroup[];
@@ -332,8 +333,8 @@ interface ReviewConfig {
             <p role="status">Änderung der Freigabe noch nicht gespeichert.</p>
           }
           <small
-            >Speichert auch Änderungen an Kommentarsicht und Gruppen. Beim Aktivieren wird die
-            Bereitschaft geprüft.</small
+            >Speichert auch Änderungen an Metadatensicht, Kommentarsicht und Gruppen. Beim
+            Aktivieren wird die Bereitschaft geprüft.</small
           >
         </section>
       }
@@ -392,6 +393,19 @@ interface ReviewConfig {
             </div>
           }
         </section>
+      }
+      @if (access?.canManageReview && config) {
+        <fieldset [disabled]="busy">
+          <legend>Metadaten in der Prüfansicht</legend>
+          <label>
+            <input type="checkbox" [(ngModel)]="config.hideReviewDeveloperNames" />
+            Namen und Kürzel der Aufgabenentwickler/innen ausblenden
+          </label>
+          <p>
+            Blendet das Metadatenfeld „Entwickler/in“ in der Testheft-Prüfansicht für alle
+            Review-Teilnehmenden aus. Die Einstellung gilt nach dem Speichern.
+          </p>
+        </fieldset>
       }
       @if (manifest) {
         <h2>2. Prüfansicht testen</h2>

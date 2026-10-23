@@ -341,9 +341,9 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
           @if (activeTab === 'metadata') {
             @if (metadataLoading) {
               <p class="help-text">Aufgabenmetadaten werden geladen...</p>
-            } @else if (unitMetadata.length) {
+            } @else if (visibleUnitMetadata.length) {
               <dl class="meta-dl">
-                @for (entry of unitMetadata; track entry.id) {
+                @for (entry of visibleUnitMetadata; track entry.id) {
                   <dt>{{ entry.label || entry.id }}</dt>
                   <dd>{{ entry.value || '–' }}</dd>
                 }
@@ -509,12 +509,14 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
 
       .page-nav {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: center;
         gap: 16px;
         margin-top: 12px;
       }
       .page-info {
+        white-space: nowrap;
         font-size: 0.9rem;
         font-weight: 500;
         color: var(--color-text-secondary);
@@ -836,6 +838,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   // Page navigation
   currentPage = 1;
   totalPages = 1;
+  private playerPageIds: (string | number)[] = [];
+  private playerSessionId: string | null = null;
 
   // Panel state
   panelVisible = false;
@@ -855,6 +859,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   showBookletCommentBtn = false;
   showDownloadBtn = false;
   showAudioVideoCodingVariables = true;
+  hideReviewDeveloperNames = false;
   commentScope: ReviewCommentScope = 'unit';
   commentItems: { id: string; label: string }[] = [];
   commentItemsLoading = false;
@@ -939,6 +944,26 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     if (this.pagingMode === 'view-all') return 'on';
     if (this.pagingMode === 'print-ids') return 'on-with-ids';
     return 'off';
+  }
+
+  get visibleUnitMetadata(): FilePreviewVomdData['unitProfiles'] {
+    if (!this.reviewMode || !this.hideReviewDeveloperNames) return this.unitMetadata;
+    return this.unitMetadata.filter((entry) => {
+      const normalize = (value: string) =>
+        value
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z]/g, '');
+      const id = normalize(entry.id);
+      const label = normalize(entry.label);
+      return (
+        !['iqbauthor', 'author', 'developer', 'creator'].includes(id) &&
+        !/^(aufgaben)?(entwickler(in(nen)?)?|autor(in(nen)?)?|author|developer)(name|kurzel)?$/.test(
+          label,
+        )
+      );
+    });
   }
 
   get visibleCodingSchemeAsText(): CodingAsText[] {
@@ -1070,6 +1095,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     }
     this.showDownloadBtn = !!featureConfig.allowUnitDownload;
     this.showAudioVideoCodingVariables = featureConfig.showAudioVideoCodingVariables !== false;
+    this.hideReviewDeveloperNames = featureConfig.hideReviewDeveloperNames === true;
 
     if (this.reviewMode) this.activeTab = 'comments';
     else if (this.showMetadata) this.activeTab = 'metadata';
@@ -1142,6 +1168,10 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.unit = null;
     this.playerSrcDoc = null;
     this.playerFrameReady = false;
+    this.playerSessionId = null;
+    this.playerPageIds = [];
+    this.currentPage = 1;
+    this.totalPages = 1;
     this.definitionContent = null;
     this.unitMetadata = [];
     this.metadataLoading = false;
@@ -1197,7 +1227,6 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   onPlayerLoaded() {
     if (!this.unit || !this.playerFrame?.nativeElement?.contentWindow) return;
-    this.playerFrameReady = true;
     this.startPlayerIfReady();
   }
 
@@ -1205,6 +1234,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     const src = this.playerSrcDoc;
     if (!src) return;
     this.playerFrameReady = false;
+    this.playerSessionId = null;
+    this.initializePageNavigation();
     this.playerSrcDoc = null;
     setTimeout(() => {
       this.playerSrcDoc = src;
@@ -1213,28 +1244,38 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   private onPlayerMessage(event: MessageEvent) {
     const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
-    if (frameWindow && event.source !== frameWindow) return;
+    if (!frameWindow || event.source !== frameWindow) return;
 
     const msg = event.data;
     if (!msg || typeof msg !== 'object') return;
+    if (msg.sessionId !== undefined && msg.sessionId !== this.playerSessionId) return;
 
     switch (msg.type) {
+      case 'vopReadyNotification': {
+        this.playerFrameReady = true;
+        this.startPlayerIfReady();
+        break;
+      }
       case 'vopStateChangedNotification': {
-        if (Array.isArray(msg.playerState?.validPages) && msg.playerState.validPages.length > 0) {
-          this.totalPages = msg.playerState.validPages.length;
+        const pages = msg.playerState?.validPages;
+        if (pages && typeof pages === 'object') {
+          // Verona 6 uses ordered { id, label } entries; older players use a map.
+          this.playerPageIds = Array.isArray(pages)
+            ? pages
+                .map((page: any) => page?.id ?? page)
+                .filter(
+                  (id: unknown): id is string | number =>
+                    typeof id === 'string' || (typeof id === 'number' && Number.isFinite(id)),
+                )
+            : Object.keys(pages);
+          this.totalPages = this.playerPageIds.length;
         }
-        if (typeof msg.playerState?.currentPage === 'number') {
-          this.currentPage = this.clampPage(msg.playerState.currentPage + 1);
-        } else {
-          this.currentPage = this.clampPage(this.currentPage);
-        }
+        this.updateCurrentPage(msg.playerState?.currentPage);
         break;
       }
 
       case 'vopPageNavigationCommand': {
-        if (typeof msg.target === 'number') {
-          this.currentPage = this.clampPage(msg.target + 1);
-        }
+        this.updateCurrentPage(msg.target);
         break;
       }
 
@@ -1244,7 +1285,18 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         }
         break;
       }
+      default:
+        return;
     }
+    this.changeDetector.markForCheck();
+  }
+
+  private updateCurrentPage(id: unknown) {
+    const index = this.playerPageIds.findIndex((pageId) => String(pageId) === String(id));
+    if (index >= 0) this.currentPage = index + 1;
+    else if (!this.playerPageIds.length && typeof id === 'number' && Number.isInteger(id))
+      this.currentPage = this.clampPage(id + 1);
+    else this.currentPage = this.clampPage(this.currentPage);
   }
 
   private sendToPlayer(msg: any) {
@@ -1253,15 +1305,16 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   navigateToPage(page: number) {
     if (this.pagingMode !== 'buttons') return;
-    if (!this.playerFrameReady) return;
+    if (!this.playerSessionId) return;
 
     const target = Math.trunc(page);
-    if (target < 1 || target > this.totalPages) return;
+    if (!Number.isFinite(target) || target < 1 || target > this.totalPages) return;
 
     this.currentPage = target;
     this.sendToPlayer({
       type: 'vopPageNavigationCommand',
-      target: target - 1,
+      sessionId: this.playerSessionId,
+      target: this.playerPageIds[target - 1] ?? String(target - 1),
     });
   }
 
@@ -1328,10 +1381,12 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .then((html) => {
         if (token !== this.unitLoadToken) return;
         this.playerSrcDoc = this.sanitizer.bypassSecurityTrustHtml(rewriteGeoGebraAssetUrls(html));
+        this.changeDetector.markForCheck();
       })
       .catch(() => {
         if (token !== this.unitLoadToken) return;
         this.playerSrcDoc = null;
+        this.changeDetector.markForCheck();
       });
   }
 
@@ -1351,7 +1406,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .then((definition) => {
         if (token !== this.unitLoadToken) return;
         this.definitionContent = definition;
+        this.initializePageNavigation();
         this.startPlayerIfReady();
+        this.changeDetector.markForCheck();
       })
       .catch(() => {
         if (token !== this.unitLoadToken) return;
@@ -1453,12 +1510,14 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private startPlayerIfReady() {
-    if (!this.playerFrameReady || !this.definitionContent || !this.unit) return;
+    if (!this.playerFrameReady || !this.definitionContent || !this.unit || this.playerSessionId)
+      return;
 
     this.startSessionCounter += 1;
+    this.playerSessionId = `review-${this.unitId}-${this.startSessionCounter}`;
     this.sendToPlayer({
       type: 'vopStartCommand',
-      sessionId: `review-${this.unitId}-${this.startSessionCounter}`,
+      sessionId: this.playerSessionId,
       unitDefinition: this.definitionContent,
       unitState: { dataParts: {} },
       playerConfig: {
@@ -1474,9 +1533,27 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       },
     });
 
-    this.currentPage = 1;
-    this.totalPages = 1;
     this.applyPrintModeLayout();
+  }
+
+  private initializePageNavigation() {
+    this.currentPage = 1;
+    this.playerPageIds = [];
+    try {
+      const pages = JSON.parse(this.definitionContent || '').pages;
+      if (Array.isArray(pages)) {
+        // ASPECT numbers scroll pages separately from always-visible pages.
+        this.playerPageIds = pages
+          .filter((page) => {
+            const value = page?.alwaysVisible;
+            return value !== true && value !== 1 && String(value).trim().toLowerCase() !== 'true';
+          })
+          .map((_, index) => String(index));
+      }
+    } catch {
+      // Other players may use a different definition format and report their pages themselves.
+    }
+    this.totalPages = Math.max(1, this.playerPageIds.length);
   }
 
   private applyPrintModeLayout() {
