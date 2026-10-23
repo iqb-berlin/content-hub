@@ -862,6 +862,52 @@ describe("ServerApiService", () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it("stores the schema ID returned by 0.6 validation on server imports", async () => {
+    acpRepository.findOne.mockResolvedValue(null);
+    const report = {
+      schemaId: "acp-index@0.6",
+      valid: true,
+      publishable: true,
+      issues: [],
+    };
+    const validator = {
+      validateCandidate: jest.fn().mockResolvedValue(report),
+    };
+    const validated = new ServerApiService(
+      acpRepository as any,
+      fileRepository as any,
+      filesService as any,
+      snapshotsService as any,
+      validator as any,
+    );
+    const result = await validated.receiveAcp(
+      {
+        packageId: "pkg-1",
+        name: "New ACP",
+        acpIndex: { packageId: "pkg-1", version: "2.3.4" },
+      },
+      "overwrite",
+    );
+    expect(result.operation).toBe("created");
+    expect(acpRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        acpIndexSchemaId: "acp-index@0.6",
+        acpIndexValidationReport: report,
+      }),
+    );
+    validator.validateCandidate.mockResolvedValue({ ...report, valid: false });
+    await expect(
+      validated.receiveAcp(
+        {
+          packageId: "pkg-1",
+          name: "New ACP",
+          acpIndex: { packageId: "pkg-1", version: "2.3.4" },
+        },
+        "overwrite",
+      ),
+    ).rejects.toThrow("ACP index violates acp-index@0.6");
+  });
+
   it("creates a new ACP when package id is not known", async () => {
     acpRepository.findOne.mockResolvedValue(null);
     acpRepository.save.mockResolvedValue({

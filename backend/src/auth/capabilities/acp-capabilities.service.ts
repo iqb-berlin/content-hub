@@ -6,7 +6,11 @@ import {
   AcpUserRole,
   AcpAccessConfig,
 } from "../../database/entities";
-import { AcpCapability, hasCapability } from "./acp-capabilities";
+import {
+  AcpCapability,
+  hasCapability,
+  isExplorerAvailable,
+} from "./acp-capabilities";
 
 @Injectable()
 export class AcpCapabilitiesService {
@@ -63,11 +67,20 @@ export class AcpCapabilitiesService {
     allowPublic = false,
   ): Promise<void> {
     const grants = await this.resolve(req);
-    if (hasCapability(grants, capability)) return;
-    if (allowPublic && capability === "item-explorer:view") {
-      const config = await this.configs.findOne({
+    let config: AcpAccessConfig | null = null;
+    if (
+      capability === "item-explorer:view" ||
+      capability === "item-explorer:edit"
+    ) {
+      config = await this.configs.findOne({
         where: { acpId: req.params.acpId || req.params.id },
       });
+      if (!isExplorerAvailable(req, config?.featureConfig)) {
+        throw new ForbiddenException("Item list is not enabled for this ACP");
+      }
+    }
+    if (hasCapability(grants, capability)) return;
+    if (allowPublic && capability === "item-explorer:view") {
       if (
         config?.accessModel === "PUBLIC" &&
         config.featureConfig?.enableItemList !== false

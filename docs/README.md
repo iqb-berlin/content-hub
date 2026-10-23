@@ -49,6 +49,8 @@ For ACP managers who need a task-oriented user guide, see:
   Local setup, Docker and manual startup, ports, and common development commands.
 - [Configuration](development/configuration.md)
   Environment variables, safe defaults, OIDC setup, migration toggles, and configuration boundaries.
+- [ACP index 0.6](development/acp-index-06.md)
+  Development schema sources, scale validation and safe migration limits.
 - [Testing and Quality](development/testing-and-quality.md)
   Automated test commands, manual verification flows, and release-quality checks.
 
@@ -60,6 +62,8 @@ For ACP managers who need a task-oriented user guide, see:
   How ACPs are created, populated, configured, versioned, and reviewed.
 - [Item Explorer](features/item-explorer.md)
   Shared draft state, publish/discard flow, metadata columns, tags, and empirical difficulty workflows.
+- [Musterlösung und Kodierinformation im Booklet-Review](review-solutions.md)
+  Reversible Musterlösungsanzeige und lesbare Anweisungen für offene Antwortformate.
 - [Integrations and API](features/integrations-and-api.md)
   Public view endpoints, management endpoints, server-to-server API tokens, scopes, and transfer workflows.
 

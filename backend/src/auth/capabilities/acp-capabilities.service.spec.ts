@@ -46,6 +46,54 @@ describe("ACP capability matrix", () => {
       });
     }
   }
+  it.each(["oidc", "credential"])(
+    "honors the feature switch with existing %s grants",
+    async (type) => {
+      const config = {
+        acpId: "a",
+        accessModel: "CREDENTIALS_LIST",
+        featureConfig: { enableItemList: false },
+      };
+      const service = new AcpCapabilitiesService(
+        {
+          findOne: async () => ({
+            capabilities: [...ACP_CAPABILITIES],
+            accessConfig: config,
+          }),
+        } as any,
+        {
+          findOne: async () => ({ capabilities: [...ACP_CAPABILITIES] }),
+        } as any,
+        { findOne: async () => config } as any,
+      );
+      const req = {
+        params: { acpId: "a" },
+        user: { type, sub: "u", acpId: "a" },
+        acpAccessLevel: "READ_ONLY",
+      };
+      for (const capability of [
+        "item-explorer:view",
+        "item-explorer:edit",
+      ] as const) {
+        await expect(service.assert(req, capability, true)).rejects.toThrow(
+          "Item list is not enabled",
+        );
+      }
+      await expect(
+        service.assert(req, "review:participate"),
+      ).resolves.toBeUndefined();
+      config.featureConfig.enableItemList = true;
+      await expect(
+        service.assert(req, "item-explorer:view"),
+      ).resolves.toBeUndefined();
+      config.featureConfig.enableItemList = false;
+      req.acpAccessLevel = "MANAGER";
+      await expect(
+        service.assert(req, "item-explorer:edit"),
+      ).resolves.toBeUndefined();
+    },
+  );
+
   it("revokes grants immediately without replacing tokens", async () => {
     const roles = {
       findOne: jest

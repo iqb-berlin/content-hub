@@ -1,5 +1,5 @@
 {
-  "$id": "acp-index@0.5",
+  "$id": "acp-index@0.6",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Assessment Content Package Index",
   "description": "Specification for assessment content package index.",
@@ -374,7 +374,7 @@
           "type": "array",
           "items": {
             "$ref": "https://w3id.org/iqb/spec/acp-unit/0.5"
-           },
+          },
           "minItems": 1
         },
         "bookletModules": {
@@ -393,11 +393,19 @@
           },
           "minItems": 1
         },
-        "scales": {
-          "description": "Scales to calculate performance indicators",
+        "baseScales": {
+          "description": "Scales to calculate performance indicators directly from item values",
           "type": "array",
           "items": {
-            "$ref": "https://w3id.org/iqb/spec/acp-scale/0.2"
+            "$ref": "https://w3id.org/iqb/spec/acp-scale-base/0.4"
+          },
+          "minItems": 1
+        },
+        "derivedScales": {
+          "description": "Scales to calculate performance indicators by processing values of other scales",
+          "type": "array",
+          "items": {
+            "$ref": "https://w3id.org/iqb/spec/acp-scale-derived/0.4"
           },
           "minItems": 1
         },

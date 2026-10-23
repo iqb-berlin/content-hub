@@ -7,22 +7,40 @@ import {
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  catchError,
+  of,
+  combineLatest,
+  distinctUntilChanged,
+  map,
+  Subject,
+  switchMap,
+  takeUntil,
+} from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { FeatureConfig, TaskSequence } from '../../core/models/api.models';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/breadcrumb.component';
+import { sequenceLabel } from '../../shared/sequence-label';
+import { unitLabel } from '../../shared/unit-label';
 import { ItemCommentThreadComponent } from '../comment-thread/item-comment-thread.component';
 import { UnitViewComponent } from '../unit-view/unit-view.component';
+
+interface ReviewBookletOption {
+  id: string;
+  name?: unknown;
+}
 
 @Component({
   selector: 'app-task-sequence',
   standalone: true,
-  imports: [BreadcrumbComponent, ItemCommentThreadComponent, UnitViewComponent],
+  imports: [FormsModule, BreadcrumbComponent, ItemCommentThreadComponent, UnitViewComponent],
   template: `
     @if (sequence) {
       <app-breadcrumb [items]="breadcrumbs" />
 
-      @if (!isBookletReview) {
+      @if (!isBooklet) {
         <div class="seq-header">
           <h1>{{ sequence.name || sequence.id }}</h1>
           <div class="seq-actions">
@@ -32,14 +50,14 @@ import { UnitViewComponent } from '../unit-view/unit-view.component';
                 (click)="downloadSequence()"
                 [disabled]="!hasUnits"
               >
-                ⬇️ Download
+                ⬇️ Download Aufgabenfolge
               </button>
             }
           </div>
         </div>
       }
 
-      @if (showCommentBtn && !isBookletReview) {
+      @if (showCommentBtn && !isBooklet) {
         <app-item-comment-thread
           [acpId]="acpId"
           [targetType]="'BOOKLET'"
@@ -62,7 +80,9 @@ import { UnitViewComponent } from '../unit-view/unit-view.component';
             @if (hasUnits && currentUnit) {
               <span class="nav-info">
                 Aufgabe {{ currentIndex + 1 }} / {{ sequence.units.length }}:
-                <strong>{{ currentUnit.name || currentUnit.id }}</strong>
+                <strong>{{
+                  isBooklet ? unitLabel(currentUnit) : currentUnit.name || currentUnit.id
+                }}</strong>
                 @if (currentUnit.blockPath?.length) {
                   <small> · {{ currentUnit.blockPath?.join(' / ') }}</small>
                 }
@@ -75,13 +95,37 @@ import { UnitViewComponent } from '../unit-view/unit-view.component';
             </button>
           </div>
           <div class="workspace-actions">
-            @if (showDownloadBtn && isBookletReview) {
+            @if (isBooklet && reviewBooklets.length > 1) {
+              <button
+                class="btn btn-outline btn-sm btn-state booklet-switcher"
+                (click)="toggleBookletList()"
+                [attr.aria-expanded]="bookletListOpen"
+                [attr.aria-label]="
+                  'Testheft wechseln, aktuell ' +
+                  bookletName +
+                  ', ' +
+                  currentBookletPosition +
+                  ' von ' +
+                  reviewBooklets.length
+                "
+                aria-controls="review-booklet-list"
+                title="Testheft wechseln"
+              >
+                <span aria-hidden="true">📚</span>
+                <span class="selected-booklet-id">{{ bookletName }}</span>
+                <span class="selection-position"
+                  >· {{ currentBookletPosition || '–' }}/{{ reviewBooklets.length }}</span
+                >
+                <span aria-hidden="true">▾</span>
+              </button>
+            }
+            @if (showDownloadBtn && isBooklet) {
               <button
                 class="btn btn-outline btn-sm"
                 (click)="downloadSequence()"
                 [disabled]="!hasUnits"
               >
-                ⬇️ Download
+                ⬇️ Download Testheft
               </button>
             }
             @if (showUnitListBtn) {
@@ -107,8 +151,9 @@ import { UnitViewComponent } from '../unit-view/unit-view.component';
               [acpId]="acpId"
               [unitId]="currentUnit.id"
               [bookletId]="sequenceId"
+              [bookletName]="bookletName"
               [embedded]="true"
-              [reviewMode]="isBookletReview"
+              [reviewMode]="isBooklet && canReview"
               [featureConfigOverride]="featureConfig"
             />
           </div>
@@ -142,13 +187,76 @@ import { UnitViewComponent } from '../unit-view/unit-view.component';
                     @if (unit.blockPath?.length) {
                       <small>{{ unit.blockPath?.join(' / ') }} · </small>
                     }
-                    {{ unit.name || unit.id }}
+                    {{ isBooklet ? unitLabel(unit) : unit.name || unit.id }}
                     @if (unit.alias) {
-                      ({{ unit.alias }})
+                      <small> · Alias: {{ unit.alias }}</small>
                     }
                   </span>
                 </button>
               }
+            </div>
+          </div>
+        }
+
+        <!-- Booklet selection popup -->
+        @if (bookletListOpen) {
+          <div class="popup-overlay" (click)="closeBookletList()">
+            <div
+              id="review-booklet-list"
+              class="popup booklet-popup card"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="review-booklet-list-heading"
+              (click)="$event.stopPropagation()"
+            >
+              <div class="popup-header">
+                <h3 id="review-booklet-list-heading">Testheft wechseln</h3>
+                <button
+                  class="btn btn-outline btn-sm"
+                  aria-label="Testheftauswahl schließen"
+                  (click)="closeBookletList()"
+                >
+                  ✕
+                </button>
+              </div>
+              <label class="booklet-search">
+                <span>Testhefte durchsuchen</span>
+                <input
+                  type="search"
+                  placeholder="Bezeichnung oder Booklet-ID"
+                  [(ngModel)]="bookletSearchText"
+                />
+              </label>
+              <div class="booklet-result-count">
+                {{ filteredReviewBooklets.length }} von {{ reviewBooklets.length }} Testheften
+              </div>
+              <div class="booklet-list-items">
+                @for (booklet of filteredReviewBooklets; track booklet.id) {
+                  <button
+                    class="unit-list-item booklet-list-item"
+                    [class.active]="booklet.id === sequenceId"
+                    [attr.aria-current]="booklet.id === sequenceId ? 'page' : null"
+                    (click)="switchBooklet(booklet.id)"
+                  >
+                    <span class="booklet-list-identity">
+                      <span class="booklet-id-row">
+                        @if (booklet.id === sequenceId) {
+                          <span class="current-booklet-check" aria-hidden="true">✓</span>
+                        }
+                        <code class="booklet-id">{{ booklet.id }}</code>
+                      </span>
+                      @if (hasDistinctBookletName(booklet)) {
+                        <span class="booklet-name">{{ bookletDisplayName(booklet) }}</span>
+                      }
+                    </span>
+                    @if (booklet.id === sequenceId) {
+                      <span class="current-booklet-label">Aktuell geöffnet</span>
+                    }
+                  </button>
+                } @empty {
+                  <p class="help-text">Keine Testhefte entsprechen dem Filter.</p>
+                }
+              </div>
             </div>
           </div>
         }
@@ -193,9 +301,37 @@ import { UnitViewComponent } from '../unit-view/unit-view.component';
         flex: 1;
         justify-content: center;
       }
+      .workspace-actions {
+        min-width: 0;
+        flex-wrap: wrap;
+      }
+      .booklet-switcher {
+        min-width: 0;
+        max-width: 100%;
+      }
       .nav-info {
         font-size: 0.95rem;
         color: var(--color-text-secondary);
+      }
+      .sequence-navigation .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: var(--color-border);
+        border-color: var(--color-border);
+        color: var(--color-text-secondary);
+        box-shadow: none;
+      }
+      .selection-position {
+        color: var(--color-text-secondary);
+        font-variant-numeric: tabular-nums;
+      }
+      .selected-booklet-id {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        color: inherit;
+        font-family: inherit;
+        font-size: inherit;
+        font-weight: 700;
       }
 
       .unit-embed {
@@ -240,6 +376,36 @@ import { UnitViewComponent } from '../unit-view/unit-view.component';
         align-items: center;
         margin-bottom: 12px;
       }
+      .popup-header h3 {
+        margin: 0;
+      }
+      .booklet-popup {
+        max-width: 560px;
+      }
+      .booklet-search {
+        display: grid;
+        gap: 6px;
+        margin-bottom: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .booklet-search input {
+        width: 100%;
+        min-width: 0;
+        padding: 8px 10px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        font: inherit;
+      }
+      .booklet-result-count {
+        margin-bottom: 8px;
+        color: var(--color-text-secondary);
+        font-size: 0.82rem;
+      }
+      .booklet-list-items {
+        max-height: min(50vh, 480px);
+        overflow-y: auto;
+      }
       .unit-list-item {
         display: flex;
         align-items: center;
@@ -277,6 +443,52 @@ import { UnitViewComponent } from '../unit-view/unit-view.component';
         background: var(--color-primary);
         color: white;
       }
+      .booklet-list-item {
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .booklet-list-item.active {
+        background: rgba(41, 128, 185, 0.16);
+        box-shadow: inset 4px 0 0 var(--color-primary);
+      }
+      .booklet-list-identity {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+      .booklet-id-row {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .booklet-id {
+        color: inherit;
+        font-family: inherit;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+      .current-booklet-check {
+        color: var(--color-primary);
+        font-size: 1rem;
+        line-height: 1;
+      }
+      .booklet-name {
+        min-width: 0;
+        color: var(--color-text-secondary);
+        font-size: 0.8rem;
+        font-weight: 400;
+        overflow-wrap: anywhere;
+      }
+      .current-booklet-label {
+        flex: 0 0 auto;
+        padding: 3px 7px;
+        border-radius: 999px;
+        background: var(--color-primary);
+        color: white;
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
 
       @media (max-width: 768px) {
         .seq-header {
@@ -295,6 +507,9 @@ import { UnitViewComponent } from '../unit-view/unit-view.component';
           width: 100%;
           justify-content: center;
         }
+        .booklet-switcher {
+          flex-basis: 100%;
+        }
       }
     `,
   ],
@@ -305,17 +520,28 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   acpId = '';
   sequenceId = '';
   sequenceKind?: 'booklet';
+  canReview = false;
   sequence: TaskSequence | null = null;
   currentIndex = 0;
   breadcrumbs: BreadcrumbItem[] = [];
+  reviewBooklets: ReviewBookletOption[] = [];
+  readonly unitLabel = unitLabel;
+
+  get bookletName(): string {
+    return this.sequence ? sequenceLabel(this.sequence) || 'Testheft' : 'Testheft';
+  }
 
   unitListOpen = false;
+  bookletListOpen = false;
+  bookletSearchText = '';
   showCommentBtn = false;
   showDownloadBtn = false;
   showUnitListBtn = true;
   featureConfig: FeatureConfig | null = null;
   isFullscreen = false;
   isFallbackFullscreen = false;
+
+  private readonly destroy$ = new Subject<void>();
 
   private readonly fullscreenChangeHandler = () => {
     this.isFullscreen =
@@ -329,6 +555,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
 
   constructor(
     @Inject(ActivatedRoute) private route: ActivatedRoute,
+    @Inject(Router) private router: Router,
     @Inject(ApiService) private api: ApiService,
     @Inject(ChangeDetectorRef) private changeDetector: ChangeDetectorRef,
   ) {}
@@ -337,36 +564,77 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
     document.addEventListener('fullscreenchange', this.fullscreenChangeHandler);
     document.addEventListener('keydown', this.fullscreenKeyHandler);
     this.acpId = this.route.snapshot.paramMap.get('acpId') || '';
-    this.sequenceId = this.route.snapshot.paramMap.get('sequenceId') || '';
-    this.sequenceKind =
-      this.route.snapshot.queryParamMap?.get('kind') === 'booklet' ? 'booklet' : undefined;
 
-    this.api.getAcpStartPage(this.acpId).subscribe((data) => {
-      const fc: FeatureConfig = data?.featureConfig || {};
-      this.featureConfig = fc;
-      const commentTargets = Array.isArray(fc.commentTargets) ? fc.commentTargets : [];
-      this.showCommentBtn = !!(
-        this.sequenceKind === 'booklet' &&
-        fc.enableCommenting &&
-        commentTargets.includes('BOOKLET')
-      );
-      this.showDownloadBtn = !!fc.allowUnitDownload;
-      this.showUnitListBtn = this.isBookletReview || fc.enableSequenceNavigation !== false;
-    });
+    this.api
+      .getCapabilities(this.acpId)
+      .pipe(
+        catchError(() => of({ canReview: false })),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((capabilities) => {
+        this.canReview = capabilities.canReview === true;
+        this.changeDetector.markForCheck();
+      });
 
-    this.api.getViewSequence(this.acpId, this.sequenceId, this.sequenceKind).subscribe((s) => {
-      this.sequence = this.normalizeSequence(s);
-      this.currentIndex = 0;
-      this.unitListOpen = false;
-      this.breadcrumbs = [
-        { label: 'Assessment Content Pool', route: ['/'] },
-        { label: 'ACP', route: ['/view', this.acpId] },
-        { label: this.sequence.name || 'Aufgabenfolge' },
-      ];
-    });
+    this.api
+      .getAcpStartPage(this.acpId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data) => {
+        const fc: FeatureConfig = data?.featureConfig || {};
+        this.featureConfig = fc;
+        this.reviewBooklets = (Array.isArray(data?.sequences) ? data.sequences : [])
+          .filter(
+            (sequence: any) =>
+              sequence?.kind === 'booklet' &&
+              typeof sequence.id === 'string' &&
+              sequence.id.trim().length > 0,
+          )
+          .map((sequence: any) => ({ ...sequence, id: sequence.id.trim() }))
+          .sort((left: ReviewBookletOption, right: ReviewBookletOption) =>
+            left.id.localeCompare(right.id, 'de', { numeric: true }),
+          );
+        this.applyFeatureConfig(fc);
+      });
+
+    combineLatest([this.route.paramMap, this.route.queryParamMap])
+      .pipe(
+        map(([params, queryParams]) => ({
+          sequenceId: params.get('sequenceId') || '',
+          sequenceKind: queryParams.get('kind') === 'booklet' ? ('booklet' as const) : undefined,
+        })),
+        distinctUntilChanged(
+          (previous, current) =>
+            previous.sequenceId === current.sequenceId &&
+            previous.sequenceKind === current.sequenceKind,
+        ),
+        switchMap(({ sequenceId, sequenceKind }) =>
+          this.api
+            .getViewSequence(this.acpId, sequenceId, sequenceKind)
+            .pipe(map((sequence) => ({ sequence, sequenceId, sequenceKind }))),
+        ),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(({ sequence, sequenceId, sequenceKind }) => {
+        this.sequenceId = sequenceId;
+        this.sequenceKind = sequenceKind;
+        this.currentIndex = 0;
+        this.unitListOpen = false;
+        this.closeBookletList();
+        if (this.featureConfig) this.applyFeatureConfig(this.featureConfig);
+        this.sequence = this.normalizeSequence(sequence);
+        this.breadcrumbs = [
+          { label: 'Assessment Content Pool', route: ['/'] },
+          { label: 'ACP', route: ['/view', this.acpId] },
+          {
+            label: this.isBooklet ? this.bookletName : this.sequence.name || 'Aufgabenfolge',
+          },
+        ];
+      });
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
     document.removeEventListener('fullscreenchange', this.fullscreenChangeHandler);
     document.removeEventListener('keydown', this.fullscreenKeyHandler);
   }
@@ -375,7 +643,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
     return !!this.sequence?.units?.length;
   }
 
-  get isBookletReview(): boolean {
+  get isBooklet(): boolean {
     return this.sequenceKind === 'booklet';
   }
 
@@ -390,6 +658,21 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
 
   get canGoNext(): boolean {
     return this.hasUnits && !!this.sequence && this.currentIndex < this.sequence.units.length - 1;
+  }
+
+  get currentBookletPosition(): number {
+    const index = this.reviewBooklets.findIndex((booklet) => booklet.id === this.sequenceId);
+    return index >= 0 ? index + 1 : 0;
+  }
+
+  get filteredReviewBooklets(): ReviewBookletOption[] {
+    const term = this.bookletSearchText.trim().toLocaleLowerCase('de');
+    if (!term) return this.reviewBooklets;
+    return this.reviewBooklets.filter((booklet) =>
+      [booklet.id, this.bookletDisplayName(booklet)].some((value) =>
+        value.toLocaleLowerCase('de').includes(term),
+      ),
+    );
   }
 
   prev() {
@@ -412,7 +695,36 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
 
   toggleUnitList() {
     if (!this.hasUnits) return;
+    this.closeBookletList();
     this.unitListOpen = !this.unitListOpen;
+  }
+
+  toggleBookletList() {
+    this.unitListOpen = false;
+    this.bookletListOpen = !this.bookletListOpen;
+    if (!this.bookletListOpen) this.bookletSearchText = '';
+  }
+
+  closeBookletList() {
+    this.bookletListOpen = false;
+    this.bookletSearchText = '';
+  }
+
+  switchBooklet(bookletId: string) {
+    if (!bookletId || !this.reviewBooklets.some((booklet) => booklet.id === bookletId)) return;
+    this.closeBookletList();
+    if (bookletId === this.sequenceId) return;
+    void this.router.navigate(['/view', this.acpId, 'sequence', bookletId], {
+      queryParams: { kind: 'booklet' },
+    });
+  }
+
+  bookletDisplayName(booklet: ReviewBookletOption): string {
+    return sequenceLabel(booklet) || booklet.id;
+  }
+
+  hasDistinctBookletName(booklet: ReviewBookletOption): boolean {
+    return this.bookletDisplayName(booklet) !== booklet.id;
   }
 
   async toggleFullscreen() {
@@ -443,6 +755,19 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
     // Download all units in the sequence as ZIP
     const url = `/api/acp/${this.acpId}/files?sequenceId=${encodeURIComponent(this.sequenceId)}&format=zip${this.sequenceKind === 'booklet' ? '&kind=booklet' : ''}`;
     window.open(this.api.appendAuthToken(url), '_blank');
+  }
+
+  private applyFeatureConfig(featureConfig: FeatureConfig) {
+    const commentTargets = Array.isArray(featureConfig.commentTargets)
+      ? featureConfig.commentTargets
+      : [];
+    this.showCommentBtn = !!(
+      this.sequenceKind === 'booklet' &&
+      featureConfig.enableCommenting &&
+      commentTargets.includes('BOOKLET')
+    );
+    this.showDownloadBtn = !!featureConfig.allowUnitDownload;
+    this.showUnitListBtn = this.isBooklet || featureConfig.enableSequenceNavigation !== false;
   }
 
   private normalizeSequence(raw: TaskSequence | null | undefined): TaskSequence {

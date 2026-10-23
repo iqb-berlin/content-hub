@@ -1,5 +1,5 @@
 import { CodingAsText } from '@iqb/responses';
-import { ItemExplorerPerspective } from '../../core/models/api.models';
+import { ItemExplorerPerspective, StudioItemComment } from '../../core/models/api.models';
 
 export type DeepReadonly<T> = T extends (...args: infer _Args) => infer _Result
   ? T
@@ -51,6 +51,7 @@ export interface ExplorerItem {
   variableReadOnlyId?: string;
   useUnitAliasAsPrefix?: boolean;
   metadata: Record<string, string>;
+  studioComments?: StudioItemComment[];
   empiricalDifficulty?: number;
   bista?: number;
   meanTaskDifficulty?: number;

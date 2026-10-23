@@ -54,6 +54,27 @@ describe("Review manifest / #59", () => {
     ).toEqual(manifest);
   });
 
+  it("uses canonical task titles for repeated occurrences while retaining aliases separately", () => {
+    const source = index();
+    Object.assign(source.assessmentParts[0].units[1], {
+      name: "Kanonischer Titel",
+    });
+    const manifest = buildReviewManifest(
+      source,
+      new Map([["review.xml", fixture]]),
+    );
+    const occurrences = manifest.booklets[0].units.filter(
+      (unit) => unit.id === "task-1",
+    );
+    expect(occurrences).toHaveLength(2);
+    expect(occurrences.map((unit) => unit.name)).toEqual([
+      "Kanonischer Titel",
+      "Kanonischer Titel",
+    ]);
+    expect(occurrences[1].alias).toBe("repeat");
+    expect(occurrences[0].occurrenceId).not.toBe(occurrences[1].occurrenceId);
+  });
+
   it("supports multiple booklets and rejects conflicting or duplicate canonical IDs", () => {
     const second = fixture.replace("<Id>review-1</Id>", "<Id>review-2</Id>");
     const definitions = new Map([

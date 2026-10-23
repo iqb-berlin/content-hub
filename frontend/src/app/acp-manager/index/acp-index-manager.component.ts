@@ -18,7 +18,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
   imports: [CommonModule, FormsModule, AcpManagerContextComponent],
   template: `
     <app-acp-manager-context />
-    <div class="page-header"><h1>ACP-Index 0.5</h1></div>
+    <div class="page-header"><h1>ACP-Index 0.6</h1></div>
     @if (acp?.acpIndexValidationStatus) {
       <div
         class="alert"
@@ -285,11 +285,12 @@ export class AcpIndexManagerComponent implements OnInit {
         const index = acp.acpIndex || {};
         this.header = {
           packageId: acp.packageId,
-          version: index['version'] || '',
+          version: typeof index['version'] === 'string' ? index['version'] : '',
           nameDe: this.localized(index['name'], 'de'),
           descriptionDe: this.localized(index['description'], 'de'),
-          maintainerName: index['maintainerName'] || '',
-          maintainerUrl: index['maintainerUrl'] || '',
+          maintainerName:
+            typeof index['maintainerName'] === 'string' ? index['maintainerName'] : '',
+          maintainerUrl: typeof index['maintainerUrl'] === 'string' ? index['maintainerUrl'] : '',
         };
         this.metadataJson = index['metadata'] ? JSON.stringify(index['metadata'], null, 2) : '';
         this.fullIndexJson = JSON.stringify(index, null, 2);

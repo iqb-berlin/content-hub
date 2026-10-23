@@ -5,32 +5,38 @@ import type { ExplorerMetadataColumns } from "./item-explorer-state.service";
 /** Shared field mapping for JSON projections and spreadsheet/CSV columns.
  * Unknown item fields are not released by adding them to a response DTO.
  */
-const FIELD_COLUMNS: Record<string, string> = {
-  unitLabel: "system:unitLabel",
-  unitName: "system:unitLabel",
-  rowNumber: "system:referenceNumber",
-  subIdDisplay: "system:subId",
-  empiricalDifficulty: "system:empiricalDifficulty",
-  meanTaskDifficulty: "system:meanTaskDifficulty",
-  tags: "system:tags",
-  commentCount: "system:comments",
-  bista: "metadata:bista",
-  infit: "metadata:infit",
-  discrimination: "metadata:discrimination",
-  solutionRate: "metadata:solutionRate",
-  textComplexity: "metadata:textComplexity",
-  competenceLevel: "metadata:competenceLevel",
-  itemTimeSeconds: "metadata:itemTimeSeconds",
-  stimulusTimeSeconds: "metadata:stimulusTimeSeconds",
-  booklets: "metadata:booklet",
-  bookletPositions: "metadata:bookletPosition",
-};
+const FIELD_COLUMNS: Record<string, string> = Object.assign(
+  Object.create(null),
+  {
+    unitLabel: "system:unitLabel",
+    unitName: "system:unitLabel",
+    rowNumber: "system:referenceNumber",
+    subIdDisplay: "system:subId",
+    empiricalDifficulty: "system:empiricalDifficulty",
+    meanTaskDifficulty: "system:meanTaskDifficulty",
+    tags: "system:tags",
+    commentCount: "system:comments",
+    bista: "metadata:bista",
+    infit: "metadata:infit",
+    discrimination: "metadata:discrimination",
+    solutionRate: "metadata:solutionRate",
+    textComplexity: "metadata:textComplexity",
+    competenceLevel: "metadata:competenceLevel",
+    itemTimeSeconds: "metadata:itemTimeSeconds",
+    stimulusTimeSeconds: "metadata:stimulusTimeSeconds",
+    booklets: "metadata:booklet",
+    bookletPositions: "metadata:bookletPosition",
+  },
+);
 
-const TIME_COLUMN_ALIASES: Readonly<Record<string, string>> = {
-  "metadata:iqb_time_item": "metadata:itemTimeSeconds",
-  "metadata:iqb_item_time": "metadata:itemTimeSeconds",
-  "metadata:iqb_time_stimulus": "metadata:stimulusTimeSeconds",
-};
+const TIME_COLUMN_ALIASES: Readonly<Record<string, string>> = Object.assign(
+  Object.create(null),
+  {
+    "metadata:iqb_time_item": "metadata:itemTimeSeconds",
+    "metadata:iqb_item_time": "metadata:itemTimeSeconds",
+    "metadata:iqb_time_stimulus": "metadata:stimulusTimeSeconds",
+  },
+);
 
 const normalizeColumn = (column: string): string =>
   TIME_COLUMN_ALIASES[column] || column;
@@ -109,6 +115,9 @@ export class ReviewerColumnPolicy {
   }
 
   allowsField(field: string): boolean {
+    // Studio comments have their own ACP feature flag in the source parser;
+    // table column selection does not control this read-only preview section.
+    if (field === "studioComments") return true;
     return (
       !this.restricted ||
       IDENTITY_FIELDS.has(field) ||
@@ -292,6 +301,17 @@ export class ReviewerColumnPolicy {
         activeState: published,
         publishedState: published,
         draftState: published,
+      };
+    }
+    // Summary endpoints carry labels outside the full review manifest. Keep only
+    // navigation identities when the corresponding booklet column is hidden.
+    if (context === "sequences" && !this.allows("metadata:booklet")) {
+      return {
+        id: value.id,
+        ...(value.kind ? { kind: value.kind } : {}),
+        ...(Array.isArray(value.units)
+          ? { units: this.projectResponse(value.units, "units") }
+          : {}),
       };
     }
     const result: Record<string, unknown> = {};

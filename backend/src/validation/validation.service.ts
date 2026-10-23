@@ -319,9 +319,11 @@ export class ValidationService {
         );
       }, 0) +
       scaleEntries.reduce((count, scaleEntry: any) => {
-        const items = Array.isArray(scaleEntry.scale?.typeParameters?.items)
-          ? scaleEntry.scale.typeParameters.items
-          : [];
+        const items = Array.isArray(scaleEntry.scale?.items)
+          ? scaleEntry.scale.items
+          : Array.isArray(scaleEntry.scale?.typeParameters?.items)
+            ? scaleEntry.scale.typeParameters.items
+            : [];
         return count + items.length;
       }, 0);
 
@@ -434,16 +436,18 @@ export class ValidationService {
     const knownItemIds = this.collectKnownItemIds(units);
 
     for (const scaleEntry of scaleEntries) {
-      const scaleItems = Array.isArray(scaleEntry.scale?.typeParameters?.items)
-        ? scaleEntry.scale.typeParameters.items
-        : [];
+      const scaleItems = Array.isArray(scaleEntry.scale?.items)
+        ? scaleEntry.scale.items
+        : Array.isArray(scaleEntry.scale?.typeParameters?.items)
+          ? scaleEntry.scale.typeParameters.items
+          : [];
       for (const [scaleItemIndex, scaleItem] of scaleItems.entries()) {
         const scaleItemId = this.resolveScaleItemId(scaleItem);
         if (!scaleItemId || !knownItemIds.has(scaleItemId)) {
           issues.push({
             severity: "warning",
             message: `Scale "${scaleEntry.scale?.id || "(unbekannt)"}" references unknown item: ${scaleItemId || "(unbekannt)"}`,
-            path: `${scaleEntry.pathBase}.typeParameters.items[${scaleItemIndex}].id`,
+            path: `${scaleEntry.pathBase}.${Array.isArray(scaleEntry.scale?.items) ? "items" : "typeParameters.items"}[${scaleItemIndex}].id`,
           });
         }
         await progress?.advance({
@@ -811,12 +815,14 @@ export class ValidationService {
   ): Array<{ scale: any; pathBase: string }> {
     const entries: Array<{ scale: any; pathBase: string }> = [];
     for (const [partIndex, part] of assessmentParts.entries()) {
-      const partScales = Array.isArray(part?.scales) ? part.scales : [];
-      for (const [scaleIndex, scale] of partScales.entries()) {
-        entries.push({
-          scale,
-          pathBase: `assessmentParts[${partIndex}].scales[${scaleIndex}]`,
-        });
+      for (const kind of ["baseScales", "scales"]) {
+        const partScales = Array.isArray(part?.[kind]) ? part[kind] : [];
+        for (const [scaleIndex, scale] of partScales.entries()) {
+          entries.push({
+            scale,
+            pathBase: `assessmentParts[${partIndex}].${kind}[${scaleIndex}]`,
+          });
+        }
       }
     }
     return entries;

@@ -16,7 +16,7 @@ export interface AcpExternalCheck {
 }
 
 export interface AcpIndexValidationReport {
-  schemaId: "acp-index@0.5";
+  schemaId: "acp-index@0.6";
   valid: boolean;
   publishable: boolean;
   checkedAt: string;

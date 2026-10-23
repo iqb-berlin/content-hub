@@ -466,7 +466,7 @@ export class ServerApiService {
         : ({ valid: true, publishable: false } as any);
       if (!validation.valid) {
         throw new UnprocessableEntityException({
-          message: "ACP index violates acp-index@0.5",
+          message: "ACP index violates acp-index@0.6",
           report: validation,
         });
       }
@@ -478,7 +478,7 @@ export class ServerApiService {
         settings: {},
         ...(this.acpIndexService
           ? {
-              acpIndexSchemaId: "acp-index@0.5",
+              acpIndexSchemaId: validation.schemaId,
               acpIndexValidationStatus: validation.publishable
                 ? "CONFORMANT"
                 : "CONFORMANT_WITH_ISSUES",

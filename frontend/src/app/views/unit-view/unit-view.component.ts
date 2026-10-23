@@ -23,7 +23,26 @@ import {
   rewriteGeoGebraAssetUrls,
 } from '../../core/utils/geogebra-player-html.util';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/breadcrumb.component';
+import { unitLabel } from '../../shared/unit-label';
 import { ItemCommentThreadComponent } from '../comment-thread/item-comment-thread.component';
+
+import { CommentThreadDrafts } from '../comment-thread/comment-thread-drafts';
+import { AuthService } from '../../core/services/auth.service';
+import { PendingPersonalSessionStorageService } from '../../core/services/pending-personal-session-storage.service';
+import { VoudService } from '../../core/services/voud.service';
+import {
+  CodingVariableLike,
+  mergePlayerSolutionIntoDataParts,
+} from '../item-explorer/item-explorer-solution-prefill';
+import { deriveReviewSolution, ReviewSolution } from './review-solution';
+
+type ReviewCodingAsText = Omit<CodingAsText, 'codes'> & {
+  manualInstructionText?: string;
+  codes: (CodingAsText['codes'][number] & {
+    manualInstructionText?: string;
+    description?: string;
+  })[];
+};
 
 type UnitPagingMode =
   | 'buttons'
@@ -32,6 +51,8 @@ type UnitPagingMode =
   | 'concat-scroll-snap'
   | 'view-all'
   | 'print-ids';
+
+type ReviewCommentScope = 'unit' | 'item' | 'booklet';
 
 @Component({
   selector: 'app-unit-view',
@@ -44,7 +65,7 @@ type UnitPagingMode =
       }
 
       <div class="unit-header">
-        <h1>{{ unit.name }}</h1>
+        <h1>{{ unitDisplayName }}</h1>
         <div class="unit-actions">
           @if (showMetadataToggle && !reviewMode) {
             <button
@@ -67,9 +88,33 @@ type UnitPagingMode =
             </select>
           }
           @if (showDownloadBtn) {
-            <button class="btn btn-outline btn-sm" (click)="downloadUnit()">⬇️ Download</button>
+            <button class="btn btn-outline btn-sm" (click)="downloadUnit()">
+              ⬇️ Download Aufgabe
+            </button>
           }
           @if (reviewMode) {
+            <button
+              class="btn btn-outline btn-sm btn-state"
+              type="button"
+              (click)="toggleSolution()"
+              [disabled]="
+                codingSchemeLoading ||
+                !definitionContent ||
+                !playerSessionId ||
+                solutionRequestPending ||
+                printMode !== 'off'
+              "
+              [attr.aria-pressed]="solutionVisible"
+              [attr.aria-busy]="solutionRequestPending"
+            >
+              {{
+                solutionRequestPending
+                  ? 'Musterlösung wird vorbereitet …'
+                  : solutionVisible
+                    ? 'Musterlösung ausblenden'
+                    : 'Musterlösung anzeigen'
+              }}
+            </button>
             <button
               class="btn btn-outline btn-sm btn-state"
               type="button"
@@ -98,9 +143,12 @@ type UnitPagingMode =
 
       @if (showCommentBtn && !reviewMode) {
         <app-item-comment-thread
+          [drafts]="commentDrafts"
+          [sessionToken]="commentSessionToken"
           [acpId]="acpId"
           [targetType]="'UNIT'"
           [unitId]="unitId"
+          [unitName]="unit.name"
           [enabled]="showCommentBtn"
         />
       }
@@ -241,30 +289,75 @@ type UnitPagingMode =
 
         <div class="panel-content">
           @if (activeTab === 'comments') {
-            @if (showCommentBtn || showBookletCommentBtn) {
-              @if (showCommentBtn && showBookletCommentBtn) {
+            @if (commentScopeOptions.length) {
+              @if (commentScopeOptions.length > 1) {
                 <label class="comment-scope-select">
                   Kommentarziel
-                  <select [(ngModel)]="commentScope">
-                    <option value="unit">Aufgabe</option>
-                    <option value="booklet">Testheft</option>
+                  <select aria-label="Kommentarziel" [(ngModel)]="commentScope">
+                    @for (scope of commentScopeOptions; track scope.value) {
+                      <option [value]="scope.value">{{ scope.label }}</option>
+                    }
                   </select>
                 </label>
               }
-              @if (commentScope === 'booklet' && showBookletCommentBtn) {
+              @if (commentScope === 'item' && showItemCommentBtn) {
+                @if (commentItemsLoading) {
+                  <p class="help-text" role="status">Items werden geladen …</p>
+                } @else if (commentItemsError) {
+                  <p class="alert alert-error" role="alert">{{ commentItemsError }}</p>
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm comment-items-retry"
+                    (click)="loadCommentItems()"
+                  >
+                    Items erneut laden
+                  </button>
+                } @else if (commentItems.length) {
+                  <label class="comment-item-select">
+                    Item
+                    <select aria-label="Item" [(ngModel)]="selectedCommentItemId">
+                      @for (item of commentItems; track item.id) {
+                        <option [value]="item.id">{{ item.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <app-item-comment-thread
+                    [drafts]="commentDrafts"
+                    [sessionToken]="commentSessionToken"
+                    [acpId]="acpId"
+                    [targetType]="'ITEM'"
+                    [unitId]="unitId"
+                    [unitName]="unit.name"
+                    [itemId]="selectedCommentItemId"
+                    [enabled]="showItemCommentBtn"
+                    [initiallyOpen]="true"
+                    [hideToggle]="true"
+                  />
+                } @else {
+                  <p class="help-text" role="status">
+                    Für diese Aufgabe sind keine kommentierbaren Items verfügbar.
+                  </p>
+                }
+              } @else if (commentScope === 'booklet' && showBookletCommentBtn) {
                 <app-item-comment-thread
+                  [drafts]="commentDrafts"
+                  [sessionToken]="commentSessionToken"
                   [acpId]="acpId"
                   [targetType]="'BOOKLET'"
                   [bookletId]="bookletId"
+                  [bookletName]="bookletName"
                   [enabled]="showBookletCommentBtn"
                   [initiallyOpen]="true"
                   [hideToggle]="true"
                 />
               } @else {
                 <app-item-comment-thread
+                  [drafts]="commentDrafts"
+                  [sessionToken]="commentSessionToken"
                   [acpId]="acpId"
                   [targetType]="'UNIT'"
                   [unitId]="unitId"
+                  [unitName]="unit.name"
                   [enabled]="showCommentBtn"
                   [initiallyOpen]="true"
                   [hideToggle]="true"
@@ -284,9 +377,9 @@ type UnitPagingMode =
           @if (activeTab === 'metadata') {
             @if (metadataLoading) {
               <p class="help-text">Aufgabenmetadaten werden geladen...</p>
-            } @else if (unitMetadata.length) {
+            } @else if (visibleUnitMetadata.length) {
               <dl class="meta-dl">
-                @for (entry of unitMetadata; track entry.id) {
+                @for (entry of visibleUnitMetadata; track entry.id) {
                   <dt>{{ entry.label || entry.id }}</dt>
                   <dd>{{ entry.value || '–' }}</dd>
                 }
@@ -300,6 +393,29 @@ type UnitPagingMode =
 
           @if (activeTab === 'coding') {
             <div class="coding-content">
+              @if (reviewMode && !codingSchemeLoading) {
+                <div class="solution-info" role="status">
+                  <strong>{{
+                    solutionVisible ? 'Musterlösung eingeblendet' : 'Musterlösung'
+                  }}</strong>
+                  <p>{{ reviewSolution.prefill.message }}</p>
+                  @if (printMode !== 'off') {
+                    <p>Zum Anzeigen der Musterlösung eine interaktive Seitendarstellung wählen.</p>
+                  }
+                  @if (solutionRequestError) {
+                    <p role="alert">{{ solutionRequestError }}</p>
+                  }
+                  @if (reviewSolution.unavailableVariables.length) {
+                    <p>
+                      Ohne eindeutige Player-Lösung:
+                      {{ reviewSolution.unavailableVariables.join(', ') }}
+                    </p>
+                  }
+                  @if (solutionVisible) {
+                    <p>Beim Ausblenden werden die eigenen Eingaben wiederhergestellt.</p>
+                  }
+                </div>
+              }
               @if (codingSchemeLoading) {
                 <p class="help-text">Kodierung wird geladen...</p>
               } @else if (codingSchemeAsText?.length) {
@@ -312,27 +428,73 @@ type UnitPagingMode =
                     [(ngModel)]="codingFilterText"
                   />
                 </label>
+                @if (!reviewMode && hiddenCodingVariableCount > 0) {
+                  <label class="coding-visibility-toggle">
+                    <input type="checkbox" [(ngModel)]="showAllCodingVariables" />
+                    <span>
+                      Alle Variablen anzeigen
+                      <small>({{ hiddenCodingVariableCount }} weitere)</small>
+                    </span>
+                  </label>
+                }
                 @if (visibleCodingSchemeAsText.length) {
                   @for (coding of visibleCodingSchemeAsText; track coding.id) {
                     <section class="coding-variable">
-                      <h4>{{ coding.label || coding.id }}</h4>
-                      @if ($any(coding).manualInstructionText) {
+                      <h4>
+                        {{ reviewMode ? coding.id : coding.label || coding.id }}
+                        @if (reviewMode && coding.label && coding.label !== coding.id) {
+                          <span> – {{ coding.label }}</span>
+                        }
+                      </h4>
+                      @if (reviewMode && coding.source) {
+                        <p class="help-text">{{ coding.source }}</p>
+                      }
+                      @if (reviewMode && coding.processing) {
+                        <p class="help-text">{{ coding.processing }}</p>
+                      }
+                      @if (coding.manualInstructionText) {
                         <div class="coding-instruction">
                           <strong>Variablenanweisung</strong>
-                          <div [innerHTML]="$any(coding).manualInstructionText"></div>
+                          <div [innerHTML]="coding.manualInstructionText"></div>
                         </div>
                       }
                       <div class="coding-codes">
                         @for (code of coding.codes; track code.id) {
                           <div class="coding-code">
-                            <strong>{{ code.id }}</strong>
-                            <span class="coding-score">({{ code.score }})</span>
+                            <strong>{{ reviewMode ? 'Code ' : '' }}{{ code.id }}</strong>
+                            <span class="coding-score"
+                              >({{ code.score
+                              }}{{
+                                reviewMode ? (code.score === 1 ? ' Punkt' : ' Punkte') : ''
+                              }})</span
+                            >
                             <span>{{ code.label }}</span>
                           </div>
-                          @if ($any(code).manualInstructionText) {
+                          @if (reviewMode && code.description && code.description !== code.label) {
+                            <p>{{ code.description }}</p>
+                          }
+                          @if (code.manualInstructionText) {
                             <div class="coding-instruction code-instruction">
                               <strong>Kodieranweisung</strong>
-                              <div [innerHTML]="$any(code).manualInstructionText"></div>
+                              <div [innerHTML]="code.manualInstructionText"></div>
+                            </div>
+                          }
+                          @if (reviewMode && code.ruleSetDescriptions.length) {
+                            <div class="coding-instruction code-instruction">
+                              <strong>
+                                Kodierregeln:
+                                {{
+                                  code.ruleSetOperatorAnd
+                                    ? 'Alle folgenden Bedingungen müssen'
+                                    : 'Mindestens eine der folgenden Bedingungen muss'
+                                }}
+                                zutreffen
+                              </strong>
+                              <ul>
+                                @for (rule of code.ruleSetDescriptions; track $index) {
+                                  <li>{{ rule }}</li>
+                                }
+                              </ul>
                             </div>
                           }
                         }
@@ -381,6 +543,16 @@ type UnitPagingMode =
         gap: 8px;
         align-items: center;
         flex-wrap: wrap;
+      }
+      .solution-info {
+        margin-bottom: 16px;
+        padding: 12px;
+        border-left: 3px solid var(--color-primary);
+        background: var(--color-bg);
+        overflow-wrap: anywhere;
+      }
+      .solution-info p {
+        margin: 8px 0 0;
       }
       .panel-mode-select {
         min-width: 150px;
@@ -443,12 +615,14 @@ type UnitPagingMode =
 
       .page-nav {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: center;
         gap: 16px;
         margin-top: 12px;
       }
       .page-info {
+        white-space: nowrap;
         font-size: 0.9rem;
         font-weight: 500;
         color: var(--color-text-secondary);
@@ -493,7 +667,8 @@ type UnitPagingMode =
       }
       .panel-resize-handle {
         position: absolute;
-        inset: 0 auto 0 -9px;
+        inset: 0 auto 0 0;
+        z-index: 2;
         width: 14px;
         min-height: 100%;
         padding: 0;
@@ -501,6 +676,8 @@ type UnitPagingMode =
         border-left: 3px solid transparent;
         background: transparent;
         cursor: col-resize;
+        touch-action: none;
+        user-select: none;
       }
       .panel-resize-handle:hover,
       .panel-resize-handle:focus-visible {
@@ -620,6 +797,18 @@ type UnitPagingMode =
         border-radius: 6px;
         font: inherit;
       }
+      .coding-visibility-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: -2px 0 12px;
+        color: var(--color-text-secondary);
+        font-size: 0.82rem;
+        cursor: pointer;
+      }
+      .coding-visibility-toggle input {
+        margin: 0;
+      }
       .coding-variable {
         padding: 12px;
         border: 1px solid var(--color-border);
@@ -640,6 +829,7 @@ type UnitPagingMode =
       }
       .coding-code {
         display: flex;
+        flex-wrap: wrap;
         align-items: baseline;
         gap: 8px;
       }
@@ -648,6 +838,7 @@ type UnitPagingMode =
         font-weight: 600;
       }
       .coding-instruction {
+        overflow-wrap: anywhere;
         margin: 8px 0;
         padding: 8px;
         border-left: 3px solid #f39c12;
@@ -675,7 +866,8 @@ type UnitPagingMode =
         color: var(--color-text-secondary);
         font-size: 0.85rem;
       }
-      .comment-scope-select {
+      .comment-scope-select,
+      .comment-item-select {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -687,10 +879,15 @@ type UnitPagingMode =
       .comment-scope-select select {
         min-width: 130px;
       }
+      .comment-item-select select {
+        flex: 1;
+        min-width: 0;
+      }
 
       @media (max-width: 1100px) {
-        .unit-layout.with-panel {
-          grid-template-columns: 1fr;
+        .unit-layout.with-panel,
+        .unit-layout.review-mode.with-panel {
+          grid-template-columns: minmax(0, 1fr);
         }
         .review-mode .meta-panel.split {
           position: static;
@@ -736,6 +933,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   @Input() unitId = '';
   @Input() partId = '';
   @Input() bookletId = '';
+  @Input() bookletName = '';
   @Input() embedded = false;
   @Input() reviewMode = false;
   @Input() featureConfigOverride: FeatureConfig | null = null;
@@ -748,6 +946,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   // Page navigation
   currentPage = 1;
   totalPages = 1;
+  private playerPageIds: (string | number)[] = [];
+  playerSessionId: string | null = null;
+  private personalResponseSession = false;
 
   // Panel state
   panelVisible = false;
@@ -763,19 +964,86 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   showRichText = false;
   showMetadataToggle = false;
   showCommentBtn = false;
+  showItemCommentBtn = false;
   showBookletCommentBtn = false;
   showDownloadBtn = false;
   showAudioVideoCodingVariables = true;
-  commentScope: 'unit' | 'booklet' = 'unit';
+  hideReviewDeveloperNames = false;
+  commentScope: ReviewCommentScope = 'unit';
+  commentItems: { id: string; label: string }[] = [];
+  commentItemsLoading = false;
+  commentItemsError = '';
+  private readonly selectedCommentItems = new Map<string, string>();
+
+  get selectedCommentItemId(): string {
+    return this.selectedCommentItems.get(`${this.acpId}\u0000${this.unitId}`) || '';
+  }
+
+  set selectedCommentItemId(value: string) {
+    this.selectedCommentItems.set(`${this.acpId}\u0000${this.unitId}`, value);
+  }
+
+  get commentScopeOptions(): { value: ReviewCommentScope; label: string }[] {
+    const scopes: { value: ReviewCommentScope; label: string; enabled: boolean }[] = [
+      { value: 'unit', label: 'Aufgabe', enabled: this.showCommentBtn },
+      { value: 'item', label: 'Item', enabled: this.showItemCommentBtn },
+      { value: 'booklet', label: 'Testheft', enabled: this.showBookletCommentBtn },
+    ];
+    return scopes.filter((scope) => scope.enabled);
+  }
+  readonly commentDrafts = new CommentThreadDrafts();
+  commentSessionToken = 0;
+  private commentIdentity: string | null = null;
+  private authSubscription: Subscription | null = null;
   codingFilterText = '';
+  showAllCodingVariables = false;
   unitMetadata: FilePreviewVomdData['unitProfiles'] = [];
   metadataLoading = false;
   metadataError = '';
-  codingSchemeAsText: CodingAsText[] | null = null;
+  codingSchemeAsText: ReviewCodingAsText[] | null = null;
   codingSchemeLoading = false;
   codingSchemeError = '';
+  solutionVisible = false;
+  solutionRequestPending = false;
+  solutionRequestError = '';
+  reviewSolution: ReviewSolution = deriveReviewSolution([], [], () => undefined);
+  private codingVariables: CodingVariableLike[] = [];
+  private responseData: Record<string, unknown> = {};
+  private responseDataTimes: Record<string, number> = {};
+  private retiringResponseSource: { window: Window; sessionId: string } | null = null;
+  private responseChangedAt: number | null = null;
+  private playerInputDocument: Document | null = null;
+  private solutionRequestTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly playerInputHandler = () => {
+    if (this.reviewMode && !this.solutionVisible && this.printMode === 'off')
+      this.responseChangedAt = Date.now();
+  };
+  private readonly playerControlHandler = (event: Event) => {
+    const key = (event as KeyboardEvent).key;
+    if (
+      event.type === 'keydown' &&
+      !['Enter', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)
+    )
+      return;
+    const selector =
+      '[role="option"], button[role="radio"], button[role="checkbox"], button[role="switch"]' +
+      (event.type === 'keydown' ? ', [role="combobox"]' : '');
+    const control = (event.target as Element | null)?.closest?.(selector);
+    if (!control || control.getAttribute('aria-disabled') === 'true') return;
+    const isArrow = event.type === 'keydown' && key.startsWith('Arrow');
+    if (
+      !isArrow &&
+      (control.getAttribute('aria-selected') === 'true' ||
+        (control.getAttribute('role') === 'radio' &&
+          control.getAttribute('aria-checked') === 'true'))
+    )
+      return;
+    this.playerInputHandler();
+  };
+  private readonly voud = new VoudService();
+  private playerRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private definitionContent: string | null = null;
+  definitionContent: string | null = null;
   private playerFrameReady = false;
   private unitLoadToken = 0;
   private initialized = false;
@@ -783,19 +1051,31 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private featureConfigRequest: Subscription | null = null;
   private unitRequest: Subscription | null = null;
   private metadataRequest: Subscription | null = null;
+  private commentItemsRequest: Subscription | null = null;
+  private commentItemsLoadToken = 0;
   private unitAbortController: AbortController | null = null;
   private panelResizeStartX = 0;
   private panelResizeStartWidth = 0;
+  private panelResizePointerId: number | null = null;
+  private panelResizeHandle: HTMLElement | null = null;
 
   private messageHandler = this.onPlayerMessage.bind(this);
   private resizeHandler = this.onWindowResize.bind(this);
   private panelResizeMoveHandler = (event: PointerEvent) => {
+    if (event.pointerId !== this.panelResizePointerId) return;
+    if (!(event.buttons & 1)) {
+      this.stopReviewPanelResize();
+      return;
+    }
     this.reviewPanelWidth = this.clampReviewPanelWidth(
       this.panelResizeStartWidth + this.panelResizeStartX - event.clientX,
     );
     this.changeDetector.markForCheck();
   };
-  private panelResizeEndHandler = () => this.stopReviewPanelResize();
+  private panelResizeEndHandler = (event: PointerEvent) => {
+    if (event.pointerId === this.panelResizePointerId) this.stopReviewPanelResize();
+  };
+  private panelResizeBlurHandler = () => this.stopReviewPanelResize();
   private autoResizeInterval: any;
 
   constructor(
@@ -803,6 +1083,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     @Inject(ApiService) public api: ApiService,
     @Inject(DomSanitizer) private sanitizer: DomSanitizer,
     @Inject(ChangeDetectorRef) private changeDetector: ChangeDetectorRef,
+    @Inject(AuthService) private auth: AuthService,
+    @Inject(PendingPersonalSessionStorageService)
+    private personalSession: PendingPersonalSessionStorageService,
   ) {}
 
   get printMode(): 'off' | 'on' | 'on-with-ids' {
@@ -811,12 +1094,38 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     return 'off';
   }
 
-  get visibleCodingSchemeAsText(): CodingAsText[] {
-    const codings = this.codingSchemeAsText || [];
-    const hideAudioVideoVariables = this.reviewMode || !this.showAudioVideoCodingVariables;
-    const visibleCodings = hideAudioVideoVariables
-      ? codings.filter((coding) => !this.isAudioVideoCodingVariable(coding))
-      : codings;
+  get visibleUnitMetadata(): FilePreviewVomdData['unitProfiles'] {
+    if (!this.reviewMode || !this.hideReviewDeveloperNames) return this.unitMetadata;
+    return this.unitMetadata.filter((entry) => {
+      const normalize = (value: string) =>
+        value
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z]/g, '');
+      const id = normalize(entry.id);
+      const label = normalize(entry.label);
+      return (
+        !['iqbauthor', 'author', 'developer', 'creator'].includes(id) &&
+        !/^(aufgaben)?(entwickler(in(nen)?)?|autor(in(nen)?)?|author|developer)(name|kurzel)?$/.test(
+          label,
+        )
+      );
+    });
+  }
+
+  get visibleCodingSchemeAsText(): ReviewCodingAsText[] {
+    const visibleCodings =
+      !this.reviewMode && this.showAllCodingVariables
+        ? this.availableCodingSchemeAsText
+        : this.availableCodingSchemeAsText.filter((coding) =>
+            this.isRelevantCodingVariable(coding),
+          );
+    if (this.reviewMode) {
+      visibleCodings.sort((left, right) =>
+        left.id.localeCompare(right.id, 'de', { numeric: true }),
+      );
+    }
     const term = this.codingFilterText.trim().toLowerCase();
     if (!term) return visibleCodings;
     return visibleCodings.filter((coding) => {
@@ -827,7 +1136,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         ...coding.codes.flatMap((code) => [
           code.id,
           code.label,
+          code.description,
           (code as any).manualInstructionText,
+          ...(this.reviewMode ? code.ruleSetDescriptions : []),
         ]),
       ]
         .filter(Boolean)
@@ -837,11 +1148,40 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  get hiddenCodingVariableCount(): number {
+    return this.availableCodingSchemeAsText.filter(
+      (coding) => !this.isRelevantCodingVariable(coding),
+    ).length;
+  }
+
+  get unitDisplayName(): string {
+    return this.unit ? (this.reviewMode ? unitLabel(this.unit) : this.unit.name) : '';
+  }
+
+  private get availableCodingSchemeAsText(): ReviewCodingAsText[] {
+    const codings = this.codingSchemeAsText || [];
+    const hideAudioVideoVariables = this.reviewMode || !this.showAudioVideoCodingVariables;
+    return hideAudioVideoVariables
+      ? codings.filter((coding) => !this.isAudioVideoCodingVariable(coding))
+      : codings;
+  }
+
   get resolvedPanelMode(): 'split' | 'overlay' {
     return this.isNarrowLayout ? 'overlay' : this.panelMode;
   }
 
   ngOnInit() {
+    this.authSubscription = this.auth.currentUser$.subscribe(() => {
+      const identity = this.personalSession.resolveIdentityFromToken(this.auth.getToken());
+      if (identity !== this.commentIdentity) {
+        this.commentDrafts.clear();
+        this.selectedCommentItems.clear();
+        this.commentIdentity = identity;
+        this.commentSessionToken += 1;
+        this.loadCommentItems();
+        this.changeDetector.markForCheck();
+      }
+    });
     this.acpId = this.acpId || this.route.snapshot.paramMap.get('acpId') || '';
     this.unitId = this.unitId || this.route.snapshot.paramMap.get('unitId') || '';
     this.partId = this.partId || this.route.snapshot.paramMap.get('partId') || '';
@@ -883,42 +1223,107 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private applyFeatureConfig(featureConfig: FeatureConfig) {
     this.showMetadata = this.reviewMode || !!featureConfig.showMetadata;
     this.showCodingScheme = this.reviewMode || !!featureConfig.showCodingScheme;
-    this.showRichText = !!featureConfig.showRichText;
+    this.showRichText = !this.reviewMode && !!featureConfig.showRichText;
     this.showMetadataToggle = this.showMetadata || this.showCodingScheme || this.showRichText;
 
     const commentTargets = Array.isArray(featureConfig.commentTargets)
       ? featureConfig.commentTargets
       : [];
     this.showCommentBtn = !!(featureConfig.enableCommenting && commentTargets.includes('UNIT'));
+    this.showItemCommentBtn = !!(
+      this.reviewMode &&
+      featureConfig.enableCommenting &&
+      commentTargets.includes('ITEM')
+    );
     this.showBookletCommentBtn = !!(
       this.reviewMode &&
       this.bookletId &&
       featureConfig.enableCommenting &&
       commentTargets.includes('BOOKLET')
     );
-    if (!this.showCommentBtn && this.showBookletCommentBtn) this.commentScope = 'booklet';
-    else if (!this.showBookletCommentBtn) this.commentScope = 'unit';
+    if (!this.commentScopeOptions.some((scope) => scope.value === this.commentScope)) {
+      this.commentScope = this.commentScopeOptions[0]?.value || 'unit';
+    }
     this.showDownloadBtn = !!featureConfig.allowUnitDownload;
     this.showAudioVideoCodingVariables = featureConfig.showAudioVideoCodingVariables !== false;
+    this.hideReviewDeveloperNames = featureConfig.hideReviewDeveloperNames === true;
 
     if (this.reviewMode) this.activeTab = 'comments';
     else if (this.showMetadata) this.activeTab = 'metadata';
     else if (this.showCodingScheme) this.activeTab = 'coding';
     else if (this.showRichText) this.activeTab = 'richtext';
     if (!this.showMetadataToggle) this.panelVisible = false;
+    this.loadCommentItems();
+  }
+
+  private resetCommentItems() {
+    this.commentItemsLoadToken += 1;
+    this.commentItemsRequest?.unsubscribe();
+    this.commentItemsRequest = null;
+    this.commentItems = [];
+    this.commentItemsLoading = false;
+    this.commentItemsError = '';
+  }
+
+  loadCommentItems() {
+    this.resetCommentItems();
+    if (!this.showItemCommentBtn || !this.unit || this.unit.id !== this.unitId) return;
+    const token = this.commentItemsLoadToken;
+    const unitId = this.unitId;
+    const names = new Map(
+      (this.unit.items || []).map((item) => [
+        String(item.id || '').trim(),
+        typeof item.name === 'string' ? item.name.trim() : '',
+      ]),
+    );
+    this.commentItemsLoading = true;
+    // Counts include every canonical target, even without comments, and do not
+    // require Item Explorer access. Raw unit metadata alone may omit file items.
+    this.commentItemsRequest = this.api.getItemCommentCounts(this.acpId).subscribe({
+      next: (snapshot) => {
+        if (token !== this.commentItemsLoadToken) return;
+        const ids = new Set(
+          snapshot.counts.filter((item) => item.unitId === unitId).map((item) => item.itemId),
+        );
+        this.commentItems = [...ids]
+          .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
+          .map((id) => ({
+            id,
+            label: names.get(id) && names.get(id) !== id ? `${names.get(id)} (${id})` : id,
+          }));
+        if (!ids.has(this.selectedCommentItemId)) {
+          this.selectedCommentItemId = this.commentItems[0]?.id || '';
+        }
+        this.commentItemsLoading = false;
+        this.changeDetector.markForCheck();
+      },
+      error: () => {
+        if (token !== this.commentItemsLoadToken) return;
+        this.commentItemsLoading = false;
+        this.commentItemsError = 'Items für die Kommentierung konnten nicht geladen werden.';
+        this.changeDetector.markForCheck();
+      },
+    });
   }
 
   private loadUnit() {
+    this.stopReviewPanelResize();
     if (!this.acpId || !this.unitId) return;
     const requestToken = ++this.unitLoadToken;
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
+    this.resetCommentItems();
     this.unitAbortController?.abort();
     this.unitAbortController = new AbortController();
     this.stopAutoResize();
     this.unit = null;
     this.playerSrcDoc = null;
     this.playerFrameReady = false;
+    this.playerSessionId = null;
+    this.playerPageIds = [];
+    this.personalResponseSession = false;
+    this.currentPage = 1;
+    this.totalPages = 1;
     this.definitionContent = null;
     this.unitMetadata = [];
     this.metadataLoading = false;
@@ -926,13 +1331,24 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.codingSchemeAsText = null;
     this.codingSchemeLoading = false;
     this.codingSchemeError = '';
+    this.codingVariables = [];
+    this.solutionVisible = false;
+    this.responseData = {};
+    this.responseDataTimes = {};
+    this.retiringResponseSource = null;
+    this.responseChangedAt = null;
+    this.solutionRequestError = '';
+    this.reviewSolution = deriveReviewSolution([], [], () => undefined);
+    this.clearPlayerRefresh();
     this.codingFilterText = '';
+    this.showAllCodingVariables = false;
     const unitRequest = this.partId
       ? this.api.getViewUnit(this.acpId, this.unitId, this.partId)
       : this.api.getViewUnit(this.acpId, this.unitId);
     this.unitRequest = unitRequest.subscribe((u) => {
       if (requestToken !== this.unitLoadToken) return;
       this.unit = u;
+      this.loadCommentItems();
       this.breadcrumbs = [
         { label: 'Assessment Content Pool', route: ['/'] },
         { label: 'ACP', route: ['/view', this.acpId] },
@@ -958,11 +1374,17 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.authSubscription?.unsubscribe();
+    this.commentDrafts.clear();
+    this.selectedCommentItems.clear();
+    this.resetCommentItems();
     this.unitLoadToken += 1;
+    this.retiringResponseSource = null;
     this.featureConfigRequest?.unsubscribe();
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
     this.unitAbortController?.abort();
+    this.clearPlayerRefresh();
     this.stopReviewPanelResize();
     window.removeEventListener('resize', this.resizeHandler);
     window.removeEventListener('message', this.messageHandler);
@@ -971,44 +1393,164 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   onPlayerLoaded() {
     if (!this.unit || !this.playerFrame?.nativeElement?.contentWindow) return;
-    this.playerFrameReady = true;
+    this.observePlayerInputs();
     this.startPlayerIfReady();
   }
 
   onPagingModeChange() {
     const src = this.playerSrcDoc;
     if (!src) return;
+    this.clearPlayerRefresh();
+    const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
+    // ASPECT flushes its last response on unload. Retain this exact source/session
+    // while the replacement frame starts, without accepting synthetic solution data.
+    this.retiringResponseSource =
+      this.personalResponseSession && frameWindow && this.playerSessionId
+        ? { window: frameWindow, sessionId: this.playerSessionId }
+        : null;
+    if (this.printMode !== 'off') this.solutionVisible = false;
     this.playerFrameReady = false;
+    this.playerSessionId = null;
+    if (!this.reviewMode) this.initializePageNavigation();
     this.playerSrcDoc = null;
-    setTimeout(() => {
+    this.changeDetector.markForCheck();
+    this.playerRefreshTimer = setTimeout(() => {
+      this.playerRefreshTimer = null;
       this.playerSrcDoc = src;
+      this.changeDetector.markForCheck();
     }, 50);
   }
 
-  private onPlayerMessage(event: MessageEvent) {
-    const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
-    if (frameWindow && event.source !== frameWindow) return;
+  toggleSolution() {
+    if (
+      !this.reviewMode ||
+      !this.playerSessionId ||
+      this.solutionRequestPending ||
+      this.printMode !== 'off'
+    )
+      return;
+    this.activeTab = 'coding';
+    this.reviewPanelCollapsed = false;
+    this.changeDetector.markForCheck();
+    if (!this.solutionVisible && this.reviewSolution.prefill.status !== 'available') return;
+    this.solutionRequestError = '';
+    if (!this.solutionVisible) {
+      // Material choice controls commit their form value on blur. Moving focus
+      // into the parent document does not consistently blur them in every browser.
+      (this.playerInputDocument?.activeElement as HTMLElement | null)?.blur?.();
+    }
+    if (!this.solutionVisible && this.responseChangedAt !== null) {
+      // Input reports are debounced by the player. Keep the original frame until
+      // it acknowledges the last interaction, including browsers without unload reports.
+      this.solutionRequestPending = true;
+      this.solutionRequestTimer = setTimeout(() => {
+        this.cancelSolutionRequest();
+        this.solutionRequestError =
+          'Der aktuelle Antwortstand wurde noch nicht vom Player gemeldet. Bitte erneut versuchen.';
+        this.changeDetector.markForCheck();
+      }, 2500);
+      return;
+    }
+    this.applySolutionToggle();
+  }
 
+  private applySolutionToggle() {
+    this.solutionVisible = !this.solutionVisible;
+    this.onPagingModeChange();
+  }
+
+  private clearPlayerRefresh() {
+    this.cancelSolutionRequest();
+    this.stopObservingPlayerInputs();
+    if (this.playerRefreshTimer) clearTimeout(this.playerRefreshTimer);
+    this.playerRefreshTimer = null;
+  }
+
+  private cancelSolutionRequest() {
+    if (this.solutionRequestTimer) clearTimeout(this.solutionRequestTimer);
+    this.solutionRequestTimer = null;
+    this.solutionRequestPending = false;
+  }
+
+  private observePlayerInputs() {
+    this.stopObservingPlayerInputs();
+    if (!this.reviewMode) return;
+    const doc = this.playerFrame?.nativeElement?.contentDocument;
+    if (!doc) return;
+    this.playerInputDocument = doc;
+    doc.addEventListener('input', this.playerInputHandler, true);
+    doc.addEventListener('click', this.playerControlHandler, true);
+    doc.addEventListener('keydown', this.playerControlHandler, true);
+  }
+
+  private stopObservingPlayerInputs() {
+    this.playerInputDocument?.removeEventListener('input', this.playerInputHandler, true);
+    this.playerInputDocument?.removeEventListener('click', this.playerControlHandler, true);
+    this.playerInputDocument?.removeEventListener('keydown', this.playerControlHandler, true);
+    this.playerInputDocument = null;
+  }
+
+  private onPlayerMessage(event: MessageEvent) {
     const msg = event.data;
     if (!msg || typeof msg !== 'object') return;
+    const retiringSource = this.retiringResponseSource;
+    if (
+      retiringSource &&
+      event.source === retiringSource.window &&
+      msg.sessionId === retiringSource.sessionId
+    ) {
+      if (msg.type === 'vopStateChangedNotification') this.captureResponseData(msg);
+      return;
+    }
+    const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
+    if (!frameWindow || event.source !== frameWindow) return;
+
+    if (msg.sessionId !== undefined && msg.sessionId !== this.playerSessionId) return;
 
     switch (msg.type) {
+      case 'vopReadyNotification': {
+        this.observePlayerInputs();
+        this.playerFrameReady = true;
+        this.startPlayerIfReady();
+        break;
+      }
       case 'vopStateChangedNotification': {
-        if (Array.isArray(msg.playerState?.validPages) && msg.playerState.validPages.length > 0) {
-          this.totalPages = msg.playerState.validPages.length;
+        if (
+          this.reviewMode &&
+          this.playerSessionId &&
+          msg.sessionId === this.playerSessionId &&
+          !this.solutionVisible &&
+          this.printMode === 'off'
+        ) {
+          this.captureResponseData(msg);
+          if (
+            this.responseChangedAt !== null &&
+            typeof msg.unitState?.dataParts?.elementCodes === 'string' &&
+            this.playerMessageTime(msg.timeStamp) >= this.responseChangedAt
+          ) {
+            this.responseChangedAt = null;
+            if (this.solutionRequestPending) this.applySolutionToggle();
+          }
         }
-        if (typeof msg.playerState?.currentPage === 'number') {
-          this.currentPage = this.clampPage(msg.playerState.currentPage + 1);
-        } else {
-          this.currentPage = this.clampPage(this.currentPage);
+        const pages = msg.playerState?.validPages;
+        if (pages && typeof pages === 'object') {
+          // Verona 6 uses ordered { id, label } entries; older players use a map.
+          this.playerPageIds = Array.isArray(pages)
+            ? pages
+                .map((page: any) => page?.id ?? page)
+                .filter(
+                  (id: unknown): id is string | number =>
+                    typeof id === 'string' || (typeof id === 'number' && Number.isFinite(id)),
+                )
+            : Object.keys(pages);
+          this.totalPages = this.playerPageIds.length;
         }
+        this.updateCurrentPage(msg.playerState?.currentPage);
         break;
       }
 
       case 'vopPageNavigationCommand': {
-        if (typeof msg.target === 'number') {
-          this.currentPage = this.clampPage(msg.target + 1);
-        }
+        this.updateCurrentPage(msg.target);
         break;
       }
 
@@ -1018,7 +1560,38 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         }
         break;
       }
+      default:
+        return;
     }
+    this.changeDetector.markForCheck();
+  }
+
+  private captureResponseData(msg: Record<string, any>) {
+    const dataParts = msg['unitState']?.dataParts;
+    if (!dataParts || typeof dataParts !== 'object' || Array.isArray(dataParts)) return;
+    const time = this.playerMessageTime(msg['timeStamp']);
+    for (const [key, value] of Object.entries(dataParts)) {
+      if (typeof value !== 'string') continue;
+      if (Number.isFinite(time) && time < (this.responseDataTimes[key] ?? -Infinity)) continue;
+      this.responseData[key] = value;
+      if (Number.isFinite(time)) this.responseDataTimes[key] = time;
+    }
+  }
+
+  private playerMessageTime(value: unknown): number {
+    return typeof value === 'number'
+      ? Number.isFinite(value)
+        ? value
+        : Number.NaN
+      : Date.parse(String(value));
+  }
+
+  private updateCurrentPage(id: unknown) {
+    const index = this.playerPageIds.findIndex((pageId) => String(pageId) === String(id));
+    if (index >= 0) this.currentPage = index + 1;
+    else if (!this.playerPageIds.length && typeof id === 'number' && Number.isInteger(id))
+      this.currentPage = this.clampPage(id + 1);
+    else this.currentPage = this.clampPage(this.currentPage);
   }
 
   private sendToPlayer(msg: any) {
@@ -1027,15 +1600,16 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   navigateToPage(page: number) {
     if (this.pagingMode !== 'buttons') return;
-    if (!this.playerFrameReady) return;
+    if (!this.playerSessionId) return;
 
     const target = Math.trunc(page);
-    if (target < 1 || target > this.totalPages) return;
+    if (!Number.isFinite(target) || target < 1 || target > this.totalPages) return;
 
     this.currentPage = target;
     this.sendToPlayer({
       type: 'vopPageNavigationCommand',
-      target: target - 1,
+      sessionId: this.playerSessionId,
+      target: this.playerPageIds[target - 1] ?? String(target - 1),
     });
   }
 
@@ -1045,17 +1619,27 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   toggleReviewPanel() {
+    this.stopReviewPanelResize();
     this.reviewPanelCollapsed = !this.reviewPanelCollapsed;
   }
 
   startReviewPanelResize(event: PointerEvent) {
-    if (!this.reviewMode || this.isNarrowLayout) return;
+    if (!this.reviewMode || this.isNarrowLayout || event.button !== 0 || event.isPrimary === false)
+      return;
     event.preventDefault();
-    (event.currentTarget as HTMLElement | null)?.focus();
+    this.stopReviewPanelResize();
+    const handle = event.currentTarget as HTMLElement;
+    handle.focus();
+    this.panelResizePointerId = event.pointerId;
+    this.panelResizeHandle = handle;
     this.panelResizeStartX = event.clientX;
     this.panelResizeStartWidth = this.reviewPanelWidth;
-    document.addEventListener('pointermove', this.panelResizeMoveHandler);
-    document.addEventListener('pointerup', this.panelResizeEndHandler, { once: true });
+    handle.addEventListener('lostpointercapture', this.panelResizeEndHandler);
+    handle.setPointerCapture?.(event.pointerId);
+    window.addEventListener('pointermove', this.panelResizeMoveHandler, true);
+    window.addEventListener('pointerup', this.panelResizeEndHandler, true);
+    window.addEventListener('pointercancel', this.panelResizeEndHandler, true);
+    window.addEventListener('blur', this.panelResizeBlurHandler);
   }
 
   resizeReviewPanelWithKeyboard(event: KeyboardEvent) {
@@ -1092,10 +1676,12 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .then((html) => {
         if (token !== this.unitLoadToken) return;
         this.playerSrcDoc = this.sanitizer.bypassSecurityTrustHtml(rewriteGeoGebraAssetUrls(html));
+        this.changeDetector.markForCheck();
       })
       .catch(() => {
         if (token !== this.unitLoadToken) return;
         this.playerSrcDoc = null;
+        this.changeDetector.markForCheck();
       });
   }
 
@@ -1115,7 +1701,10 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .then((definition) => {
         if (token !== this.unitLoadToken) return;
         this.definitionContent = definition;
+        this.updateReviewSolution();
+        this.initializePageNavigation();
         this.startPlayerIfReady();
+        this.changeDetector.markForCheck();
       })
       .catch(() => {
         if (token !== this.unitLoadToken) return;
@@ -1177,6 +1766,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         if (token !== this.unitLoadToken) return;
         this.codingSchemeLoading = false;
         this.codingSchemeError = 'Kodierung konnte nicht geladen werden.';
+        this.changeDetector.markForCheck();
       });
   }
 
@@ -1191,8 +1781,15 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
           ? (codingScheme as any).variableCodings
           : [];
       const codingSchemeAsText = CodingSchemeTextFactory.asText(variableCodings);
-      codingSchemeAsText.forEach((coding) => {
-        const rawVariable = variableCodings.find((variable: any) => variable.id === coding.id);
+      if (
+        codingSchemeAsText.some((coding) => typeof coding.id !== 'string' || !coding.id.trim()) ||
+        new Set(codingSchemeAsText.map((coding) => coding.id.toLowerCase())).size !==
+          codingSchemeAsText.length
+      ) {
+        throw new Error('Coding variables require a non-empty ID');
+      }
+      codingSchemeAsText.forEach((coding, index) => {
+        const rawVariable = variableCodings[index];
         if (!rawVariable) return;
         (coding as any).manualInstructionText = rawVariable.manualInstruction;
         coding.codes.forEach((code) => {
@@ -1200,30 +1797,79 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
             (candidate: any) =>
               (candidate.id === null ? 'null' : candidate.id?.toString(10)) === code.id,
           );
-          if (rawCode) (code as any).manualInstructionText = rawCode.manualInstruction;
+          code.ruleSetDescriptions ??= [];
+          if (rawCode) {
+            (code as any).manualInstructionText = rawCode.manualInstruction;
+            (code as any).description = rawCode.label;
+            if (
+              !code.ruleSetDescriptions.length &&
+              ['RESIDUAL', 'RESIDUAL_AUTO'].includes(rawCode.type)
+            ) {
+              code.ruleSetDescriptions = ['Alle anderen Antworten.'];
+            }
+          }
         });
       });
       this.codingSchemeAsText = codingSchemeAsText;
+      this.codingVariables = variableCodings;
+      this.updateReviewSolution();
       this.codingSchemeError = '';
     } catch {
       this.codingSchemeAsText = null;
+      this.codingVariables = [];
+      this.updateReviewSolution();
       this.codingSchemeError = 'Kodierung konnte nicht gelesen werden.';
     } finally {
       this.codingSchemeLoading = false;
+      this.changeDetector.markForCheck();
     }
   }
 
+  private updateReviewSolution() {
+    const relevantVariables = this.codingVariables.filter((_, index) => {
+      const coding = this.codingSchemeAsText?.[index];
+      return (
+        coding && !this.isAudioVideoCodingVariable(coding) && this.isRelevantCodingVariable(coding)
+      );
+    });
+    this.reviewSolution = deriveReviewSolution(
+      this.codingVariables,
+      relevantVariables,
+      (variable) => {
+        if (!this.definitionContent) return undefined;
+        for (const id of [variable.alias, variable.id]) {
+          if (typeof id !== 'string' || !id.trim()) continue;
+          const target = this.voud.resolvePlayerResponseTarget(this.definitionContent, id);
+          // The supported ASPECT player does not reliably render scalar toggle-button
+          // prefills. Keep these variables in the readable coding fallback.
+          if (target && target.elementType.trim().toLowerCase() !== 'toggle-button') return target;
+        }
+        return undefined;
+      },
+    );
+  }
+
   private startPlayerIfReady() {
-    if (!this.playerFrameReady || !this.definitionContent || !this.unit) return;
+    if (!this.playerFrameReady || !this.definitionContent || !this.unit || this.playerSessionId)
+      return;
 
     this.startSessionCounter += 1;
+    this.playerSessionId = `review-${this.unitId}-${this.startSessionCounter}`;
+    this.personalResponseSession =
+      this.reviewMode && !this.solutionVisible && this.printMode === 'off';
     this.sendToPlayer({
       type: 'vopStartCommand',
-      sessionId: `review-${this.unitId}-${this.startSessionCounter}`,
+      sessionId: this.playerSessionId,
       unitDefinition: this.definitionContent,
-      unitState: { dataParts: {} },
+      unitState: {
+        dataParts:
+          this.solutionVisible && this.reviewSolution.prefill.status === 'available'
+            ? mergePlayerSolutionIntoDataParts({}, this.reviewSolution.prefill.responses)
+            : { ...this.responseData },
+      },
       playerConfig: {
         stateReportPolicy: 'none',
+        startPage: String(this.playerPageIds[this.currentPage - 1] ?? this.currentPage - 1),
         pagingMode:
           this.pagingMode === 'view-all' || this.pagingMode === 'print-ids'
             ? 'concat-scroll'
@@ -1235,9 +1881,27 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       },
     });
 
-    this.currentPage = 1;
-    this.totalPages = 1;
     this.applyPrintModeLayout();
+  }
+
+  private initializePageNavigation() {
+    this.currentPage = 1;
+    this.playerPageIds = [];
+    try {
+      const pages = JSON.parse(this.definitionContent || '').pages;
+      if (Array.isArray(pages)) {
+        // ASPECT numbers scroll pages separately from always-visible pages.
+        this.playerPageIds = pages
+          .filter((page) => {
+            const value = page?.alwaysVisible;
+            return value !== true && value !== 1 && String(value).trim().toLowerCase() !== 'true';
+          })
+          .map((_, index) => String(index));
+      }
+    } catch {
+      // Other players may use a different definition format and report their pages themselves.
+    }
+    this.totalPages = Math.max(1, this.playerPageIds.length);
   }
 
   private applyPrintModeLayout() {
@@ -1259,6 +1923,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private onWindowResize() {
+    this.stopReviewPanelResize();
     this.isNarrowLayout = window.innerWidth <= 1100;
     this.reviewPanelWidth = this.clampReviewPanelWidth(this.reviewPanelWidth);
   }
@@ -1274,14 +1939,30 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     );
   }
 
+  private isRelevantCodingVariable(coding: CodingAsText): boolean {
+    return Boolean(
+      coding.codes.length || coding.hasManualInstruction || (coding as any).manualInstructionText,
+    );
+  }
+
   private clampReviewPanelWidth(width: number): number {
     const maxWidth = Math.min(720, Math.max(320, window.innerWidth * 0.6));
     return Math.round(Math.min(maxWidth, Math.max(320, width)));
   }
 
   private stopReviewPanelResize() {
-    document.removeEventListener('pointermove', this.panelResizeMoveHandler);
-    document.removeEventListener('pointerup', this.panelResizeEndHandler);
+    const handle = this.panelResizeHandle;
+    const pointerId = this.panelResizePointerId;
+    this.panelResizePointerId = null;
+    this.panelResizeHandle = null;
+    window.removeEventListener('pointermove', this.panelResizeMoveHandler, true);
+    window.removeEventListener('pointerup', this.panelResizeEndHandler, true);
+    window.removeEventListener('pointercancel', this.panelResizeEndHandler, true);
+    window.removeEventListener('blur', this.panelResizeBlurHandler);
+    handle?.removeEventListener('lostpointercapture', this.panelResizeEndHandler);
+    if (pointerId !== null && handle?.hasPointerCapture?.(pointerId)) {
+      handle.releasePointerCapture(pointerId);
+    }
   }
 
   private startAutoResize() {

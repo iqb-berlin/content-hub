@@ -52,7 +52,9 @@ export function getIndexUnits(index: unknown): any[] {
 export function getIndexScales(index: unknown): any[] {
   const obj = asRecord(index);
   const partScales = getAssessmentParts(obj).flatMap((part) =>
-    asArray(part?.scales),
+    part?.baseScales !== undefined || part?.derivedScales !== undefined
+      ? [...asArray(part?.baseScales), ...asArray(part?.derivedScales)]
+      : asArray(part?.scales),
   );
   return partScales.length ? partScales : dedupeById(asArray(obj.scales));
 }
@@ -86,7 +88,7 @@ export function findUnitInPart(
 
 /**
  * Runtime view of ACP index:
- * - prefers assessmentParts units/scales (ACP 0.5)
+ * - prefers assessmentParts units and both scale types (ACP 0.6)
  * - keeps legacy top-level units/scales for compatibility
  */
 export function toRuntimeAcpIndex(index: unknown): UnknownRecord {

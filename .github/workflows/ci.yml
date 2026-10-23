@@ -25,7 +25,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run lint
-      - run: npx prettier --check "src/**/*.ts" "test/**/*.ts"
+      - run: npm run format:check
 
   frontend-lint:
     name: Frontend Lint & Format
@@ -42,7 +42,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
-      - run: npx prettier --check "src/**/*.{ts,html,scss}"
+      - run: npm run format:check
 
   release-metadata:
     name: Release Metadata
@@ -69,7 +69,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
-      - run: npm run test
+      - run: npm run test:cov -- --runInBand
+      - name: Upload backend coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+          if-no-files-found: warn
+          retention-days: 14
 
   backend-e2e:
     name: Backend E2E Tests
@@ -247,7 +255,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - run: npm run test -- --run
+      - run: npm run test:cov
+      - name: Upload frontend coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          if-no-files-found: warn
+          retention-days: 14
 
   browser-e2e:
     name: Browser E2E

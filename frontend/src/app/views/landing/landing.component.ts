@@ -537,7 +537,7 @@ export class LandingComponent implements OnInit {
       const mapped: PublicAcp = {
         id: acp.id,
         name: acp.name,
-        description: acp.description,
+        description: acp.description ?? undefined,
         accessModel: 'ADMIN',
         requiresLogin: false,
       };
@@ -566,7 +566,7 @@ export class LandingComponent implements OnInit {
       const mapped: PublicAcp = {
         id: acp.id,
         name: acp.name,
-        description: acp.description,
+        description: acp.description ?? undefined,
         accessModel: 'REGISTERED',
         requiresLogin: false,
       };

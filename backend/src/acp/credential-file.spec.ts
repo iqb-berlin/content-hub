@@ -1,3 +1,4 @@
+import { BadRequestException } from "@nestjs/common";
 import { parseCredentialFile } from "./credential-file";
 const password = "Strong,Password123!";
 describe("credential file parsing", () => {
@@ -43,6 +44,7 @@ describe("credential file parsing", () => {
       parseCredentialFile(Buffer.from(text));
       throw new Error("expected failure");
     } catch (error) {
+      if (!(error instanceof BadRequestException)) throw error;
       expect(error.getStatus()).toBe(400);
       expect(JSON.stringify(error.getResponse())).not.toContain(
         "StrongPassword123!",
@@ -89,9 +91,12 @@ describe("credential file parsing", () => {
       parseCredentialFile(Buffer.from("\n\nusername;password\nalice;\n"));
       throw new Error("expected failure");
     } catch (error) {
-      expect(error.getResponse().errors).toEqual([
-        { line: 4, message: "Passwort fehlt" },
-      ]);
+      if (!(error instanceof BadRequestException)) throw error;
+      expect(error.getResponse()).toEqual(
+        expect.objectContaining({
+          errors: [{ line: 4, message: "Passwort fehlt" }],
+        }),
+      );
     }
   });
   it("rejects invalid UTF-8", () =>

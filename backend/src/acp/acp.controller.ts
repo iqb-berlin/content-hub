@@ -22,6 +22,8 @@ import {
   Optional,
   ForbiddenException,
   BadRequestException,
+  DefaultValuePipe,
+  ParseEnumPipe,
 } from "@nestjs/common";
 import {
   ArrayNotEmpty,
@@ -48,6 +50,7 @@ import {
   AssignRoleDto,
   UpdateAccessConfigDto,
   UploadCredentialsDto,
+  CredentialUploadMode,
   UpdateMetadataColumnsDto,
   CreateCredentialDto,
   UpdateCredentialDto,
@@ -217,7 +220,7 @@ export class AcpController {
   @Post(":id/index/validate")
   @UseGuards(RolesGuard)
   @Roles("ACP_MANAGER")
-  @ApiOperation({ summary: "Validate ACP-Index against acp-index@0.5" })
+  @ApiOperation({ summary: "Validate ACP-Index against acp-index@0.6" })
   async validateIndex(@UuidParam("id") id: string) {
     return this.acpIndexService!.validateStoredIndex(id, { external: true });
   }
@@ -225,7 +228,7 @@ export class AcpController {
   @Post(":id/index/migration-preview")
   @UseGuards(RolesGuard)
   @Roles("ACP_MANAGER")
-  @ApiOperation({ summary: "Preview migration to acp-index@0.5" })
+  @ApiOperation({ summary: "Preview migration to acp-index@0.6" })
   async migrationPreview(@UuidParam("id") id: string) {
     return this.acpIndexService!.migrationPreview(id);
   }
@@ -440,18 +443,23 @@ export class AcpController {
   ) {
     if (dto.featureConfig) {
       const current = await this.acpService.getAccessConfig(id);
-      const reviewKeys = [
-        "enableReview",
-        "enableCommenting",
-        "commentTargets",
-        "commentVisibilityMode",
-      ];
-      if (
-        reviewKeys.some(
-          (key) =>
-            JSON.stringify(current?.featureConfig?.[key]) !==
-            JSON.stringify(dto.featureConfig?.[key]),
+      // Compare effective defaults: the access form materializes optional fields
+      // even when only an unrelated package setting has changed.
+      const reviewSettings = (config: Record<string, any> = {}) => ({
+        enableReview: config.enableReview === true,
+        enableCommenting: config.enableCommenting ?? false,
+        commentTargets: Array.isArray(config.commentTargets)
+          ? [...new Set(config.commentTargets)].sort()
+          : [],
+        commentVisibilityMode: ["SHARED", "GROUP"].includes(
+          config.commentVisibilityMode,
         )
+          ? config.commentVisibilityMode
+          : "PRIVATE",
+      });
+      if (
+        JSON.stringify(reviewSettings(current?.featureConfig)) !==
+        JSON.stringify(reviewSettings(dto.featureConfig))
       ) {
         await this.capabilities.assert(req, "review:manage");
       }
@@ -467,7 +475,12 @@ export class AcpController {
   @ApiOperation({ summary: "Upload credentials list for ACP" })
   async uploadCredentials(
     @UuidParam("id") id: string,
-    @Query("mode") mode: "replace" | "append" | "upsert" = "replace",
+    @Query(
+      "mode",
+      new DefaultValuePipe("replace"),
+      new ParseEnumPipe(CredentialUploadMode),
+    )
+    mode: `${CredentialUploadMode}` = "replace",
     @Body() dto: UploadCredentialsDto,
   ) {
     const result = await this.acpService.uploadCredentials(
@@ -604,8 +617,8 @@ export class AcpController {
       return this.withoutReviewInternals(result);
     } catch (error) {
       this.logger.error(
-        `Failed to update metadata columns for ACP ${id}: ${error.message}`,
-        error.stack,
+        `Failed to update metadata columns for ACP ${id}: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
       throw error;
     }

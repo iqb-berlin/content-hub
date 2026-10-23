@@ -72,6 +72,28 @@ App admins can:
 `ACP_MANAGER` allows write access to manager functionality for a specific ACP.
 `READ_ONLY` grants authenticated access to that ACP without management rights.
 
+### Management API validation
+
+Role assignment accepts only `ACP_MANAGER` and `READ_ONLY`, with a UUID target
+user ID. Access updates accept `PRIVATE`, `PUBLIC`, `CREDENTIALS_LIST`, and the
+legacy `REGISTERED` model. If supplied, `allowRegistered` must be a JSON boolean:
+strings, numbers, and `null` are rejected with HTTP 400 before persistence.
+Omitting the field preserves the existing update behavior.
+
+Validity dates can be omitted or `null`; supplied non-null dates must be ISO date
+strings. The service continues to enforce the credential validity window and
+retains existing dates when updating an existing credential-based configuration
+without replacement dates. Feature configuration remains an extensible object.
+
+Credential imports accept `mode=replace`, `mode=append`, or `mode=upsert` and
+default to `replace` when omitted. Unknown modes return HTTP 400. Successful
+imports return `message`, `added`, `updated`, `skipped`, and `duplicates`.
+
+The frontend models role assignments separately from user profiles: listing roles
+includes user details, while assigning a role can return just the assignment.
+Assignable users contain `id`, `username`, and an optional nullable `displayName`.
+Access responses can contain `null` validity dates.
+
 ## ACP Access Models
 
 Each ACP also has an access configuration.

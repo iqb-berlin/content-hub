@@ -1,4 +1,5 @@
 import { ForbiddenException } from "@nestjs/common";
+import { AcpCapabilitiesService } from "../auth/capabilities/acp-capabilities.service";
 import { AcpController } from "./acp.controller";
 
 describe("AcpController", () => {
@@ -79,6 +80,114 @@ describe("AcpController", () => {
     jest
       .spyOn((controller as any).logger, "error")
       .mockImplementation(() => undefined);
+  });
+
+  describe("review settings authorization", () => {
+    const request = () => ({
+      params: { id: "acp-1" },
+      acpAccessLevel: "MANAGER",
+      user: { sub: "u-1", type: "oidc" },
+    });
+
+    beforeEach(() => {
+      controller = new AcpController(
+        acpService,
+        itemExplorerStateService,
+        adminService,
+        new AcpCapabilitiesService(
+          {} as any,
+          { findOne: async () => ({ capabilities: [] }) } as any,
+          {} as any,
+        ),
+      );
+    });
+
+    it.each([
+      [
+        {},
+        {
+          enableReview: false,
+          enableCommenting: false,
+          commentTargets: [],
+          commentVisibilityMode: "PRIVATE",
+        },
+      ],
+      [
+        { enableReview: false, commentVisibilityMode: "PRIVATE" },
+        {
+          enableReview: false,
+          commentVisibilityMode: "PRIVATE",
+          commentTargets: [],
+        },
+      ],
+      [
+        { enableCommenting: true, commentTargets: ["UNIT", "ITEM"] },
+        { enableCommenting: true, commentTargets: ["ITEM", "UNIT", "ITEM"] },
+      ],
+    ])(
+      "allows unrelated changes with equivalent defaults or target sets",
+      async (current, next) => {
+        acpService.getAccessConfig.mockResolvedValue({
+          featureConfig: current,
+        });
+        const dto = {
+          accessModel: "PRIVATE",
+          featureConfig: { ...next, showIndexOnStartPage: false },
+        };
+        await expect(
+          controller.updateAccessConfig("acp-1", dto as any, request()),
+        ).resolves.toEqual({ accessModel: "PUBLIC" });
+        expect(acpService.updateAccessConfig).toHaveBeenCalledWith(
+          "acp-1",
+          dto,
+        );
+      },
+    );
+
+    it.each([
+      [{}, { enableReview: true }],
+      [{ enableReview: true }, {}],
+      [{}, { enableCommenting: true }],
+      [{ enableCommenting: "true" }, { enableCommenting: true }],
+      [{ enableCommenting: true }, {}],
+      [{}, { commentTargets: ["BOOKLET"] }],
+      [{ commentTargets: ["ITEM"] }, { commentTargets: [] }],
+      [{}, { commentVisibilityMode: "SHARED" }],
+      [{ commentVisibilityMode: "GROUP" }, {}],
+    ])(
+      "still rejects effective review changes without review:manage",
+      async (current, next) => {
+        acpService.getAccessConfig.mockResolvedValue({
+          featureConfig: current,
+        });
+        await expect(
+          controller.updateAccessConfig(
+            "acp-1",
+            { featureConfig: next } as any,
+            request(),
+          ),
+        ).rejects.toThrow(ForbiddenException);
+        expect(acpService.updateAccessConfig).not.toHaveBeenCalled();
+      },
+    );
+
+    it("allows effective review changes with an explicit grant", async () => {
+      controller = new AcpController(
+        acpService,
+        itemExplorerStateService,
+        adminService,
+        new AcpCapabilitiesService(
+          {} as any,
+          { findOne: async () => ({ capabilities: ["review:manage"] }) } as any,
+          {} as any,
+        ),
+      );
+      const dto = {
+        featureConfig: { enableCommenting: true, commentTargets: ["UNIT"] },
+      };
+      await controller.updateAccessConfig("acp-1", dto as any, request());
+      expect(acpService.updateAccessConfig).toHaveBeenCalledWith("acp-1", dto);
+    });
   });
 
   it("findAll returns all ACPs for app admins", async () => {

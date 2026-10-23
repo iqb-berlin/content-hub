@@ -14,7 +14,9 @@ import type {
   ItemListResult,
   MetadataColumn,
   VomdItemData,
+  StudioItemComment,
 } from "./unit-parser.types";
+import { parseStudioItemComments } from "./studio-item-comments";
 import { AsyncCacheStatus, AsyncLruCache } from "./async-lru-cache";
 import {
   extractLabelText,
@@ -150,6 +152,12 @@ export class ItemListParser {
           continue;
         }
 
+        const partId = this.partFromUnitPath(
+          xmlFile.relativePath || xmlFile.originalName,
+        );
+        const unitCacheKey = partId
+          ? `${partId}/${parsed.unitId}`
+          : parsed.unitId;
         const vomdFileName = parsed.metadataRef;
         if (!vomdFileName) continue;
         const vomdFile = this.findReferencedFile(allFiles, xmlFile, [
@@ -180,7 +188,7 @@ export class ItemListParser {
 
         if (vomdData.unitProfiles.length > 0) {
           const entries = vomdData.unitProfiles[0]?.entries;
-          unitMetadata[parsed.unitId] = Array.isArray(entries) ? entries : [];
+          unitMetadata[unitCacheKey] = Array.isArray(entries) ? entries : [];
         }
         const vomdStimulusTimeSeconds = extractVomdTimeSeconds(
           vomdData.unitProfiles,
@@ -194,7 +202,7 @@ export class ItemListParser {
           if (vocsFile) {
             try {
               const vocsContent = await fs.readFile(vocsFile.filePath, "utf-8");
-              codingSchemes[parsed.unitId] = JSON.parse(vocsContent);
+              codingSchemes[unitCacheKey] = JSON.parse(vocsContent);
             } catch {
               cacheable = false;
               this.logger.warn(
@@ -203,6 +211,33 @@ export class ItemListParser {
             }
           } else {
             cacheable = false;
+          }
+        }
+
+        let studioComments = new Map<string, StudioItemComment[]>();
+        if (
+          normalizedFeatureConfig.showStudioItemComments === true &&
+          parsed.commentsRef
+        ) {
+          const commentsFile = allFiles.find(
+            (file) => file.originalName === parsed.commentsRef,
+          );
+          if (commentsFile) {
+            try {
+              studioComments = parseStudioItemComments(
+                await fs.readFile(commentsFile.filePath, "utf-8"),
+              );
+            } catch {
+              cacheable = false;
+              this.logger.warn(
+                `Could not parse Studio comments ${parsed.commentsRef}`,
+              );
+            }
+          } else {
+            cacheable = false;
+            this.logger.warn(
+              `Referenced Studio comments file is missing: ${parsed.commentsRef}`,
+            );
           }
         }
 
@@ -239,11 +274,11 @@ export class ItemListParser {
           ).trim();
           if (variableReadOnlyId) {
             const codingVariables = Array.isArray(
-              codingSchemes[parsed.unitId]?.variableCodings,
+              codingSchemes[unitCacheKey]?.variableCodings,
             )
-              ? codingSchemes[parsed.unitId].variableCodings
-              : Array.isArray(codingSchemes[parsed.unitId])
-                ? codingSchemes[parsed.unitId]
+              ? codingSchemes[unitCacheKey].variableCodings
+              : Array.isArray(codingSchemes[unitCacheKey])
+                ? codingSchemes[unitCacheKey]
                 : [];
             const exactVariables = codingVariables.filter(
               (variable: any) =>
@@ -384,6 +419,9 @@ export class ItemListParser {
               variableReadOnlyId: variableReadOnlyId || undefined,
               useUnitAliasAsPrefix: item.useUnitAliasAsPrefix,
               metadata: { ...metadata },
+              ...(studioComments.has(itemUuid)
+                ? { studioComments: studioComments.get(itemUuid) }
+                : {}),
               empiricalDifficulty,
               bista: optionalNumber("bista"),
               infit: optionalNumber("infit"),
@@ -491,6 +529,8 @@ export class ItemListParser {
       itemSubIdLabel:
         context.normalizedFeatureConfig.itemSubIdLabel || "Sub-ID",
       itemSubIdLabels: context.normalizedFeatureConfig.itemSubIdLabels || {},
+      showStudioItemComments:
+        context.normalizedFeatureConfig.showStudioItemComments === true,
     })}`;
   }
 

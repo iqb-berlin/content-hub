@@ -2,6 +2,7 @@ import {
   CallHandler,
   ExecutionContext,
   Injectable,
+  Logger,
   NestInterceptor,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
@@ -16,6 +17,8 @@ import { Response } from "express";
 
 @Injectable()
 export class ServerApiAuditInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(ServerApiAuditInterceptor.name);
+
   constructor(
     private readonly reflector: Reflector,
     private readonly auditService: ServerApiAuditService,
@@ -51,22 +54,36 @@ export class ServerApiAuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(() => {
-        void this.auditService.log({
-          ...baseEntry,
-          success: true,
-          statusCode: res?.statusCode,
-        });
+        this.auditService
+          .log({
+            ...baseEntry,
+            success: true,
+            statusCode: res?.statusCode,
+          })
+          .catch((error: unknown) => {
+            this.logger.error(
+              "Failed to persist server API audit entry",
+              error,
+            );
+          });
       }),
       catchError((error) => {
-        void this.auditService.log({
-          ...baseEntry,
-          success: false,
-          statusCode: error?.status || 500,
-          details: {
-            ...(baseEntry.details || {}),
-            errorMessage: error?.message || "Unknown error",
-          },
-        });
+        this.auditService
+          .log({
+            ...baseEntry,
+            success: false,
+            statusCode: error?.status || 500,
+            details: {
+              ...(baseEntry.details || {}),
+              errorMessage: error?.message || "Unknown error",
+            },
+          })
+          .catch((error: unknown) => {
+            this.logger.error(
+              "Failed to persist server API audit entry",
+              error,
+            );
+          });
 
         return throwError(() => error);
       }),

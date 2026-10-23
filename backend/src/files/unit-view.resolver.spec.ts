@@ -107,7 +107,9 @@ describe("UnitViewResolver", () => {
       "mathe-teil-1",
     );
 
-    expect(result.value).toEqual(expect.objectContaining({ id: "u1" }));
+    expect(result.value).toEqual(
+      expect.objectContaining({ id: "u1", partId: "mathe-teil-1" }),
+    );
     expect(fs.readFile).toHaveBeenCalledWith("/tmp/mathe-u1.xml", "utf-8");
   });
 });

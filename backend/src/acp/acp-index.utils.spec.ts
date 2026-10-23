@@ -61,6 +61,27 @@ describe("acp-index.utils", () => {
     ]);
   });
 
+  it("reads both 0.6 scale types and preserves them in storage", () => {
+    const index = {
+      assessmentParts: [
+        {
+          id: "p1",
+          baseScales: [{ id: "base" }],
+          derivedScales: [{ id: "derived" }],
+        },
+      ],
+    };
+    expect(getIndexScales(index).map((scale) => scale.id)).toEqual([
+      "base",
+      "derived",
+    ]);
+    expect(normalizeIndexForStorage(index)).toEqual(index);
+    expect(toRuntimeAcpIndex(index).scales).toEqual([
+      { id: "base" },
+      { id: "derived" },
+    ]);
+  });
+
   it("drops legacy top-level units/scales instead of persisting them", () => {
     const normalized = normalizeIndexForStorage({
       units: [{ id: "u1" }],

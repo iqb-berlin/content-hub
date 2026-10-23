@@ -13,9 +13,15 @@ import {
   IsInt,
   Min,
   IsUUID,
+  IsEnum,
+  IsBoolean,
+  ValidateIf,
 } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+
+import { AcpRole } from "../../database/entities/acp-user-role.entity";
+import { AccessModel } from "../../database/entities/acp-access-config.entity";
 
 const STRONG_CREDENTIAL_PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
@@ -62,21 +68,19 @@ export class AssignRoleDto {
   @IsUUID("all")
   userId!: string;
 
-  @ApiProperty({ enum: ["ACP_MANAGER", "READ_ONLY"] })
-  @IsString()
-  @IsNotEmpty()
-  @IsIn(["ACP_MANAGER", "READ_ONLY"])
-  role!: string;
+  @ApiProperty({ enum: AcpRole })
+  @IsEnum(AcpRole)
+  role!: `${AcpRole}`;
 }
 
 export class UpdateAccessConfigDto {
-  @ApiProperty({ enum: ["PRIVATE", "PUBLIC", "CREDENTIALS_LIST"] })
-  @IsString()
-  @IsNotEmpty()
-  accessModel!: string;
+  @ApiProperty({ enum: AccessModel })
+  @IsEnum(AccessModel)
+  accessModel!: `${AccessModel}`;
 
   @ApiPropertyOptional()
-  @IsOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
   allowRegistered?: boolean;
 
   @ApiPropertyOptional()
@@ -84,15 +88,15 @@ export class UpdateAccessConfigDto {
   @IsOptional()
   featureConfig?: Record<string, unknown>;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, format: "date-time", nullable: true })
   @IsDateString()
   @IsOptional()
-  validFrom?: string;
+  validFrom?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, format: "date-time", nullable: true })
   @IsDateString()
   @IsOptional()
-  validUntil?: string;
+  validUntil?: string | null;
 }
 
 export class UpdateMetadataColumnsDto {
@@ -251,6 +255,12 @@ export class CredentialResponseDto {
 
   @ApiProperty()
   username!: string;
+}
+
+export enum CredentialUploadMode {
+  replace = "replace",
+  append = "append",
+  upsert = "upsert",
 }
 
 export class UpdateCapabilitiesDto {

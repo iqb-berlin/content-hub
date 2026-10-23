@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { AcpCredentialsService } from "./acp-credentials.service";
 import { AcpService } from "./acp.service";
 import { AcpController } from "./acp.controller";
 import {
@@ -36,7 +37,7 @@ import { AcpIndexService } from "./acp-index.service";
     SnapshotsModule,
   ],
   controllers: [AcpController],
-  providers: [AcpService, AcpIndexService],
+  providers: [AcpService, AcpIndexService, AcpCredentialsService],
   exports: [AcpService, AcpIndexService],
 })
 export class AcpModule {}

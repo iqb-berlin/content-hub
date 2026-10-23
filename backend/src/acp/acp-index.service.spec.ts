@@ -35,7 +35,7 @@ describe("AcpIndexService", () => {
     await expect(
       service.validateCandidate("acp", empty),
     ).resolves.toMatchObject({
-      schemaId: "acp-index@0.5",
+      schemaId: "acp-index@0.6",
       valid: true,
       publishable: true,
     });

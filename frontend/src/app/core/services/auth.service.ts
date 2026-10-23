@@ -10,6 +10,9 @@ import {
 import { BYPASS_APP_AUTH } from '../interceptors/auth-context.tokens';
 import { PendingPersonalSessionStorageService } from './pending-personal-session-storage.service';
 
+// A callback opened in another tab cannot use the original tab's PKCE transaction.
+export class OidcLoginStateError extends Error {}
+
 interface OidcTokenResponse {
   access_token: string;
   id_token?: string;
@@ -175,11 +178,11 @@ export class AuthService {
     const codeVerifier = sessionStorage.getItem(this.OIDC_CODE_VERIFIER_KEY);
 
     if (!state || !expectedState || state !== expectedState) {
-      return throwError(() => new Error('Ungültiger OIDC-State'));
+      return throwError(() => new OidcLoginStateError('Ungültiger OIDC-State'));
     }
 
     if (!codeVerifier) {
-      return throwError(() => new Error('PKCE-Verifier fehlt'));
+      return throwError(() => new OidcLoginStateError('PKCE-Verifier fehlt'));
     }
 
     sessionStorage.removeItem(this.OIDC_STATE_KEY);
@@ -431,7 +434,7 @@ export class AuthService {
       authUrl.searchParams.set(key, value);
     });
 
-    window.location.href = authUrl.toString();
+    this.navigateBrowserTo(authUrl.toString());
   }
 
   private generateCodeVerifier(): string {

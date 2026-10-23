@@ -1,3 +1,12 @@
+import { ItemExplorerImportService } from './item-explorer-import.service';
+import { ItemExplorerTableService } from './item-explorer-table.service';
+import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerCodingService } from './item-explorer-coding.service';
+import { ItemExplorerDraftService } from './item-explorer-draft.service';
+import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
+import { ItemExplorerPersonalDataService } from './item-explorer-personal-data.service';
+import { ItemExplorerCommentsService } from './item-explorer-comments.service';
+import { ItemExplorerBrowser } from './item-explorer-browser.service';
 import {
   Component,
   ElementRef,
@@ -46,6 +55,15 @@ import { ItemExplorerPreviewCoordinator } from './item-explorer-preview-coordina
   ],
   providers: [
     ItemExplorerFacade,
+    ItemExplorerDraftService,
+    ItemExplorerCodingService,
+    ItemExplorerPlayerService,
+    ItemExplorerTableService,
+    ItemExplorerImportService,
+    ItemExplorerCollectionsService,
+    ItemExplorerPersonalDataService,
+    ItemExplorerCommentsService,
+    ItemExplorerBrowser,
     ItemExplorerPreviewLoader,
     ItemExplorerPreviewCoordinator,
     ItemExplorerLoadDiagnostics,

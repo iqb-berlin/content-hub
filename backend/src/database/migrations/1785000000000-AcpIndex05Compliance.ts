@@ -47,7 +47,7 @@ export class AcpIndex05Compliance1785000000000 implements MigrationInterface {
       "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_acp_external_resource_cache_url" UNIQUE ("url"),
       CONSTRAINT "PK_acp_external_resource_cache" PRIMARY KEY ("id"))`);
     await queryRunner.query(
-      `UPDATE "acp" SET "acp_index_schema_id" = 'acp-index@0.5', "acp_index_validation_status" = 'LEGACY_NONCONFORMANT' WHERE "acp_index_schema_id" IS NULL`,
+      `UPDATE "acp" SET "acp_index_schema_id" = 'acp-index@0.6', "acp_index_validation_status" = 'LEGACY_NONCONFORMANT' WHERE "acp_index_schema_id" IS NULL`,
     );
   }
 

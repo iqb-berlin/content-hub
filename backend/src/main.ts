@@ -83,4 +83,7 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`ContentPool API running on port ${port}`);
 }
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  console.error("Failed to start ContentPool API", error);
+  process.exitCode = 1;
+});

@@ -516,6 +516,23 @@ metadatenbezogene Bearbeitung.
 - Kodierung und Metadaten direkt neben dem Player einsehen
 - Aenderungsverlauf einsehen
 
+### Studio-Kommentare anzeigen
+
+Unter `Zugriff & Funktionen` → `Item-Explorer` → `Inhalte und Darstellung` können
+ACP-Manager `Studio-Kommentare im Item-Explorer anzeigen` einschalten. Die Einstellung
+ist standardmäßig ausgeschaltet und unabhängig von der Freigabe für Review-Kommentare.
+
+Voraussetzung ist ein Studio-Export einschließlich Kommentaren: Die Aufgaben-XML
+verweist mit `UnitCommentsRef` auf die mit hochgeladene `.vouc`-Datei. Die dortigen
+`itemUuids` müssen zu den UUIDs der Items in der `.vomd`-Datei passen.
+
+Beim Auswählen eines Items erscheinen seine Kommentare und zugehörigen Antworten
+oberhalb der Player-Vorschau in einem eigenen Abschnitt `Studio-Kommentare`. Die
+Reihenfolge des Studio-Exports bleibt erhalten; im Studio ausgeblendete Kommentare
+werden entsprechend gekennzeichnet. Ohne zugehörige Kommentare erscheint kein
+Abschnitt. Die Hinweise sind ausschließlich lesbar und werden nicht in
+Review-Kommentar-Threads übernommen. Ein neuer Upload aktualisiert die Hinweise.
+
 ### Entwurf und Veroeffentlichung
 
 Der Explorer arbeitet mit einem Entwurfsmodell:
@@ -597,6 +614,16 @@ aktuellen Aktivierungsstatus.
 5. Aktivieren Sie den Review und speichern Sie die Konfiguration.
 6. Vergeben Sie unter den Personen oder ACP-Zugaengen die Berechtigung `Review: teilnehmen`.
 
+Unter **Metadaten in der Prüfansicht** koennen Sie **Namen und Kürzel der
+Aufgabenentwickler/innen ausblenden** aktivieren. Speichern Sie anschliessend die
+Review-Konfiguration. In der Testheft-Pruefansicht wird das Metadatenfeld
+`iqb_author` bzw. „Entwickler/in“ dann fuer alle Review-Teilnehmenden ausgeblendet.
+Andere Metadaten bleiben sichtbar. Die Einstellung aendert die Anzeige; die
+Metadatendateien und vorhandene Downloadrechte bleiben erhalten.
+
+Bei mehrseitigen Aufgaben zeigt die Seitennavigation die aktuelle Seite und die
+Gesamtzahl an. Sie folgt auch Seitenwechseln ueber Schaltflaechen innerhalb der Aufgabe.
+
 Die Bereitschaftspruefung kontrolliert insbesondere Booklets, referenzierte Units,
 Aufgabendefinitionen, Player sowie syntaktische und semantische Validierungsergebnisse. Sie ist
 keine formale Release-Freigabe.
@@ -612,8 +639,27 @@ nur die Sichtbarkeit von Kommentaren und vergeben keinen Zugang.
 
 Wenn Kommentare aktiviert sind, koennen angemeldete Nutzerinnen und Nutzer Kommentare im
 jeweiligen fachlichen Kontext anlegen. Item-Kommentare werden beim ausgewaehlten Item im
-Item-Explorer erfasst; Unit-Kommentare in der Ansicht der jeweiligen Unit. Auf der
-ACP-Startseite stehen dann typischerweise zur Verfuegung:
+Item-Explorer erfasst; Unit-Kommentare in der Ansicht der jeweiligen Unit.
+
+Im Review-Arbeitsplatz kann unter `Kommentarziel` zwischen `Aufgabe`, `Item` und `Testheft`
+gewechselt werden, soweit diese Ziele fuer den ACP aktiviert sind. Fuer `Item` waehlen Sie
+anschliessend das gewuenschte Item der aktuellen Aufgabe aus. Die Auswahl zeigt die Item-ID
+und, soweit vorhanden, die Bezeichnung. Nicht abgesendete Kommentare bleiben beim Wechsel
+zwischen Items und Kommentarzielen erhalten. Ein separater Zugang zum Item-Explorer ist fuer
+diese Kommentierung nicht erforderlich.
+
+Im Review werden Aufgaben in Navigation, Aufgabenliste, Ueberschrift und Kommentarbereich
+einheitlich mit Aufgabentitel und ID bezeichnet. Aliasse aus dem Testheft bleiben gesondert
+gekennzeichnet. Die Downloads sind als `Download Aufgabe` und `Download Testheft` beschriftet.
+Unter `Kodierung` erscheinen nur relevante Kodiervariablen, numerisch nach ihrer ID sortiert;
+`Alle Variablen anzeigen` und der Reiter `RichText` werden im Review nicht angeboten.
+
+Die Breite des Reviewbereichs laesst sich mit gedrueckter linker Maustaste oder den Pfeiltasten
+aendern. Nach dem Loslassen endet die Groessenaenderung auch ueber dem Player.
+Kommentarbewertungen sind nur bei geteilter Kommentarsicht moeglich; der Hinweis dazu steht
+unter `Review` bei der Konfiguration der Kommentarsicht und Gruppen.
+
+Auf der ACP-Startseite stehen dann typischerweise zur Verfuegung:
 
 - ein Link zu den Item-Kommentaren im Item-Explorer, falls diese aktiviert sind
 - `Kommentare exportieren (XLSX)`

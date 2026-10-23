@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
+import { AcpCredentialsService } from "./acp-credentials.service";
 import { AcpService } from "./acp.service";
 import {
   Acp,
@@ -108,6 +109,7 @@ describe("AcpService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AcpService,
+        AcpCredentialsService,
         { provide: getRepositoryToken(Acp), useValue: acpRepo },
         { provide: getRepositoryToken(AcpUserRole), useValue: roleRepo },
         {
@@ -125,6 +127,30 @@ describe("AcpService", () => {
     }).compile();
 
     service = module.get<AcpService>(AcpService);
+  });
+
+  it("rejects capability updates for missing role assignments", async () => {
+    roleRepo.findOne.mockResolvedValue(null);
+    await expect(
+      service.updateRoleCapabilities("acp-1", "user-1", []),
+    ).rejects.toThrow(NotFoundException);
+    expect(roleRepo.save).not.toHaveBeenCalled();
+  });
+
+  it("persists normalized capabilities on the requested assignment", async () => {
+    const role = {
+      acpId: "acp-1",
+      userId: "user-1",
+      capabilities: ["explorer.read"],
+    };
+    roleRepo.findOne.mockResolvedValue(role);
+    roleRepo.save.mockImplementation(async (value: typeof role) => value);
+    const result = await service.updateRoleCapabilities("acp-1", "user-1", []);
+    expect(roleRepo.findOne).toHaveBeenCalledWith({
+      where: { acpId: "acp-1", userId: "user-1" },
+    });
+    expect(result.capabilities).toEqual([]);
+    expect(roleRepo.save).toHaveBeenCalledWith(role);
   });
 
   describe("findAll", () => {
@@ -171,6 +197,25 @@ describe("AcpService", () => {
         service.create({ packageId: "test-pkg", name: "Dup" }),
       ).rejects.toThrow(ConflictException);
     });
+  });
+
+  it("updates the German index name while preserving other languages", async () => {
+    acpRepo.findOne.mockResolvedValue({
+      ...mockAcp,
+      acpIndex: {
+        ...mockAcp.acpIndex,
+        name: [
+          { lang: "en", value: "English name" },
+          { lang: "de", value: "Alter Name" },
+        ],
+      },
+    });
+    const updated = await service.update("acp-1", { name: "Neuer Name" });
+    expect(updated.name).toBe("Neuer Name");
+    expect(updated.acpIndex.name).toEqual([
+      { lang: "en", value: "English name" },
+      { lang: "de", value: "Neuer Name" },
+    ]);
   });
 
   describe("delete", () => {

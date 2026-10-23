@@ -18,6 +18,7 @@ describe('AccessConfigComponent', () => {
   let api: {
     getAccessConfig: ReturnType<typeof vi.fn>;
     getCredentials: ReturnType<typeof vi.fn>;
+    createCredential: ReturnType<typeof vi.fn>;
     updateAccessConfig: ReturnType<typeof vi.fn>;
   };
 
@@ -41,6 +42,7 @@ describe('AccessConfigComponent', () => {
         }),
       ),
       getCredentials: vi.fn().mockReturnValue(of([])),
+      createCredential: vi.fn(),
       updateAccessConfig: vi.fn().mockReturnValue(of({})),
     };
   });
@@ -48,6 +50,124 @@ describe('AccessConfigComponent', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     TestBed.resetTestingModule();
+  });
+
+  describe('adding credentials', () => {
+    async function renderCredentialForm() {
+      api.getAccessConfig.mockReturnValue(
+        of({ accessModel: 'CREDENTIALS_LIST', featureConfig: {} }),
+      );
+      await TestBed.configureTestingModule({
+        imports: [AccessConfigComponent],
+        providers: [
+          provideZonelessChangeDetection(),
+          provideRouter([]),
+          { provide: ActivatedRoute, useValue: route },
+          { provide: ApiService, useValue: api },
+        ],
+      })
+        .overrideComponent(AccessConfigComponent, {
+          remove: { imports: [AcpManagerContextComponent] },
+          add: { imports: [AcpManagerContextStubComponent] },
+        })
+        .compileComponents();
+      const fixture = TestBed.createComponent(AccessConfigComponent);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const root: HTMLElement = fixture.nativeElement;
+      const form = root.querySelector<HTMLElement>('.manual-add-form')!;
+      const username = form.querySelector<HTMLInputElement>('input[type="text"]')!;
+      const password = form.querySelector<HTMLInputElement>('input[type="password"]')!;
+      const submit = form.querySelector<HTMLButtonElement>('button')!;
+      async function fill(value: string, secret: string) {
+        username.value = value;
+        username.dispatchEvent(new Event('input'));
+        password.value = secret;
+        password.dispatchEvent(new Event('input'));
+        await fixture.whenStable();
+      }
+      return { fixture, root, form, username, password, submit, fill };
+    }
+
+    it('explains password requirements and reports invalid input when adding a credential', async () => {
+      const { fixture, form, submit, fill } = await renderCredentialForm();
+      await fill('reviewer', 'short');
+
+      expect(submit.disabled).toBe(false);
+      submit.click();
+      await fixture.whenStable();
+
+      expect(form.querySelector('[role="alert"]')?.textContent).toContain(
+        'Kennwort muss mindestens 12 Zeichen lang sein',
+      );
+      expect(api.createCredential).not.toHaveBeenCalled();
+    });
+
+    it('shows progress, prevents duplicate submissions and renders the created credential after an asynchronous response', async () => {
+      const response = new Subject<any>();
+      api.createCredential.mockReturnValue(response);
+      const { fixture, root, form, username, password, submit, fill } =
+        await renderCredentialForm();
+      await fill(' reviewer ', 'ValidPassword123!');
+      form.querySelector<HTMLInputElement>('input[aria-label="Review: teilnehmen"]')!.click();
+      await fixture.whenStable();
+
+      submit.click();
+      await fixture.whenStable();
+      expect(submit.disabled).toBe(true);
+      expect(submit.textContent).toContain('Wird hinzugefügt');
+      fixture.componentInstance.addCredential();
+      expect(api.createCredential).toHaveBeenCalledExactlyOnceWith(
+        'acp-1',
+        'reviewer',
+        'ValidPassword123!',
+        ['review:participate'],
+      );
+
+      response.next({
+        id: 'credential-1',
+        username: 'reviewer',
+        capabilities: ['review:participate'],
+      });
+      response.complete();
+      await fixture.whenStable();
+
+      expect(root.querySelector('.credentials-table tbody')?.textContent).toContain('reviewer');
+      expect(form.querySelector('[role="status"]')?.textContent).toContain('reviewer');
+      expect(username.value).toBe('');
+      expect(password.value).toBe('');
+      expect(submit.disabled).toBe(false);
+      expect(fixture.componentInstance.credentialCount).toBe(1);
+    });
+
+    it('renders a server error, retains the entered values and allows retry', async () => {
+      const response = new Subject<any>();
+      api.createCredential.mockReturnValue(response);
+      const { fixture, root, form, username, password, submit, fill } =
+        await renderCredentialForm();
+      await fill('reviewer', 'ValidPassword123!');
+      submit.click();
+      await fixture.whenStable();
+
+      response.error({ error: { message: 'Zugang konnte nicht angelegt werden.' } });
+      await fixture.whenStable();
+
+      expect(form.querySelector('[role="alert"]')?.textContent).toContain(
+        'Zugang konnte nicht angelegt werden.',
+      );
+      expect(form.querySelector('[role="status"]')).toBeNull();
+      expect(username.value).toBe('reviewer');
+      expect(password.value).toBe('ValidPassword123!');
+      expect(submit.disabled).toBe(false);
+
+      api.createCredential.mockReturnValue(of({ id: 'credential-1', username: 'reviewer' }));
+      submit.click();
+      await fixture.whenStable();
+      expect(api.createCredential).toHaveBeenCalledTimes(2);
+      expect(root.querySelectorAll('.credentials-table tbody tr')).toHaveLength(1);
+      expect(form.querySelector('[role="alert"]')).toBeNull();
+      expect(form.querySelector('[role="status"]')?.textContent).toContain('reviewer');
+    });
   });
 
   it('renders and binds all four start-page visibility switches', async () => {
@@ -132,6 +252,22 @@ describe('AccessConfigComponent', () => {
     component.loadConfig();
 
     expect(component.featureConfig.showUnitListOnStartPage).toBe(false);
+  });
+
+  it('defaults Studio comments to off and persists explicit activation and deactivation', () => {
+    const component = new AccessConfigComponent(route as any, api as any);
+    component.loadConfig();
+    expect(component.featureConfig.showStudioItemComments).toBe(false);
+    for (const enabled of [true, false]) {
+      component.featureConfig.showStudioItemComments = enabled;
+      component.saveFeatures();
+      expect(api.updateAccessConfig).toHaveBeenLastCalledWith(
+        '',
+        expect.objectContaining({
+          featureConfig: expect.objectContaining({ showStudioItemComments: enabled }),
+        }),
+      );
+    }
   });
 
   it('saves access and features together and clears the dirty state after success', () => {

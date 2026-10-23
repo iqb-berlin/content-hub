@@ -204,6 +204,97 @@ describe("UnitParserService", () => {
     service = module.get<UnitParserService>(UnitParserService);
   });
 
+  it("gates Studio comments at the API source and invalidates cached lists when toggled", async () => {
+    fileRepo.find.mockResolvedValue([
+      ...files,
+      {
+        id: "f-comments",
+        originalName: "u1.vouc",
+        filePath: "/tmp/u1.vouc",
+      },
+    ]);
+    const readFile = fs.readFile as jest.Mock;
+    readFile.mockImplementation(async (path: string) => {
+      if (path === "/tmp/u1.xml")
+        return xmlContent.replace(
+          "</Unit>",
+          "<UnitCommentsRef>u1.vouc</UnitCommentsRef></Unit>",
+        );
+      if (path === "/tmp/u1.vomd")
+        return JSON.stringify({
+          items: [
+            { id: "i1", uuid: "item-a" },
+            { id: "i2", uuid: "item-b" },
+          ],
+        });
+      if (path === "/tmp/u1.vouc")
+        return JSON.stringify([
+          { id: 1, body: "Only item A", itemUuids: ["item-a"] },
+          { id: 2, body: "Reply", parentId: 1 },
+          { id: 3, body: "Only item B", itemUuids: ["item-b"] },
+          { id: 4, body: "Unit comment", itemUuids: [] },
+        ]);
+      return "{}";
+    });
+    const disabled = await service.getItemListFromFiles("acp-1");
+    expect(disabled.items.every((item) => !("studioComments" in item))).toBe(
+      true,
+    );
+    expect(readFile).not.toHaveBeenCalledWith("/tmp/u1.vouc", "utf-8");
+
+    accessConfigRepo.findOne.mockResolvedValue({
+      featureConfig: { showStudioItemComments: true },
+    });
+    const enabled = await service.getItemListFromFiles("acp-1");
+    expect(
+      enabled.items[0].studioComments?.map((comment) => comment.body),
+    ).toEqual(["Only item A", "Reply"]);
+    expect(
+      enabled.items[1].studioComments?.map((comment) => comment.body),
+    ).toEqual(["Only item B"]);
+
+    accessConfigRepo.findOne.mockResolvedValue({
+      featureConfig: { showStudioItemComments: false },
+    });
+    const disabledAgain = await service.getItemListFromFiles("acp-1");
+    expect(
+      disabledAgain.items.every((item) => !("studioComments" in item)),
+    ).toBe(true);
+  });
+
+  it("keeps items usable when optional Studio comments are malformed and retries on the next load", async () => {
+    accessConfigRepo.findOne.mockResolvedValue({
+      featureConfig: { showStudioItemComments: true },
+    });
+    fileRepo.find.mockResolvedValue([
+      ...files,
+      {
+        id: "f-comments",
+        originalName: "u1.vouc",
+        filePath: "/tmp/u1.vouc",
+      },
+    ]);
+    let content = "{broken";
+    (fs.readFile as jest.Mock).mockImplementation(async (path: string) => {
+      if (path === "/tmp/u1.xml")
+        return xmlContent.replace(
+          "</Unit>",
+          "<UnitCommentsRef>u1.vouc</UnitCommentsRef></Unit>",
+        );
+      if (path === "/tmp/u1.vomd") return vomdContent;
+      if (path === "/tmp/u1.vouc") return content;
+      return "{}";
+    });
+    const malformed = await service.getItemListFromFiles("acp-1");
+    expect(malformed.items).toHaveLength(1);
+    expect(malformed.items[0]).not.toHaveProperty("studioComments");
+    content = JSON.stringify([
+      { id: 1, body: "Recovered", itemUuids: ["u1_i1"] },
+    ]);
+    const recovered = await service.getItemListFromFiles("acp-1");
+    expect(recovered.items[0].studioComments?.[0].body).toBe("Recovered");
+  });
+
   it("does not validate a Booklet with nested Unit references as a Unit file", async () => {
     const bookletFile = {
       id: "f-booklet",
@@ -1372,6 +1463,56 @@ describe("UnitParserService", () => {
         ([path]) => path === "/tmp/u1.xml",
       ),
     ).toHaveLength(2);
+  });
+
+  it("keeps metadata and coding caches separate for repeated unit IDs in different parts", async () => {
+    fileRepo.find.mockResolvedValue(
+      ["math", "language"].flatMap((part) =>
+        files.map((file) => ({
+          ...file,
+          id: `${part}-${file.id}`,
+          relativePath: `units/${part}/${file.originalName}`,
+          filePath: `/tmp/${part}/${file.originalName}`,
+        })),
+      ),
+    );
+    (fs.readFile as jest.Mock).mockImplementation(async (filePath: string) => {
+      const part = filePath.includes("/math/") ? "math" : "language";
+      if (filePath.endsWith(".xml")) return xmlContent;
+      if (filePath.endsWith(".vomd"))
+        return JSON.stringify({
+          profiles: [{ entries: [{ id: "part", value: part }] }],
+          items: [{ id: `${part}-item`, variableId: "V1", profiles: [] }],
+        });
+      if (filePath.endsWith(".vocs"))
+        return JSON.stringify({ variableCodings: [{ id: part }] });
+      return "";
+    });
+    const result = await service.getItemListFromFiles("acp-1");
+    expect(result.unitMetadata["math/u1"]).toEqual([
+      { id: "part", value: "math" },
+    ]);
+    expect(result.unitMetadata["language/u1"]).toEqual([
+      { id: "part", value: "language" },
+    ]);
+    expect(result.codingSchemes["math/u1"].variableCodings).toEqual([
+      { id: "math" },
+    ]);
+    expect(result.codingSchemes["language/u1"].variableCodings).toEqual([
+      { id: "language" },
+    ]);
+  });
+
+  it("invalidates parsed data and row-key caches only for the affected ACP", async () => {
+    const first = await service.getItemRowKeysFromFiles("acp-1");
+    await service.getItemRowKeysFromFiles("acp-2");
+    const readsBefore = (fs.readFile as jest.Mock).mock.calls.length;
+    service.invalidateFileCaches("acp-1");
+    expect(await service.getItemRowKeysFromFiles("acp-1")).toEqual(first);
+    const readsAfter = (fs.readFile as jest.Mock).mock.calls.length;
+    expect(readsAfter).toBeGreaterThan(readsBefore);
+    await service.getItemRowKeysFromFiles("acp-2");
+    expect((fs.readFile as jest.Mock).mock.calls.length).toBe(readsAfter);
   });
 
   it("caches unit-view dependency resolution by source signature", async () => {

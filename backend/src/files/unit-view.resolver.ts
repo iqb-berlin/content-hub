@@ -165,6 +165,7 @@ export class UnitViewResolver {
     return {
       value: {
         id: parsed.unitId,
+        ...(partId ? { partId: normalizePartId(partId) } : {}),
         name: parsed.unitLabel,
         description: parsed.description,
         dependencies,

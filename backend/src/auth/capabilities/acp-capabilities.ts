@@ -43,3 +43,16 @@ export function profileGrants(
       throw new BadRequestException("Ungültiges Berechtigungsprofil");
   }
 }
+
+/** Preserve the existing management override while honoring the ACP feature switch. */
+export function isExplorerAvailable(
+  req: { acpAccessLevel?: string; user?: { isAppAdmin?: boolean } },
+  featureConfig?: Record<string, unknown>,
+): boolean {
+  return (
+    req.user?.isAppAdmin === true ||
+    req.acpAccessLevel === "ADMIN" ||
+    req.acpAccessLevel === "MANAGER" ||
+    featureConfig?.enableItemList !== false
+  );
+}

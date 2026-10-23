@@ -14,6 +14,7 @@ import { isIP } from "net";
 import * as ipaddr from "ipaddr.js";
 import { Repository } from "typeorm";
 import { Agent } from "undici";
+import { migrateLegacyScales } from "./acp-scale-migration";
 import { Acp, AcpExternalResourceCache, AcpFile } from "../database/entities";
 import { SnapshotsService } from "../snapshots/snapshots.service";
 import {
@@ -27,7 +28,7 @@ import {
   AcpIndexValidationReport,
 } from "./acp-index.types";
 
-const ACP_SCHEMA_ID = "acp-index@0.5" as const;
+const ACP_SCHEMA_ID = "acp-index@0.6" as const;
 const RELEASED_STATUSES = new Set(["RELEASED_PUBLIC", "RELEASED_CONFIDENTIAL"]);
 const SEMVER_PATTERN =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
@@ -53,8 +54,9 @@ export class AcpIndexService implements OnApplicationBootstrap {
     addFormats(ajv);
     const metadataSchema = require("./schemas/metadata-values-3.0.schema.json");
     const unitSchema = require("./schemas/acp-unit-0.5.schema.json");
-    const scaleSchema = require("./schemas/acp-scale-0.2.schema.json");
-    const indexSchema = require("./schemas/acp-index-0.5.schema.json");
+    const baseScaleSchema = require("./schemas/acp-scale-base-0.4.schema.json");
+    const derivedScaleSchema = require("./schemas/acp-scale-derived-0.4.schema.json");
+    const indexSchema = require("./schemas/acp-index-0.6.schema.json");
     ajv.addSchema(metadataSchema);
     ajv.addSchema(
       metadataSchema,
@@ -62,8 +64,16 @@ export class AcpIndexService implements OnApplicationBootstrap {
     );
     ajv.addSchema(unitSchema);
     ajv.addSchema(unitSchema, "https://w3id.org/iqb/spec/acp-unit/0.5");
-    ajv.addSchema(scaleSchema);
-    ajv.addSchema(scaleSchema, "https://w3id.org/iqb/spec/acp-scale/0.2");
+    ajv.addSchema(baseScaleSchema);
+    ajv.addSchema(
+      baseScaleSchema,
+      "https://w3id.org/iqb/spec/acp-scale-base/0.4",
+    );
+    ajv.addSchema(derivedScaleSchema);
+    ajv.addSchema(
+      derivedScaleSchema,
+      "https://w3id.org/iqb/spec/acp-scale-derived/0.4",
+    );
     this.validateSchema = ajv.compile(indexSchema);
   }
 
@@ -142,6 +152,12 @@ export class AcpIndexService implements OnApplicationBootstrap {
     const files = await this.fileRepository.find({ where: { acpId } });
     this.validateSemantics(candidate, files, issues);
     if (options.external) {
+      await this.validateScaleVocabularies(
+        candidate,
+        issues,
+        externalChecks,
+        Boolean(options.forPublication),
+      );
       await this.validateMetadata(
         candidate,
         issues,
@@ -206,7 +222,7 @@ export class AcpIndexService implements OnApplicationBootstrap {
     const report = await this.validateCandidate(acpId, candidate);
     if (!report.valid) {
       throw new UnprocessableEntityException({
-        message: "ACP index violates acp-index@0.5",
+        message: "ACP index violates acp-index@0.6",
         report,
       });
     }
@@ -246,6 +262,7 @@ export class AcpIndexService implements OnApplicationBootstrap {
     const acp = await this.getAcp(acpId);
     const candidate = structuredClone(acp.acpIndex || {});
     const changes: Array<{ path: string; message: string }> = [];
+    const migrationIssues: AcpIndexValidationIssue[] = [];
     const candidateItemProperties = structuredClone(acp.itemProperties || {});
     const legacyUnits = Array.isArray((candidate as any).units)
       ? (candidate as any).units
@@ -285,6 +302,9 @@ export class AcpIndexService implements OnApplicationBootstrap {
     else delete (candidate as any).assessmentParts;
 
     for (const [partIndex, part] of parts.entries()) {
+      migrationIssues.push(
+        ...migrateLegacyScales(part, `/assessmentParts/${partIndex}`, changes),
+      );
       for (const [unitIndex, unit] of (part.units || []).entries()) {
         if (unit.dependencies && !Array.isArray(unit.dependencies)) {
           unit.dependencies = [unit.dependencies];
@@ -346,6 +366,11 @@ export class AcpIndexService implements OnApplicationBootstrap {
     const validation = await this.validateCandidate(acpId, candidate, {
       external: true,
     });
+    if (migrationIssues.length) {
+      validation.issues.push(...migrationIssues);
+      validation.valid = false;
+      validation.publishable = false;
+    }
     return {
       candidateIndex: candidate,
       candidateItemProperties,
@@ -366,7 +391,7 @@ export class AcpIndexService implements OnApplicationBootstrap {
         preview,
       });
     }
-    await this.snapshotsService.create(acpId, "ACP-Index 0.5 migration");
+    await this.snapshotsService.create(acpId, "ACP-Index 0.6 migration");
     return this.saveCandidate(
       acpId,
       preview.candidateIndex,
@@ -540,59 +565,120 @@ export class AcpIndexService implements OnApplicationBootstrap {
           issues,
         );
       }
-      const itemIds = new Set(
-        (part.units || []).flatMap((unit: any) =>
-          (unit.items || []).map((item: any) => item.id),
-        ),
-      );
-      const scaleIds = new Set(
-        (part.scales || []).map((scale: any) => scale.id),
-      );
-      for (const [scaleIndex, scale] of (part.scales || []).entries()) {
-        for (const [itemIndex, item] of (
-          scale.typeParameters?.items || []
+      const itemIds = new Set<string>();
+      for (const unit of part.units || []) {
+        const aliases = new Set<string>([
+          unit.id,
+          ...(part.bookletModules || []).flatMap((module: any) =>
+            (module.units || [])
+              .filter((ref: any) => ref.id === unit.id)
+              .map((ref: any) => ref.alias || ref.id),
+          ),
+        ]);
+        for (const item of unit.items || []) {
+          itemIds.add(item.id);
+          if (item.useUnitAliasAsPrefix !== false) {
+            for (const alias of aliases) itemIds.add(`${alias}_${item.id}`);
+          }
+        }
+      }
+      const baseScales = Array.isArray(part.baseScales) ? part.baseScales : [];
+      const derivedScales = Array.isArray(part.derivedScales)
+        ? part.derivedScales
+        : [];
+      const scaleIds = new Set<string>();
+      for (const [kind, scales] of [
+        ["baseScales", baseScales],
+        ["derivedScales", derivedScales],
+      ] as const) {
+        for (const [scaleIndex, scale] of scales.entries()) {
+          if (scaleIds.has(scale?.id))
+            issues.push(
+              this.issue(
+                "DUPLICATE_SCALE_ID",
+                "semantic",
+                "error",
+                `${partPath}/${kind}/${scaleIndex}/id`,
+                `Skalen-ID ${scale.id} ist innerhalb des Parts doppelt.`,
+              ),
+            );
+          scaleIds.add(scale?.id);
+        }
+      }
+      for (const [scaleIndex, scale] of baseScales.entries()) {
+        for (const [itemIndex, item] of (Array.isArray(scale?.items)
+          ? scale.items
+          : []
         ).entries()) {
-          if (item.id && !itemIds.has(item.id))
+          if (!itemIds.has(item?.id))
             issues.push(
               this.issue(
                 "UNKNOWN_SCALE_ITEM",
                 "semantic",
                 "error",
-                `${partPath}/scales/${scaleIndex}/typeParameters/items/${itemIndex}/id`,
-                `Skalen-Item ${item.id} ist nicht auflösbar.`,
+                `${partPath}/baseScales/${scaleIndex}/items/${itemIndex}/id`,
+                `Skalen-Item ${item?.id} ist nicht auflösbar.`,
               ),
             );
         }
-        if (
-          scale.scaleType === "DERIVED" &&
-          scale.typeParameters?.source &&
-          !scaleIds.has(scale.typeParameters.source)
-        ) {
-          issues.push(
-            this.issue(
-              "UNKNOWN_SCALE_REFERENCE",
-              "semantic",
-              "error",
-              `${partPath}/scales/${scaleIndex}/typeParameters/source`,
-              `Skala ${scale.typeParameters.source} ist in diesem Part nicht definiert.`,
-            ),
-          );
-        }
-        for (const [sourceIndex, source] of (
-          scale.typeParameters?.sources || []
-        ).entries()) {
-          if (source.id && !scaleIds.has(source.id)) {
+      }
+      const graph = new Map<string, string[]>();
+      for (const [scaleIndex, scale] of derivedScales.entries()) {
+        const sources = Array.isArray(scale?.sources) ? scale.sources : [];
+        graph.set(scale?.id, sources);
+        for (const [sourceIndex, source] of sources.entries()) {
+          if (!scaleIds.has(source))
             issues.push(
               this.issue(
                 "UNKNOWN_SCALE_REFERENCE",
                 "semantic",
                 "error",
-                `${partPath}/scales/${scaleIndex}/typeParameters/sources/${sourceIndex}/id`,
-                `Skala ${source.id} ist in diesem Part nicht definiert.`,
+                `${partPath}/derivedScales/${scaleIndex}/sources/${sourceIndex}`,
+                `Skala ${source} ist in diesem Part nicht definiert.`,
               ),
             );
-          }
         }
+        if (
+          !scale?.publicVocabularyUrl &&
+          [
+            ...(Array.isArray(scale?.mappings)
+              ? scale.mappings.map((mapping: any) => mapping?.newValue)
+              : []),
+            scale?.mappingsElse,
+          ].some((value) => value?.publicVocabularyEntry !== undefined)
+        )
+          issues.push(
+            this.issue(
+              "MISSING_SCALE_VOCABULARY",
+              "semantic",
+              "error",
+              `${partPath}/derivedScales/${scaleIndex}/publicVocabularyUrl`,
+              "Vokabulareinträge benötigen eine publicVocabularyUrl.",
+            ),
+          );
+      }
+      const visiting = new Set<string>();
+      const visited = new Set<string>();
+      const visit = (id: string): boolean => {
+        if (visiting.has(id)) return true;
+        if (visited.has(id)) return false;
+        visiting.add(id);
+        const cyclic = (graph.get(id) || []).some((source) => visit(source));
+        visiting.delete(id);
+        visited.add(id);
+        return cyclic;
+      };
+      for (const id of graph.keys()) {
+        if (visit(id))
+          issues.push(
+            this.issue(
+              "CYCLIC_SCALE_REFERENCE",
+              "semantic",
+              "error",
+              `${partPath}/derivedScales`,
+              `Zyklische Skalenabhängigkeit bei ${id}.`,
+            ),
+          );
       }
     }
   }
@@ -626,6 +712,85 @@ export class AcpIndexService implements OnApplicationBootstrap {
           `Datei ${id} wurde nicht gefunden.`,
         ),
       );
+    }
+  }
+
+  private async validateScaleVocabularies(
+    candidate: Record<string, unknown>,
+    issues: AcpIndexValidationIssue[],
+    checks: AcpExternalCheck[],
+    forPublication: boolean,
+  ): Promise<void> {
+    const resources = new Map<
+      string,
+      Awaited<ReturnType<AcpIndexService["loadExternalJson"]>>
+    >();
+    for (const [partIndex, part] of getAssessmentParts(candidate).entries()) {
+      const scales = Array.isArray(part.derivedScales)
+        ? part.derivedScales
+        : [];
+      for (const [scaleIndex, scale] of scales.entries()) {
+        if (typeof scale?.publicVocabularyUrl !== "string") continue;
+        const url = scale.publicVocabularyUrl;
+        const path = `/assessmentParts/${partIndex}/derivedScales/${scaleIndex}`;
+        if (!resources.has(url)) {
+          const resource = await this.loadExternalJson(url, forPublication);
+          resources.set(url, resource);
+          checks.push(resource.check);
+        }
+        const resource = resources.get(url)!;
+        const payload = resource.payload as any;
+        if (
+          !payload ||
+          (!Array.isArray(payload.hasTopConcept) &&
+            !Array.isArray(payload.concepts))
+        ) {
+          if (payload) resource.check.status = "invalid";
+          issues.push(
+            this.issue(
+              "SCALE_VOCABULARY_UNAVAILABLE",
+              "vocabulary",
+              "error",
+              `${path}/publicVocabularyUrl`,
+              `Skalenvokabular ${url} ist nicht verfügbar oder enthält keine Konzepteinträge.`,
+            ),
+          );
+          continue;
+        }
+        const ids = new Set<string>();
+        const collect = (nodes: any[]) => {
+          for (const node of nodes) {
+            if (typeof node?.id === "string") ids.add(node.id);
+            if (Array.isArray(node?.narrower)) collect(node.narrower);
+          }
+        };
+        collect([
+          ...(payload.hasTopConcept || []),
+          ...(payload.concepts || []),
+        ]);
+        const values = [
+          ...(Array.isArray(scale.mappings)
+            ? scale.mappings.map((mapping: any, index: number) => ({
+                value: mapping?.newValue,
+                path: `${path}/mappings/${index}/newValue`,
+              }))
+            : []),
+          { value: scale.mappingsElse, path: `${path}/mappingsElse` },
+        ];
+        for (const entry of values) {
+          const suffix = entry.value?.publicVocabularyEntry;
+          if (typeof suffix === "string" && !ids.has(`${url}${suffix}`))
+            issues.push(
+              this.issue(
+                "UNKNOWN_SCALE_VOCABULARY_ENTRY",
+                "vocabulary",
+                "error",
+                `${entry.path}/publicVocabularyEntry`,
+                `Eintrag ${suffix} existiert nicht im Skalenvokabular ${url}.`,
+              ),
+            );
+        }
+      }
     }
   }
 

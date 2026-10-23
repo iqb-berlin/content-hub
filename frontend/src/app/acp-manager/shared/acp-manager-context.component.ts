@@ -1,15 +1,10 @@
 import { Component, DestroyRef, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Acp } from '../../core/models/api.models';
+import { Acp, AcpRoleAssignment } from '../../core/models/api.models';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { getAcpRoleLabel } from '../../core/utils/acp-role-label.util';
-
-interface AcpRoleAssignment {
-  userId: string;
-  role: 'ACP_MANAGER' | 'READ_ONLY';
-}
 
 @Component({
   selector: 'app-acp-manager-context',

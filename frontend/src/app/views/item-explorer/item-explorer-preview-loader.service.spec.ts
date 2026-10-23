@@ -51,6 +51,29 @@ describe('ItemExplorerPreviewLoader', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps requests for the same unit ID separate across parts', async () => {
+    const api = {
+      getFileUnitView: vi.fn((_acp, _unit, options) =>
+        of({ id: 'UNIT_1', partId: options.partId, dependencies: [] }),
+      ),
+      appendAuthToken: vi.fn((url) => url),
+    };
+    const diagnostics = { start: vi.fn(), finish: vi.fn() };
+    const loader = new ItemExplorerPreviewLoader(api as any, diagnostics as any);
+    const first = await firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1', 'math'));
+    const second = await firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1', 'language'));
+    expect(first.unit.partId).toBe('math');
+    expect(second.unit.partId).toBe('language');
+    expect(api.getFileUnitView).toHaveBeenCalledWith('acp-1', 'UNIT_1', {
+      perspective: 'editor',
+      partId: 'math',
+    });
+    expect(api.getFileUnitView).toHaveBeenCalledWith('acp-1', 'UNIT_1', {
+      perspective: 'editor',
+      partId: 'language',
+    });
+  });
+
   it('does not retain failed asset requests', async () => {
     const api = {
       getFileUnitView: vi.fn(() =>

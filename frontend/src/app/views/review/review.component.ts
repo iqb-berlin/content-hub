@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
-import { ReviewReadiness } from '../../core/models/api.models';
+import { CommentCategory, ReviewReadiness } from '../../core/models/api.models';
 import { BookletSelectionComponent } from '../../shared/components/booklet-selection.component';
 
 interface ReviewMember {
@@ -18,11 +18,15 @@ interface ReviewGroup {
   archived: boolean;
   members: ReviewMember[];
 }
+type EditableCommentCategory = Omit<CommentCategory, 'id'> & { id?: string };
+
 interface ReviewConfig {
   enableReview: boolean;
+  hideReviewDeveloperNames?: boolean;
   visibilityMode: 'PRIVATE' | 'SHARED' | 'GROUP';
   configVersion: number;
   groups: ReviewGroup[];
+  categories?: EditableCommentCategory[];
 }
 
 @Component({
@@ -332,8 +336,8 @@ interface ReviewConfig {
             <p role="status">Änderung der Freigabe noch nicht gespeichert.</p>
           }
           <small
-            >Speichert auch Änderungen an Kommentarsicht und Gruppen. Beim Aktivieren wird die
-            Bereitschaft geprüft.</small
+            >Speichert auch Änderungen an Metadatensicht, Kommentarsicht, Gruppen und Kategorien.
+            Beim Aktivieren wird die Bereitschaft geprüft.</small
           >
         </section>
       }
@@ -393,6 +397,19 @@ interface ReviewConfig {
           }
         </section>
       }
+      @if (access?.canManageReview && config) {
+        <fieldset [disabled]="busy">
+          <legend>Metadaten in der Prüfansicht</legend>
+          <label>
+            <input type="checkbox" [(ngModel)]="config.hideReviewDeveloperNames" />
+            Namen und Kürzel der Aufgabenentwickler/innen ausblenden
+          </label>
+          <p>
+            Blendet das Metadatenfeld „Entwickler/in“ in der Testheft-Prüfansicht für alle
+            Review-Teilnehmenden aus. Die Einstellung gilt nach dem Speichern.
+          </p>
+        </fieldset>
+      }
       @if (manifest) {
         <h2>2. Prüfansicht testen</h2>
         <p>Testheft auswählen und die Ansicht für das Review prüfen.</p>
@@ -404,7 +421,7 @@ interface ReviewConfig {
       }
       @if (access?.canManageReview && config) {
         <fieldset [disabled]="busy">
-          <legend>3. Kommentarsicht und Gruppen</legend>
+          <legend>3. Kommentarsicht, Gruppen und Kategorien</legend>
           <p>
             <label
               >Kommentarsicht
@@ -416,6 +433,7 @@ interface ReviewConfig {
             </label>
           </p>
           <p>Review-Verantwortliche sehen alle Kommentare. Gruppen vergeben keine Zugangsrechte.</p>
+          <p>Bewertungen sind nur im geteilten Modus verfügbar.</p>
           @for (group of config.groups; track $index) {
             <details class="review-group" [open]="!group.id">
               <summary>
@@ -482,6 +500,41 @@ interface ReviewConfig {
             ohne Kommentare können gelöscht werden. Gruppen mit Kommentaren werden archiviert, damit
             ihr Verlauf erhalten bleibt.
           </p>
+          <h3>Kommentarkategorien</h3>
+          <p>
+            Pro Kommentar und Antwort ist eine Kategorie optional. Umbenennen ändert die Bezeichnung
+            auch bei bestehenden Kommentaren und in Exporten. Archivierte Kategorien bleiben
+            zugeordnet und auswertbar, sind aber für neue Zuordnungen nicht mehr wählbar.
+          </p>
+          @for (category of config.categories || []; track $index) {
+            <div class="review-group">
+              <label>Kategoriename <input [(ngModel)]="category.name" maxlength="120" /></label>
+              <label
+                ><input type="checkbox" [(ngModel)]="category.archived" /> Kategorie
+                archivieren</label
+              >
+              <button class="btn btn-outline btn-sm" (click)="removeCategory(category)">
+                {{ category.id ? 'Kategorie löschen' : 'Neue Kategorie verwerfen' }}
+              </button>
+            </div>
+          }
+          @if (deletedCategoryIds.length) {
+            <p role="status">
+              {{ deletedCategoryIds.length }} Kategorie(n) zum Löschen vorgemerkt. Bitte
+              Einstellungen speichern.
+            </p>
+          }
+          <button
+            class="btn btn-outline"
+            (click)="addCategory()"
+            [disabled]="(config.categories?.length || 0) >= 100"
+          >
+            Kommentarkategorie hinzufügen
+          </button>
+          <p>
+            Nur Kategorien ohne Kommentare können gelöscht werden. Verwendete Kategorien lassen sich
+            archivieren.
+          </p>
           <div class="configuration-actions">
             <button class="btn btn-primary" (click)="configure()" [disabled]="readinessBusy">
               Review-Konfiguration speichern
@@ -530,6 +583,16 @@ interface ReviewConfig {
                 <option value="TASK_SEQUENCE">Aufgabenfolge</option>
               </select></label
             >
+            <label
+              >Kategorie filtern
+              <select [(ngModel)]="categoryFilter">
+                <option value="">Alle Kategorien</option>
+                <option value="uncategorized">Ohne Kategorie</option>
+                @for (category of commentCategories; track category.id) {
+                  <option [value]="category.id">{{ category.name }}</option>
+                }
+              </select>
+            </label>
             @if (access?.canManageReview && config) {
               <label
                 >Gruppe filtern
@@ -604,6 +667,7 @@ interface ReviewConfig {
               <article class="card">
                 <strong>{{ targetLabel(comment.targetType) }} · {{ comment.targetId }}</strong>
                 <span> · {{ comment.groupName || 'Ohne Gruppe' }} · {{ comment.authorLabel }}</span>
+                <span> · {{ comment.categoryName || 'Ohne Kategorie' }}</span>
                 <p style="white-space: pre-wrap">{{ comment.commentText }}</p>
               </article>
             } @empty {
@@ -669,6 +733,8 @@ export class ReviewComponent implements OnInit, OnDestroy {
   private groupDeleteTrigger: HTMLElement | null = null;
   deletedGroupIds: string[] = [];
   private removedGroups: ReviewGroup[] = [];
+  deletedCategoryIds: string[] = [];
+  private removedCategories: EditableCommentCategory[] = [];
   config: ReviewConfig | null = null;
   private savedMode = 'PRIVATE';
   savedEnabled = false;
@@ -678,6 +744,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
   comments: any[] = [];
   commentsError = '';
   groupFilter = '';
+  categoryFilter = '';
   textFilter = '';
   authorFilter = '';
   targetFilter = '';
@@ -742,6 +809,8 @@ export class ReviewComponent implements OnInit, OnDestroy {
     this.requests.add(
       this.api.getReviewConfig(this.acpId).subscribe({
         next: (config) => {
+          this.removedCategories = [];
+          this.deletedCategoryIds = [];
           this.removedGroups = [];
           this.deletedGroupIds = [];
           this.configConflict = false;
@@ -770,6 +839,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
         q: this.textFilter.trim(),
         author: this.authorFilter,
         groupId: this.groupFilter,
+        categoryId: this.categoryFilter,
         targetType: this.targetFilter,
       }).filter(([, value]) => value),
     );
@@ -778,6 +848,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
     this.textFilter = '';
     this.authorFilter = '';
     this.groupFilter = '';
+    this.categoryFilter = '';
     this.targetFilter = '';
   }
   loadReadiness() {
@@ -833,6 +904,10 @@ export class ReviewComponent implements OnInit, OnDestroy {
           comment.commentText.toLowerCase().includes(this.textFilter.trim().toLowerCase())) &&
         (!this.authorFilter || comment.authorLabel === this.authorFilter) &&
         (!this.targetFilter || comment.targetType === this.targetFilter) &&
+        (!this.categoryFilter ||
+          (this.categoryFilter === 'uncategorized'
+            ? !comment.categoryId
+            : comment.categoryId === this.categoryFilter)) &&
         (!this.groupFilter ||
           (this.groupFilter === 'ungrouped'
             ? !comment.groupId
@@ -855,6 +930,26 @@ export class ReviewComponent implements OnInit, OnDestroy {
   }
   addGroup() {
     this.config?.groups.push({ name: '', archived: false, members: [] });
+  }
+  addCategory() {
+    if (!this.config || this.busy) return;
+    (this.config.categories ??= []).push({ name: '', archived: false });
+  }
+  removeCategory(category: EditableCommentCategory) {
+    if (!this.config || this.busy) return;
+    if (category.id) {
+      this.deletedCategoryIds.push(category.id);
+      this.removedCategories.push(category);
+    }
+    this.config.categories = this.config.categories?.filter((entry) => entry !== category);
+  }
+  get commentCategories() {
+    const categories = new Map<string, { id: string; name: string }>();
+    for (const comment of this.comments) {
+      if (comment.categoryId && comment.categoryName)
+        categories.set(comment.categoryId, { id: comment.categoryId, name: comment.categoryName });
+    }
+    return [...categories.values()].sort((left, right) => left.name.localeCompare(right.name));
   }
   get readinessLabel(): string {
     if (this.readinessError) return 'Aktualität unbekannt';
@@ -951,11 +1046,14 @@ export class ReviewComponent implements OnInit, OnDestroy {
         .configureReview(this.acpId, {
           ...this.config,
           deletedGroupIds: this.deletedGroupIds,
+          deletedCategoryIds: this.deletedCategoryIds,
           confirmExistingComments: sharing,
           confirmReadinessWarnings,
         })
         .subscribe({
           next: (config) => {
+            this.removedCategories = [];
+            this.deletedCategoryIds = [];
             this.removedGroups = [];
             this.deletedGroupIds = [];
             this.configConflict = false;
@@ -972,6 +1070,11 @@ export class ReviewComponent implements OnInit, OnDestroy {
               this.config.groups.push(...this.removedGroups);
               this.removedGroups = [];
               this.deletedGroupIds = [];
+            }
+            if (this.config && this.removedCategories.length) {
+              (this.config.categories ??= []).push(...this.removedCategories);
+              this.removedCategories = [];
+              this.deletedCategoryIds = [];
             }
             this.configConflict = error?.status === 409;
             if (error?.error?.readiness) this.readiness = error.error.readiness;

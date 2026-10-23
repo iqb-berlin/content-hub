@@ -104,6 +104,34 @@ describe("ItemParameterImportPipeline", () => {
     });
   });
 
+  it("ignores empty CSV records while preserving source row numbers for errors", () => {
+    const result = pipeline.execute({
+      fileBuffer: Buffer.from(
+        [
+          "item;est;infit",
+          "I1;0.5;1.0",
+          ";;",
+          '"";" ";""',
+          "   ",
+          ";0.7;",
+          "I2;0.8;1.1",
+          ";;",
+        ].join("\r\n"),
+      ),
+      items,
+      itemProperties: {},
+    });
+
+    expect(result.updated).toBe(2);
+    expect(result.failed).toEqual([
+      { csvRow: "Zeile 6", reason: "Item fehlt" },
+    ]);
+    expect(result.nextItemProperties).toEqual({
+      "uuid-1": { empiricalDifficulty: 0.5, infit: 1.0 },
+      "uuid-2": { empiricalDifficulty: 0.8, infit: 1.1 },
+    });
+  });
+
   it("distinguishes an absent column from an explicitly empty value", () => {
     const result = pipeline.execute({
       fileBuffer: Buffer.from("item;est\nI1;"),

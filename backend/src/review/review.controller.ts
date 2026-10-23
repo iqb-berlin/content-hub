@@ -35,7 +35,10 @@ import {
 } from "../database/entities";
 import { AcpAccessGuard } from "../auth/guards/acp-access.guard";
 import { AcpCapabilitiesService } from "../auth/capabilities/acp-capabilities.service";
-import { hasCapability } from "../auth/capabilities/acp-capabilities";
+import {
+  hasCapability,
+  isExplorerAvailable,
+} from "../auth/capabilities/acp-capabilities";
 import { UuidParam } from "../common/uuid-param";
 import { ReviewManifestService } from "./review-manifest.service";
 import { ReviewReadinessService } from "./review-readiness.service";
@@ -54,8 +57,14 @@ class ReviewGroupDto {
   @Type(() => ReviewMemberDto)
   members!: ReviewMemberDto[];
 }
+class CommentCategoryDto {
+  @IsOptional() @IsUUID() id?: string;
+  @IsString() @MaxLength(120) name!: string;
+  @IsBoolean() archived!: boolean;
+}
 class ReviewConfigDto {
   @IsBoolean() enableReview!: boolean;
+  @IsOptional() @IsBoolean() hideReviewDeveloperNames?: boolean;
   @IsInt() @Min(1) configVersion!: number;
   @IsIn(["PRIVATE", "SHARED", "GROUP"]) visibilityMode!:
     | "PRIVATE"
@@ -74,6 +83,19 @@ class ReviewConfigDto {
   @ArrayMaxSize(100)
   @IsUUID(undefined, { each: true })
   deletedGroupIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(100)
+  @ValidateNested({ each: true })
+  @Type(() => CommentCategoryDto)
+  categories?: CommentCategoryDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(100)
+  @IsUUID(undefined, { each: true })
+  deletedCategoryIds?: string[];
 }
 @Controller("view/acp/:acpId")
 @UseGuards(AcpAccessGuard)
@@ -93,13 +115,16 @@ export class ReviewController {
   ) {
     const grants = await this.capabilities.resolve(req);
     const config = await this.configs.findOne({ where: { acpId } });
+    const explorerAvailable = isExplorerAvailable(req, config?.featureConfig);
     return {
       capabilities: grants,
       canViewExplorer:
-        hasCapability(grants, "item-explorer:view") ||
-        (config?.accessModel === "PUBLIC" &&
-          config.featureConfig?.enableItemList !== false),
-      canEditExplorer: hasCapability(grants, "item-explorer:edit"),
+        explorerAvailable &&
+        (hasCapability(grants, "item-explorer:view") ||
+          (config?.accessModel === "PUBLIC" &&
+            config.featureConfig?.enableItemList !== false)),
+      canEditExplorer:
+        explorerAvailable && hasCapability(grants, "item-explorer:edit"),
       canReview:
         grants.includes("review:manage") ||
         (config?.featureConfig?.enableReview === true &&
@@ -224,12 +249,52 @@ export class ReviewController {
         }
         config.reviewGroups = next;
       }
+      if (dto.categories) {
+        const previous = config.commentCategories || [];
+        const ids = new Set<string>();
+        const names = new Set<string>();
+        const next = dto.categories.map((category) => {
+          const name = category.name.trim();
+          if (!name) throw new BadRequestException("Kategoriename fehlt");
+          if (
+            category.id &&
+            !previous.some((entry) => entry.id === category.id)
+          )
+            throw new BadRequestException("Unbekannte Kommentarkategorie");
+          const id = category.id || randomUUID();
+          if (ids.has(id) || names.has(name.toLowerCase()))
+            throw new BadRequestException("Doppelte Kommentarkategorie");
+          ids.add(id);
+          names.add(name.toLowerCase());
+          return { id, name, archived: category.archived };
+        });
+        for (const category of previous.filter((entry) => !ids.has(entry.id))) {
+          if (!dto.deletedCategoryIds?.includes(category.id))
+            throw new BadRequestException(
+              "Löschen der Kategorie muss bestätigt werden.",
+            );
+          // Comment writes hold the same ACP lock. Historical assignments,
+          // including soft-deleted comments, must survive category management.
+          if (
+            await manager.count(Comment, {
+              where: { acpId, categoryId: category.id },
+            })
+          )
+            throw new BadRequestException(
+              "Die Kategorie enthält Kommentare und kann nur archiviert werden.",
+            );
+        }
+        config.commentCategories = next;
+      }
       if (dto.visibilityMode === "GROUP" && previousMode !== "GROUP") {
         config.featureConfig.ungroupedVisibilityMode = previousMode;
       }
       config.featureConfig = {
         ...config.featureConfig,
         enableReview: dto.enableReview,
+        ...(dto.hideReviewDeveloperNames !== undefined
+          ? { hideReviewDeveloperNames: dto.hideReviewDeveloperNames }
+          : {}),
         commentVisibilityMode: dto.visibilityMode,
       };
       config.reviewConfigVersion += 1;
@@ -288,9 +353,12 @@ export class ReviewController {
   private configView(config: AcpAccessConfig) {
     return {
       enableReview: config.featureConfig.enableReview === true,
+      hideReviewDeveloperNames:
+        config.featureConfig.hideReviewDeveloperNames === true,
       visibilityMode: config.featureConfig.commentVisibilityMode || "PRIVATE",
       configVersion: config.reviewConfigVersion,
       groups: config.reviewGroups || [],
+      categories: config.commentCategories || [],
     };
   }
 
