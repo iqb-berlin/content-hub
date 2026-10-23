@@ -38,7 +38,10 @@ import { ItemExplorerPreviewCoordinator } from './item-explorer-preview-coordina
 
 @Component({
   selector: 'app-item-explorer',
-  host: { '[class.table-only]': '!showExplorerItemPanel' },
+  host: {
+    '[class.table-only]': '!showExplorerItemPanel',
+    '[class.without-player]': '!showPlayerPreview',
+  },
   standalone: true,
   imports: [
     BreadcrumbComponent,
@@ -92,6 +95,10 @@ export class ItemExplorerComponent implements OnInit, OnDestroy, ItemExplorerShe
 
   get showExplorerItemPanel(): boolean {
     return this.feature.showExplorerItemPanel;
+  }
+
+  get showPlayerPreview(): boolean {
+    return this.feature.showPlayerPreview;
   }
 
   get isFullscreenActive(): boolean {

@@ -3305,6 +3305,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   openCodingOverlay() {
+    if (!this.showExplorerItemPanel) return;
     this.rememberFocusBeforeOverlay();
     this.coding.codingSearchText = '';
     this.showOverlay = 'coding';

@@ -95,6 +95,12 @@ app-item-explorer app-split-pane {
     overflow: visible;
   }
 
+  app-item-explorer.without-player app-split-pane .pane-right,
+  app-item-explorer.without-player .preview-panel {
+    height: auto;
+    min-height: 0;
+  }
+
   app-item-explorer .collection-select {
     min-width: 0;
     max-width: 100%;

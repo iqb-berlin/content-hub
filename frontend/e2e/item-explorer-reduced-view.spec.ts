@@ -207,9 +207,34 @@ for (const setting of ['showTableToolbarArea', 'showItemInfo', 'showPlayerPrevie
     ).toBeVisible();
     await expect(page.locator('.explorer-table .filter-row')).toBeVisible();
     await expect(page.locator('.pane-right')).toBeVisible();
+    if (setting === 'showPlayerPreview') {
+      await page.setViewportSize({ width: 600, height: 900 });
+      // Removing the player must also remove its reserved mobile height.
+      await expect(page.locator('.pane-right')).toHaveCSS('min-height', '0px');
+      const panel = await page.locator('.pane-right').boundingBox();
+      expect(panel!.height).toBeLessThan(300);
+    }
     await testInfo.attach(setting, { body: await page.screenshot(), contentType: 'image/png' });
   });
 }
+
+test('keeps coding deep links within the configured item panel visibility', async ({
+  page,
+  request,
+}) => {
+  await configure(request, { enabled: true, showExplorerItemPanel: false });
+  await installOidcSession(page, viewerId, 'e2e-viewer');
+  const targetUrl = `${explorerUrl}?unitId=u1&itemId=i1&coding=open`;
+  await page.goto(targetUrl);
+  await expect(page.locator('.explorer-table tbody tr[aria-selected="true"]')).toHaveCount(1);
+  await expect(page.locator('.pane-right')).toHaveCount(0);
+  await expect(page.locator('.overlay-dialog')).toHaveCount(0);
+
+  await configure(request, { enabled: true });
+  await page.goto(targetUrl);
+  await expect(page.locator('.overlay-dialog')).toBeVisible();
+  await expect(page.locator('.coding-item').first()).toBeVisible();
+});
 
 test('hides optional header actions without trapping managers in their preview', async ({
   page,
