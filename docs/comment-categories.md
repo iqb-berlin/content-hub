@@ -23,6 +23,10 @@ Felder leer. Der Kategoriefilter gilt wie die übrigen Anzeigefilter für Export
 solange „Anzeigefilter beim Export ignorieren“ ausgeschaltet ist. Archivierte
 Kategorien werden mit ihrer aktuellen Bezeichnung exportiert.
 
+Exporte lesen Kommentare und Kategorien gemeinsam unter der ACP-Sperre. Dadurch
+bleiben Zuordnungen und Bezeichnungen auch bei gleichzeitigem Entfernen oder
+Löschen einer Kategorie konsistent. Die Sperre endet vor der Dateierzeugung.
+
 Die Review-Konfiguration liefert und akzeptiert `categories` mit `id`, `name`
 und `archived`; bei neuen Kategorien fehlt die ID. Entfernte IDs werden zusätzlich
 in `deletedCategoryIds` gesendet. Konfigurationsänderungen verwenden die

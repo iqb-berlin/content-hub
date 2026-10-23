@@ -878,10 +878,10 @@ export class CommentsService {
   }
 
   async exportComments(acpId: string, userId?: string): Promise<any[]> {
-    const comments = userId
-      ? await this.findByUser(acpId, userId)
-      : await this.findByAcp(acpId);
-    const categories = await this.reviewPolicy.getCommentCategories(acpId);
+    const { comments, categories } = await this.getExportSnapshot(
+      acpId,
+      userId ? { userId, isManager: false, authorLabel: "" } : undefined,
+    );
     return comments.map((comment) =>
       this.toExportRow(comment, false, categories),
     );
@@ -891,11 +891,35 @@ export class CommentsService {
     acpId: string,
     credentialId: string,
   ): Promise<any[]> {
-    const comments = await this.findByCredential(acpId, credentialId);
-    const categories = await this.reviewPolicy.getCommentCategories(acpId);
+    const { comments, categories } = await this.getExportSnapshot(acpId, {
+      credentialId,
+      isManager: false,
+      authorLabel: "",
+    });
     return comments.map((comment) =>
       this.toExportRow(comment, true, categories),
     );
+  }
+
+  private async getExportSnapshot(
+    acpId: string,
+    actor?: CommentActor & { visible?: boolean },
+  ): Promise<{ comments: Comment[]; categories: CommentCategory[] }> {
+    if (!this.inTransaction)
+      return this.transaction(acpId, (service) =>
+        service.getExportSnapshot(acpId, actor),
+      );
+    // Keep labels and assignments from the same state while category writes
+    // wait on the shared ACP lock. Release it before catalog/file rendering.
+    const comments = actor?.visible
+      ? await this.findVisible(acpId, actor)
+      : actor?.credentialId
+        ? await this.findByCredential(acpId, actor.credentialId, actor)
+        : actor?.userId
+          ? await this.findByUser(acpId, actor.userId, actor)
+          : await this.findByAcp(acpId);
+    const categories = await this.reviewPolicy.getCommentCategories(acpId);
+    return { comments, categories };
   }
 
   async exportCommentsXlsx(acpId: string, userId?: string): Promise<Buffer> {
@@ -1019,24 +1043,12 @@ export class CommentsService {
           authorLabel: actor.authorLabel || "",
         }
       : undefined;
-    const commentsPromise = actor?.visible
-      ? this.findVisible(acpId, {
-          ...actor,
-          isManager: actor.isManager === true,
-          authorLabel: actor.authorLabel || "",
-        })
-      : actor?.credentialId
-        ? this.findByCredential(acpId, actor.credentialId, requestActor)
-        : actor?.userId
-          ? this.findByUser(acpId, actor.userId, requestActor)
-          : this.findByAcp(acpId);
-    const [comments, itemCatalog, acp, manifest, categories] =
+    const [{ comments, categories }, itemCatalog, acp, manifest] =
       await Promise.all([
-        commentsPromise,
+        this.getExportSnapshot(acpId, requestActor),
         this.getItemCatalog(acpId),
         this.acpRepository.findOne({ where: { id: acpId } }),
         this.reviewManifestService.getManifest(acpId, this.transactionManager),
-        this.reviewPolicy.getCommentCategories(acpId),
       ]);
     const bookletCatalog = this.buildReviewBookletCatalog(acp?.acpIndex);
     manifest.booklets.forEach((booklet, bookletOrder) => {

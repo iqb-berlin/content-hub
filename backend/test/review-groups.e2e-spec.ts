@@ -1496,6 +1496,144 @@ describe("Review visibility, groups and synchronization API", () => {
       .expect(400);
   });
 
+  it.each(["legacy", "review"] as const)(
+    "keeps the category label in a %s export while its last assignment is removed",
+    async (format) => {
+      const acp = await db.getRepository(Acp).save({
+        packageId: `category-export-${format}-${Date.now()}`,
+        name: "Category export snapshot",
+        acpIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
+      });
+      const category = {
+        id: "10000000-0000-4000-8000-000000000239",
+        name: "Snapshot category",
+        archived: false,
+      };
+      await db.getRepository(AcpAccessConfig).save({
+        acpId: acp.id,
+        accessModel: "PRIVATE" as any,
+        featureConfig: { commentVisibilityMode: "PRIVATE" },
+        commentCategories: [category],
+      });
+      await db.getRepository(Comment).save({
+        acpId: acp.id,
+        userId: actors[4].id,
+        targetType: CommentTargetType.UNIT,
+        targetId: "U",
+        unitId: "U",
+        commentText: "Snapshot comment",
+        categoryId: category.id,
+      });
+      let entered!: () => void;
+      const readingCategories = new Promise<void>((resolve) => {
+        entered = resolve;
+      });
+      let resume!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        resume = resolve;
+      });
+      let commentsRead!: () => void;
+      const readingComments = new Promise<void>((resolve) => {
+        commentsRead = resolve;
+      });
+      const originalFind = CommentsService.prototype.findByAcp;
+      const find = jest
+        .spyOn(CommentsService.prototype, "findByAcp")
+        .mockImplementationOnce(async function (
+          this: CommentsService,
+          id: string,
+        ) {
+          const comments = await originalFind.call(this, id);
+          commentsRead();
+          return comments;
+        });
+      const original = ReviewPolicyService.prototype.getCommentCategories;
+      const read = jest
+        .spyOn(ReviewPolicyService.prototype, "getCommentCategories")
+        .mockImplementationOnce(async function (
+          this: ReviewPolicyService,
+          id: string,
+        ) {
+          entered();
+          await gate;
+          return original.call(this, id);
+        });
+      const q = db.createQueryRunner();
+      let writer: Promise<void> | undefined;
+      let exporting: Promise<string> | undefined;
+      try {
+        await q.connect();
+        const [{ pid }] = await q.query(`SELECT pg_backend_pid() AS pid`);
+        await q.startTransaction();
+        const service = app.get(CommentsService);
+        exporting =
+          format === "legacy"
+            ? service
+                .exportComments(acp.id)
+                .then((rows) => JSON.stringify(rows))
+            : service
+                .exportReviewCommentsCsv(acp.id, {
+                  userId: actors[4].id,
+                  isManager: true,
+                  visible: true,
+                })
+                .then((buffer) => buffer.toString("utf8"));
+        await Promise.all([readingCategories, readingComments]);
+        let committed = false;
+        writer = (async () => {
+          // The same ACP lock serializes real comment and category writes.
+          await q.query(
+            `SELECT id FROM acp_access_configs WHERE acp_id = $1 FOR UPDATE`,
+            [acp.id],
+          );
+          await q.query(
+            `UPDATE comments SET category_id = NULL WHERE acp_id = $1`,
+            [acp.id],
+          );
+          await q.query(
+            `UPDATE acp_access_configs SET comment_categories = '[]' WHERE acp_id = $1`,
+            [acp.id],
+          );
+          await q.commitTransaction();
+          committed = true;
+        })();
+        // Wait for an observed database state, so both the unlocked regression
+        // and the serialized implementation are exercised without timing guesses.
+        const deadline = Date.now() + 5000;
+        while (!committed) {
+          const [activity] = await db.query(
+            `SELECT wait_event_type FROM pg_stat_activity WHERE pid = $1`,
+            [pid],
+          );
+          if (activity?.wait_event_type === "Lock") break;
+          if (Date.now() > deadline)
+            throw new Error("Category writer did not reach the database");
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        resume();
+        const output = await exporting;
+        await writer;
+        expect(output).toContain("Snapshot comment");
+        expect(output).toContain("Snapshot category");
+        expect(
+          (
+            await db
+              .getRepository(AcpAccessConfig)
+              .findOneByOrFail({ acpId: acp.id })
+          ).commentCategories,
+        ).toEqual([]);
+      } finally {
+        resume();
+        await Promise.allSettled([exporting, writer]);
+        read.mockRestore();
+        find.mockRestore();
+        if (q.isTransactionActive) await q.rollbackTransaction();
+        await q.release();
+        await db.getRepository(Acp).delete(acp.id);
+      }
+    },
+  );
+
   it("migrates existing comments without category assignment and protects rollback", async () => {
     const q = db.createQueryRunner();
     const schema = `category_migration_${Date.now()}`;
