@@ -78,7 +78,7 @@ Typical manager loop:
 
 ## Reduced read-only view
 
-ACP managers configure **Reduzierte Ansicht des Item-Explorers** under **Zugriff & Funktionen**.
+ACP managers configure **Ansicht für Reviewer vereinfachen** under **Zugriff & Funktionen**.
 These settings are saved directly in `featureConfig.itemExplorerReducedView`. They take effect on
 subsequent Explorer loads without publishing an Explorer draft. Publishing or discarding an Explorer
 draft does not change them. They are presentation settings, not API permissions.

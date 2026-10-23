@@ -123,11 +123,11 @@ test('saves the reviewer view directly in access settings independently of publi
   await page.goto(`/manage/${acpId}/access`);
   const settings = page
     .locator('details')
-    .filter({ has: page.locator('summary', { hasText: 'Reduzierte Ansicht des Item-Explorers' }) });
+    .filter({ has: page.locator('summary', { hasText: 'Ansicht für Reviewer vereinfachen' }) });
   await settings.locator('summary').click();
   await settings.getByRole('button', { name: 'Nur Tabelle', exact: true }).click();
   await expect(
-    settings.getByRole('checkbox', { name: 'Reduzierte Ansicht aktivieren' }),
+    settings.getByRole('checkbox', { name: 'Vereinfachte Ansicht für Reviewer aktivieren' }),
   ).toBeChecked();
   await page.getByRole('button', { name: 'Änderungen speichern' }).click();
   await expect(page.getByText('✓ Gespeichert', { exact: true })).toBeVisible();
