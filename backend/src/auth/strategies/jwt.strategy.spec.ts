@@ -74,8 +74,31 @@ describe("JwtStrategy", () => {
     expect(userRepository.findOne).not.toHaveBeenCalled();
   });
 
+  it("uses the current profile name when the token still contains an old username", async () => {
+    userRepository.findOne.mockResolvedValue({
+      username: "current-user",
+      displayName: "Current Name",
+      isAppAdmin: false,
+      acpRoles: [],
+    });
+    const result = await strategy.validate({
+      sub: "user-1",
+      username: "old@example.org",
+      type: "oidc",
+      authType: "oidc",
+    } as any);
+    expect(result).toEqual(
+      expect.objectContaining({
+        sub: "user-1",
+        username: "current-user",
+        displayName: "Current Name",
+      }),
+    );
+  });
+
   it("maps DB roles for regular users", async () => {
     userRepository.findOne.mockResolvedValue({
+      displayName: "Julian Beispiel",
       isAppAdmin: true,
       acpRoles: [
         {
@@ -97,6 +120,7 @@ describe("JwtStrategy", () => {
     expect(result).toEqual({
       sub: "user-1",
       username: "julian",
+      displayName: "Julian Beispiel",
       isAppAdmin: true,
       type: "oidc",
       authType: "oidc",

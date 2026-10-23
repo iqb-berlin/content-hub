@@ -145,7 +145,9 @@ test('synchronizes initial totals, both navigation directions, display modes and
   await player.getByRole('button', { name: 'Intern weiter', exact: true }).click();
   await expect(info).toHaveText('Seite 2 / 2');
   await page.getByRole('button', { name: 'Weiter →', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Aufgabe 2', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Aufgabe 2 (review-u2)', exact: true }),
+  ).toBeVisible();
   await expect(player.getByText('Player-Seite 1')).toBeVisible();
   await expect(page.locator('.page-nav')).toHaveCount(0);
   await page.getByRole('button', { name: '← Zurück', exact: true }).click();

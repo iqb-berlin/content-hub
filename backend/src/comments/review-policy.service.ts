@@ -13,6 +13,7 @@ import {
 } from "../database/entities";
 
 import { ReviewGroup } from "../database/entities/acp-access-config.entity";
+import { commentAuthorName } from "./comment-author-name";
 
 export type CommentVisibilityMode = "PRIVATE" | "SHARED" | "GROUP";
 
@@ -44,7 +45,10 @@ export class ReviewPolicyService {
       credentialId: credential ? req.user?.sub : undefined,
       credentialUsername: credential ? req.user?.username : undefined,
       authorLabel:
-        String(req.user?.username || "Unbekannt").trim() || "Unbekannt",
+        commentAuthorName(
+          !credential && req.user?.displayName,
+          req.user?.username,
+        ) || "Unbekannt",
       isManager: this.isManagerRequest(req),
       canParticipate: Boolean(
         req.user?.sub && req.acpCapabilities?.includes("review:participate"),

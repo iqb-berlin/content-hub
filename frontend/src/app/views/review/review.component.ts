@@ -430,6 +430,7 @@ interface ReviewConfig {
             </label>
           </p>
           <p>Review-Verantwortliche sehen alle Kommentare. Gruppen vergeben keine Zugangsrechte.</p>
+          <p>Bewertungen sind nur im geteilten Modus verfügbar.</p>
           @for (group of config.groups; track $index) {
             <details class="review-group" [open]="!group.id">
               <summary>

@@ -648,6 +648,17 @@ und, soweit vorhanden, die Bezeichnung. Nicht abgesendete Kommentare bleiben bei
 zwischen Items und Kommentarzielen erhalten. Ein separater Zugang zum Item-Explorer ist fuer
 diese Kommentierung nicht erforderlich.
 
+Im Review werden Aufgaben in Navigation, Aufgabenliste, Ueberschrift und Kommentarbereich
+einheitlich mit Aufgabentitel und ID bezeichnet. Aliasse aus dem Testheft bleiben gesondert
+gekennzeichnet. Die Downloads sind als `Download Aufgabe` und `Download Testheft` beschriftet.
+Unter `Kodierung` erscheinen nur relevante Kodiervariablen, numerisch nach ihrer ID sortiert;
+`Alle Variablen anzeigen` und der Reiter `RichText` werden im Review nicht angeboten.
+
+Die Breite des Reviewbereichs laesst sich mit gedrueckter linker Maustaste oder den Pfeiltasten
+aendern. Nach dem Loslassen endet die Groessenaenderung auch ueber dem Player.
+Kommentarbewertungen sind nur bei geteilter Kommentarsicht moeglich; der Hinweis dazu steht
+unter `Review` bei der Konfiguration der Kommentarsicht und Gruppen.
+
 Auf der ACP-Startseite stehen dann typischerweise zur Verfuegung:
 
 - ein Link zu den Item-Kommentaren im Item-Explorer, falls diese aktiviert sind

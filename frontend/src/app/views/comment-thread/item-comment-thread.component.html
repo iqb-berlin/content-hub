@@ -37,9 +37,6 @@
           }
         </div>
 
-        @if (snapshot?.visibilityMode === 'GROUP') {
-          <p class="comment-status">Bewertungen sind nur im geteilten Modus verfügbar.</p>
-        }
         <div class="new-comment-form">
           @if (snapshot?.visibilityMode === 'GROUP') {
             <label
@@ -115,8 +112,13 @@
                     >
                       {{
                         repliesExpanded(thread.id)
-                          ? 'Antworten einklappen'
-                          : thread.replies.length + ' Antworten aufklappen'
+                          ? thread.replies.length === 1
+                            ? 'Antwort einklappen'
+                            : 'Antworten einklappen'
+                          : thread.replies.length +
+                            (thread.replies.length === 1
+                              ? ' Antwort aufklappen'
+                              : ' Antworten aufklappen')
                       }}
                     </button>
                   }

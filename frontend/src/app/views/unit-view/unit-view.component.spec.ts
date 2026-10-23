@@ -30,7 +30,9 @@ vi.mock('../comment-thread/item-comment-thread.component', async () => {
       'acpId',
       'targetType',
       'unitId',
+      'unitName',
       'bookletId',
+      'bookletName',
       'enabled',
       'initiallyOpen',
       'hideToggle',
@@ -350,6 +352,7 @@ describe('UnitViewComponent', () => {
       commentTargets: ['UNIT', 'BOOKLET'],
       showMetadata: false,
       showCodingScheme: false,
+      showRichText: true,
       showAudioVideoCodingVariables: true,
     });
     fixture.detectChanges();
@@ -424,23 +427,14 @@ describe('UnitViewComponent', () => {
       Array.from(
         fixture.nativeElement.querySelectorAll('.coding-variable h4') as NodeListOf<HTMLElement>,
       ).map((heading) => heading.textContent?.trim()),
-    ).toEqual(['Variable 2', 'Variable 1']);
+    ).toEqual(['Variable 1', 'Variable 2']);
     expect(fixture.nativeElement.textContent).not.toContain('Audio 1');
     expect(fixture.nativeElement.textContent).not.toContain('Textinhalt');
-    const showAllCodingVariables = fixture.nativeElement.querySelector(
-      '.coding-visibility-toggle input',
-    ) as HTMLInputElement;
-    expect(showAllCodingVariables).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.coding-visibility-toggle').textContent).toContain(
-      '1 weitere',
-    );
-    showAllCodingVariables.click();
+    expect(fixture.nativeElement.querySelector('.coding-visibility-toggle')).toBeNull();
+    component.showAllCodingVariables = true;
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
-    expect(
-      Array.from(
-        fixture.nativeElement.querySelectorAll('.coding-variable h4') as NodeListOf<HTMLElement>,
-      ).map((heading) => heading.textContent?.trim()),
-    ).toEqual(['Variable 2', 'Variable 1', 'Textinhalt']);
+    expect(fixture.nativeElement.textContent).not.toContain('Textinhalt');
     expect(fixture.nativeElement.textContent).not.toContain('Audio 1');
     const codingFilter = fixture.nativeElement.querySelector(
       'input[aria-label="Kodiervariablen filtern"]',
@@ -522,7 +516,122 @@ describe('UnitViewComponent', () => {
     fixture.detectChanges();
     expect(component.showMetadata).toBe(false);
     expect(component.showCodingScheme).toBe(false);
+    expect(component.showRichText).toBe(true);
     expect(fixture.nativeElement.querySelector('.meta-dl')).toBeNull();
     expect(fixture.nativeElement.querySelector('.coding-variable')).toBeNull();
+  });
+});
+
+describe('Review panel interactions', () => {
+  function component() {
+    const result = new UnitViewComponent(
+      null as any,
+      null as any,
+      null as any,
+      { markForCheck: vi.fn() } as any,
+      null as any,
+      null as any,
+    );
+    result.reviewMode = true;
+    return result;
+  }
+
+  function pointer(target: EventTarget, type: string, values: Record<string, unknown> = {}) {
+    const event = Object.assign(new Event(type, { bubbles: true, cancelable: true }), {
+      pointerId: 1,
+      clientX: 800,
+      button: 0,
+      buttons: 1,
+      isPrimary: true,
+      ...values,
+    });
+    target.dispatchEvent(event);
+  }
+
+  it.each([
+    'pointerup',
+    'pointercancel',
+    'lostpointercapture',
+    'blur',
+    'released-button',
+    'collapse',
+    'destroy',
+  ])('stops dragging on %s and ignores subsequent movement', (ending) => {
+    const view = component();
+    const handle = document.createElement('button');
+    const capture = vi.fn();
+    const release = vi.fn();
+    handle.setPointerCapture = capture;
+    handle.hasPointerCapture = () => true;
+    handle.releasePointerCapture = release;
+    handle.addEventListener('pointerdown', (event) => view.startReviewPanelResize(event));
+    try {
+      pointer(handle, 'pointerdown');
+      expect(capture).toHaveBeenCalledWith(1);
+      pointer(window, 'pointermove', { clientX: 750 });
+      expect(view.reviewPanelWidth).toBe(470);
+      pointer(window, 'pointerup', { pointerId: 2 });
+      pointer(window, 'pointermove', { clientX: 730 });
+      expect(view.reviewPanelWidth).toBe(490);
+      if (ending === 'blur') window.dispatchEvent(new Event('blur'));
+      else if (ending === 'released-button')
+        pointer(window, 'pointermove', { buttons: 0, clientX: 600 });
+      else if (ending === 'collapse') view.toggleReviewPanel();
+      else if (ending === 'destroy') view.ngOnDestroy();
+      else pointer(ending === 'lostpointercapture' ? handle : window, ending, { buttons: 0 });
+      pointer(window, 'pointermove', { clientX: 600 });
+      expect(view.reviewPanelWidth).toBe(490);
+      expect(release).toHaveBeenCalledWith(1);
+    } finally {
+      view.ngOnDestroy();
+    }
+  });
+
+  it.each([undefined, '', '  ', 42])(
+    'reports a malformed coding ID %s without crashing the review',
+    (id) => {
+      const view = component();
+      view['applyCodingScheme'](
+        {
+          variableCodings: [
+            {
+              id: 'V1',
+              sourceType: 'BASE',
+              codes: [{ id: 1, score: 1, label: 'richtig', ruleSets: [] }],
+            },
+            {
+              id,
+              sourceType: 'BASE',
+              codes: [{ id: 1, score: 1, label: 'richtig', ruleSets: [] }],
+            },
+          ],
+        },
+        0,
+      );
+      expect(view.codingSchemeAsText).toBeNull();
+      expect(view.codingSchemeError).toBe('Kodierung konnte nicht gelesen werden.');
+      expect(view.visibleCodingSchemeAsText).toEqual([]);
+      view.ngOnDestroy();
+    },
+  );
+
+  it('sorts coded variables naturally in review while keeping ordinary visibility settings', () => {
+    const view = component();
+    view.codingSchemeAsText = ['V10', 'V2', 'V1', 'text'].map((id) => ({
+      id,
+      label: id,
+      codes: id === 'text' ? [] : [{ id: 1 }],
+    })) as any;
+    view.showAllCodingVariables = true;
+    expect(view.visibleCodingSchemeAsText.map((entry) => entry.id)).toEqual(['V1', 'V2', 'V10']);
+    expect(view.codingSchemeAsText!.map((entry) => entry.id)).toEqual(['V10', 'V2', 'V1', 'text']);
+    view.reviewMode = false;
+    expect(view.visibleCodingSchemeAsText.map((entry) => entry.id)).toEqual([
+      'V10',
+      'V2',
+      'V1',
+      'text',
+    ]);
+    view.ngOnDestroy();
   });
 });
