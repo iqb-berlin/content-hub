@@ -173,7 +173,8 @@ test('shows readable coding and a reversible partial solution in the booklet rev
           unitState:{dataParts:{elementCodes:JSON.stringify([{id:'ANSWER',status:'VALUE_CHANGED',value:input.value}])}},
           playerState:{validPages:[{id:'0'},{id:'1'}],currentPage}}, '*');
       }
-      input.oninput = report;
+      input.oninput = () => setTimeout(report, 100);
+      addEventListener('unload', report);
       addEventListener('message', event => {
         const msg = event.data;
         if (msg.type === 'vopStartCommand') {
@@ -204,6 +205,8 @@ test('shows readable coding and a reversible partial solution in the booklet rev
   await answer.fill('Hamburg');
   await page.getByRole('button', { name: 'Nächste Seite →', exact: true }).click();
   await expect(page.locator('.page-info')).toHaveText('Seite 2 / 2');
+  // Match ASPECT: its debounced input report can still be pending when the frame unloads.
+  await answer.fill('Letzte eigene Eingabe');
   await page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }).click();
   await expect(answer).toHaveValue('Berlin');
   await expect(page.locator('.page-info')).toHaveText('Seite 2 / 2');
@@ -218,7 +221,7 @@ test('shows readable coding and a reversible partial solution in the booklet rev
   });
   await answer.fill('Änderung im Lösungsmodus');
   await page.getByRole('button', { name: 'Musterlösung ausblenden', exact: true }).click();
-  await expect(answer).toHaveValue('Hamburg');
+  await expect(answer).toHaveValue('Letzte eigene Eingabe');
   await page.getByRole('button', { name: 'Weiter →', exact: true }).click();
   await expect(answer).toHaveValue('');
   await expect(

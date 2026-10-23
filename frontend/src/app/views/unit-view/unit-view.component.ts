@@ -97,10 +97,23 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
               class="btn btn-outline btn-sm btn-state"
               type="button"
               (click)="toggleSolution()"
-              [disabled]="codingSchemeLoading || !definitionContent || !playerSessionId"
+              [disabled]="
+                codingSchemeLoading ||
+                !definitionContent ||
+                !playerSessionId ||
+                solutionRequestPending ||
+                printMode !== 'off'
+              "
               [attr.aria-pressed]="solutionVisible"
+              [attr.aria-busy]="solutionRequestPending"
             >
-              {{ solutionVisible ? 'Musterlösung ausblenden' : 'Musterlösung anzeigen' }}
+              {{
+                solutionRequestPending
+                  ? 'Musterlösung wird vorbereitet …'
+                  : solutionVisible
+                    ? 'Musterlösung ausblenden'
+                    : 'Musterlösung anzeigen'
+              }}
             </button>
             <button
               class="btn btn-outline btn-sm btn-state"
@@ -386,6 +399,12 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                     solutionVisible ? 'Musterlösung eingeblendet' : 'Musterlösung'
                   }}</strong>
                   <p>{{ reviewSolution.prefill.message }}</p>
+                  @if (printMode !== 'off') {
+                    <p>Zum Anzeigen der Musterlösung eine interaktive Seitendarstellung wählen.</p>
+                  }
+                  @if (solutionRequestError) {
+                    <p role="alert">{{ solutionRequestError }}</p>
+                  }
                   @if (reviewSolution.unavailableVariables.length) {
                     <p>
                       Ohne eindeutige Player-Lösung:
@@ -929,6 +948,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   totalPages = 1;
   private playerPageIds: (string | number)[] = [];
   playerSessionId: string | null = null;
+  private personalResponseSession = false;
 
   // Panel state
   panelVisible = false;
@@ -984,10 +1004,42 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   codingSchemeLoading = false;
   codingSchemeError = '';
   solutionVisible = false;
+  solutionRequestPending = false;
+  solutionRequestError = '';
   reviewSolution: ReviewSolution = deriveReviewSolution([], [], () => undefined);
   private codingVariables: CodingVariableLike[] = [];
   private responseData: Record<string, unknown> = {};
   private responseDataTimes: Record<string, number> = {};
+  private retiringResponseSource: { window: Window; sessionId: string } | null = null;
+  private responseChangedAt: number | null = null;
+  private playerInputDocument: Document | null = null;
+  private solutionRequestTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly playerInputHandler = () => {
+    if (this.reviewMode && !this.solutionVisible && this.printMode === 'off')
+      this.responseChangedAt = Date.now();
+  };
+  private readonly playerControlHandler = (event: Event) => {
+    const key = (event as KeyboardEvent).key;
+    if (
+      event.type === 'keydown' &&
+      !['Enter', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)
+    )
+      return;
+    const selector =
+      '[role="option"], button[role="radio"], button[role="checkbox"], button[role="switch"]' +
+      (event.type === 'keydown' ? ', [role="combobox"]' : '');
+    const control = (event.target as Element | null)?.closest?.(selector);
+    if (!control || control.getAttribute('aria-disabled') === 'true') return;
+    const isArrow = event.type === 'keydown' && key.startsWith('Arrow');
+    if (
+      !isArrow &&
+      (control.getAttribute('aria-selected') === 'true' ||
+        (control.getAttribute('role') === 'radio' &&
+          control.getAttribute('aria-checked') === 'true'))
+    )
+      return;
+    this.playerInputHandler();
+  };
   private readonly voud = new VoudService();
   private playerRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -1268,6 +1320,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.playerFrameReady = false;
     this.playerSessionId = null;
     this.playerPageIds = [];
+    this.personalResponseSession = false;
     this.currentPage = 1;
     this.totalPages = 1;
     this.definitionContent = null;
@@ -1281,6 +1334,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.solutionVisible = false;
     this.responseData = {};
     this.responseDataTimes = {};
+    this.retiringResponseSource = null;
+    this.responseChangedAt = null;
+    this.solutionRequestError = '';
     this.reviewSolution = deriveReviewSolution([], [], () => undefined);
     this.clearPlayerRefresh();
     this.codingFilterText = '';
@@ -1319,6 +1375,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.selectedCommentItems.clear();
     this.resetCommentItems();
     this.unitLoadToken += 1;
+    this.retiringResponseSource = null;
     this.featureConfigRequest?.unsubscribe();
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
@@ -1332,6 +1389,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   onPlayerLoaded() {
     if (!this.unit || !this.playerFrame?.nativeElement?.contentWindow) return;
+    this.observePlayerInputs();
     this.startPlayerIfReady();
   }
 
@@ -1339,6 +1397,14 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     const src = this.playerSrcDoc;
     if (!src) return;
     this.clearPlayerRefresh();
+    const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
+    // ASPECT flushes its last response on unload. Retain this exact source/session
+    // while the replacement frame starts, without accepting synthetic solution data.
+    this.retiringResponseSource =
+      this.personalResponseSession && frameWindow && this.playerSessionId
+        ? { window: frameWindow, sessionId: this.playerSessionId }
+        : null;
+    if (this.printMode !== 'off') this.solutionVisible = false;
     this.playerFrameReady = false;
     this.playerSessionId = null;
     if (!this.reviewMode) this.initializePageNavigation();
@@ -1352,30 +1418,94 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   toggleSolution() {
-    if (!this.reviewMode || !this.playerSessionId) return;
+    if (
+      !this.reviewMode ||
+      !this.playerSessionId ||
+      this.solutionRequestPending ||
+      this.printMode !== 'off'
+    )
+      return;
     this.activeTab = 'coding';
     this.reviewPanelCollapsed = false;
     this.changeDetector.markForCheck();
     if (!this.solutionVisible && this.reviewSolution.prefill.status !== 'available') return;
+    this.solutionRequestError = '';
+    if (!this.solutionVisible) {
+      // Material choice controls commit their form value on blur. Moving focus
+      // into the parent document does not consistently blur them in every browser.
+      (this.playerInputDocument?.activeElement as HTMLElement | null)?.blur?.();
+    }
+    if (!this.solutionVisible && this.responseChangedAt !== null) {
+      // Input reports are debounced by the player. Keep the original frame until
+      // it acknowledges the last interaction, including browsers without unload reports.
+      this.solutionRequestPending = true;
+      this.solutionRequestTimer = setTimeout(() => {
+        this.cancelSolutionRequest();
+        this.solutionRequestError =
+          'Der aktuelle Antwortstand wurde noch nicht vom Player gemeldet. Bitte erneut versuchen.';
+        this.changeDetector.markForCheck();
+      }, 2500);
+      return;
+    }
+    this.applySolutionToggle();
+  }
+
+  private applySolutionToggle() {
     this.solutionVisible = !this.solutionVisible;
     this.onPagingModeChange();
   }
 
   private clearPlayerRefresh() {
+    this.cancelSolutionRequest();
+    this.stopObservingPlayerInputs();
     if (this.playerRefreshTimer) clearTimeout(this.playerRefreshTimer);
     this.playerRefreshTimer = null;
   }
 
+  private cancelSolutionRequest() {
+    if (this.solutionRequestTimer) clearTimeout(this.solutionRequestTimer);
+    this.solutionRequestTimer = null;
+    this.solutionRequestPending = false;
+  }
+
+  private observePlayerInputs() {
+    this.stopObservingPlayerInputs();
+    if (!this.reviewMode) return;
+    const doc = this.playerFrame?.nativeElement?.contentDocument;
+    if (!doc) return;
+    this.playerInputDocument = doc;
+    doc.addEventListener('input', this.playerInputHandler, true);
+    doc.addEventListener('click', this.playerControlHandler, true);
+    doc.addEventListener('keydown', this.playerControlHandler, true);
+  }
+
+  private stopObservingPlayerInputs() {
+    this.playerInputDocument?.removeEventListener('input', this.playerInputHandler, true);
+    this.playerInputDocument?.removeEventListener('click', this.playerControlHandler, true);
+    this.playerInputDocument?.removeEventListener('keydown', this.playerControlHandler, true);
+    this.playerInputDocument = null;
+  }
+
   private onPlayerMessage(event: MessageEvent) {
+    const msg = event.data;
+    if (!msg || typeof msg !== 'object') return;
+    const retiringSource = this.retiringResponseSource;
+    if (
+      retiringSource &&
+      event.source === retiringSource.window &&
+      msg.sessionId === retiringSource.sessionId
+    ) {
+      if (msg.type === 'vopStateChangedNotification') this.captureResponseData(msg);
+      return;
+    }
     const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
     if (!frameWindow || event.source !== frameWindow) return;
 
-    const msg = event.data;
-    if (!msg || typeof msg !== 'object') return;
     if (msg.sessionId !== undefined && msg.sessionId !== this.playerSessionId) return;
 
     switch (msg.type) {
       case 'vopReadyNotification': {
+        this.observePlayerInputs();
         this.playerFrameReady = true;
         this.startPlayerIfReady();
         break;
@@ -1386,17 +1516,16 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
           this.playerSessionId &&
           msg.sessionId === this.playerSessionId &&
           !this.solutionVisible &&
-          msg.unitState?.dataParts &&
-          typeof msg.unitState.dataParts === 'object' &&
-          !Array.isArray(msg.unitState.dataParts)
+          this.printMode === 'off'
         ) {
-          const time = Date.parse(msg.timeStamp);
-          for (const [key, value] of Object.entries(msg.unitState.dataParts)) {
-            if (typeof value !== 'string') continue;
-            if (Number.isFinite(time) && time < (this.responseDataTimes[key] ?? -Infinity))
-              continue;
-            this.responseData[key] = value;
-            if (Number.isFinite(time)) this.responseDataTimes[key] = time;
+          this.captureResponseData(msg);
+          if (
+            this.responseChangedAt !== null &&
+            typeof msg.unitState?.dataParts?.elementCodes === 'string' &&
+            this.playerMessageTime(msg.timeStamp) >= this.responseChangedAt
+          ) {
+            this.responseChangedAt = null;
+            if (this.solutionRequestPending) this.applySolutionToggle();
           }
         }
         const pages = msg.playerState?.validPages;
@@ -1431,6 +1560,26 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         return;
     }
     this.changeDetector.markForCheck();
+  }
+
+  private captureResponseData(msg: Record<string, any>) {
+    const dataParts = msg['unitState']?.dataParts;
+    if (!dataParts || typeof dataParts !== 'object' || Array.isArray(dataParts)) return;
+    const time = this.playerMessageTime(msg['timeStamp']);
+    for (const [key, value] of Object.entries(dataParts)) {
+      if (typeof value !== 'string') continue;
+      if (Number.isFinite(time) && time < (this.responseDataTimes[key] ?? -Infinity)) continue;
+      this.responseData[key] = value;
+      if (Number.isFinite(time)) this.responseDataTimes[key] = time;
+    }
+  }
+
+  private playerMessageTime(value: unknown): number {
+    return typeof value === 'number'
+      ? Number.isFinite(value)
+        ? value
+        : Number.NaN
+      : Date.parse(String(value));
   }
 
   private updateCurrentPage(id: unknown) {
@@ -1687,7 +1836,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         for (const id of [variable.alias, variable.id]) {
           if (typeof id !== 'string' || !id.trim()) continue;
           const target = this.voud.resolvePlayerResponseTarget(this.definitionContent, id);
-          if (target) return target;
+          // The supported ASPECT player does not reliably render scalar toggle-button
+          // prefills. Keep these variables in the readable coding fallback.
+          if (target && target.elementType.trim().toLowerCase() !== 'toggle-button') return target;
         }
         return undefined;
       },
@@ -1700,6 +1851,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
     this.startSessionCounter += 1;
     this.playerSessionId = `review-${this.unitId}-${this.startSessionCounter}`;
+    this.personalResponseSession =
+      this.reviewMode && !this.solutionVisible && this.printMode === 'off';
     this.sendToPlayer({
       type: 'vopStartCommand',
       sessionId: this.playerSessionId,

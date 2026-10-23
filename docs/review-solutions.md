@@ -7,8 +7,18 @@ im Aufgabenplayer eingeblendet. Der Reviewbereich öffnet dabei den Reiter
 **Kodierung** mit dem Ergebnis und den zugehörigen Anweisungen. Beim Ausblenden
 werden die zuvor vom Player gemeldeten eigenen Eingaben und die aktuelle Seite
 wiederhergestellt. Eingaben im Lösungsmodus verändern diesen vorherigen Stand
-nicht. Ein Aufgabenwechsel beendet den Lösungsmodus und verwirft den lokalen
+nicht. Bei noch nicht gemeldeten Eingaben wartet die Umschaltung auf einen
+aktuellen Antwortstand des Players. Bleibt die Meldung aus, bleibt der eigene
+Player erhalten und die Oberfläche bietet einen erneuten Versuch an.
+Abschließende Entlademeldungen werden nur über die genaue Fenster- und
+Sitzungskennung des bisherigen Players übernommen. ISO-Zeitstempel und
+numerische Millisekunden-Zeitstempel werden unterstützt.
+
+Ein Aufgabenwechsel beendet den Lösungsmodus und verwirft den lokalen
 Antwortpuffer der vorherigen Aufgabe. Es werden keine Antworten gespeichert.
+Die Druckansichten von ASPECT berücksichtigen keine Antwortwerte. Daher ist
+der Musterlösungs-Schalter dort deaktiviert. Ein Wechsel in die Druckansicht
+beendet den Lösungsmodus; Druckzustände überschreiben keine eigenen Antworten.
 
 Die Ableitung verwendet denselben konservativen Resolver wie der Item-Explorer:
 Ein ausdrücklich markierter FULL_CREDIT-Code, eine eindeutig darstellbare Antwort
@@ -23,6 +33,9 @@ Kodiervariablen und die übrigen Variablen. Im Lösungsmodus werden ausschließl
 die geprüften Antworten vorgegeben. Bei ausschließlich manueller Kodierung,
 mehrdeutigen Lösungen oder nicht unterstützten Formaten verweist die Oberfläche
 auf die vorhandenen Anweisungen, ohne den Player neu zu starten.
+Schaltflächen-Gruppen werden über die Kodierinformation erläutert; eine skalare
+Antwortvorgabe wird dafür im Review nicht verwendet, weil sie im geprüften
+ASPECT-Player nicht zuverlässig dargestellt wird.
 
 Der Reiter **Kodierung** zeigt Variablen-ID und Bezeichnung, Herkunft und
 Vorverarbeitung, allgemeine Variablenanweisungen, Code-Bezeichnungen, Punkte,
@@ -33,6 +46,7 @@ Sortierung und das Ausblenden von Audio-/Video-Variablen bleiben bestehen.
 
 Die automatisierte Prüfung verwendet synthetische Antwortdefinitionen und
 Kodierschemata. Komponententests prüfen das Puffern inkrementeller Antwortteile,
-Zeitstempel, veraltete Sitzungen, Wiederherstellung und Aufgabenwechsel. Die
+Zeitstempel, veraltete Sitzungen, ausstehende Antwortmeldungen, abschließende
+Entlademeldungen, Druckansichten, Wiederherstellung und Aufgabenwechsel. Die
 Browserprüfung deckt den Booklet-Ablauf einschließlich offener Antwortformate,
 Teilmusterlösung und mobiler Anzeige in Chromium, Firefox und WebKit ab.

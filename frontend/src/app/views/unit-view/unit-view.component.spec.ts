@@ -144,14 +144,40 @@ describe('UnitViewComponent', () => {
     expect(component.visibleCodingSchemeAsText).toHaveLength(0);
   });
 
+  it('keeps toggle-button coding readable without claiming an unverified scalar player solution', async () => {
+    const scheme = JSON.parse(JSON.stringify(solutionScheme));
+    scheme.variableCodings[0].codes[0].ruleSets[0].rules[0].parameters = ['2'];
+    const { component } = await playerFixture(
+      JSON.stringify({
+        pages: [
+          {
+            elements: [
+              {
+                id: 'input',
+                alias: 'ANSWER',
+                type: 'toggle-button',
+                options: ['A', 'B', 'C'],
+              },
+            ],
+          },
+        ],
+      }),
+      scheme,
+    );
+    expect(component.reviewSolution.prefill.status).toBe('unavailable');
+    expect(component.reviewSolution.unavailableVariables).toEqual(['ANSWER']);
+    expect(component.visibleCodingSchemeAsText).toHaveLength(1);
+  });
+
   it('restores personal data parts and the page after hiding the solution, ignoring stale and synthetic states', async () => {
     const definition = JSON.stringify({
       pages: [{}, { elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
     });
-    const { fixture, component, message } = await playerFixture(definition, solutionScheme);
+    const { fixture, component, message, frame } = await playerFixture(definition, solutionScheme);
     const send = vi.spyOn(component as any, 'sendToPlayer');
     await message({ type: 'vopReadyNotification' });
     const ownSession = component.playerSessionId;
+    const ownSource = frame.contentWindow!;
     const ownAnswers = JSON.stringify([
       { id: 'ANSWER', value: 'Hamburg', status: 'VALUE_CHANGED' },
     ]);
@@ -185,6 +211,18 @@ describe('UnitViewComponent', () => {
       return frame;
     };
     component.toggleSolution();
+    fixture.detectChanges();
+    // ASPECT emits its final answer state on unload, after the frame has been removed.
+    const finalAnswers = JSON.stringify([{ id: 'ANSWER', value: 'Bonn', status: 'VALUE_CHANGED' }]);
+    await message(
+      {
+        type: 'vopStateChangedNotification',
+        sessionId: ownSession,
+        timeStamp: '2026-10-23T10:00:03Z',
+        unitState: { dataParts: { elementCodes: finalAnswers } },
+      },
+      ownSource,
+    );
     const solutionFrame = await ready();
     const solutionStart = send.mock.calls.at(-1)![0];
     expect(solutionStart.playerConfig.startPage).toBe('1');
@@ -208,11 +246,47 @@ describe('UnitViewComponent', () => {
     await ready();
     const restoredStart = send.mock.calls.at(-1)![0];
     expect(restoredStart.unitState.dataParts).toEqual({
-      elementCodes: ownAnswers,
+      elementCodes: finalAnswers,
       other: 'retain me',
     });
     expect(restoredStart.playerConfig.startPage).toBe('1');
     expect(component.solutionVisible).toBe(false);
+
+    // Print modes ignore response values in ASPECT. They must neither claim an active
+    // solution nor replace the buffered personal answers with empty print responses.
+    component.toggleSolution();
+    await ready();
+    component.pagingMode = 'view-all';
+    component.onPagingModeChange();
+    const printFrame = await ready();
+    const printSource = printFrame.contentWindow!;
+    const printSession = component.playerSessionId;
+    expect(component.solutionVisible).toBe(false);
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        source: printFrame.contentWindow,
+        data: {
+          type: 'vopStateChangedNotification',
+          sessionId: component.playerSessionId,
+          unitState: { dataParts: { elementCodes: '[]' } },
+        },
+      }),
+    );
+    component.pagingMode = 'buttons';
+    component.onPagingModeChange();
+    fixture.detectChanges();
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        source: printSource,
+        data: {
+          type: 'vopStateChangedNotification',
+          sessionId: printSession,
+          unitState: { dataParts: { elementCodes: '[]' } },
+        },
+      }),
+    );
+    await ready();
+    expect(send.mock.calls.at(-1)![0].unitState.dataParts.elementCodes).toBe(finalAnswers);
 
     // A unit change cancels a pending frame restart and clears all solution/answer state.
     component.toggleSolution();
@@ -238,6 +312,95 @@ describe('UnitViewComponent', () => {
     expect(fixture.nativeElement.querySelector('.solution-info').textContent).toContain(
       'Keine eindeutige Musterlösung',
     );
+  });
+
+  it.each(['iso', 'milliseconds'])(
+    'waits for a fresh player response with %s timestamps after an input before showing the solution',
+    async (format) => {
+      const { component, frame, message } = await playerFixture(
+        JSON.stringify({
+          pages: [{ elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
+        }),
+        solutionScheme,
+      );
+      await message({ type: 'vopReadyNotification' });
+      const sessionId = component.playerSessionId;
+      frame.contentDocument!.dispatchEvent(new Event('input', { bubbles: true }));
+      component.toggleSolution();
+      expect(component.solutionRequestPending).toBe(true);
+      expect(component.solutionVisible).toBe(false);
+      expect(component.playerSessionId).toBe(sessionId);
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId,
+        timeStamp: format === 'iso' ? new Date(Date.now() - 1000).toISOString() : Date.now() - 1000,
+        unitState: { dataParts: { elementCodes: '[]' } },
+      });
+      expect(component.solutionRequestPending).toBe(true);
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId,
+        timeStamp: format === 'iso' ? new Date(Date.now() + 1).toISOString() : Date.now() + 1,
+        unitState: {
+          dataParts: {
+            elementCodes: JSON.stringify([
+              { id: 'ANSWER', status: 'VALUE_CHANGED', value: 'Meine letzte Eingabe' },
+            ]),
+          },
+        },
+      });
+      expect(component.solutionRequestPending).toBe(false);
+      expect(component.solutionVisible).toBe(true);
+    },
+  );
+
+  it('keeps the personal player when a fresh response does not arrive', async () => {
+    const { component, frame, message } = await playerFixture(
+      JSON.stringify({
+        pages: [{ elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
+      }),
+      solutionScheme,
+    );
+    await message({ type: 'vopReadyNotification' });
+    const sessionId = component.playerSessionId;
+    vi.useFakeTimers();
+    try {
+      frame.contentDocument!.dispatchEvent(new Event('input', { bubbles: true }));
+      component.toggleSolution();
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(component.solutionRequestPending).toBe(false);
+      expect(component.solutionVisible).toBe(false);
+      expect(component.playerSessionId).toBe(sessionId);
+      expect(component.solutionRequestError).toContain('noch nicht vom Player gemeldet');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it.each([
+    { role: 'option', type: 'click', key: '' },
+    { role: 'radio', type: 'click', key: '' },
+    { role: 'radio', type: 'keydown', key: 'ArrowRight' },
+  ])('waits for custom $role controls changed via $type', async ({ role, type, key }) => {
+    const { component, frame, message } = await playerFixture(
+      JSON.stringify({
+        pages: [{ elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
+      }),
+      solutionScheme,
+    );
+    await message({ type: 'vopReadyNotification' });
+    const doc = frame.contentDocument!;
+    const control = doc.createElement('button');
+    control.setAttribute('role', role);
+    doc.body.append(control);
+    control.dispatchEvent(
+      type === 'keydown'
+        ? new KeyboardEvent(type, { key, bubbles: true })
+        : new Event(type, { bubbles: true }),
+    );
+    component.toggleSolution();
+    expect(component.solutionRequestPending).toBe(true);
+    expect(component.solutionVisible).toBe(false);
   });
 
   it('shows the initial scroll-page count and synchronizes internal player navigation', async () => {
