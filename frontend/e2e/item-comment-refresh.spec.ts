@@ -305,7 +305,7 @@ for (const height of [720, 600]) {
     });
     failing = false;
     await page
-      .locator('.table-toolbar')
+      .locator('.table-panel')
       .getByRole('button', { name: 'Erneut versuchen', exact: true })
       .click();
     await expect(page.getByText('Kommentaranzahlen konnten nicht geladen werden.')).toHaveCount(0);
