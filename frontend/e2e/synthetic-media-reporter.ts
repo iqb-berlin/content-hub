@@ -18,6 +18,7 @@ interface CaseResult {
   title: string;
   status: string;
   durationMs: number;
+  retry: number;
   media: { name: string; file: string; type: string; sha256: string }[];
 }
 
@@ -40,7 +41,7 @@ export default class SyntheticMediaReporter implements Reporter {
     const output = this.output;
     if (!/\/synthetic-aspect(?:-media)?\.spec\.ts$/.test(test.location.file)) return;
     const browser = test.parent.project()!.name;
-    const id = createHash('sha256').update(test.titlePath().join('/')).digest('hex').slice(0, 12);
+    const id = `${createHash('sha256').update(test.titlePath().join('/')).digest('hex').slice(0, 12)}-attempt-${result.retry}`;
     const media: CaseResult['media'] = [];
     for (const attachment of result.attachments) {
       if (!attachment.path || !['image/png', 'video/webm'].includes(attachment.contentType))
@@ -60,6 +61,7 @@ export default class SyntheticMediaReporter implements Reporter {
       title: test.title,
       status: result.status,
       durationMs: result.duration,
+      retry: result.retry,
       media,
     });
   }
@@ -123,19 +125,19 @@ export default class SyntheticMediaReporter implements Reporter {
     const rows = cases
       .map(
         (entry) =>
-          `<tr><td>${escapeHtml(entry.browser)}</td><td>${escapeHtml(entry.title)}</td><td>${escapeHtml(entry.status)}</td></tr>`,
+          `<tr><td>${escapeHtml(entry.browser)}</td><td>${escapeHtml(entry.title)}</td><td>${entry.retry + 1}</td><td>${escapeHtml(entry.status)}</td></tr>`,
       )
       .join('');
     const media = cases
       .filter((entry) => entry.media.length)
       .map(
         (entry) =>
-          `<section><h2>${escapeHtml(entry.browser)} · ${escapeHtml(entry.title)}</h2><p>Status: ${escapeHtml(entry.status)}</p><div class="media">${entry.media.map((item) => `<figure>${item.type.startsWith('video/') ? `<video controls preload="metadata" src="${item.file}"></video>` : `<a href="${item.file}"><img loading="lazy" src="${item.file}" alt="${escapeHtml(item.name)}"></a>`}<figcaption>${escapeHtml(item.name)}</figcaption></figure>`).join('')}</div></section>`,
+          `<section><h2>${escapeHtml(entry.browser)} · ${escapeHtml(entry.title)}</h2><p>Status: ${escapeHtml(entry.status)} · Versuch ${entry.retry + 1}</p><div class="media">${entry.media.map((item) => `<figure>${item.type.startsWith('video/') ? `<video controls preload="metadata" src="${item.file}"></video>` : `<a href="${item.file}"><img loading="lazy" src="${item.file}" alt="${escapeHtml(item.name)}"></a>`}<figcaption>${escapeHtml(item.name)}</figcaption></figure>`).join('')}</div></section>`,
       )
       .join('');
     writeFileSync(
       resolve(output, 'index.html'),
-      `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Synthetischer ASPECT-Testpool</title><style>body{font:16px/1.5 system-ui;margin:2rem auto;padding:0 1rem;max-width:1100px;color:#163247;background:#f4f7fa}table{border-collapse:collapse;width:100%;background:white}td,th{padding:.5rem;border:1px solid #ccd6df;text-align:left}.media{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}figure{margin:0;padding:1rem;background:white}img,video{width:100%;height:auto}h2{margin-top:2rem}code{overflow-wrap:anywhere}</style><h1>Synthetischer ASPECT-Testpool</h1><p>Status: <strong>${escapeHtml(report.status)}</strong> · ${cases.length} ausgeführte Tests · ASPECT ${escapeHtml(report.playerVersion)} · ausschließlich synthetische Daten</p><p>Revision: <code>${escapeHtml(report.revision)}</code> · <a href="manifest.json">Ergebnisse und Prüfsummen</a></p><p>Die Aufnahmen zeigen feste, automatisch geprüfte Abläufe. Laufzeit, Browser-Rendering und Videolänge können zwischen Betriebssystemen variieren; es werden keine pixelgleichen Dateien zugesichert.</p><table><thead><tr><th>Browser</th><th>Prüfung</th><th>Ergebnis</th></tr></thead><tbody>${rows}</tbody></table>${media}</html>`,
+      `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Synthetischer ASPECT-Testpool</title><style>body{font:16px/1.5 system-ui;margin:2rem auto;padding:0 1rem;max-width:1100px;color:#163247;background:#f4f7fa}table{border-collapse:collapse;width:100%;background:white}td,th{padding:.5rem;border:1px solid #ccd6df;text-align:left}.media{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}figure{margin:0;padding:1rem;background:white}img,video{width:100%;height:auto}h2{margin-top:2rem}code{overflow-wrap:anywhere}</style><h1>Synthetischer ASPECT-Testpool</h1><p>Status: <strong>${escapeHtml(report.status)}</strong> · ${cases.length} ausgeführte Tests · ASPECT ${escapeHtml(report.playerVersion)} · ausschließlich synthetische Daten</p><p>Revision: <code>${escapeHtml(report.revision)}</code> · <a href="manifest.json">Ergebnisse und Prüfsummen</a></p><p>Die Aufnahmen zeigen feste, automatisch geprüfte Abläufe. Laufzeit, Browser-Rendering und Videolänge können zwischen Betriebssystemen variieren; es werden keine pixelgleichen Dateien zugesichert.</p><table><thead><tr><th>Browser</th><th>Prüfung</th><th>Versuch</th><th>Ergebnis</th></tr></thead><tbody>${rows}</tbody></table>${media}</html>`,
     );
     for (const error of missingMedia) process.stderr.write(`${error}\n`);
     return { status: report.status };

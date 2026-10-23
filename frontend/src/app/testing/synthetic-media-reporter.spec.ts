@@ -33,7 +33,7 @@ const fullResult = (status: FullResult['status']) => ({ status }) as FullResult;
 const testResult = (
   attachments: TestResult['attachments'],
   status: TestResult['status'] = 'passed',
-) => ({ status, duration: 123, attachments }) as TestResult;
+) => ({ status, duration: 123, attachments, retry: 0 }) as TestResult;
 
 describe('Synthetic media reporter', () => {
   it('rejects a passing walkthrough with incomplete recordings', async () => {
@@ -87,5 +87,29 @@ describe('Synthetic media reporter', () => {
     reporter.onTestEnd(testCase('other feature', '/e2e/other.spec.ts'), testResult([]));
     await reporter.onEnd(fullResult('passed'));
     expect(JSON.parse(readFileSync(join(outputDir, 'manifest.json'), 'utf8')).cases).toEqual([]);
+  });
+
+  it('keeps recordings and checksums distinct across retries of the same test', async () => {
+    const { reporter, directory, outputDir } = setup();
+    const path = join(directory, 'video.webm');
+    const entry = testCase('retryable case', '/e2e/synthetic-aspect.spec.ts');
+    writeFileSync(path, 'first attempt');
+    reporter.onTestEnd(
+      entry,
+      testResult([{ name: 'video', contentType: 'video/webm', path }], 'failed'),
+    );
+    writeFileSync(path, 'second attempt');
+    reporter.onTestEnd(entry, {
+      ...testResult([{ name: 'video', contentType: 'video/webm', path }]),
+      retry: 1,
+    });
+    await reporter.onEnd(fullResult('passed'));
+    const manifest = JSON.parse(readFileSync(join(outputDir, 'manifest.json'), 'utf8'));
+    const [first, second] = manifest.cases;
+    expect(first.media[0].file).not.toBe(second.media[0].file);
+    expect(first.media[0].sha256).not.toBe(second.media[0].sha256);
+    expect(readFileSync(join(outputDir, first.media[0].file), 'utf8')).toBe('first attempt');
+    expect(readFileSync(join(outputDir, second.media[0].file), 'utf8')).toBe('second attempt');
+    expect([first.retry, second.retry]).toEqual([0, 1]);
   });
 });
