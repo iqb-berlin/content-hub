@@ -103,6 +103,19 @@
     <app-item-explorer-collections />
   }
 
+  @if (!vm.showTableToolbarArea && vm.enableItemCollections) {
+    @if (vm.collectionLoadState === 'loading') {
+      <div class="collection-status" role="status">Persönliche Auswahllisten werden geladen …</div>
+    } @else if (vm.collectionError) {
+      <div class="collection-status" role="alert">
+        <span class="personal-data-error">{{ vm.collectionError }}</span>
+        <button class="btn btn-outline btn-sm" type="button" (click)="vm.loadItemCollections()">
+          Auswahllisten erneut laden
+        </button>
+      </div>
+    }
+  }
+
   @if (vm.itemCommentsEnabled && vm.itemCommentCountsError) {
     <span class="personal-data-error" role="alert">{{ vm.itemCommentCountsError }}</span>
     <button
@@ -546,6 +559,7 @@
           </tr>
         }
         @if (
+          vm.showTableToolbarArea &&
           vm.collectionViewMode === 'active' &&
           vm.activeItemCollection &&
           vm.activeItemCollection.rowKeys.length === 0

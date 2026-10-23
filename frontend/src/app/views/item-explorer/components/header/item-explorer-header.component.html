@@ -407,6 +407,12 @@
   </div>
 }
 
+@if (!vm.showTableToolbarArea && vm.collectionDataExportError) {
+  <div class="alert alert-error" style="margin-bottom: 12px" role="alert">
+    {{ vm.collectionDataExportError }}
+  </div>
+}
+
 @if (vm.commentExportError) {
   <div class="alert alert-error" style="margin-bottom: 12px" aria-live="polite">
     {{ vm.commentExportError }}

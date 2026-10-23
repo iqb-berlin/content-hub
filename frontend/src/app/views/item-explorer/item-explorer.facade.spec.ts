@@ -1,3 +1,4 @@
+import { normalizeReducedView } from '../../core/models/item-explorer-reduced-view';
 import { ItemExplorerImportService } from './item-explorer-import.service';
 import { ItemExplorerTableService } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
@@ -750,6 +751,105 @@ describe('ItemExplorerFacade', () => {
     );
     expect(component.selectedItem?.itemId).toBe('i1');
     expect(select).not.toHaveBeenCalled();
+    destroyFacade(component);
+  });
+
+  it('reloads the selected preview after leaving a table-only perspective and cancels hidden preview work', async () => {
+    const rows = [
+      {
+        itemId: 'i1',
+        uuid: 'r1',
+        rowKey: 'r1',
+        unitId: 'u1',
+        unitLabel: 'U',
+        description: '',
+        variableId: 'V1',
+        metadata: {},
+      },
+      {
+        itemId: 'i2',
+        uuid: 'r2',
+        rowKey: 'r2',
+        unitId: 'u1',
+        unitLabel: 'U',
+        description: '',
+        variableId: 'V2',
+        metadata: {},
+      },
+    ];
+    const assets$ = new Subject<any>();
+    const previewLoader = { load: vi.fn(() => assets$), clear: vi.fn() };
+    const envelope = createExplorerEnvelope();
+    const component = createFacade({
+      previewLoader,
+      api: {
+        getItemExplorerState: () => of(envelope),
+        getFileItemList: () =>
+          of({ items: rows, columns: [], unitMetadata: {}, codingSchemes: {} }),
+        getResponseStateWithFallback: () => of(null),
+      },
+    });
+    component.acpId = 'acp-1';
+    (component as any).reducedView = normalizeReducedView({
+      enabled: true,
+      showExplorerItemPanel: false,
+    });
+    (component as any).applySharedExplorerEnvelope(envelope);
+    component.items = rows;
+    component.applyFilter(false);
+    component.selectItem(rows[0], 0);
+    expect(previewLoader.load).toHaveBeenCalledTimes(1);
+    expect(assets$.observed).toBe(true);
+    (component as any).flushDraftPatch = vi.fn().mockResolvedValue(true);
+    await component.toggleReadOnlyPreview();
+    expect(component.showExplorerItemPanel).toBe(false);
+    expect(assets$.observed).toBe(false);
+    component.selectItem(rows[1], 1);
+    expect(previewLoader.load).toHaveBeenCalledTimes(1);
+    await component.toggleReadOnlyPreview();
+    expect(component.showExplorerItemPanel).toBe(true);
+    expect(component.selectedItem?.rowKey).toBe('r2');
+    expect(previewLoader.load).toHaveBeenCalledTimes(2);
+    expect(assets$.observed).toBe(true);
+    component.selectItem(rows[1], 1);
+    expect(previewLoader.load).toHaveBeenCalledTimes(2);
+    destroyFacade(component);
+  });
+
+  it('ignores inaccessible global and collection filters while retaining visible column filters and saved selections', () => {
+    const component = createFacade();
+    (component as any).reducedView = normalizeReducedView({
+      enabled: true,
+      showTableToolbarArea: false,
+    });
+    component.items = ['a', 'b'].map((id) => ({
+      itemId: id,
+      uuid: id,
+      rowKey: id,
+      unitId: 'u',
+      unitLabel: 'U',
+      description: '',
+      variableId: '',
+      metadata: {},
+    }));
+    component.table.filterText = 'no matching rows';
+    component.collections.activeCollectionId = 'list';
+    component.collections.itemCollections = [{ id: 'list', rowKeys: ['a'] }] as any;
+    component.collections.collectionViewMode = 'active';
+    component.applyFilter(false);
+    expect(component.filteredItems.map((row) => row.rowKey)).toEqual(['a', 'b']);
+    component.table.columnFilters = { itemId: 'b' };
+    component.applyFilter(false);
+    expect(component.filteredItems.map((row) => row.rowKey)).toEqual(['b']);
+    component.table.columnFilters = {};
+    component.hasExplorerEditPermission = true;
+    component.viewPerspective = 'editor';
+    component.applyFilter(false);
+    expect(component.filteredItems).toEqual([]);
+    component.table.filterText = '';
+    component.applyFilter(false);
+    expect(component.filteredItems.map((row) => row.rowKey)).toEqual(['a']);
+    expect(component.collections.collectionViewMode).toBe('active');
     destroyFacade(component);
   });
 

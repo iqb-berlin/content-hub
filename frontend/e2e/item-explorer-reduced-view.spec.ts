@@ -305,3 +305,92 @@ test('uses the full table area on desktop, narrow screens and fullscreen and res
   await expect(page.locator('.pane-left')).toHaveAttribute('style', `width: ${previousWidth};`);
   await expect(page.locator('.table-toolbar')).toBeVisible();
 });
+
+test('restores the selected item preview after selecting in the table-only view', async ({
+  page,
+  request,
+}) => {
+  await configure(request, { enabled: true, showExplorerItemPanel: false });
+  await open(page, true);
+  const rows = page.locator('.explorer-table tbody tr');
+  await rows.first().locator('td.sticky-col').first().click();
+  await expect(page.locator('iframe.player-iframe')).toBeVisible();
+  await page.getByRole('button', { name: 'Leseansicht', exact: true }).click();
+  await expect(page.locator('.pane-right')).toHaveCount(0);
+  await rows.last().locator('td.sticky-col').first().click();
+  await expect(rows.last()).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('button', { name: 'Bearbeitungsansicht', exact: true }).click();
+  await expect(page.locator('iframe.player-iframe')).toBeVisible();
+  await expect(rows.last()).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.preview-target-header')).toContainText('u2i5');
+});
+
+test('suspends toolbar filters in the reduced view and retains the manager search', async ({
+  page,
+  request,
+}) => {
+  await configure(request, { enabled: true, showTableToolbarArea: false });
+  await open(page, true);
+  const search = page.getByPlaceholder('🔍 Items filtern...');
+  await search.fill('no matching item');
+  await expect(page.locator('.explorer-table tbody tr')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Leseansicht', exact: true }).click();
+  await expect(search).toHaveCount(0);
+  await expect(page.locator('.explorer-table tbody tr')).toHaveCount(6);
+  await page.getByRole('button', { name: 'Bearbeitungsansicht', exact: true }).click();
+  await expect(search).toHaveValue('no matching item');
+  await expect(page.locator('.explorer-table tbody tr')).toHaveCount(0);
+});
+
+test('shows all rows when a saved empty collection is inaccessible in the reduced view', async ({
+  page,
+  request,
+}) => {
+  const access = await request.put(accessUrl, {
+    headers,
+    data: {
+      ...originalAccess,
+      featureConfig: {
+        ...originalAccess['featureConfig'],
+        enableItemCollections: true,
+        itemExplorerReducedView: { enabled: true, showTableToolbarArea: false },
+      },
+    },
+  });
+  expect(access.ok()).toBeTruthy();
+  const viewerHeaders = { Authorization: `Bearer ${createOidcAppToken(viewerId, 'e2e-viewer')}` };
+  const url = `/api/view/acp/${acpId}/items/collections`;
+  const created = await request.post(url, {
+    headers: viewerHeaders,
+    data: { name: 'Hidden collection filter', perspective: 'read-only' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const payload = await created.json();
+  const collectionId = payload.activeCollectionId;
+  expect(collectionId).toBeTruthy();
+  try {
+    const activated = await request.put(`${url}/active`, {
+      headers: viewerHeaders,
+      data: { collectionId, perspective: 'read-only', collectionViewMode: 'active' },
+    });
+    expect(activated.ok()).toBeTruthy();
+    await open(page);
+    await expect(page.locator('.collection-bar')).toHaveCount(0);
+    await expect(page.locator('.collection-empty-state')).toHaveCount(0);
+    await expect(page.locator('.explorer-table tbody tr')).toHaveCount(6);
+    const persisted = await (
+      await request.get(`${url}?perspective=read-only`, { headers: viewerHeaders })
+    ).json();
+    expect(persisted.activeCollectionId).toBe(collectionId);
+    expect(persisted.collectionViewMode).toBe('active');
+  } finally {
+    await page.close();
+    expect(
+      (
+        await request.delete(`${url}/${collectionId}?perspective=read-only`, {
+          headers: viewerHeaders,
+        })
+      ).ok(),
+    ).toBeTruthy();
+  }
+});
