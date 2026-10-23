@@ -2,6 +2,7 @@ import {
   ReviewCommentFilters,
   matchesReviewFilters,
 } from "./review-comment-filters";
+import { CommentCategory } from "../database/entities/acp-access-config.entity";
 import { ReviewerColumnPolicy } from "../item-explorer/reviewer-column-policy";
 import { commentAuthorName } from "./comment-author-name";
 import {
@@ -58,6 +59,8 @@ export interface CommentView extends CommentVoteState {
   parentVisible: boolean;
   groupId: string | null;
   groupName: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
   commentText: string;
   authorLabel: string;
   createdAt: string;
@@ -75,6 +78,7 @@ export interface CommentThreadSnapshot {
   comments: CommentView[];
   groups: { id: string; name: string; archived: boolean }[];
   defaultGroupId: string | null;
+  categories: CommentCategory[];
 }
 
 export interface ItemCommentCount {
@@ -290,6 +294,7 @@ export class CommentsService {
     itemId?: string;
     parentCommentId?: string;
     groupId?: string;
+    categoryId?: string | null;
     commentText: string;
   }): Promise<Comment> {
     const commentText = this.normalizeCommentText(data.commentText);
@@ -383,6 +388,7 @@ export class CommentsService {
           JSON.stringify([
             visibilityMode,
             defaultGroupId,
+            actor.categories || [],
             views,
             (actor.groups || []).map(({ id, name, archived }) => ({
               id,
@@ -400,6 +406,7 @@ export class CommentsService {
         archived,
       })),
       comments: views,
+      categories: actor.categories || [],
     };
   }
 
@@ -585,6 +592,7 @@ export class CommentsService {
       commentText: string;
       parentCommentId?: string;
       groupId?: string;
+      categoryId?: string | null;
     },
     actor: CommentActor,
   ): Promise<CommentView> {
@@ -601,6 +609,7 @@ export class CommentsService {
       commentText: string;
       parentCommentId?: string;
       groupId?: string;
+      categoryId?: string | null;
     },
     actor: CommentActor,
   ): Promise<CommentView> {
@@ -643,7 +652,12 @@ export class CommentsService {
         input.groupId,
       );
 
+    const categoryId = this.reviewPolicy.selectCategory(
+      actor,
+      input.categoryId,
+    );
     const comment = await this.create({
+      categoryId,
       groupId,
       acpId,
       userId: actor.userId,
@@ -733,10 +747,18 @@ export class CommentsService {
     commentText: string,
     version: number,
     actor: CommentActor,
+    categoryId?: string | null,
   ): Promise<CommentView> {
     if (!this.inTransaction)
       return this.transaction(acpId, (service) =>
-        service.updateOwnComment(acpId, commentId, commentText, version, actor),
+        service.updateOwnComment(
+          acpId,
+          commentId,
+          commentText,
+          version,
+          actor,
+          categoryId,
+        ),
       );
     const current = await this.findMutableComment(acpId, commentId, actor);
     await this.reviewPolicy.assertCommentAccess(
@@ -750,10 +772,16 @@ export class CommentsService {
     }
     await this.assertStoredTargetExists(acpId, current);
 
+    const selectedCategoryId = this.reviewPolicy.selectCategory(
+      actor,
+      categoryId,
+      current.categoryId,
+    );
     const updatedAt = new Date();
     const result = await this.commentRepository.update(
       { id: commentId, acpId, version, deletedAt: IsNull() },
       {
+        categoryId: selectedCategoryId,
         commentText: normalizedCommentText,
         updatedAt,
         version: version + 1,
@@ -773,6 +801,7 @@ export class CommentsService {
       ...this.toCommentView(
         {
           ...current,
+          categoryId: selectedCategoryId,
           commentText: normalizedCommentText,
           updatedAt,
           version: version + 1,
@@ -849,18 +878,48 @@ export class CommentsService {
   }
 
   async exportComments(acpId: string, userId?: string): Promise<any[]> {
-    const comments = userId
-      ? await this.findByUser(acpId, userId)
-      : await this.findByAcp(acpId);
-    return comments.map((comment) => this.toExportRow(comment));
+    const { comments, categories } = await this.getExportSnapshot(
+      acpId,
+      userId ? { userId, isManager: false, authorLabel: "" } : undefined,
+    );
+    return comments.map((comment) =>
+      this.toExportRow(comment, false, categories),
+    );
   }
 
   async exportCommentsByCredential(
     acpId: string,
     credentialId: string,
   ): Promise<any[]> {
-    const comments = await this.findByCredential(acpId, credentialId);
-    return comments.map((comment) => this.toExportRow(comment, true));
+    const { comments, categories } = await this.getExportSnapshot(acpId, {
+      credentialId,
+      isManager: false,
+      authorLabel: "",
+    });
+    return comments.map((comment) =>
+      this.toExportRow(comment, true, categories),
+    );
+  }
+
+  private async getExportSnapshot(
+    acpId: string,
+    actor?: CommentActor & { visible?: boolean },
+  ): Promise<{ comments: Comment[]; categories: CommentCategory[] }> {
+    if (!this.inTransaction)
+      return this.transaction(acpId, (service) =>
+        service.getExportSnapshot(acpId, actor),
+      );
+    // Keep labels and assignments from the same state while category writes
+    // wait on the shared ACP lock. Release it before catalog/file rendering.
+    const comments = actor?.visible
+      ? await this.findVisible(acpId, actor)
+      : actor?.credentialId
+        ? await this.findByCredential(acpId, actor.credentialId, actor)
+        : actor?.userId
+          ? await this.findByUser(acpId, actor.userId, actor)
+          : await this.findByAcp(acpId);
+    const categories = await this.reviewPolicy.getCommentCategories(acpId);
+    return { comments, categories };
   }
 
   async exportCommentsXlsx(acpId: string, userId?: string): Promise<Buffer> {
@@ -906,6 +965,7 @@ export class CommentsService {
   private toExportRow(
     comment: Comment,
     preferCredential = false,
+    categories: CommentCategory[] = [],
   ): Record<string, unknown> {
     return {
       groupId: comment.groupId || "",
@@ -915,6 +975,10 @@ export class CommentsService {
       itemId: comment.itemId || "",
       threadId: comment.parentCommentId || comment.id,
       parentCommentId: comment.parentCommentId || "",
+      categoryId: comment.categoryId || "",
+      category:
+        categories.find((category) => category.id === comment.categoryId)
+          ?.name || "",
       comment: comment.commentText,
       author: preferCredential
         ? commentAuthorName(
@@ -942,6 +1006,8 @@ export class CommentsService {
       { header: "Item-ID", key: "itemId", width: 22 },
       { header: "Thread-ID", key: "threadId", width: 38 },
       { header: "Antwort auf", key: "parentCommentId", width: 38 },
+      { header: "Kategorie (ID)", key: "categoryId", width: 38 },
+      { header: "Kategorie", key: "category", width: 24 },
       { header: "Kommentar", key: "comment", width: 50 },
       { header: "Autor", key: "author", width: 20 },
       { header: "Erstellt", key: "createdAt", width: 22 },
@@ -977,23 +1043,13 @@ export class CommentsService {
           authorLabel: actor.authorLabel || "",
         }
       : undefined;
-    const commentsPromise = actor?.visible
-      ? this.findVisible(acpId, {
-          ...actor,
-          isManager: actor.isManager === true,
-          authorLabel: actor.authorLabel || "",
-        })
-      : actor?.credentialId
-        ? this.findByCredential(acpId, actor.credentialId, requestActor)
-        : actor?.userId
-          ? this.findByUser(acpId, actor.userId, requestActor)
-          : this.findByAcp(acpId);
-    const [comments, itemCatalog, acp, manifest] = await Promise.all([
-      commentsPromise,
-      this.getItemCatalog(acpId),
-      this.acpRepository.findOne({ where: { id: acpId } }),
-      this.reviewManifestService.getManifest(acpId, this.transactionManager),
-    ]);
+    const [{ comments, categories }, itemCatalog, acp, manifest] =
+      await Promise.all([
+        this.getExportSnapshot(acpId, requestActor),
+        this.getItemCatalog(acpId),
+        this.acpRepository.findOne({ where: { id: acpId } }),
+        this.reviewManifestService.getManifest(acpId, this.transactionManager),
+      ]);
     const bookletCatalog = this.buildReviewBookletCatalog(acp?.acpIndex);
     manifest.booklets.forEach((booklet, bookletOrder) => {
       bookletCatalog.set(booklet.id, {
@@ -1090,6 +1146,10 @@ export class CommentsService {
         comment.parentCommentId && visibleIds.has(comment.parentCommentId)
           ? comment.parentCommentId
           : "",
+      categoryId: comment.categoryId || "",
+      category:
+        categories.find((category) => category.id === comment.categoryId)
+          ?.name || "",
       comment: comment.commentText,
       author: this.resolveAuthorLabel(comment),
       createdAt: comment.createdAt.toISOString(),
@@ -1113,6 +1173,8 @@ export class CommentsService {
       { key: "itemLabel", label: "Item-Bezeichnung", width: 32 },
       { key: "threadId", label: "Thread-ID", width: 38 },
       { key: "parentCommentId", label: "Antwort auf", width: 38 },
+      { key: "categoryId", label: "Kategorie (ID)", width: 38 },
+      { key: "category", label: "Kategorie", width: 24 },
       { key: "comment", label: "Kommentar", width: 55 },
       { key: "createdAt", label: "Erstellt", width: 22 },
       { key: "updatedAt", label: "Geändert", width: 22 },
@@ -1772,6 +1834,12 @@ export class CommentsService {
       unitId: comment.unitId || null,
       itemId: comment.itemId || null,
       parentCommentId: comment.parentCommentId || null,
+      categoryId: deleted ? null : comment.categoryId || null,
+      categoryName: deleted
+        ? null
+        : actor.categories?.find(
+            (category) => category.id === comment.categoryId,
+          )?.name || null,
       groupId: comment.groupId || null,
       groupName:
         actor.groups?.find((group) => group.id === comment.groupId)?.name ||

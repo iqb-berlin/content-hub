@@ -201,8 +201,7 @@ describe("CommentsService", () => {
 
   it("exports comments with proper author fallback chains", async () => {
     const date = new Date("2026-01-01T00:00:00.000Z");
-    const spyByAcp = jest
-      .spyOn(service, "findByAcp")
+    commentRepository.find
       .mockResolvedValueOnce([
         {
           targetType: CommentTargetType.ITEM,
@@ -211,7 +210,16 @@ describe("CommentsService", () => {
           createdAt: date,
           user: { displayName: "Display Name", username: "user-a" },
           credentialUsername: "credential-a",
-        } as any,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          targetType: CommentTargetType.UNIT,
+          targetId: "unit-1",
+          commentText: "user text",
+          createdAt: date,
+          user: { username: "user-b" },
+        },
       ])
       .mockResolvedValueOnce([
         {
@@ -221,18 +229,8 @@ describe("CommentsService", () => {
           createdAt: date,
           user: null,
           credentialUsername: null,
-        } as any,
+        },
       ]);
-
-    const spyByUser = jest.spyOn(service, "findByUser").mockResolvedValue([
-      {
-        targetType: CommentTargetType.UNIT,
-        targetId: "unit-1",
-        commentText: "user text",
-        createdAt: date,
-        user: { username: "user-b" },
-      } as any,
-    ]);
 
     const all = await service.exportComments("acp-1");
     const user = await service.exportComments("acp-1", "u-1");
@@ -242,8 +240,12 @@ describe("CommentsService", () => {
     expect(user[0].author).toBe("user-b");
     expect(unknownAuthor[0].author).toBe("Unknown");
 
-    expect(spyByAcp).toHaveBeenCalledTimes(2);
-    expect(spyByUser).toHaveBeenCalledWith("acp-1", "u-1");
+    expect(commentRepository.find).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({ acpId: "acp-1", userId: "u-1" }),
+      }),
+    );
   });
 
   it.each([
@@ -288,7 +290,7 @@ describe("CommentsService", () => {
 
   it("exports comments by credential and prefers credential author", async () => {
     const date = new Date("2026-01-01T00:00:00.000Z");
-    jest.spyOn(service, "findByCredential").mockResolvedValue([
+    commentRepository.find.mockResolvedValue([
       {
         targetType: CommentTargetType.ITEM,
         targetId: "item-1",

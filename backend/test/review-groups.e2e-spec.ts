@@ -14,6 +14,7 @@ import {
   User,
   Comment,
 } from "../src/database/entities";
+import { CommentCategories1789700000000 } from "../src/database/migrations/1789700000000-CommentCategories";
 import { CommentVotes1789500000000 } from "../src/database/migrations/1789500000000-CommentVotes";
 import { ReviewVisibilityGroups1789400000000 } from "../src/database/migrations/1789400000000-ReviewVisibilityGroups";
 import { ReviewManifestService } from "../src/review/review-manifest.service";
@@ -1252,6 +1253,412 @@ describe("Review visibility, groups and synchronization API", () => {
       await q.query(`DELETE FROM comments`);
       expect(await q.query(`SELECT * FROM comment_votes`)).toHaveLength(0);
       await migration.down(q);
+    } finally {
+      await q.query(`SET search_path TO public`);
+      await q.query(`DROP SCHEMA "${schema}" CASCADE`);
+      await q.release();
+    }
+  });
+  it("persists categories across rename, archival, filtering and all export formats", async () => {
+    await saveConfig({
+      enableReview: true,
+      visibilityMode: "SHARED",
+      confirmExistingComments: true,
+      categories: [
+        { name: " Fachlich ", archived: false },
+        { name: "Redaktion", archived: false },
+      ],
+    });
+    const category = config.categories[0];
+    expect(category).toMatchObject({ name: "Fachlich", archived: false });
+    expect(category.id).toEqual(expect.any(String));
+    for (const actor of actors.slice(0, 4)) {
+      await request(server)
+        .put(configApi())
+        .set(headers(actor.token))
+        .send({ ...config, categories: [] })
+        .expect(403);
+    }
+    const badCategory = "ffffffff-ffff-4fff-8fff-ffffffffffff";
+    for (const categoryId of [badCategory, "", 23]) {
+      await request(server)
+        .post(api())
+        .set(headers(manager))
+        .send({ ...item, commentText: "Invalid", categoryId })
+        .expect(400);
+    }
+    const roots = [];
+    for (const target of [
+      item,
+      { targetType: "UNIT", unitId: "U" },
+      { targetType: "BOOKLET", bookletId: "B" },
+      { ...item, targetType: "CODING" },
+    ]) {
+      const root = await request(server)
+        .post(api())
+        .set(headers(manager))
+        .send({
+          ...target,
+          commentText: `Categorized ${target.targetType}`,
+          categoryId: category.id,
+        })
+        .expect(201);
+      expect(root.body).toMatchObject({
+        categoryId: category.id,
+        categoryName: "Fachlich",
+      });
+      roots.push(root.body);
+    }
+    const root = roots[0];
+    const reply = await request(server)
+      .post(api())
+      .set(headers(actors[2].token))
+      .send({
+        ...item,
+        parentCommentId: root.id,
+        commentText: "Independent reply",
+        categoryId: config.categories[1].id,
+      })
+      .expect(201);
+    expect(reply.body.categoryId).toBe(config.categories[1].id);
+    const uncategorized = await request(server)
+      .post(api())
+      .set(headers(manager))
+      .send({ ...item, commentText: "No category" })
+      .expect(201);
+    expect(uncategorized.body.categoryId).toBeNull();
+    const before = await request(server)
+      .get(api())
+      .query(item)
+      .set(headers(manager))
+      .expect(200);
+    const staleConfig = { ...config };
+    const renamed = '=SUM(A1;A2) "Fachlich"';
+    await saveConfig({
+      categories: config.categories.map((entry: any) =>
+        entry.id === category.id
+          ? { ...entry, name: renamed, archived: true }
+          : entry,
+      ),
+    });
+    await request(server)
+      .put(configApi())
+      .set(headers(manager))
+      .send(staleConfig)
+      .expect(409);
+    const after = await request(server)
+      .get(api())
+      .query(item)
+      .set(headers(manager))
+      .set("If-None-Match", before.headers.etag)
+      .expect(200);
+    expect(after.body.revision).not.toBe(before.body.revision);
+    expect(
+      after.body.comments.find((entry: any) => entry.id === root.id),
+    ).toMatchObject({ categoryId: category.id, categoryName: renamed });
+    expect(after.body.categories).toContainEqual({
+      ...category,
+      name: renamed,
+      archived: true,
+    });
+    await request(server)
+      .post(api())
+      .set(headers(manager))
+      .send({ ...item, commentText: "Archived", categoryId: category.id })
+      .expect(400);
+    await request(server)
+      .patch(`${api()}/${uncategorized.body.id}`)
+      .set(headers(manager))
+      .send({
+        commentText: "New assignment",
+        version: 1,
+        categoryId: category.id,
+      })
+      .expect(400);
+    await request(server)
+      .patch(`${api()}/${root.id}`)
+      .set(headers(actors[2].token))
+      .send({ commentText: "Not mine", version: 1, categoryId: null })
+      .expect(403);
+    await request(server)
+      .patch(`${api()}/${root.id}`)
+      .set(headers(manager))
+      .send({
+        commentText: "Retain archived",
+        version: 1,
+        categoryId: category.id,
+      })
+      .expect(200);
+    await request(server)
+      .patch(`${api()}/${root.id}`)
+      .set(headers(manager))
+      .send({ commentText: "Legacy client retains category", version: 2 })
+      .expect(200)
+      .expect(({ body }) => expect(body.categoryId).toBe(category.id));
+    const csv = await request(server)
+      .get(`${api()}/export/mine.csv`)
+      .query({ categoryId: category.id })
+      .set(headers(manager))
+      .expect(200);
+    expect(csv.text).toContain('"Kategorie"');
+    expect(csv.text).toContain("'=SUM(A1;A2)");
+    expect(csv.text).not.toContain("No category");
+    const ExcelJS = await import("exceljs");
+    for (const scope of ["mine", "visible", "all"]) {
+      const xlsx = await request(server)
+        .get(`${api()}/export/${scope}.xlsx`)
+        .set(headers(manager))
+        .buffer(true)
+        .parse((res, done) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk) => chunks.push(chunk));
+          res.on("end", () => done(null, Buffer.concat(chunks)));
+        })
+        .expect(200);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(xlsx.body);
+      const sheet = workbook.worksheets[0];
+      const exportHeaders = sheet.getRow(1).values as string[];
+      const column = exportHeaders.indexOf("Kategorie");
+      expect(column).toBeGreaterThan(0);
+      expect(sheet.getColumn(column).values).toContain(renamed);
+    }
+    const uncategorizedCsv = await request(server)
+      .get(`${api()}/export/mine.csv`)
+      .query({ categoryId: "uncategorized" })
+      .set(headers(manager))
+      .expect(200);
+    expect(uncategorizedCsv.text).toContain("No category");
+    expect(uncategorizedCsv.text).not.toContain("Categorized");
+    await request(server)
+      .patch(`${api()}/${root.id}`)
+      .set(headers(manager))
+      .send({ commentText: "Clear category", version: 3, categoryId: null })
+      .expect(200)
+      .expect(({ body }) => expect(body.categoryId).toBeNull());
+    await request(server)
+      .patch(`${api()}/${root.id}`)
+      .set(headers(manager))
+      .send({ commentText: "Stale clear", version: 3, categoryId: null })
+      .expect(409);
+    // Include deleted comments when checking whether a category is in use.
+    await request(server)
+      .delete(`${api()}/${reply.body.id}`)
+      .query({ version: 1 })
+      .set(headers(actors[2].token))
+      .expect(200);
+    for (const id of config.categories.map((entry: any) => entry.id)) {
+      await request(server)
+        .put(configApi())
+        .set(headers(manager))
+        .send({
+          ...config,
+          categories: config.categories.filter((entry: any) => entry.id !== id),
+          deletedCategoryIds: [id],
+        })
+        .expect(400);
+    }
+    await saveConfig({
+      categories: [...config.categories, { name: "Unused", archived: false }],
+    });
+    const unused = config.categories.at(-1).id;
+    await saveConfig({
+      categories: config.categories.filter((entry: any) => entry.id !== unused),
+      deletedCategoryIds: [unused],
+    });
+    const legacy = { ...config };
+    delete legacy.categories;
+    await saveConfig({ ...legacy, categories: undefined });
+    expect(config.categories).toHaveLength(2);
+    await request(server)
+      .put(configApi())
+      .set(headers(manager))
+      .send({
+        ...config,
+        categories: [
+          ...config.categories,
+          { name: "redaktion", archived: false },
+        ],
+      })
+      .expect(400);
+    await request(server)
+      .put(configApi())
+      .set(headers(manager))
+      .send({
+        ...config,
+        categories: [{ id: badCategory, name: "Foreign", archived: false }],
+      })
+      .expect(400);
+    await request(server)
+      .put(configApi())
+      .set(headers(manager))
+      .send({ ...config, categories: [{ name: " ", archived: false }] })
+      .expect(400);
+  });
+
+  it.each(["legacy", "review"] as const)(
+    "keeps the category label in a %s export while its last assignment is removed",
+    async (format) => {
+      const acp = await db.getRepository(Acp).save({
+        packageId: `category-export-${format}-${Date.now()}`,
+        name: "Category export snapshot",
+        acpIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
+      });
+      const category = {
+        id: "10000000-0000-4000-8000-000000000239",
+        name: "Snapshot category",
+        archived: false,
+      };
+      await db.getRepository(AcpAccessConfig).save({
+        acpId: acp.id,
+        accessModel: "PRIVATE" as any,
+        featureConfig: { commentVisibilityMode: "PRIVATE" },
+        commentCategories: [category],
+      });
+      await db.getRepository(Comment).save({
+        acpId: acp.id,
+        userId: actors[4].id,
+        targetType: CommentTargetType.UNIT,
+        targetId: "U",
+        unitId: "U",
+        commentText: "Snapshot comment",
+        categoryId: category.id,
+      });
+      let entered!: () => void;
+      const readingCategories = new Promise<void>((resolve) => {
+        entered = resolve;
+      });
+      let resume!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        resume = resolve;
+      });
+      let commentsRead!: () => void;
+      const readingComments = new Promise<void>((resolve) => {
+        commentsRead = resolve;
+      });
+      const originalFind = CommentsService.prototype.findByAcp;
+      const find = jest
+        .spyOn(CommentsService.prototype, "findByAcp")
+        .mockImplementationOnce(async function (
+          this: CommentsService,
+          id: string,
+        ) {
+          const comments = await originalFind.call(this, id);
+          commentsRead();
+          return comments;
+        });
+      const original = ReviewPolicyService.prototype.getCommentCategories;
+      const read = jest
+        .spyOn(ReviewPolicyService.prototype, "getCommentCategories")
+        .mockImplementationOnce(async function (
+          this: ReviewPolicyService,
+          id: string,
+        ) {
+          entered();
+          await gate;
+          return original.call(this, id);
+        });
+      const q = db.createQueryRunner();
+      let writer: Promise<void> | undefined;
+      let exporting: Promise<string> | undefined;
+      try {
+        await q.connect();
+        const [{ pid }] = await q.query(`SELECT pg_backend_pid() AS pid`);
+        await q.startTransaction();
+        const service = app.get(CommentsService);
+        exporting =
+          format === "legacy"
+            ? service
+                .exportComments(acp.id)
+                .then((rows) => JSON.stringify(rows))
+            : service
+                .exportReviewCommentsCsv(acp.id, {
+                  userId: actors[4].id,
+                  isManager: true,
+                  visible: true,
+                })
+                .then((buffer) => buffer.toString("utf8"));
+        await Promise.all([readingCategories, readingComments]);
+        let committed = false;
+        writer = (async () => {
+          // The same ACP lock serializes real comment and category writes.
+          await q.query(
+            `SELECT id FROM acp_access_configs WHERE acp_id = $1 FOR UPDATE`,
+            [acp.id],
+          );
+          await q.query(
+            `UPDATE comments SET category_id = NULL WHERE acp_id = $1`,
+            [acp.id],
+          );
+          await q.query(
+            `UPDATE acp_access_configs SET comment_categories = '[]' WHERE acp_id = $1`,
+            [acp.id],
+          );
+          await q.commitTransaction();
+          committed = true;
+        })();
+        // Wait for an observed database state, so both the unlocked regression
+        // and the serialized implementation are exercised without timing guesses.
+        const deadline = Date.now() + 5000;
+        while (!committed) {
+          const [activity] = await db.query(
+            `SELECT wait_event_type FROM pg_stat_activity WHERE pid = $1`,
+            [pid],
+          );
+          if (activity?.wait_event_type === "Lock") break;
+          if (Date.now() > deadline)
+            throw new Error("Category writer did not reach the database");
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        resume();
+        const output = await exporting;
+        await writer;
+        expect(output).toContain("Snapshot comment");
+        expect(output).toContain("Snapshot category");
+        expect(
+          (
+            await db
+              .getRepository(AcpAccessConfig)
+              .findOneByOrFail({ acpId: acp.id })
+          ).commentCategories,
+        ).toEqual([]);
+      } finally {
+        resume();
+        await Promise.allSettled([exporting, writer]);
+        read.mockRestore();
+        find.mockRestore();
+        if (q.isTransactionActive) await q.rollbackTransaction();
+        await q.release();
+        await db.getRepository(Acp).delete(acp.id);
+      }
+    },
+  );
+
+  it("migrates existing comments without category assignment and protects rollback", async () => {
+    const q = db.createQueryRunner();
+    const schema = `category_migration_${Date.now()}`;
+    try {
+      await q.query(`CREATE SCHEMA "${schema}"`);
+      await q.query(`SET search_path TO "${schema}"`);
+      await q.query(`CREATE TABLE acp_access_configs (id uuid PRIMARY KEY)`);
+      await q.query(`CREATE TABLE comments (comment_text text)`);
+      await q.query(`INSERT INTO comments VALUES ('Preserved')`);
+      const migration = new CommentCategories1789700000000();
+      await migration.up(q);
+      expect(await q.query(`SELECT * FROM comments`)).toEqual([
+        { comment_text: "Preserved", category_id: null },
+      ]);
+      await q.query(
+        `INSERT INTO acp_access_configs VALUES (gen_random_uuid(), '[{"id":"category","name":"Existing","archived":false}]')`,
+      );
+      await expect(migration.down(q)).rejects.toThrow(
+        "rollback would lose review data",
+      );
+      await q.query(`UPDATE acp_access_configs SET comment_categories = '[]'`);
+      await migration.down(q);
+      expect(await q.query(`SELECT * FROM comments`)).toEqual([
+        { comment_text: "Preserved" },
+      ]);
     } finally {
       await q.query(`SET search_path TO public`);
       await q.query(`DROP SCHEMA "${schema}" CASCADE`);

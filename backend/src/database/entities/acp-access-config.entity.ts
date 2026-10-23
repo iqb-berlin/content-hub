@@ -23,6 +23,12 @@ export interface ReviewGroup {
   members: { kind: "user" | "credential"; id: string }[];
 }
 
+export interface CommentCategory {
+  id: string;
+  name: string;
+  archived: boolean;
+}
+
 @Entity("acp_access_configs")
 export class AcpAccessConfig {
   @PrimaryGeneratedColumn("uuid")
@@ -42,6 +48,9 @@ export class AcpAccessConfig {
 
   @Column({ name: "review_groups", type: "jsonb", default: [] })
   reviewGroups!: ReviewGroup[];
+
+  @Column({ name: "comment_categories", type: "jsonb", default: [] })
+  commentCategories!: CommentCategory[];
 
   @Column({ name: "review_config_version", type: "integer", default: 1 })
   reviewConfigVersion!: number;
