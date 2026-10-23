@@ -21,7 +21,7 @@ All notable changes to ContentPool are documented in this file. Releases use
 
 ### Database migrations
 
-- Classification: `additive`
+- Classification: `backward-compatible`
 - `1789700000000-CommentCategories` adds categories and optional comment assignments.
 
 ### Rollback
