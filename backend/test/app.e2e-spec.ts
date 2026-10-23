@@ -5,6 +5,7 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as request from "supertest";
 import {
+  Acp,
   AcpFile,
   AcpUserRole,
   AcpItemPreference,
@@ -38,6 +39,7 @@ describe("ContentPool API (e2e)", () => {
   let authToken: string;
   let credentialToken: string;
   let credentialId: string;
+  let acpRepository: Repository<Acp>;
   let acpFileRepository: Repository<AcpFile>;
   let itemPreferenceRepository: Repository<AcpItemPreference>;
   let itemRowNumberRepository: Repository<AcpItemRowNumber>;
@@ -61,11 +63,17 @@ describe("ContentPool API (e2e)", () => {
     assessmentParts: [
       {
         id: "part-1",
+        name: [{ lang: "de", value: "Teil 1" }],
         units: [
           {
             id: "U1",
             name: "Unit 1",
-            dependencies: [],
+            dependencies: [
+              {
+                id: "unit.xml",
+                type: "UNIT_INDEX",
+              },
+            ],
             items: [
               {
                 id: "I1",
@@ -85,7 +93,7 @@ describe("ContentPool API (e2e)", () => {
         instruments: [
           {
             id: "INST-1",
-            name: "Instrument 1",
+            name: [{ lang: "de", value: "Instrument 1" }],
             testcenterBooklet: [
               {
                 definitionId: "booklet.xml",
@@ -152,6 +160,7 @@ describe("ContentPool API (e2e)", () => {
     acpFileRepository = moduleFixture.get<Repository<AcpFile>>(
       getRepositoryToken(AcpFile),
     );
+    acpRepository = moduleFixture.get<Repository<Acp>>(getRepositoryToken(Acp));
     itemRowNumberRepository = moduleFixture.get<Repository<AcpItemRowNumber>>(
       getRepositoryToken(AcpItemRowNumber),
     );
@@ -229,6 +238,7 @@ describe("ContentPool API (e2e)", () => {
 
     await request(server)
       .put(`/api/acp/${acpId}/index`)
+      .query({ expectedUpdatedAt: createRes.body.updatedAt })
       .set("Authorization", `Bearer ${authToken}`)
       .send(baseIndex)
       .expect(200);
@@ -330,6 +340,7 @@ describe("ContentPool API (e2e)", () => {
         acpId,
         filePath: `/tmp/${uniqueSuffix}-source.xml`,
         originalName: `${uniqueSuffix}-source.xml`,
+        relativePath: `${uniqueSuffix}-source.xml`,
         fileType: "application/xml",
         fileSize: 1,
         checksum: "a".repeat(64),
@@ -964,8 +975,10 @@ describe("ContentPool API (e2e)", () => {
       ],
     };
 
+    const currentAcp = await acpRepository.findOneByOrFail({ id: acpId });
     await request(server)
       .put(`/api/acp/${acpId}/index`)
+      .query({ expectedUpdatedAt: currentAcp.updatedAt.toISOString() })
       .set("Authorization", `Bearer ${authToken}`)
       .send(modifiedIndex)
       .expect(200);

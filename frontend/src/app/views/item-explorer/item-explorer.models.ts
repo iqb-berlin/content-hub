@@ -43,6 +43,7 @@ export interface ExplorerItem {
   subId?: string;
   subIdDisplay?: string;
   unitId: string;
+  partId?: string;
   unitLabel: string;
   description: string;
   variableId: string;

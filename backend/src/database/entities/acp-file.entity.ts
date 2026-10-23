@@ -22,6 +22,9 @@ export class AcpFile {
   @Column({ name: "original_name" })
   originalName!: string;
 
+  @Column({ name: "relative_path" })
+  relativePath!: string;
+
   @Column({ name: "file_type", nullable: true })
   fileType?: string;
 

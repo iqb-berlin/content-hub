@@ -1,11 +1,7 @@
 import { AcpCapabilitiesService } from "../auth/capabilities/acp-capabilities.service";
 import { UpdateCapabilitiesDto } from "./dto/acp.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import {
-  UploadedFile,
-  UseInterceptors,
-  BadRequestException,
-} from "@nestjs/common";
+import { UploadedFile, UseInterceptors } from "@nestjs/common";
 import { parseCredentialFile } from "./credential-file";
 import { profileGrants } from "../auth/capabilities/acp-capabilities";
 import { ExplorerEditGuard } from "../auth/capabilities/explorer-access.guard";
@@ -23,7 +19,9 @@ import {
   Res,
   Header,
   Logger,
+  Optional,
   ForbiddenException,
+  BadRequestException,
   DefaultValuePipe,
   ParseEnumPipe,
 } from "@nestjs/common";
@@ -31,6 +29,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsDateString,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -41,6 +40,7 @@ import {
   ApiOperation,
   ApiProperty,
   ApiPropertyOptional,
+  ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
 import { AcpService } from "./acp.service";
@@ -64,6 +64,18 @@ import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.s
 import { AdminService } from "../admin/admin.service";
 import { ALL_SERVER_API_SCOPES } from "../api/server-api-scopes";
 import { UuidParam } from "../common/uuid-param";
+import { AcpIndexService } from "./acp-index.service";
+
+class RequiredRevisionDto {
+  @IsDateString()
+  expectedUpdatedAt!: string;
+}
+
+class PublishIndexDto extends RequiredRevisionDto {
+  @IsString()
+  @IsIn(["RELEASED_PUBLIC", "RELEASED_CONFIDENTIAL"])
+  status!: "RELEASED_PUBLIC" | "RELEASED_CONFIDENTIAL";
+}
 
 class CreateAcpApplicationTokenDto {
   @ApiProperty({ description: "Human-readable application name" })
@@ -101,6 +113,7 @@ export class AcpController {
     private readonly itemExplorerStateService: ItemExplorerStateService,
     private readonly adminService: AdminService,
     private readonly capabilities: AcpCapabilitiesService,
+    @Optional() private readonly acpIndexService?: AcpIndexService,
   ) {}
 
   @Get()
@@ -159,30 +172,107 @@ export class AcpController {
   @UseGuards(RolesGuard)
   @Roles("ACP_MANAGER")
   @ApiOperation({ summary: "Update ACP-Index" })
+  @ApiQuery({ name: "expectedUpdatedAt", required: true })
   async updateIndex(
     @UuidParam("id") id: string,
     @Body() index: Record<string, unknown>,
+    @Query("expectedUpdatedAt") expectedUpdatedAt?: string,
   ) {
-    return this.acpService.updateIndex(id, index);
+    return this.acpService.updateIndex(
+      id,
+      index,
+      this.requireRevision(expectedUpdatedAt),
+    );
   }
 
   @Post(":id/index/import")
   @UseGuards(RolesGuard)
   @Roles("ACP_MANAGER")
   @ApiOperation({ summary: "Import ACP-Index from JSON (replaces existing)" })
+  @ApiQuery({ name: "expectedUpdatedAt", required: true })
   async importIndex(
     @UuidParam("id") id: string,
     @Body() index: Record<string, unknown>,
+    @Query("expectedUpdatedAt") expectedUpdatedAt?: string,
   ) {
-    return this.acpService.importIndex(id, index);
+    return this.acpService.importIndex(
+      id,
+      index,
+      this.requireRevision(expectedUpdatedAt),
+    );
   }
 
   @Delete(":id/index")
   @UseGuards(RolesGuard)
   @Roles("ACP_MANAGER")
   @ApiOperation({ summary: "Reset ACP-Index to defaults" })
-  async deleteIndex(@UuidParam("id") id: string) {
-    return this.acpService.deleteIndex(id);
+  @ApiQuery({ name: "expectedUpdatedAt", required: true })
+  async deleteIndex(
+    @UuidParam("id") id: string,
+    @Query("expectedUpdatedAt") expectedUpdatedAt?: string,
+  ) {
+    return this.acpService.deleteIndex(
+      id,
+      this.requireRevision(expectedUpdatedAt),
+    );
+  }
+
+  @Post(":id/index/validate")
+  @UseGuards(RolesGuard)
+  @Roles("ACP_MANAGER")
+  @ApiOperation({ summary: "Validate ACP-Index against acp-index@0.6" })
+  async validateIndex(@UuidParam("id") id: string) {
+    return this.acpIndexService!.validateStoredIndex(id, { external: true });
+  }
+
+  @Post(":id/index/migration-preview")
+  @UseGuards(RolesGuard)
+  @Roles("ACP_MANAGER")
+  @ApiOperation({ summary: "Preview migration to acp-index@0.6" })
+  async migrationPreview(@UuidParam("id") id: string) {
+    return this.acpIndexService!.migrationPreview(id);
+  }
+
+  @Post(":id/index/migrate")
+  @UseGuards(RolesGuard)
+  @Roles("ACP_MANAGER")
+  @ApiOperation({ summary: "Apply snapshot-backed ACP-Index migration" })
+  async migrateIndex(
+    @UuidParam("id") id: string,
+    @Body() dto: RequiredRevisionDto,
+  ) {
+    return this.acpIndexService!.migrate(id, dto.expectedUpdatedAt);
+  }
+
+  @Post(":id/index/publish")
+  @UseGuards(RolesGuard)
+  @Roles("ACP_MANAGER")
+  @ApiOperation({ summary: "Validate and publish an ACP-Index" })
+  async publishIndex(
+    @UuidParam("id") id: string,
+    @Body() dto: PublishIndexDto,
+  ) {
+    return this.acpIndexService!.publish(id, dto.status, dto.expectedUpdatedAt);
+  }
+
+  @Post(":id/index/reopen")
+  @UseGuards(RolesGuard)
+  @Roles("ACP_MANAGER")
+  @ApiOperation({ summary: "Snapshot and reopen a published ACP" })
+  async reopenIndex(
+    @UuidParam("id") id: string,
+    @Body() dto: RequiredRevisionDto,
+  ) {
+    return this.acpIndexService!.reopen(id, dto.expectedUpdatedAt);
+  }
+
+  private requireRevision(value?: string): string {
+    if (!value || Number.isNaN(Date.parse(value))) {
+      throw new BadRequestException(
+        "expectedUpdatedAt must be a valid ISO timestamp",
+      );
+    }
+    return value;
   }
 
   @Get(":id/index/export")

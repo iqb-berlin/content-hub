@@ -69,4 +69,47 @@ describe("UnitViewResolver", () => {
     );
     expect(fs.readFile).toHaveBeenCalledTimes(3);
   });
+
+  it("resolves a unit by the same slug used for its part path", async () => {
+    const files = [
+      {
+        id: "file-mathe",
+        acpId: "acp-1",
+        originalName: "u1.xml",
+        relativePath: "units/Mäthe Teil 1/u1.xml",
+        filePath: "/tmp/mathe-u1.xml",
+      },
+      {
+        id: "file-sprache",
+        acpId: "acp-1",
+        originalName: "u1.xml",
+        relativePath: "units/Sprache/u1.xml",
+        filePath: "/tmp/sprache-u1.xml",
+      },
+    ] as AcpFile[];
+    const fileCatalogCache = {
+      get: jest.fn(async () => ({
+        files,
+        signature: "revision",
+        cacheStatus: "hit" as const,
+        sourceReadMs: 0,
+        fileSignatureMs: 0,
+      })),
+    } as unknown as FileCatalogCache;
+    (fs.readFile as jest.Mock).mockResolvedValue(`<Unit>
+      <Id>u1</Id><Label>Mathe</Label><DefinitionRef player="">u1.voud</DefinitionRef>
+    </Unit>`);
+
+    const result = await new UnitViewResolver(fileCatalogCache).resolve(
+      "acp-1",
+      "u1",
+      "",
+      "mathe-teil-1",
+    );
+
+    expect(result.value).toEqual(
+      expect.objectContaining({ id: "u1", partId: "mathe-teil-1" }),
+    );
+    expect(fs.readFile).toHaveBeenCalledWith("/tmp/mathe-u1.xml", "utf-8");
+  });
 });

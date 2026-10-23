@@ -621,32 +621,40 @@ describe('ApiService', () => {
       const indexData = { entries: [{ id: '1' }] };
       httpClientMock.put.mockReturnValue(of(indexData));
 
-      service.updateAcpIndex('acp1', indexData).subscribe((result) => {
+      service.updateAcpIndex('acp1', indexData, '2026-01-01T00:00:00.000Z').subscribe((result) => {
         expect(result).toEqual(indexData);
       });
 
-      expect(httpClientMock.put).toHaveBeenCalledWith('/api/acp/acp1/index', indexData);
+      expect(httpClientMock.put).toHaveBeenCalledWith(
+        '/api/acp/acp1/index?expectedUpdatedAt=2026-01-01T00%3A00%3A00.000Z',
+        indexData,
+      );
     });
 
     it('should import ACP index', () => {
       const importData = { entries: [{ id: '1' }] };
       httpClientMock.post.mockReturnValue(of(importData));
 
-      service.importAcpIndex('acp1', importData).subscribe((result) => {
+      service.importAcpIndex('acp1', importData, '2026-01-01T00:00:00.000Z').subscribe((result) => {
         expect(result).toEqual(importData);
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/index/import', importData);
+      expect(httpClientMock.post).toHaveBeenCalledWith(
+        '/api/acp/acp1/index/import?expectedUpdatedAt=2026-01-01T00%3A00%3A00.000Z',
+        importData,
+      );
     });
 
     it('should delete ACP index', () => {
       httpClientMock.delete.mockReturnValue(of({}));
 
-      service.deleteAcpIndex('acp1').subscribe((result) => {
+      service.deleteAcpIndex('acp1', '2026-01-01T00:00:00.000Z').subscribe((result) => {
         expect(result).toEqual({});
       });
 
-      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/acp/acp1/index');
+      expect(httpClientMock.delete).toHaveBeenCalledWith(
+        '/api/acp/acp1/index?expectedUpdatedAt=2026-01-01T00%3A00%3A00.000Z',
+      );
     });
 
     it('should build index export URL with auth token', () => {

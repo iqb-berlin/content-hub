@@ -2,6 +2,7 @@ export { User } from "./user.entity";
 export { Acp } from "./acp.entity";
 export { AcpUserRole, AcpRole } from "./acp-user-role.entity";
 export { AcpFile } from "./acp-file.entity";
+export { AcpExternalResourceCache } from "./acp-external-resource-cache.entity";
 export { AcpFileProcessingJob } from "./acp-file-processing-job.entity";
 export { AcpSnapshot } from "./acp-snapshot.entity";
 export { AcpSnapshotFile } from "./acp-snapshot-file.entity";

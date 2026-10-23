@@ -3102,6 +3102,58 @@ describe('ItemExplorerFacade', () => {
     expect(component.selectedIndex).toBe(1);
   });
 
+  it('reloads a repeated unit ID when switching assessment parts', () => {
+    const getResponseStateWithFallback = vi.fn(() => of({ state: null }));
+    const previewLoader = {
+      load: vi.fn(() =>
+        of({ unit: null, playerHtml: null, definition: null, cacheStatus: 'miss' }),
+      ),
+      clear: vi.fn(),
+    };
+    const component = createFacade({ api: { getResponseStateWithFallback }, previewLoader });
+    component.acpId = 'acp-1';
+    component.player.unit = { id: 'UNIT_1', partId: 'math', dependencies: [] };
+    component.player.playerSrcDoc = '<html>math player</html>';
+    component.player.definitionContent = '{"pages":[]}';
+    component.unitMetadataCache = {
+      'math/UNIT_1': [{ id: 'math' }],
+      'language/UNIT_1': [{ id: 'language' }],
+    };
+    const item = {
+      itemId: 'ITEM_2',
+      uuid: 'uuid-2',
+      rowKey: 'uuid-2',
+      unitId: 'UNIT_1',
+      partId: 'language',
+      unitLabel: 'Unit',
+      description: 'Item',
+      variableId: 'VAR_2',
+      metadata: {},
+    } as any;
+    component.selectedItem = { ...item, partId: 'math' };
+    component.table.filteredItems = [component.selectedItem, item];
+    component.selectItem(item, 1);
+    expect(previewLoader.load).toHaveBeenCalledWith('acp-1', 'read-only', 'UNIT_1', 'language');
+    expect(component.currentUnitMetadata).toEqual([{ id: 'language' }]);
+    expect(component.playerSrcDoc).toBeNull();
+    destroyFacade(component);
+  });
+
+  it.each(['math / part', undefined])('uses the selected part in unit downloads (%s)', (partId) => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const component = createFacade({ api: { appendAuthToken: (url: string) => url } });
+    component.acpId = 'acp-1';
+    component.selectedItem = { unitId: 'UNIT 1', partId } as any;
+    component.downloadUnit();
+    const partQuery = partId ? '&partId=math%20%2F%20part' : '';
+    expect(open).toHaveBeenCalledWith(
+      `/api/acp/acp-1/files?unitId=UNIT%201${partQuery}&format=zip`,
+      '_blank',
+    );
+    destroyFacade(component);
+    open.mockRestore();
+  });
+
   it('reuses the loaded player assets when selecting another item in the same unit', async () => {
     const getResponseStateWithFallback = vi.fn(() => of({ state: null, isFallback: false }));
     const previewLoader = { load: vi.fn(), clear: vi.fn() };

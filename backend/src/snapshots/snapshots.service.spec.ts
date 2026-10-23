@@ -244,7 +244,10 @@ describe("SnapshotsService", () => {
       await service.restore("snap-1");
       expect(acpRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
-          acpIndex: snapshotWithFiles.acpIndexSnapshot,
+          acpIndex: {
+            ...snapshotWithFiles.acpIndexSnapshot,
+            status: "IN_DEVELOPMENT",
+          },
         }),
       );
       expect(fileRepo.delete).toHaveBeenCalledWith({

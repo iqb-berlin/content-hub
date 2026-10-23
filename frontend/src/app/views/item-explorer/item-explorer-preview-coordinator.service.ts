@@ -129,7 +129,14 @@ export class ItemExplorerPreviewCoordinator implements OnDestroy {
     );
     const assets$ = request.reuseUnit
       ? of(null)
-      : this.loader.load(request.acpId, request.perspective, request.item.unitId);
+      : request.item.partId
+        ? this.loader.load(
+            request.acpId,
+            request.perspective,
+            request.item.unitId,
+            request.item.partId,
+          )
+        : this.loader.load(request.acpId, request.perspective, request.item.unitId);
 
     return forkJoin({ assets: assets$, responseState: responseState$ }).pipe(
       map(({ assets, responseState }) => {

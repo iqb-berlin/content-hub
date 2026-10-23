@@ -47,16 +47,51 @@ describe("acp-index.utils", () => {
     expect(getIndexScales(index).map((s) => s.id)).toEqual(["modern-s1"]);
   });
 
-  it("normalizes legacy units/scales into assessmentParts", () => {
+  it("keeps equal scale ids separate across assessment parts", () => {
+    const index = {
+      assessmentParts: [
+        { id: "p1", scales: [{ id: "shared", marker: "p1" }] },
+        { id: "p2", scales: [{ id: "shared", marker: "p2" }] },
+      ],
+    };
+
+    expect(getIndexScales(index).map((scale) => scale.marker)).toEqual([
+      "p1",
+      "p2",
+    ]);
+  });
+
+  it("reads both 0.6 scale types and preserves them in storage", () => {
+    const index = {
+      assessmentParts: [
+        {
+          id: "p1",
+          baseScales: [{ id: "base" }],
+          derivedScales: [{ id: "derived" }],
+        },
+      ],
+    };
+    expect(getIndexScales(index).map((scale) => scale.id)).toEqual([
+      "base",
+      "derived",
+    ]);
+    expect(normalizeIndexForStorage(index)).toEqual(index);
+    expect(toRuntimeAcpIndex(index).scales).toEqual([
+      { id: "base" },
+      { id: "derived" },
+    ]);
+  });
+
+  it("drops legacy top-level units/scales instead of persisting them", () => {
     const normalized = normalizeIndexForStorage({
       units: [{ id: "u1" }],
       scales: [{ id: "s1" }],
       assessmentParts: [],
     }) as any;
 
-    expect(normalized.assessmentParts?.length).toBe(1);
-    expect(normalized.assessmentParts[0].units).toEqual([{ id: "u1" }]);
-    expect(normalized.assessmentParts[0].scales).toEqual([{ id: "s1" }]);
+    expect(normalized.assessmentParts).toBeUndefined();
+    expect(normalized.units).toBeUndefined();
+    expect(normalized.scales).toBeUndefined();
   });
 
   it("adds runtime compatibility units/scales for modern ACPs", () => {

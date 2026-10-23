@@ -130,6 +130,13 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
       <section class="card overview-section" aria-labelledby="management-heading">
         <h2 id="management-heading">Verwaltung</h2>
         <div class="grid management-grid">
+          <a [routerLink]="['/manage', acp.id, 'index']" class="card link-card">
+            <span class="tile-icon" aria-hidden="true">🧭</span>
+            <div>
+              <h3>ACP-Index 0.6</h3>
+              <p>Validieren, migrieren, erzeugen und veröffentlichen</p>
+            </div>
+          </a>
           <a [routerLink]="['/manage', acp.id, 'files']" class="card link-card">
             <span class="tile-icon" aria-hidden="true">📁</span>
             <div>
@@ -781,11 +788,12 @@ export class DashboardComponent implements OnInit {
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result as string);
-        this.api.importAcpIndex(this.acp!.id, data).subscribe({
+        this.api.importAcpIndex(this.acp!.id, data, this.acp!.updatedAt).subscribe({
           next: (idx) => {
             this.acp!.acpIndex = idx;
             this.error = '';
             this.indexSuccessMessage = 'ACP-Index wurde importiert.';
+            this.refreshAcp();
             this.reloadContent();
           },
           error: () => (this.error = 'ACP-Index konnte nicht importiert werden.'),
@@ -814,12 +822,13 @@ export class DashboardComponent implements OnInit {
     this.deleteIndexError = '';
     this.indexSuccessMessage = '';
 
-    this.api.deleteAcpIndex(this.acp.id).subscribe({
+    this.api.deleteAcpIndex(this.acp.id, this.acp.updatedAt).subscribe({
       next: (idx) => {
         this.acp!.acpIndex = idx;
         this.indexSuccessMessage = 'ACP-Index wurde auf den Standardzustand zurückgesetzt.';
         this.deletingIndex = false;
         this.showDeleteIndexDialog = false;
+        this.refreshAcp();
         this.reloadContent();
       },
       error: (err) => {
@@ -827,6 +836,11 @@ export class DashboardComponent implements OnInit {
         this.deleteIndexError = err?.error?.message || 'Fehler beim Zurücksetzen des ACP-Index.';
       },
     });
+  }
+
+  private refreshAcp() {
+    if (!this.acp) return;
+    this.api.getAcp(this.acp.id).subscribe((acp) => (this.acp = acp));
   }
 
   assignRole() {

@@ -14,6 +14,7 @@ import { ServerApiAuthGuard } from "./server-api-auth.guard";
 import { ServerApiAuditService } from "./server-api-audit.service";
 import { ServerApiAuditInterceptor } from "./server-api-audit.interceptor";
 import { SnapshotsModule } from "../snapshots/snapshots.module";
+import { AcpModule } from "../acp/acp.module";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SnapshotsModule } from "../snapshots/snapshots.module";
     ]),
     FilesModule,
     SnapshotsModule,
+    AcpModule,
   ],
   controllers: [ServerApiController],
   providers: [

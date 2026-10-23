@@ -122,6 +122,31 @@ describe('ItemExplorerPreviewCoordinator', () => {
     expect(coordinator.status).toEqual({ kind: 'ready', item: second });
   });
 
+  it('passes the selected assessment part to the preview loader', () => {
+    const loader = {
+      load: vi.fn(() =>
+        of({ unit: null, playerHtml: null, definition: null, cacheStatus: 'miss' }),
+      ),
+      clear: vi.fn(),
+    };
+    const api = { getResponseStateWithFallback: vi.fn(() => of({ state: null })) };
+    const coordinator = new ItemExplorerPreviewCoordinator(
+      api as any,
+      loader as any,
+      createDiagnostics() as any,
+    );
+    const item = { ...createItem('ITEM_1', 'UNIT_1'), partId: 'math' };
+    coordinator.select({
+      acpId: 'acp-1',
+      perspective: 'editor',
+      item,
+      itemList: [],
+      reuseUnit: false,
+    });
+    expect(loader.load).toHaveBeenCalledWith('acp-1', 'editor', 'UNIT_1', 'math');
+    coordinator.ngOnDestroy();
+  });
+
   it('loads only the response state when the unit can be reused', () => {
     const loader = { load: vi.fn(), clear: vi.fn() };
     const api = { getResponseStateWithFallback: vi.fn(() => of({ state: null })) };

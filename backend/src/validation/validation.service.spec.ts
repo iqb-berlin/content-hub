@@ -288,44 +288,51 @@ describe("ValidationService", () => {
       );
     });
 
-    it("should validate assessmentParts scales and report precise item paths", async () => {
-      acpRepo.findOne.mockResolvedValue({
-        id: "acp-1",
-        acpIndex: {
-          assessmentParts: [
-            {
-              units: [
-                {
-                  id: "u1",
-                  dependencies: [],
-                  items: [{ id: "i1", useUnitAliasAsPrefix: true }],
-                },
-              ],
-              scales: [
-                {
-                  id: "scale-1",
-                  typeParameters: {
-                    items: [{ id: "u1_missing-item" }],
+    it.each(["scales", "baseScales"])(
+      "should validate assessmentParts %s and report precise item paths",
+      async (kind) => {
+        acpRepo.findOne.mockResolvedValue({
+          id: "acp-1",
+          acpIndex: {
+            assessmentParts: [
+              {
+                units: [
+                  {
+                    id: "u1",
+                    dependencies: [],
+                    items: [{ id: "i1", useUnitAliasAsPrefix: true }],
                   },
-                },
-              ],
-            },
-          ],
-        },
-      });
-      fileRepo.find.mockResolvedValue([]);
+                ],
+                [kind]: [
+                  {
+                    id: "scale-1",
+                    ...(kind === "baseScales"
+                      ? { items: [{ id: "u1_missing-item" }] }
+                      : {
+                          typeParameters: {
+                            items: [{ id: "u1_missing-item" }],
+                          },
+                        }),
+                  },
+                ],
+              },
+            ],
+          },
+        });
+        fileRepo.find.mockResolvedValue([]);
 
-      const result = await service.validateAcpConsistency("acp-1");
-      expect(result.valid).toBe(true);
-      expect(result.issues).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            message: expect.stringContaining("scale-1"),
-            path: "assessmentParts[0].scales[0].typeParameters.items[0].id",
-          }),
-        ]),
-      );
-    });
+        const result = await service.validateAcpConsistency("acp-1");
+        expect(result.valid).toBe(true);
+        expect(result.issues).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.stringContaining("scale-1"),
+              path: `assessmentParts[0].${kind}[0].${kind === "baseScales" ? "items" : "typeParameters.items"}[0].id`,
+            }),
+          ]),
+        );
+      },
+    );
 
     it("should return error for unknown ACP", async () => {
       acpRepo.findOne.mockResolvedValue(null);

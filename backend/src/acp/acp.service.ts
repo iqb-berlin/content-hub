@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Optional,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
@@ -29,13 +30,8 @@ import {
   CreateCredentialDto,
   UpdateCredentialDto,
 } from "./dto/acp.dto";
-import {
-  ACP_INDEX_ALLOWED_STATUS_VALUES,
-  DEFAULT_ACP_INDEX_VERSION,
-  normalizeIndexForStorage,
-  toRuntimeAcpIndex,
-} from "./acp-index.utils";
 import { normalizeFeatureConfig } from "./feature-config.utils";
+import { AcpIndexService } from "./acp-index.service";
 
 const PLAYER_FOCUS_HIGHLIGHT_FEATURE_KEY = "enablePlayerFocusHighlight";
 
@@ -54,6 +50,7 @@ export class AcpService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly dataSource: DataSource,
+    @Optional() private readonly acpIndexService?: AcpIndexService,
   ) {}
 
   async findAll(): Promise<Acp[]> {
@@ -86,32 +83,18 @@ export class AcpService {
       );
     }
 
-    // Get default ACP index from settings
-    let defaultIndex: Record<string, unknown> = {};
-    const settings = await this.settingsRepository.findOne({ where: {} });
-    if (settings?.defaultAcpIndex) {
-      defaultIndex = { ...settings.defaultAcpIndex };
-    }
-
-    const normalizedIndex = normalizeIndexForStorage({
-      ...defaultIndex,
-      packageId: dto.packageId,
-      version: DEFAULT_ACP_INDEX_VERSION,
-      name: [{ lang: "de", value: dto.name }],
-      description: dto.description
-        ? [{ lang: "de", value: dto.description }]
-        : [],
-      status: "IN_DEVELOPMENT",
-      units: [],
-      assessmentParts: [],
-    });
-
     const acp = this.acpRepository.create({
       packageId: dto.packageId,
       name: dto.name,
       description: dto.description,
-      acpIndex: normalizedIndex,
+      acpIndex: {},
+      acpIndexSchemaId: "acp-index@0.6",
+      acpIndexValidationStatus: "CONFORMANT",
     });
+
+    acp.acpIndex =
+      this.acpIndexService?.createEmptyIndex(acp) ||
+      this.createFallbackIndex(acp);
 
     const savedAcp = await this.acpRepository.save(acp);
     await this.createDefaultAccessConfig(savedAcp.id, false);
@@ -120,7 +103,36 @@ export class AcpService {
 
   async update(id: string, dto: UpdateAcpDto): Promise<Acp> {
     const acp = await this.findById(id);
-    if (dto.name !== undefined) acp.name = dto.name;
+    if (
+      acp.acpIndex?.status === "RELEASED_PUBLIC" ||
+      acp.acpIndex?.status === "RELEASED_CONFIDENTIAL"
+    ) {
+      throw new ConflictException(
+        "Published ACP must be reopened before it can be changed",
+      );
+    }
+    if (dto.name !== undefined) {
+      const localizedNames = Array.isArray(acp.acpIndex?.name)
+        ? [...(acp.acpIndex.name as Array<{ lang: string; value: string }>)]
+        : [];
+      const germanIndex = localizedNames.findIndex(
+        (entry) => entry?.lang === "de",
+      );
+      if (germanIndex >= 0)
+        localizedNames[germanIndex] = { lang: "de", value: dto.name };
+      else localizedNames.push({ lang: "de", value: dto.name });
+      const candidate = { ...acp.acpIndex, name: localizedNames };
+      if (this.acpIndexService) {
+        return this.acpIndexService.saveCandidate(
+          id,
+          candidate,
+          acp.updatedAt.toISOString(),
+          { name: dto.name, description: dto.description },
+        );
+      }
+      acp.name = dto.name;
+      acp.acpIndex = candidate;
+    }
     if (dto.description !== undefined) acp.description = dto.description;
     return this.acpRepository.save(acp);
   }
@@ -136,51 +148,59 @@ export class AcpService {
   // ACP-Index management
   async getIndex(id: string): Promise<Record<string, unknown>> {
     const acp = await this.findById(id);
-    return toRuntimeAcpIndex(acp.acpIndex);
+    return acp.acpIndex;
   }
 
   async updateIndex(
     id: string,
     index: Record<string, unknown>,
+    expectedUpdatedAt?: string,
   ): Promise<Record<string, unknown>> {
-    const acp = await this.findById(id);
-    acp.acpIndex = this.prepareIndexForSave(acp, index, {});
-    const saved = await this.acpRepository.save(acp);
-    return toRuntimeAcpIndex(saved.acpIndex);
+    const saved = this.acpIndexService
+      ? await this.acpIndexService.saveCandidate(id, index, expectedUpdatedAt)
+      : await this.saveFallbackIndex(id, index);
+    return saved.acpIndex;
   }
 
   async importIndex(
     id: string,
     indexJson: Record<string, unknown>,
+    expectedUpdatedAt?: string,
+  ): Promise<Record<string, unknown>> {
+    const saved = this.acpIndexService
+      ? await this.acpIndexService.saveCandidate(
+          id,
+          indexJson,
+          expectedUpdatedAt,
+        )
+      : await this.saveFallbackIndex(id, indexJson);
+    return saved.acpIndex;
+  }
+
+  async deleteIndex(
+    id: string,
+    expectedUpdatedAt?: string,
   ): Promise<Record<string, unknown>> {
     const acp = await this.findById(id);
 
-    // Get default settings for required fields
-    let defaultIndex: Record<string, unknown> = {};
-    const settings = await this.settingsRepository.findOne({ where: {} });
-    if (settings?.defaultAcpIndex) {
-      defaultIndex = { ...settings.defaultAcpIndex };
+    let candidate =
+      this.acpIndexService?.createEmptyIndex(acp) ||
+      this.createFallbackIndex(acp);
+    if (!this.acpIndexService) {
+      const settings = await this.settingsRepository.findOne({ where: {} });
+      candidate = this.normalizeFallbackIndex(acp, {
+        ...(settings?.defaultAcpIndex || {}),
+        ...candidate,
+      });
     }
-
-    // Merge: uploaded index takes priority, defaults fill in missing required fields
-    acp.acpIndex = this.prepareIndexForSave(acp, indexJson, defaultIndex);
-    const saved = await this.acpRepository.save(acp);
-    return toRuntimeAcpIndex(saved.acpIndex);
-  }
-
-  async deleteIndex(id: string): Promise<Record<string, unknown>> {
-    const acp = await this.findById(id);
-
-    // Reset to default ACP index shape from settings + ACP fallback fields.
-    let defaultIndex: Record<string, unknown> = {};
-    const settings = await this.settingsRepository.findOne({ where: {} });
-    if (settings?.defaultAcpIndex) {
-      defaultIndex = { ...settings.defaultAcpIndex };
-    }
-
-    acp.acpIndex = this.prepareIndexForSave(acp, {}, defaultIndex);
-    const saved = await this.acpRepository.save(acp);
-    return toRuntimeAcpIndex(saved.acpIndex);
+    const saved = this.acpIndexService
+      ? await this.acpIndexService.saveCandidate(
+          id,
+          candidate,
+          expectedUpdatedAt,
+        )
+      : await this.saveFallbackIndex(id, candidate);
+    return saved.acpIndex;
   }
 
   // Role management
@@ -509,149 +529,78 @@ export class AcpService {
     return repository.save(config);
   }
 
-  private prepareIndexForSave(
-    acp: Acp,
-    inputIndex: Record<string, unknown>,
-    defaultIndex: Record<string, unknown>,
+  private createFallbackIndex(
+    acp: Pick<Acp, "packageId" | "name" | "description">,
   ): Record<string, unknown> {
-    if (
-      !inputIndex ||
-      typeof inputIndex !== "object" ||
-      Array.isArray(inputIndex)
-    ) {
-      throw new BadRequestException("ACP-Index muss ein JSON-Objekt sein.");
-    }
-
-    const merged = { ...defaultIndex, ...inputIndex } as Record<
-      string,
-      unknown
-    >;
-    const packageId = this.resolvePackageId(acp, merged.packageId);
-    const version = this.resolveVersion(merged.version);
-    const status = this.resolveStatus(merged.status);
-    const name = this.resolveLanguageTextArray(
-      merged.name,
-      [{ lang: "de", value: acp.name || acp.packageId }],
-      "name",
-    );
-    const description = this.resolveLanguageTextArray(
-      merged.description,
-      acp.description ? [{ lang: "de", value: acp.description }] : [],
-      "description",
-      true,
-    );
-
-    const sanitizedIndex = {
-      ...merged,
-      packageId,
-      version,
-      status,
-      name,
-      description,
+    return {
+      packageId: acp.packageId,
+      version: "0.5.0",
+      name: [{ lang: "de", value: acp.name || acp.packageId }],
+      ...(acp.description
+        ? { description: [{ lang: "de", value: acp.description }] }
+        : {}),
+      status: "IN_DEVELOPMENT",
     };
-
-    return normalizeIndexForStorage(sanitizedIndex);
   }
 
-  private resolvePackageId(acp: Acp, rawPackageId: unknown): string {
+  private normalizeFallbackIndex(
+    acp: Acp,
+    input: Record<string, unknown>,
+  ): Record<string, unknown> {
+    if (!input || typeof input !== "object" || Array.isArray(input))
+      throw new BadRequestException("ACP index must be an object");
+    const candidate = { ...this.createFallbackIndex(acp), ...input };
+    if (candidate.packageId !== acp.packageId)
+      throw new BadRequestException("packageId mismatch");
+    if (typeof candidate.version !== "string")
+      throw new BadRequestException("version must be a string");
     if (
-      rawPackageId === undefined ||
-      rawPackageId === null ||
-      rawPackageId === ""
-    ) {
-      return acp.packageId;
-    }
-
-    if (typeof rawPackageId !== "string") {
-      throw new BadRequestException(
-        'Ungültiges Feld "packageId": Muss ein Text sein.',
-      );
-    }
-
-    if (rawPackageId !== acp.packageId) {
-      throw new BadRequestException(
-        `Ungültiges Feld "packageId": Erwartet "${acp.packageId}", erhalten "${rawPackageId}".`,
-      );
-    }
-
-    return rawPackageId;
-  }
-
-  private resolveVersion(rawVersion: unknown): string {
-    if (rawVersion === undefined || rawVersion === null || rawVersion === "") {
-      return DEFAULT_ACP_INDEX_VERSION;
-    }
-
-    if (typeof rawVersion !== "string") {
-      throw new BadRequestException(
-        'Ungültiges Feld "version": Muss ein Text sein.',
-      );
-    }
-
-    return rawVersion;
-  }
-
-  private resolveStatus(rawStatus: unknown): string {
-    if (rawStatus === undefined || rawStatus === null || rawStatus === "") {
-      return "IN_DEVELOPMENT";
-    }
-
-    if (typeof rawStatus !== "string") {
-      throw new BadRequestException(
-        'Ungültiges Feld "status": Muss ein Text sein.',
-      );
-    }
-
+      !Array.isArray(candidate.name) ||
+      candidate.name.some((entry: unknown) => {
+        const record = entry !== null && typeof entry === "object" ? entry : {};
+        const value = "value" in record ? record.value : undefined;
+        const lang = "lang" in record ? record.lang : undefined;
+        return (
+          typeof value !== "string" ||
+          !value.trim() ||
+          typeof lang !== "string" ||
+          !/^[a-z]{2}$/.test(lang)
+        );
+      })
+    )
+      throw new BadRequestException("name must be language-tagged text");
+    if (typeof candidate.status !== "string")
+      throw new BadRequestException("status must be a string");
     if (
-      !ACP_INDEX_ALLOWED_STATUS_VALUES.some((status) => status === rawStatus)
+      ![
+        "IN_DEVELOPMENT",
+        "DISCONTINUED",
+        "RELEASED_PUBLIC",
+        "RELEASED_CONFIDENTIAL",
+      ].includes(candidate.status)
+    )
+      throw new BadRequestException("Invalid status");
+    if (
+      Array.isArray(candidate.units) &&
+      !Array.isArray(candidate.assessmentParts)
     ) {
-      throw new BadRequestException(
-        `Ungültiges Feld "status": "${rawStatus}". Erlaubte Werte: ${ACP_INDEX_ALLOWED_STATUS_VALUES.join(", ")}`,
-      );
+      candidate.assessmentParts = [
+        {
+          id: "default-assessment-part",
+          name: [{ lang: "de", value: "Default Assessment Part" }],
+          units: candidate.units,
+        },
+      ];
     }
-
-    return rawStatus;
+    return candidate;
   }
 
-  private resolveLanguageTextArray(
-    rawValue: unknown,
-    fallback: Array<{ lang: string; value: string }>,
-    fieldName: string,
-    optional = false,
-  ): Array<{ lang: string; value: string }> {
-    if (rawValue === undefined || rawValue === null) {
-      return optional ? fallback : [...fallback];
-    }
-
-    if (!Array.isArray(rawValue)) {
-      throw new BadRequestException(
-        `Ungültiges Feld "${fieldName}": Muss ein Array sein.`,
-      );
-    }
-
-    if (rawValue.length === 0) {
-      return optional ? [] : [...fallback];
-    }
-
-    const parsed = rawValue.map((entry: unknown, idx) => {
-      const record = entry !== null && typeof entry === "object" ? entry : {};
-      const lang = "lang" in record ? record.lang : undefined;
-      const value = "value" in record ? record.value : undefined;
-
-      if (typeof lang !== "string" || !/^[a-z]{2}$/.test(lang)) {
-        throw new BadRequestException(
-          `Ungültiges Feld "${fieldName}[${idx}].lang": Muss ein ISO-Sprachcode mit 2 Kleinbuchstaben sein.`,
-        );
-      }
-      if (typeof value !== "string" || !value.trim()) {
-        throw new BadRequestException(
-          `Ungültiges Feld "${fieldName}[${idx}].value": Muss ein nicht-leerer Text sein.`,
-        );
-      }
-
-      return { lang, value };
-    });
-
-    return parsed;
+  private async saveFallbackIndex(
+    id: string,
+    input: Record<string, unknown>,
+  ): Promise<Acp> {
+    const acp = await this.findById(id);
+    acp.acpIndex = this.normalizeFallbackIndex(acp, input);
+    return this.acpRepository.save(acp);
   }
 }

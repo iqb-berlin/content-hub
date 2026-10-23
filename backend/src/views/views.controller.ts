@@ -388,6 +388,21 @@ export class ViewsController {
     return this.viewsService.getUnitViewData(acpId, unitId);
   }
 
+  @Get("acp/:acpId/parts/:partId/units/:unitId")
+  @UseGuards(AcpAccessGuard)
+  @ApiOperation({ summary: "Get unit view data scoped to an assessment part" })
+  async getUnitInPart(
+    @UuidParam("acpId") acpId: string,
+    @Param("partId") partId: string,
+    @Param("unitId") unitId: string,
+    @Request() req: any,
+  ) {
+    if (!(await this.canUseFeature(acpId, req, "enableUnitView", true))) {
+      throw new ForbiddenException("Unit view is not enabled for this ACP");
+    }
+    return this.viewsService.getUnitViewData(acpId, unitId, partId);
+  }
+
   @Get("acp/:acpId/items")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Get item list for an ACP" })

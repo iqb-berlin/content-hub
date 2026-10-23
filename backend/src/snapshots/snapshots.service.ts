@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { LessThan, Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
+import { ModuleRef } from "@nestjs/core";
 import * as fs from "fs/promises";
 import * as path from "path";
 import {
@@ -26,6 +27,7 @@ export class SnapshotsService {
     @InjectRepository(AcpFile)
     private readonly fileRepository: Repository<AcpFile>,
     private readonly configService: ConfigService,
+    private readonly moduleRef: ModuleRef,
   ) {
     this.storagePath = this.configService.get<string>(
       "FILE_STORAGE_PATH",
@@ -129,6 +131,7 @@ export class SnapshotsService {
           snapshotId: savedSnapshot.id,
           filePath: snapshotFilePath,
           originalName: file.originalName,
+          relativePath: file.relativePath || file.originalName,
           checksum: file.checksum,
           fileSize: file.fileSize,
         }),
@@ -150,10 +153,6 @@ export class SnapshotsService {
       throw new NotFoundException("ACP not found");
     }
 
-    // Restore ACP-Index
-    acp.acpIndex = { ...snapshot.acpIndexSnapshot };
-    await this.acpRepository.save(acp);
-
     // Resolve all file data first; only mutate DB state after all files
     // are restorable to avoid partial restores.
     const restoredFiles: AcpFile[] = [];
@@ -169,18 +168,47 @@ export class SnapshotsService {
             acpId: acp.id,
             filePath,
             originalName: sf.originalName,
+            relativePath: sf.relativePath || sf.originalName,
             fileSize: fileSize ?? sf.fileSize,
             checksum: sf.checksum,
           }),
         );
       }
     }
+    const restoredIndex = {
+      ...snapshot.acpIndexSnapshot,
+      status: "IN_DEVELOPMENT",
+    };
+    let restoredAcp: Acp;
+    let indexService: any;
+    try {
+      const { AcpIndexService } = require("../acp/acp-index.service");
+      indexService = this.moduleRef.get(AcpIndexService, {
+        strict: false,
+      });
+      restoredAcp = await indexService.saveCandidate(
+        acp.id,
+        restoredIndex,
+        acp.updatedAt.toISOString(),
+      );
+    } catch (error) {
+      if (error?.constructor?.name !== "UnknownElementException") throw error;
+      acp.acpIndex = restoredIndex;
+      restoredAcp = await this.acpRepository.save(acp);
+    }
+
     await this.fileRepository.delete({ acpId: snapshot.acpId });
     if (restoredFiles.length) {
       await this.fileRepository.save(restoredFiles);
     }
+    if (indexService) {
+      await indexService.validateStoredIndex(acp.id, {
+        external: false,
+        persist: true,
+      });
+    }
 
-    return acp;
+    return restoredAcp;
   }
 
   private async resolveRestoredFilePath(

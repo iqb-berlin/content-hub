@@ -5,6 +5,7 @@ import {
   Logger,
   MessageEvent,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
@@ -19,6 +20,7 @@ import {
   FileProcessingJobSnapshot,
   FileProcessingProgressReporter,
 } from "./file-processing-progress";
+import { IndexGenerationService } from "./index-generation.service";
 
 @Injectable()
 export class FileProcessingJobsService {
@@ -37,6 +39,8 @@ export class FileProcessingJobsService {
     private readonly filesService: FilesService,
     private readonly unitParserService: UnitParserService,
     private readonly validationService: ValidationService,
+    @Optional()
+    private readonly indexGenerationService?: IndexGenerationService,
   ) {}
 
   async createAndStartJob(
@@ -254,10 +258,12 @@ export class FileProcessingJobsService {
         });
       } else {
         const uploadedFiles = await this.loadUploadedFiles(job);
-        const syncReport = await this.unitParserService.syncIndexFromFiles(
-          job.acpId,
-          reporter,
-        );
+        const syncReport = this.indexGenerationService
+          ? await this.buildGenerationPreviewReport(job.acpId)
+          : await this.unitParserService.syncIndexFromFiles(
+              job.acpId,
+              reporter,
+            );
         const validationRun =
           await this.validationService.autoValidateUploadedFiles(
             job.acpId,
@@ -327,6 +333,27 @@ export class FileProcessingJobsService {
     } finally {
       this.runningJobs.delete(jobId);
     }
+  }
+
+  private async buildGenerationPreviewReport(
+    acpId: string,
+  ): Promise<Record<string, unknown>> {
+    const preview = await this.indexGenerationService!.preview(acpId);
+    return {
+      unitsAdded: 0,
+      unitsUpdated: 0,
+      itemsAdded: 0,
+      itemsUpdated: 0,
+      requiresConfirmation: true,
+      canApply: preview.canApply,
+      sourceRevision: preview.sourceRevision,
+      unassignedUnitPaths: preview.unassignedUnitPaths,
+      ambiguousBooklets: preview.ambiguousBooklets,
+      warnings: [
+        "Der ACP-Index wurde nicht automatisch geändert. Bitte die Generatorvorschau prüfen und übernehmen.",
+        ...preview.warnings,
+      ],
+    };
   }
 
   private async ensureNoActiveJob(acpId: string): Promise<void> {

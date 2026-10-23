@@ -51,6 +51,9 @@ import {
   ItemCollectionRowsMutationResult,
   ItemExplorerPerspective,
   SimpleItemListEntry,
+  AcpIndexValidationReport,
+  AcpIndexMigrationPreview,
+  AcpIndexGenerationPreview,
   BuildVersion,
 } from '../models/api.models';
 
@@ -188,14 +191,70 @@ export class ApiService {
   getAcpIndex(id: string): Observable<any> {
     return this.http.get(`${this.API}/acp/${id}/index`);
   }
-  updateAcpIndex(id: string, data: any): Observable<any> {
-    return this.http.put(`${this.API}/acp/${id}/index`, data);
+  updateAcpIndex(id: string, data: any, expectedUpdatedAt: string): Observable<any> {
+    return this.http.put(
+      `${this.API}/acp/${id}/index?expectedUpdatedAt=${encodeURIComponent(expectedUpdatedAt)}`,
+      data,
+    );
   }
-  importAcpIndex(id: string, data: any): Observable<any> {
-    return this.http.post(`${this.API}/acp/${id}/index/import`, data);
+  importAcpIndex(id: string, data: any, expectedUpdatedAt: string): Observable<any> {
+    return this.http.post(
+      `${this.API}/acp/${id}/index/import?expectedUpdatedAt=${encodeURIComponent(expectedUpdatedAt)}`,
+      data,
+    );
   }
-  deleteAcpIndex(id: string): Observable<any> {
-    return this.http.delete(`${this.API}/acp/${id}/index`);
+  deleteAcpIndex(id: string, expectedUpdatedAt: string): Observable<any> {
+    return this.http.delete(
+      `${this.API}/acp/${id}/index?expectedUpdatedAt=${encodeURIComponent(expectedUpdatedAt)}`,
+    );
+  }
+  validateAcpIndex(id: string): Observable<AcpIndexValidationReport> {
+    return this.http.post<AcpIndexValidationReport>(`${this.API}/acp/${id}/index/validate`, {});
+  }
+  previewAcpIndexMigration(id: string): Observable<AcpIndexMigrationPreview> {
+    return this.http.post<AcpIndexMigrationPreview>(
+      `${this.API}/acp/${id}/index/migration-preview`,
+      {},
+    );
+  }
+  migrateAcpIndex(id: string, expectedUpdatedAt: string): Observable<Acp> {
+    return this.http.post<Acp>(`${this.API}/acp/${id}/index/migrate`, { expectedUpdatedAt });
+  }
+  publishAcpIndex(
+    id: string,
+    status: 'RELEASED_PUBLIC' | 'RELEASED_CONFIDENTIAL',
+    expectedUpdatedAt: string,
+  ): Observable<Acp> {
+    return this.http.post<Acp>(`${this.API}/acp/${id}/index/publish`, {
+      status,
+      expectedUpdatedAt,
+    });
+  }
+  reopenAcpIndex(id: string, expectedUpdatedAt: string): Observable<Acp> {
+    return this.http.post<Acp>(`${this.API}/acp/${id}/index/reopen`, { expectedUpdatedAt });
+  }
+  previewIndexGeneration(
+    acpId: string,
+    options: { partAssignments?: Record<string, string>; omittedUnitPaths?: string[] } = {},
+  ): Observable<AcpIndexGenerationPreview> {
+    return this.http.post<AcpIndexGenerationPreview>(
+      `${this.API}/files/${acpId}/index-generation/preview`,
+      options,
+    );
+  }
+  applyIndexGeneration(
+    acpId: string,
+    input: {
+      sourceRevision: string;
+      expectedUpdatedAt: string;
+      partAssignments?: Record<string, string>;
+      omittedUnitPaths?: string[];
+    },
+  ): Observable<{ index: Record<string, any>; validation: AcpIndexValidationReport }> {
+    return this.http.post<{ index: Record<string, any>; validation: AcpIndexValidationReport }>(
+      `${this.API}/files/${acpId}/index-generation/apply`,
+      input,
+    );
   }
 
   // ACP Roles
@@ -445,10 +504,13 @@ export class ApiService {
   getFileUnitView(
     acpId: string,
     unitId: string,
-    options?: { perspective?: ItemExplorerPerspective },
+    options?: { perspective?: ItemExplorerPerspective; partId?: string },
   ): Observable<any> {
     const query = this.buildPerspectiveQuery(options?.perspective);
-    return this.http.get(`${this.API}/acp/${acpId}/files/unit-view/${unitId}${query}`);
+    const route = options?.partId
+      ? `${this.API}/acp/${acpId}/files/unit-view/${encodeURIComponent(options.partId)}/${encodeURIComponent(unitId)}`
+      : `${this.API}/acp/${acpId}/files/unit-view/${encodeURIComponent(unitId)}`;
+    return this.http.get(`${route}${query}`);
   }
 
   getIndexExportUrl(id: string): string {
@@ -635,8 +697,11 @@ export class ApiService {
   getViewUnits(acpId: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.API}/view/acp/${acpId}/units`);
   }
-  getViewUnit(acpId: string, unitId: string): Observable<UnitViewData> {
-    return this.http.get<UnitViewData>(`${this.API}/view/acp/${acpId}/units/${unitId}`);
+  getViewUnit(acpId: string, unitId: string, partId?: string): Observable<UnitViewData> {
+    const url = partId
+      ? `${this.API}/view/acp/${acpId}/parts/${encodeURIComponent(partId)}/units/${encodeURIComponent(unitId)}`
+      : `${this.API}/view/acp/${acpId}/units/${encodeURIComponent(unitId)}`;
+    return this.http.get<UnitViewData>(url);
   }
   getViewItems(acpId: string): Observable<SimpleItemListEntry[]> {
     return this.http.get<SimpleItemListEntry[]>(`${this.API}/view/acp/${acpId}/items`);

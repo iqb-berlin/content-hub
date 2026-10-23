@@ -21,6 +21,9 @@ export class AcpSnapshotFile {
   @Column({ name: "original_name" })
   originalName!: string;
 
+  @Column({ name: "relative_path" })
+  relativePath!: string;
+
   @Column({ nullable: true })
   checksum?: string;
 

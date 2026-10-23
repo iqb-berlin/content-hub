@@ -5,6 +5,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { EntityManager, Repository } from "typeorm";
@@ -22,6 +23,7 @@ import {
 } from "../acp/acp-index.utils";
 import { FileProcessingProgressReporter } from "./file-processing-progress";
 import { normalizeFeatureConfig } from "../acp/feature-config.utils";
+import { AcpIndexService } from "../acp/acp-index.service";
 import { parseItemRowKeyParts } from "../items/item-row-key.util";
 import { ItemRowNumberingService } from "./item-row-numbering.service";
 import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.service";
@@ -123,6 +125,7 @@ export class UnitParserService {
     private readonly itemListParser: ItemListParser,
     private readonly numberedItemListCache: NumberedItemListCache,
     private readonly unitViewResolver: UnitViewResolver,
+    @Optional() private readonly acpIndexService?: AcpIndexService,
   ) {}
 
   /**
@@ -499,8 +502,16 @@ export class UnitParserService {
     });
 
     if (JSON.stringify(acp.acpIndex || {}) !== JSON.stringify(nextIndex)) {
-      acp.acpIndex = nextIndex;
-      await this.acpRepository.save(acp);
+      if (this.acpIndexService) {
+        await this.acpIndexService.saveCandidate(
+          acpId,
+          nextIndex,
+          acp.updatedAt?.toISOString(),
+        );
+      } else {
+        acp.acpIndex = nextIndex;
+        await this.acpRepository.save(acp);
+      }
     }
 
     report.warnings = Array.from(warningSet);
@@ -542,8 +553,16 @@ export class UnitParserService {
       JSON.stringify(acp.acpIndex || {}) !== JSON.stringify(nextIndex);
 
     if (indexUpdated) {
-      acp.acpIndex = nextIndex;
-      await this.acpRepository.save(acp);
+      if (this.acpIndexService) {
+        await this.acpIndexService.saveCandidate(
+          acpId,
+          nextIndex,
+          acp.updatedAt?.toISOString(),
+        );
+      } else {
+        acp.acpIndex = nextIndex;
+        await this.acpRepository.save(acp);
+      }
     }
 
     return {
@@ -1072,12 +1091,14 @@ export class UnitParserService {
     unitId: string,
     onDiagnostics?: (diagnostics: ItemExplorerLoadDiagnostics) => void,
     explorerStateSignature: string | Promise<string> = "",
+    partId?: string,
   ): Promise<any> {
     const totalStartedAt = performance.now();
     const result = await this.unitViewResolver.resolve(
       acpId,
       unitId,
       explorerStateSignature,
+      partId,
     );
     onDiagnostics?.({
       cacheStatus: result.cacheStatus,
@@ -1103,7 +1124,7 @@ export class UnitParserService {
     if (parsedUnit.definitionRef) {
       dependencies.push({
         id: parsedUnit.definitionRef,
-        type: "UNIT_DEFINITION",
+        type: "UNIT_UI_DEFINITION",
       });
       if (!fileNameSet.has(parsedUnit.definitionRef)) {
         warningSet.add(
@@ -1115,7 +1136,7 @@ export class UnitParserService {
     if (parsedUnit.codingSchemeRef) {
       dependencies.push({
         id: parsedUnit.codingSchemeRef,
-        type: "CODING_SCHEME",
+        type: "UNIT_CODING_SCHEME",
       });
       if (!fileNameSet.has(parsedUnit.codingSchemeRef)) {
         warningSet.add(
@@ -1131,7 +1152,7 @@ export class UnitParserService {
           ? `${parsedUnit.metadataRef}.json`
           : parsedUnit.metadataRef;
 
-      dependencies.push({ id: metadataFileName, type: "METADATA" });
+      dependencies.push({ id: metadataFileName, type: "UNIT_METADATA" });
       if (!fileNameSet.has(metadataFileName)) {
         warningSet.add(
           `Unit "${parsedUnit.unitId}" referenziert fehlende Metadaten: ${parsedUnit.metadataRef}`,
@@ -1185,6 +1206,9 @@ export class UnitParserService {
 
     const type = typeof dep?.type === "string" ? dep.type : "FILE";
     const fileBackedTypes = new Set([
+      "UNIT_UI_DEFINITION",
+      "UNIT_CODING_SCHEME",
+      "UNIT_METADATA",
       "UNIT_DEFINITION",
       "CODING_SCHEME",
       "METADATA",

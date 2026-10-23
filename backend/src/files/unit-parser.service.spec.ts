@@ -470,9 +470,9 @@ describe("UnitParserService", () => {
     expect(units[0].id).toBe("u1");
     expect(units[0].dependencies).toEqual(
       expect.arrayContaining([
-        { id: "u1.voud", type: "UNIT_DEFINITION" },
-        { id: "u1.vocs", type: "CODING_SCHEME" },
-        { id: "u1.vomd", type: "METADATA" },
+        { id: "u1.voud", type: "UNIT_UI_DEFINITION" },
+        { id: "u1.vocs", type: "UNIT_CODING_SCHEME" },
+        { id: "u1.vomd", type: "UNIT_METADATA" },
         { id: "iqb-player-aspect-2.11.6.html", type: "PLAYER" },
       ]),
     );
@@ -1463,6 +1463,56 @@ describe("UnitParserService", () => {
         ([path]) => path === "/tmp/u1.xml",
       ),
     ).toHaveLength(2);
+  });
+
+  it("keeps metadata and coding caches separate for repeated unit IDs in different parts", async () => {
+    fileRepo.find.mockResolvedValue(
+      ["math", "language"].flatMap((part) =>
+        files.map((file) => ({
+          ...file,
+          id: `${part}-${file.id}`,
+          relativePath: `units/${part}/${file.originalName}`,
+          filePath: `/tmp/${part}/${file.originalName}`,
+        })),
+      ),
+    );
+    (fs.readFile as jest.Mock).mockImplementation(async (filePath: string) => {
+      const part = filePath.includes("/math/") ? "math" : "language";
+      if (filePath.endsWith(".xml")) return xmlContent;
+      if (filePath.endsWith(".vomd"))
+        return JSON.stringify({
+          profiles: [{ entries: [{ id: "part", value: part }] }],
+          items: [{ id: `${part}-item`, variableId: "V1", profiles: [] }],
+        });
+      if (filePath.endsWith(".vocs"))
+        return JSON.stringify({ variableCodings: [{ id: part }] });
+      return "";
+    });
+    const result = await service.getItemListFromFiles("acp-1");
+    expect(result.unitMetadata["math/u1"]).toEqual([
+      { id: "part", value: "math" },
+    ]);
+    expect(result.unitMetadata["language/u1"]).toEqual([
+      { id: "part", value: "language" },
+    ]);
+    expect(result.codingSchemes["math/u1"].variableCodings).toEqual([
+      { id: "math" },
+    ]);
+    expect(result.codingSchemes["language/u1"].variableCodings).toEqual([
+      { id: "language" },
+    ]);
+  });
+
+  it("invalidates parsed data and row-key caches only for the affected ACP", async () => {
+    const first = await service.getItemRowKeysFromFiles("acp-1");
+    await service.getItemRowKeysFromFiles("acp-2");
+    const readsBefore = (fs.readFile as jest.Mock).mock.calls.length;
+    service.invalidateFileCaches("acp-1");
+    expect(await service.getItemRowKeysFromFiles("acp-1")).toEqual(first);
+    const readsAfter = (fs.readFile as jest.Mock).mock.calls.length;
+    expect(readsAfter).toBeGreaterThan(readsBefore);
+    await service.getItemRowKeysFromFiles("acp-2");
+    expect((fs.readFile as jest.Mock).mock.calls.length).toBe(readsAfter);
   });
 
   it("caches unit-view dependency resolution by source signature", async () => {

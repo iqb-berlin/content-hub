@@ -1,10 +1,12 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import * as fs from "fs/promises";
 import { createHash } from "crypto";
 import { performance } from "perf_hooks";
+import * as path from "path";
 import { AcpFile } from "../database/entities";
 import { AsyncCacheStatus, AsyncLruCache } from "./async-lru-cache";
 import { FileCatalogCache, FileCatalogResult } from "./file-catalog.cache";
+import { normalizePartId } from "./relative-path";
 import { findPlayerFile, parseUnitXml } from "./unit-file-parsing";
 
 interface UnitViewCacheValue {
@@ -34,17 +36,20 @@ export class UnitViewResolver {
     acpId: string,
     unitId: string,
     explorerStateSignature: string | Promise<string> = "",
+    partId?: string,
   ): Promise<UnitViewResolution> {
     const [catalog, resolvedExplorerStateSignature] = await Promise.all([
       this.fileCatalogCache.get(acpId),
       Promise.resolve(explorerStateSignature),
     ]);
-    const cacheKey = `${acpId}:${unitId}:${this.hashCanonicalValue({
-      files: catalog.signature,
-      explorerState: resolvedExplorerStateSignature,
-    })}`;
+    const cacheKey = `${acpId}:${partId || "legacy"}:${unitId}:${this.hashCanonicalValue(
+      {
+        files: catalog.signature,
+        explorerState: resolvedExplorerStateSignature,
+      },
+    )}`;
     const { value, status } = await this.cache.getOrLoad(cacheKey, () =>
-      this.build(acpId, unitId, catalog.files),
+      this.build(acpId, unitId, catalog.files, partId),
     );
     return {
       value: structuredClone(value.value),
@@ -62,11 +67,31 @@ export class UnitViewResolver {
     acpId: string,
     unitId: string,
     allFiles: AcpFile[],
+    partId?: string,
   ): Promise<UnitViewCacheValue> {
     const parseStartedAt = performance.now();
-    const xmlFile = allFiles.find(
+    const matchingXmlFiles = allFiles.filter(
       (file) => file.originalName.replace(/\.xml$/i, "") === unitId,
     );
+    if (!partId && matchingXmlFiles.length > 1) {
+      throw new ConflictException({
+        message: `Unit ${unitId} exists in multiple assessment parts`,
+        possibleParts: matchingXmlFiles
+          .map((file) =>
+            this.partFromUnitPath(file.relativePath || file.originalName),
+          )
+          .filter(Boolean),
+      });
+    }
+    const xmlFile = partId
+      ? matchingXmlFiles.find(
+          (file) =>
+            this.partFromUnitPath(file.relativePath || file.originalName) ===
+            normalizePartId(partId),
+        )
+      : matchingXmlFiles.length === 1
+        ? matchingXmlFiles[0]
+        : undefined;
     if (!xmlFile) {
       return { value: null, parseMs: performance.now() - parseStartedAt };
     }
@@ -81,6 +106,9 @@ export class UnitViewResolver {
     }
 
     const dependencies: any[] = [];
+    const unitDirectory = path.posix.dirname(
+      xmlFile.relativePath || xmlFile.originalName,
+    );
     const playerFileName = findPlayerFile(
       parsed.playerRef,
       allFiles.map((file) => file.originalName),
@@ -105,6 +133,7 @@ export class UnitViewResolver {
       parsed.definitionRef,
       "UNIT_DEFINITION",
       acpId,
+      unitDirectory,
     );
     this.addDependency(
       dependencies,
@@ -112,14 +141,17 @@ export class UnitViewResolver {
       parsed.codingSchemeRef,
       "CODING_SCHEME",
       acpId,
+      unitDirectory,
     );
 
     if (parsed.metadataRef) {
-      const metadataFile = allFiles.find(
-        (file) =>
-          file.originalName === parsed.metadataRef ||
-          file.originalName === `${parsed.metadataRef}.json`,
-      );
+      const metadataFile =
+        this.findDependencyFile(allFiles, parsed.metadataRef, unitDirectory) ||
+        this.findDependencyFile(
+          allFiles,
+          `${parsed.metadataRef}.json`,
+          unitDirectory,
+        );
       if (metadataFile) {
         dependencies.push({
           type: "METADATA",
@@ -133,6 +165,7 @@ export class UnitViewResolver {
     return {
       value: {
         id: parsed.unitId,
+        ...(partId ? { partId: normalizePartId(partId) } : {}),
         name: parsed.unitLabel,
         description: parsed.description,
         dependencies,
@@ -147,11 +180,10 @@ export class UnitViewResolver {
     originalName: string | undefined,
     type: string,
     acpId: string,
+    unitDirectory: string,
   ): void {
     if (!originalName) return;
-    const file = allFiles.find(
-      (candidate) => candidate.originalName === originalName,
-    );
+    const file = this.findDependencyFile(allFiles, originalName, unitDirectory);
     if (!file) return;
     dependencies.push({
       type,
@@ -159,6 +191,35 @@ export class UnitViewResolver {
       downloadUrl: `/api/acp/${acpId}/files/${file.id}/download`,
       fileId: file.id,
     });
+  }
+
+  private findDependencyFile(
+    allFiles: AcpFile[],
+    originalName: string,
+    unitDirectory: string,
+  ): AcpFile | undefined {
+    const relativePath = path.posix.normalize(
+      path.posix.join(unitDirectory === "." ? "" : unitDirectory, originalName),
+    );
+    const local = allFiles.find(
+      (candidate) =>
+        (candidate.relativePath || candidate.originalName) === relativePath,
+    );
+    if (local) return local;
+    const matches = allFiles.filter(
+      (candidate) => candidate.originalName === originalName,
+    );
+    return matches.length === 1 ? matches[0] : undefined;
+  }
+
+  private partFromUnitPath(relativePath: string): string {
+    const segments = relativePath.split("/");
+    const unitsIndex = segments.findIndex(
+      (segment) => segment.toLowerCase() === "units",
+    );
+    return unitsIndex >= 0 && segments[unitsIndex + 1]
+      ? normalizePartId(segments[unitsIndex + 1])
+      : "";
   }
 
   private hashCanonicalValue(value: unknown): string {

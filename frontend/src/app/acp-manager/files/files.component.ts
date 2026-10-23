@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { filter, firstValueFrom, map, tap } from 'rxjs';
 import {
   AcpFile,
@@ -34,6 +34,7 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
   standalone: true,
   imports: [
     FormsModule,
+    RouterLink,
     AcpManagerContextComponent,
     ConfirmDialogComponent,
     FilePreviewPanelComponent,
@@ -160,10 +161,15 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
 
     @if (lastSyncReport) {
       <div class="alert alert-info">
-        Index-Sync: {{ lastSyncReport.unitsAdded }} Aufgaben hinzugefügt,
-        {{ lastSyncReport.unitsUpdated }} Aufgaben aktualisiert,
-        {{ lastSyncReport.itemsAdded }} Items hinzugefügt, {{ lastSyncReport.itemsUpdated }} Items
-        aktualisiert.
+        @if (lastSyncReport.requiresConfirmation) {
+          Der ACP-Index wurde nicht verändert. Prüfen und übernehmen Sie die Generatorvorschau im
+          <a [routerLink]="['/manage', acpId, 'index']">ACP-Index-Editor</a>.
+        } @else {
+          Index-Sync: {{ lastSyncReport.unitsAdded }} Aufgaben hinzugefügt,
+          {{ lastSyncReport.unitsUpdated }} Aufgaben aktualisiert,
+          {{ lastSyncReport.itemsAdded }} Items hinzugefügt, {{ lastSyncReport.itemsUpdated }} Items
+          aktualisiert.
+        }
         @if (lastSyncReport.warnings?.length) {
           <div style="margin-top:6px">
             Warnungen:

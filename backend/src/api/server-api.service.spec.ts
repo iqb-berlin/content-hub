@@ -94,7 +94,7 @@ describe("ServerApiService", () => {
         {
           packageId: "pkg-1",
           name: "Demo",
-          acpIndex: { version: "0.5.0" },
+          acpIndex: { packageId: "pkg-1", version: "0.5.0" },
         },
         "reject",
       ),
@@ -126,6 +126,7 @@ describe("ServerApiService", () => {
         name: "New Name",
         description: "New Desc",
         acpIndex: {
+          packageId: "pkg-1",
           nested: { y: 2 },
           extra: true,
         },
@@ -141,6 +142,8 @@ describe("ServerApiService", () => {
         name: "New Name",
         description: "New Desc",
         acpIndex: {
+          packageId: "pkg-1",
+          name: [{ lang: "de", value: "New Name" }],
           header: { a: 1 },
           nested: { x: 1, y: 2 },
           extra: true,
@@ -479,6 +482,7 @@ describe("ServerApiService", () => {
         {
           id: "33333333-3333-4333-8333-333333333333",
           originalName: "unit.xml",
+          relativePath: "unit.xml",
           fileType: "text/xml",
           fileSize: 21,
           checksum: "abc",
@@ -858,6 +862,52 @@ describe("ServerApiService", () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it("stores the schema ID returned by 0.6 validation on server imports", async () => {
+    acpRepository.findOne.mockResolvedValue(null);
+    const report = {
+      schemaId: "acp-index@0.6",
+      valid: true,
+      publishable: true,
+      issues: [],
+    };
+    const validator = {
+      validateCandidate: jest.fn().mockResolvedValue(report),
+    };
+    const validated = new ServerApiService(
+      acpRepository as any,
+      fileRepository as any,
+      filesService as any,
+      snapshotsService as any,
+      validator as any,
+    );
+    const result = await validated.receiveAcp(
+      {
+        packageId: "pkg-1",
+        name: "New ACP",
+        acpIndex: { packageId: "pkg-1", version: "2.3.4" },
+      },
+      "overwrite",
+    );
+    expect(result.operation).toBe("created");
+    expect(acpRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        acpIndexSchemaId: "acp-index@0.6",
+        acpIndexValidationReport: report,
+      }),
+    );
+    validator.validateCandidate.mockResolvedValue({ ...report, valid: false });
+    await expect(
+      validated.receiveAcp(
+        {
+          packageId: "pkg-1",
+          name: "New ACP",
+          acpIndex: { packageId: "pkg-1", version: "2.3.4" },
+        },
+        "overwrite",
+      ),
+    ).rejects.toThrow("ACP index violates acp-index@0.6");
+  });
+
   it("creates a new ACP when package id is not known", async () => {
     acpRepository.findOne.mockResolvedValue(null);
     acpRepository.save.mockResolvedValue({
@@ -871,7 +921,11 @@ describe("ServerApiService", () => {
     });
 
     const result = await service.receiveAcp(
-      { packageId: "pkg-1", name: "New ACP", acpIndex: { version: "0.5.0" } },
+      {
+        packageId: "pkg-1",
+        name: "New ACP",
+        acpIndex: { packageId: "pkg-1", version: "0.5.0" },
+      },
       "overwrite",
     );
 
@@ -879,7 +933,11 @@ describe("ServerApiService", () => {
       packageId: "pkg-1",
       name: "New ACP",
       description: "",
-      acpIndex: { version: "0.5.0" },
+      acpIndex: {
+        packageId: "pkg-1",
+        version: "0.5.0",
+        name: [{ lang: "de", value: "New ACP" }],
+      },
       settings: {},
     });
     expect(result.operation).toBe("created");
@@ -906,7 +964,7 @@ describe("ServerApiService", () => {
         packageId: "pkg-1",
         name: "Updated",
         description: "Updated Desc",
-        acpIndex: { replaced: true },
+        acpIndex: { packageId: "pkg-1", replaced: true },
         expectedUpdatedAt: "2026-01-01T00:00:00.000Z",
       },
       "overwrite",
@@ -918,7 +976,11 @@ describe("ServerApiService", () => {
       expect.objectContaining({
         name: "Updated",
         description: "Updated Desc",
-        acpIndex: { replaced: true },
+        acpIndex: {
+          packageId: "pkg-1",
+          name: [{ lang: "de", value: "Updated" }],
+          replaced: true,
+        },
       }),
     );
   });

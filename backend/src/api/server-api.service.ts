@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
@@ -11,6 +12,8 @@ import { Acp, AcpFile } from "../database/entities";
 import { FilesService } from "../files/files.service";
 import { SnapshotsService } from "../snapshots/snapshots.service";
 import { assertUuidParam } from "../common/uuid-param";
+import { AcpIndexService } from "../acp/acp-index.service";
+import { UnprocessableEntityException } from "@nestjs/common";
 
 export type ConflictStrategy = "reject" | "overwrite" | "merge";
 export type IndexUpdateStrategy = "overwrite" | "merge";
@@ -40,6 +43,7 @@ export class ServerApiService {
     private readonly fileRepository: Repository<AcpFile>,
     private readonly filesService: FilesService,
     private readonly snapshotsService: SnapshotsService,
+    @Optional() private readonly acpIndexService?: AcpIndexService,
   ) {}
 
   /**
@@ -123,18 +127,24 @@ export class ServerApiService {
     if (!acpIndex || typeof acpIndex !== "object" || Array.isArray(acpIndex)) {
       throw new BadRequestException("acpIndex must be an object");
     }
+    this.requireExpectedUpdatedAt(expectedUpdatedAt);
 
     this.assertAcpAllowed(acpId, allowedAcpIds);
     const acp = await this.getAcpOrFail(acpId);
     this.assertExpectedUpdatedAt(acp, expectedUpdatedAt);
 
     const strategy = this.resolveIndexUpdateStrategy(strategyInput);
-    acp.acpIndex =
+    const candidate =
       strategy === "merge"
         ? this.deepMergeObjects(acp.acpIndex as Record<string, any>, acpIndex)
         : acpIndex;
-
-    const saved = await this.acpRepository.save(acp);
+    const saved = this.acpIndexService
+      ? await this.acpIndexService.saveCandidate(
+          acpId,
+          candidate,
+          expectedUpdatedAt,
+        )
+      : await this.acpRepository.save({ ...acp, acpIndex: candidate });
     return {
       acpId: saved.id,
       packageId: saved.packageId,
@@ -150,6 +160,7 @@ export class ServerApiService {
     Array<{
       id: string;
       originalName: string;
+      relativePath: string;
       fileType?: string;
       fileSize: number;
       checksum?: string;
@@ -173,6 +184,7 @@ export class ServerApiService {
   ): Promise<{
     id: string;
     originalName: string;
+    relativePath: string;
     fileType?: string;
     fileSize: number;
     checksum?: string;
@@ -212,6 +224,7 @@ export class ServerApiService {
     Array<{
       id: string;
       originalName: string;
+      relativePath: string;
       fileType?: string;
       fileSize: number;
       checksum?: string;
@@ -297,6 +310,7 @@ export class ServerApiService {
     const replacementPlan: Array<{
       incoming: Express.Multer.File;
       canonicalName: string;
+      relativePath: string;
     }> = [];
 
     for (const incoming of files) {
@@ -324,10 +338,19 @@ export class ServerApiService {
           `Coding scheme "${incomingName}" does not exist in ACP and cannot be replaced`,
         );
       }
+      if (matches.length > 1) {
+        throw new ConflictException({
+          message: `Coding scheme "${incomingName}" is ambiguous`,
+          possiblePaths: matches.map(
+            (file) => file.relativePath || file.originalName,
+          ),
+        });
+      }
 
       replacementPlan.push({
         incoming,
         canonicalName: matches[0].originalName,
+        relativePath: matches[0].relativePath || matches[0].originalName,
       });
     }
 
@@ -336,6 +359,7 @@ export class ServerApiService {
         ({
           ...plan.incoming,
           originalname: plan.canonicalName,
+          relativePath: plan.relativePath,
         }) as Express.Multer.File,
     );
     const replacedFiles = await this.filesService.uploadMultiple(
@@ -407,6 +431,20 @@ export class ServerApiService {
     const conflictStrategy = this.resolveConflictStrategy(
       conflictStrategyInput,
     );
+    const incomingIndex = this.withGermanName(data.acpIndex, data.name);
+    if (incomingIndex.packageId !== data.packageId) {
+      throw new UnprocessableEntityException(
+        "acpIndex.packageId must match packageId",
+      );
+    }
+    if (
+      incomingIndex.status === "RELEASED_PUBLIC" ||
+      incomingIndex.status === "RELEASED_CONFIDENTIAL"
+    ) {
+      throw new UnprocessableEntityException(
+        "Released status can only be set through the publish endpoint",
+      );
+    }
 
     let acp = await this.acpRepository.findOne({
       where: { packageId: data.packageId },
@@ -420,12 +458,36 @@ export class ServerApiService {
       this.assertAcpAllowed(acp.id, allowedAcpIds);
     }
     if (!acp) {
+      const validation = this.acpIndexService
+        ? await this.acpIndexService.validateCandidate(
+            "00000000-0000-4000-8000-000000000000",
+            incomingIndex,
+          )
+        : ({ valid: true, publishable: false } as any);
+      if (!validation.valid) {
+        throw new UnprocessableEntityException({
+          message: "ACP index violates acp-index@0.6",
+          report: validation,
+        });
+      }
       acp = this.acpRepository.create({
         packageId: data.packageId,
         name: data.name,
         description: data.description || "",
-        acpIndex: data.acpIndex,
+        acpIndex: incomingIndex,
         settings: {},
+        ...(this.acpIndexService
+          ? {
+              acpIndexSchemaId: validation.schemaId,
+              acpIndexValidationStatus: validation.publishable
+                ? "CONFORMANT"
+                : "CONFORMANT_WITH_ISSUES",
+              acpIndexValidationReport: validation as unknown as Record<
+                string,
+                unknown
+              >,
+            }
+          : {}),
       });
       const saved = await this.acpRepository.save(acp);
       return { acp: saved, operation: "created", conflictStrategy };
@@ -438,21 +500,33 @@ export class ServerApiService {
         `ACP with packageId \"${data.packageId}\" already exists. Use conflictStrategy=overwrite or conflictStrategy=merge.`,
       );
     }
+    this.requireExpectedUpdatedAt(data.expectedUpdatedAt);
 
-    acp.name = data.name;
-    if (data.description !== undefined) {
-      acp.description = data.description;
-    }
-
-    acp.acpIndex =
+    const candidate =
       conflictStrategy === "merge"
         ? this.deepMergeObjects(
             acp.acpIndex as Record<string, any>,
-            data.acpIndex,
+            incomingIndex,
           )
-        : data.acpIndex;
+        : incomingIndex;
 
-    const saved = await this.acpRepository.save(acp);
+    const synchronizedCandidate = this.withGermanName(candidate, data.name);
+
+    const saved = this.acpIndexService
+      ? await this.acpIndexService.saveCandidate(
+          acp.id,
+          synchronizedCandidate,
+          data.expectedUpdatedAt,
+          { name: data.name, description: data.description },
+        )
+      : await this.acpRepository.save({
+          ...acp,
+          name: data.name,
+          ...(data.description !== undefined
+            ? { description: data.description }
+            : {}),
+          acpIndex: synchronizedCandidate,
+        });
     return { acp: saved, operation: "updated", conflictStrategy };
   }
 
@@ -497,6 +571,7 @@ export class ServerApiService {
   private toTransferFileMeta(file: AcpFile): {
     id: string;
     originalName: string;
+    relativePath: string;
     fileType?: string;
     fileSize: number;
     checksum?: string;
@@ -506,6 +581,7 @@ export class ServerApiService {
     return {
       id: file.id,
       originalName: file.originalName,
+      relativePath: file.relativePath || file.originalName,
       fileType: file.fileType,
       fileSize: Number(file.fileSize),
       checksum: file.checksum,
@@ -529,6 +605,16 @@ export class ServerApiService {
     if (acp.updatedAt.toISOString() !== parsed.toISOString()) {
       throw new ConflictException(
         "ACP was modified since the expected version timestamp",
+      );
+    }
+  }
+
+  private requireExpectedUpdatedAt(
+    expectedUpdatedAt?: string,
+  ): asserts expectedUpdatedAt is string {
+    if (!expectedUpdatedAt || Number.isNaN(Date.parse(expectedUpdatedAt))) {
+      throw new BadRequestException(
+        "expectedUpdatedAt must be a valid ISO timestamp",
       );
     }
   }
@@ -601,6 +687,19 @@ export class ServerApiService {
     }
 
     return result;
+  }
+
+  private withGermanName(
+    index: Record<string, any>,
+    name: string,
+  ): Record<string, any> {
+    const localizedNames = Array.isArray(index.name)
+      ? index.name.filter((entry) => entry?.lang !== "de")
+      : [];
+    return {
+      ...index,
+      name: [{ lang: "de", value: name }, ...localizedNames],
+    };
   }
 
   private isRecord(value: unknown): value is Record<string, any> {

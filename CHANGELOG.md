@@ -8,12 +8,17 @@ All notable changes to ContentPool are documented in this file. Releases use
 
 ### Changes
 
+- Validate and manage ACP indexes against the upstream 0.6 development schema,
+  including base/derived scales, scoped references and explicit migration previews.
 - Add configurable ACP comment categories with optional assignments, archival,
   category filters and CSV/XLSX export columns. Refs #239.
 
 ### Breaking changes
 
-- None.
+- Index writes require an `expectedUpdatedAt` revision and schema-conformant
+  ACP-Index 0.6 data. Reopen released packages before editing. Existing `scales`
+  arrays need migration to `baseScales`/`derivedScales`; weighted aggregations and
+  vocabulary relationships requiring a domain decision block automatic migration.
 
 ### Configuration
 
@@ -22,10 +27,14 @@ All notable changes to ContentPool are documented in this file. Releases use
 ### Database migrations
 
 - Classification: `backward-compatible`
+- `1785000000000-AcpIndex05Compliance` adds index validation state, relative
+  file paths and the external vocabulary cache; its original identity is retained.
 - `1789700000000-CommentCategories` adds categories and optional comment assignments.
 
 ### Rollback
 
+- Restore the snapshot taken before an index migration when returning to an
+  older schema; older application versions cannot interpret 0.6 scale structures.
 - The category migration refuses rollback while configured categories or
   assignments exist, preserving review data.
 

@@ -5,17 +5,20 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, In, Repository } from "typeorm";
+import * as crypto from "crypto";
 import { assertUuidParam } from "../common/uuid-param";
 import { Acp, AcpFile } from "../database/entities";
 import { ArchiveExpansionService } from "./archive-expansion.service";
 import { FileStorageService } from "./file-storage.service";
+import { getUploadRelativePath, normalizeRelativePath } from "./relative-path";
 
 export type UploadConflictStrategy = "reject" | "overwrite" | "keep-both";
 
 export interface UploadMultipleOptions {
   conflictStrategy?: string;
   expandArchives?: boolean;
+  relativePaths?: string[];
 }
 
 @Injectable()
@@ -34,18 +37,10 @@ export class FileMutationService {
     acpId: string,
     uploadedFile: Express.Multer.File,
   ): Promise<AcpFile> {
-    await this.getAcpOrFail(acpId);
-    const stagedFile = await this.fileStorageService.stageUpload(
-      acpId,
-      uploadedFile,
-    );
-
-    try {
-      return await this.fileRepository.save(stagedFile);
-    } catch (error) {
-      await this.fileStorageService.removePhysicalFile(stagedFile);
-      throw error;
-    }
+    const [saved] = await this.uploadMultiple(acpId, [uploadedFile], {
+      expandArchives: false,
+    });
+    return saved;
   }
 
   async uploadMultiple(
@@ -61,6 +56,17 @@ export class FileMutationService {
     }
 
     await this.getAcpOrFail(acpId);
+    if (options.relativePaths) {
+      if (options.relativePaths.length !== files.length) {
+        throw new BadRequestException(
+          "relativePaths must have the same number of entries as files",
+        );
+      }
+      files.forEach((file, index) => {
+        (file as Express.Multer.File & { relativePath?: string }).relativePath =
+          normalizeRelativePath(options.relativePaths![index]);
+      });
+    }
     const normalizedFiles =
       options.expandArchives === false
         ? files
@@ -72,7 +78,7 @@ export class FileMutationService {
     if (conflictStrategy === "reject") {
       const existingFiles = await this.fileRepository.find({
         where: { acpId },
-        order: { originalName: "ASC" },
+        order: { relativePath: "ASC" },
       });
       this.assertNoRejectedConflicts(
         filesToPersist,
@@ -103,11 +109,12 @@ export class FileMutationService {
         if (!lockedAcp) {
           throw new NotFoundException(`ACP with ID ${acpId} not found`);
         }
+        this.assertEditable(lockedAcp);
 
         const repository = manager.getRepository(AcpFile);
         const existingFiles = await repository.find({
           where: { acpId },
-          order: { originalName: "ASC" },
+          order: { relativePath: "ASC" },
         });
         const existingByName = this.groupByNormalizedName(existingFiles);
         this.assertNoRejectedConflicts(
@@ -115,15 +122,20 @@ export class FileMutationService {
           existingByName,
           conflictStrategy,
         );
+        if (conflictStrategy === "keep-both") {
+          this.ensureKeepBothPaths(stagedFiles, existingFiles);
+        }
 
         const replacedFiles =
           conflictStrategy === "overwrite"
             ? this.collectOverwriteMatches(filesToPersist, existingByName)
             : [];
-        const savedFiles = await repository.save(stagedFiles);
         if (replacedFiles.length) {
           await repository.remove(replacedFiles);
         }
+        const savedFiles = await repository.save(stagedFiles);
+        lockedAcp.updatedAt = new Date();
+        await acpRepository.save(lockedAcp);
         return { savedFiles, replacedFiles };
       });
 
@@ -135,6 +147,36 @@ export class FileMutationService {
     }
   }
 
+  async deleteMultiple(acpId: string, fileIds: string[]): Promise<AcpFile[]> {
+    await this.getAcpOrFail(acpId);
+    const normalizedIds = Array.from(new Set(fileIds));
+    const deletedFiles = await this.dataSource.transaction(async (manager) => {
+      const acpRepository = manager.getRepository(Acp);
+      const acp = await acpRepository.findOne({
+        where: { id: acpId },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!acp) throw new NotFoundException(`ACP with ID ${acpId} not found`);
+      this.assertEditable(acp);
+
+      const repository = manager.getRepository(AcpFile);
+      const files = await repository.find({
+        where: { acpId, id: In(normalizedIds) },
+      });
+      if (files.length !== normalizedIds.length) {
+        throw new NotFoundException(
+          "One or more files were not found in the ACP",
+        );
+      }
+      await repository.remove(files);
+      acp.updatedAt = new Date();
+      await acpRepository.save(acp);
+      return files;
+    });
+    await this.fileStorageService.removePhysicalFiles(deletedFiles);
+    return deletedFiles;
+  }
+
   private resolveIncomingFiles(
     files: Express.Multer.File[],
     conflictStrategy: UploadConflictStrategy,
@@ -143,7 +185,7 @@ export class FileMutationService {
     const duplicates = new Set<string>();
 
     for (const file of files) {
-      const name = String(file?.originalname || "").trim();
+      const name = getUploadRelativePath(file);
       const key = this.normalizeFileName(name);
       if (!key) {
         throw new BadRequestException("All files must include a filename");
@@ -174,8 +216,9 @@ export class FileMutationService {
 
     const conflicts = new Set<string>();
     for (const file of files) {
-      if (existingByName.has(this.normalizeFileName(file.originalname))) {
-        conflicts.add(file.originalname);
+      const relativePath = getUploadRelativePath(file);
+      if (existingByName.has(this.normalizeFileName(relativePath))) {
+        conflicts.add(relativePath);
       }
     }
     if (conflicts.size) {
@@ -198,7 +241,7 @@ export class FileMutationService {
     const matches = new Map<string, AcpFile>();
     for (const file of files) {
       for (const match of existingByName.get(
-        this.normalizeFileName(file.originalname),
+        this.normalizeFileName(getUploadRelativePath(file)),
       ) || []) {
         matches.set(match.id, match);
       }
@@ -209,7 +252,9 @@ export class FileMutationService {
   private groupByNormalizedName(files: AcpFile[]): Map<string, AcpFile[]> {
     const grouped = new Map<string, AcpFile[]>();
     for (const file of files) {
-      const key = this.normalizeFileName(file.originalName);
+      const key = this.normalizeFileName(
+        file.relativePath || file.originalName,
+      );
       if (!key) {
         continue;
       }
@@ -218,6 +263,22 @@ export class FileMutationService {
       grouped.set(key, bucket);
     }
     return grouped;
+  }
+
+  private ensureKeepBothPaths(incoming: AcpFile[], existing: AcpFile[]): void {
+    const occupied = new Set(
+      existing.map((file) =>
+        this.normalizeFileName(file.relativePath || file.originalName),
+      ),
+    );
+    for (const file of incoming) {
+      let candidate = file.relativePath || file.originalName;
+      if (occupied.has(this.normalizeFileName(candidate))) {
+        candidate = `duplicates/${crypto.randomUUID()}/${candidate}`;
+      }
+      file.relativePath = candidate;
+      occupied.add(this.normalizeFileName(candidate));
+    }
   }
 
   private resolveConflictStrategy(input?: string): UploadConflictStrategy {
@@ -246,6 +307,18 @@ export class FileMutationService {
     if (!acp) {
       throw new NotFoundException(`ACP with ID ${acpId} not found`);
     }
+    this.assertEditable(acp);
     return acp;
+  }
+
+  private assertEditable(acp: Acp): void {
+    if (
+      acp.acpIndex?.status === "RELEASED_PUBLIC" ||
+      acp.acpIndex?.status === "RELEASED_CONFIDENTIAL"
+    ) {
+      throw new ConflictException(
+        "Published ACP must be reopened before files can be changed",
+      );
+    }
   }
 }

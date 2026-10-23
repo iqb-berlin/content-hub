@@ -81,6 +81,13 @@ export const routes: Routes = [
           import('./acp-manager/files/files.component').then((m) => m.FilesComponent),
       },
       {
+        path: 'index',
+        loadComponent: () =>
+          import('./acp-manager/index/acp-index-manager.component').then(
+            (m) => m.AcpIndexManagerComponent,
+          ),
+      },
+      {
         path: 'snapshots',
         loadComponent: () =>
           import('./acp-manager/snapshots/snapshots.component').then((m) => m.SnapshotsComponent),
@@ -119,6 +126,11 @@ export const routes: Routes = [
       },
       {
         path: 'unit/:unitId',
+        loadComponent: () =>
+          import('./views/unit-view/unit-view.component').then((m) => m.UnitViewComponent),
+      },
+      {
+        path: 'part/:partId/unit/:unitId',
         loadComponent: () =>
           import('./views/unit-view/unit-view.component').then((m) => m.UnitViewComponent),
       },

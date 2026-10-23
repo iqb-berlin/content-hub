@@ -227,21 +227,42 @@ describe("AcpController", () => {
       packageId: "pkg-1",
     });
     await expect(
-      controller.updateIndex("acp-1", { assessmentParts: [] }),
+      controller.updateIndex(
+        "acp-1",
+        { assessmentParts: [] },
+        "2026-01-01T00:00:00.000Z",
+      ),
     ).resolves.toEqual({
       packageId: "pkg-1",
       version: "1.0.0",
     });
     await expect(
-      controller.importIndex("acp-1", { assessmentParts: [] }),
+      controller.importIndex(
+        "acp-1",
+        { assessmentParts: [] },
+        "2026-01-01T00:00:00.000Z",
+      ),
     ).resolves.toEqual({
       packageId: "pkg-1",
       version: "1.1.0",
     });
-    await expect(controller.deleteIndex("acp-1")).resolves.toEqual({
+    await expect(
+      controller.deleteIndex("acp-1", "2026-01-01T00:00:00.000Z"),
+    ).resolves.toEqual({
       packageId: "pkg-1",
       version: "0.5.0",
     });
+    expect(acpService.updateIndex).toHaveBeenCalledWith(
+      "acp-1",
+      { assessmentParts: [] },
+      "2026-01-01T00:00:00.000Z",
+    );
+  });
+
+  it("rejects index mutations without a revision", async () => {
+    await expect(
+      controller.updateIndex("acp-1", { assessmentParts: [] }),
+    ).rejects.toThrow("expectedUpdatedAt");
   });
 
   it("exports ACP index as JSON attachment", async () => {

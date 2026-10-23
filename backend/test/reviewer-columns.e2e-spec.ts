@@ -205,6 +205,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
       const file = await db.getRepository(AcpFile).save({
         acpId,
         originalName: name,
+        relativePath: name,
         filePath,
         fileType: "text/plain",
         fileSize: 10,

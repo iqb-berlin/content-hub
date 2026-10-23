@@ -6,6 +6,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { Repository } from "typeorm";
 import { AcpFile } from "../database/entities";
+import { getUploadRelativePath } from "./relative-path";
 
 @Injectable()
 export class FileStorageService {
@@ -48,6 +49,7 @@ export class FileStorageService {
       acpId,
       filePath,
       originalName: uploadedFile.originalname,
+      relativePath: getUploadRelativePath(uploadedFile),
       fileType: uploadedFile.mimetype,
       fileSize: uploadedFile.size,
       checksum,

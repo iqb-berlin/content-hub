@@ -2,6 +2,7 @@ import { ReviewerColumnPolicy } from "../item-explorer/reviewer-column-policy";
 import { ReviewManifestService } from "../review/review-manifest.service";
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -17,6 +18,8 @@ import {
 } from "../database/entities";
 import {
   findUnitInIndex,
+  findUnitInPart,
+  findUnitsInIndex,
   getAssessmentParts,
   getIndexUnits,
   toRuntimeAcpIndex,
@@ -190,16 +193,25 @@ export class ViewsService {
     const index = toRuntimeAcpIndex(acp.acpIndex);
 
     // Extract units from ACP-Index
-    const units = getIndexUnits(index).map((u: any) => ({
-      id: u.id,
-      name: u.name,
-      description: u.description,
-    }));
+    const assessmentParts = getAssessmentParts(index);
+    const units = assessmentParts.length
+      ? assessmentParts.flatMap((part: any) =>
+          (Array.isArray(part?.units) ? part.units : []).map((unit: any) => ({
+            id: unit.id,
+            partId: part.id,
+            name: unit.name,
+            description: unit.description,
+          })),
+        )
+      : getIndexUnits(index).map((unit: any) => ({
+          id: unit.id,
+          name: unit.name,
+          description: unit.description,
+        }));
 
     // Sequence model: one sequence equals one booklet module.
     const sequenceMap = new Map<string, any>();
-    const parts = getAssessmentParts(index);
-    for (const part of parts) {
+    for (const part of assessmentParts) {
       const modulesById = new Map<string, any>();
       for (const module of part.bookletModules || []) {
         if (!module?.id || typeof module.id !== "string") continue;
@@ -273,18 +285,31 @@ export class ViewsService {
   async getAcpIndex(acpId: string): Promise<Record<string, unknown> | null> {
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
     if (!acp) return null;
-    return toRuntimeAcpIndex(acp.acpIndex);
+    return acp.acpIndex;
   }
 
   /**
    * Get unit view data including player reference.
    */
-  async getUnitViewData(acpId: string, unitId: string): Promise<any> {
+  async getUnitViewData(
+    acpId: string,
+    unitId: string,
+    partId?: string,
+  ): Promise<any> {
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
     if (!acp) return null;
 
     const index = toRuntimeAcpIndex(acp.acpIndex);
-    const unit = findUnitInIndex(index, unitId);
+    const matches = findUnitsInIndex(index, unitId);
+    if (!partId && matches.length > 1) {
+      throw new ConflictException({
+        message: `Unit ${unitId} exists in multiple assessment parts`,
+        possibleParts: matches.map((entry) => entry.partId),
+      });
+    }
+    const unit = partId
+      ? findUnitInPart(index, partId, unitId)
+      : matches[0]?.unit || findUnitInIndex(index, unitId);
     if (!unit) return null;
 
     // Resolve file references
@@ -292,7 +317,7 @@ export class ViewsService {
     const fileRefs: any[] = [];
     for (const dep of dependencies) {
       const file = await this.fileRepository.findOne({
-        where: { acpId, originalName: dep.id },
+        where: { acpId, relativePath: dep.id },
       });
       if (file) {
         fileRefs.push({
@@ -306,6 +331,9 @@ export class ViewsService {
 
     return {
       id: unit.id,
+      ...(partId || matches[0]?.partId
+        ? { partId: partId || matches[0]?.partId }
+        : {}),
       name: unit.name,
       description: unit.description,
       lang: unit.lang,
