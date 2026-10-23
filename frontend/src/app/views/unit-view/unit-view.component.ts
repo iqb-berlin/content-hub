@@ -29,6 +29,20 @@ import { ItemCommentThreadComponent } from '../comment-thread/item-comment-threa
 import { CommentThreadDrafts } from '../comment-thread/comment-thread-drafts';
 import { AuthService } from '../../core/services/auth.service';
 import { PendingPersonalSessionStorageService } from '../../core/services/pending-personal-session-storage.service';
+import { VoudService } from '../../core/services/voud.service';
+import {
+  CodingVariableLike,
+  mergePlayerSolutionIntoDataParts,
+} from '../item-explorer/item-explorer-solution-prefill';
+import { deriveReviewSolution, ReviewSolution } from './review-solution';
+
+type ReviewCodingAsText = Omit<CodingAsText, 'codes'> & {
+  manualInstructionText?: string;
+  codes: (CodingAsText['codes'][number] & {
+    manualInstructionText?: string;
+    description?: string;
+  })[];
+};
 
 type UnitPagingMode =
   | 'buttons'
@@ -79,6 +93,28 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
             </button>
           }
           @if (reviewMode) {
+            <button
+              class="btn btn-outline btn-sm btn-state"
+              type="button"
+              (click)="toggleSolution()"
+              [disabled]="
+                codingSchemeLoading ||
+                !definitionContent ||
+                !playerSessionId ||
+                solutionRequestPending ||
+                printMode !== 'off'
+              "
+              [attr.aria-pressed]="solutionVisible"
+              [attr.aria-busy]="solutionRequestPending"
+            >
+              {{
+                solutionRequestPending
+                  ? 'Musterlösung wird vorbereitet …'
+                  : solutionVisible
+                    ? 'Musterlösung ausblenden'
+                    : 'Musterlösung anzeigen'
+              }}
+            </button>
             <button
               class="btn btn-outline btn-sm btn-state"
               type="button"
@@ -357,6 +393,29 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
 
           @if (activeTab === 'coding') {
             <div class="coding-content">
+              @if (reviewMode && !codingSchemeLoading) {
+                <div class="solution-info" role="status">
+                  <strong>{{
+                    solutionVisible ? 'Musterlösung eingeblendet' : 'Musterlösung'
+                  }}</strong>
+                  <p>{{ reviewSolution.prefill.message }}</p>
+                  @if (printMode !== 'off') {
+                    <p>Zum Anzeigen der Musterlösung eine interaktive Seitendarstellung wählen.</p>
+                  }
+                  @if (solutionRequestError) {
+                    <p role="alert">{{ solutionRequestError }}</p>
+                  }
+                  @if (reviewSolution.unavailableVariables.length) {
+                    <p>
+                      Ohne eindeutige Player-Lösung:
+                      {{ reviewSolution.unavailableVariables.join(', ') }}
+                    </p>
+                  }
+                  @if (solutionVisible) {
+                    <p>Beim Ausblenden werden die eigenen Eingaben wiederhergestellt.</p>
+                  }
+                </div>
+              }
               @if (codingSchemeLoading) {
                 <p class="help-text">Kodierung wird geladen...</p>
               } @else if (codingSchemeAsText?.length) {
@@ -381,24 +440,61 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                 @if (visibleCodingSchemeAsText.length) {
                   @for (coding of visibleCodingSchemeAsText; track coding.id) {
                     <section class="coding-variable">
-                      <h4>{{ coding.label || coding.id }}</h4>
-                      @if ($any(coding).manualInstructionText) {
+                      <h4>
+                        {{ reviewMode ? coding.id : coding.label || coding.id }}
+                        @if (reviewMode && coding.label && coding.label !== coding.id) {
+                          <span> – {{ coding.label }}</span>
+                        }
+                      </h4>
+                      @if (reviewMode && coding.source) {
+                        <p class="help-text">{{ coding.source }}</p>
+                      }
+                      @if (reviewMode && coding.processing) {
+                        <p class="help-text">{{ coding.processing }}</p>
+                      }
+                      @if (coding.manualInstructionText) {
                         <div class="coding-instruction">
                           <strong>Variablenanweisung</strong>
-                          <div [innerHTML]="$any(coding).manualInstructionText"></div>
+                          <div [innerHTML]="coding.manualInstructionText"></div>
                         </div>
                       }
                       <div class="coding-codes">
                         @for (code of coding.codes; track code.id) {
                           <div class="coding-code">
-                            <strong>{{ code.id }}</strong>
-                            <span class="coding-score">({{ code.score }})</span>
+                            <strong>{{ reviewMode ? 'Code ' : '' }}{{ code.id }}</strong>
+                            <span class="coding-score"
+                              >({{ code.score
+                              }}{{
+                                reviewMode ? (code.score === 1 ? ' Punkt' : ' Punkte') : ''
+                              }})</span
+                            >
                             <span>{{ code.label }}</span>
                           </div>
-                          @if ($any(code).manualInstructionText) {
+                          @if (reviewMode && code.description && code.description !== code.label) {
+                            <p>{{ code.description }}</p>
+                          }
+                          @if (code.manualInstructionText) {
                             <div class="coding-instruction code-instruction">
                               <strong>Kodieranweisung</strong>
-                              <div [innerHTML]="$any(code).manualInstructionText"></div>
+                              <div [innerHTML]="code.manualInstructionText"></div>
+                            </div>
+                          }
+                          @if (reviewMode && code.ruleSetDescriptions.length) {
+                            <div class="coding-instruction code-instruction">
+                              <strong>
+                                Kodierregeln:
+                                {{
+                                  code.ruleSetOperatorAnd
+                                    ? 'Alle folgenden Bedingungen müssen'
+                                    : 'Mindestens eine der folgenden Bedingungen muss'
+                                }}
+                                zutreffen
+                              </strong>
+                              <ul>
+                                @for (rule of code.ruleSetDescriptions; track $index) {
+                                  <li>{{ rule }}</li>
+                                }
+                              </ul>
                             </div>
                           }
                         }
@@ -447,6 +543,16 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         gap: 8px;
         align-items: center;
         flex-wrap: wrap;
+      }
+      .solution-info {
+        margin-bottom: 16px;
+        padding: 12px;
+        border-left: 3px solid var(--color-primary);
+        background: var(--color-bg);
+        overflow-wrap: anywhere;
+      }
+      .solution-info p {
+        margin: 8px 0 0;
       }
       .panel-mode-select {
         min-width: 150px;
@@ -723,6 +829,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
       }
       .coding-code {
         display: flex;
+        flex-wrap: wrap;
         align-items: baseline;
         gap: 8px;
       }
@@ -731,6 +838,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         font-weight: 600;
       }
       .coding-instruction {
+        overflow-wrap: anywhere;
         margin: 8px 0;
         padding: 8px;
         border-left: 3px solid #f39c12;
@@ -839,7 +947,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   currentPage = 1;
   totalPages = 1;
   private playerPageIds: (string | number)[] = [];
-  private playerSessionId: string | null = null;
+  playerSessionId: string | null = null;
+  private personalResponseSession = false;
 
   // Panel state
   panelVisible = false;
@@ -891,11 +1000,50 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   unitMetadata: FilePreviewVomdData['unitProfiles'] = [];
   metadataLoading = false;
   metadataError = '';
-  codingSchemeAsText: CodingAsText[] | null = null;
+  codingSchemeAsText: ReviewCodingAsText[] | null = null;
   codingSchemeLoading = false;
   codingSchemeError = '';
+  solutionVisible = false;
+  solutionRequestPending = false;
+  solutionRequestError = '';
+  reviewSolution: ReviewSolution = deriveReviewSolution([], [], () => undefined);
+  private codingVariables: CodingVariableLike[] = [];
+  private responseData: Record<string, unknown> = {};
+  private responseDataTimes: Record<string, number> = {};
+  private retiringResponseSource: { window: Window; sessionId: string } | null = null;
+  private responseChangedAt: number | null = null;
+  private playerInputDocument: Document | null = null;
+  private solutionRequestTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly playerInputHandler = () => {
+    if (this.reviewMode && !this.solutionVisible && this.printMode === 'off')
+      this.responseChangedAt = Date.now();
+  };
+  private readonly playerControlHandler = (event: Event) => {
+    const key = (event as KeyboardEvent).key;
+    if (
+      event.type === 'keydown' &&
+      !['Enter', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)
+    )
+      return;
+    const selector =
+      '[role="option"], button[role="radio"], button[role="checkbox"], button[role="switch"]' +
+      (event.type === 'keydown' ? ', [role="combobox"]' : '');
+    const control = (event.target as Element | null)?.closest?.(selector);
+    if (!control || control.getAttribute('aria-disabled') === 'true') return;
+    const isArrow = event.type === 'keydown' && key.startsWith('Arrow');
+    if (
+      !isArrow &&
+      (control.getAttribute('aria-selected') === 'true' ||
+        (control.getAttribute('role') === 'radio' &&
+          control.getAttribute('aria-checked') === 'true'))
+    )
+      return;
+    this.playerInputHandler();
+  };
+  private readonly voud = new VoudService();
+  private playerRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private definitionContent: string | null = null;
+  definitionContent: string | null = null;
   private playerFrameReady = false;
   private unitLoadToken = 0;
   private initialized = false;
@@ -966,7 +1114,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  get visibleCodingSchemeAsText(): CodingAsText[] {
+  get visibleCodingSchemeAsText(): ReviewCodingAsText[] {
     const visibleCodings =
       !this.reviewMode && this.showAllCodingVariables
         ? this.availableCodingSchemeAsText
@@ -988,7 +1136,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         ...coding.codes.flatMap((code) => [
           code.id,
           code.label,
+          code.description,
           (code as any).manualInstructionText,
+          ...(this.reviewMode ? code.ruleSetDescriptions : []),
         ]),
       ]
         .filter(Boolean)
@@ -1008,7 +1158,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     return this.unit ? (this.reviewMode ? unitLabel(this.unit) : this.unit.name) : '';
   }
 
-  private get availableCodingSchemeAsText(): CodingAsText[] {
+  private get availableCodingSchemeAsText(): ReviewCodingAsText[] {
     const codings = this.codingSchemeAsText || [];
     const hideAudioVideoVariables = this.reviewMode || !this.showAudioVideoCodingVariables;
     return hideAudioVideoVariables
@@ -1170,6 +1320,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.playerFrameReady = false;
     this.playerSessionId = null;
     this.playerPageIds = [];
+    this.personalResponseSession = false;
     this.currentPage = 1;
     this.totalPages = 1;
     this.definitionContent = null;
@@ -1179,6 +1330,15 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.codingSchemeAsText = null;
     this.codingSchemeLoading = false;
     this.codingSchemeError = '';
+    this.codingVariables = [];
+    this.solutionVisible = false;
+    this.responseData = {};
+    this.responseDataTimes = {};
+    this.retiringResponseSource = null;
+    this.responseChangedAt = null;
+    this.solutionRequestError = '';
+    this.reviewSolution = deriveReviewSolution([], [], () => undefined);
+    this.clearPlayerRefresh();
     this.codingFilterText = '';
     this.showAllCodingVariables = false;
     this.unitRequest = this.api.getViewUnit(this.acpId, this.unitId).subscribe((u) => {
@@ -1215,10 +1375,12 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.selectedCommentItems.clear();
     this.resetCommentItems();
     this.unitLoadToken += 1;
+    this.retiringResponseSource = null;
     this.featureConfigRequest?.unsubscribe();
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
     this.unitAbortController?.abort();
+    this.clearPlayerRefresh();
     this.stopReviewPanelResize();
     window.removeEventListener('resize', this.resizeHandler);
     window.removeEventListener('message', this.messageHandler);
@@ -1227,36 +1389,145 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   onPlayerLoaded() {
     if (!this.unit || !this.playerFrame?.nativeElement?.contentWindow) return;
+    this.observePlayerInputs();
     this.startPlayerIfReady();
   }
 
   onPagingModeChange() {
     const src = this.playerSrcDoc;
     if (!src) return;
+    this.clearPlayerRefresh();
+    const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
+    // ASPECT flushes its last response on unload. Retain this exact source/session
+    // while the replacement frame starts, without accepting synthetic solution data.
+    this.retiringResponseSource =
+      this.personalResponseSession && frameWindow && this.playerSessionId
+        ? { window: frameWindow, sessionId: this.playerSessionId }
+        : null;
+    if (this.printMode !== 'off') this.solutionVisible = false;
     this.playerFrameReady = false;
     this.playerSessionId = null;
-    this.initializePageNavigation();
+    if (!this.reviewMode) this.initializePageNavigation();
     this.playerSrcDoc = null;
-    setTimeout(() => {
+    this.changeDetector.markForCheck();
+    this.playerRefreshTimer = setTimeout(() => {
+      this.playerRefreshTimer = null;
       this.playerSrcDoc = src;
+      this.changeDetector.markForCheck();
     }, 50);
   }
 
+  toggleSolution() {
+    if (
+      !this.reviewMode ||
+      !this.playerSessionId ||
+      this.solutionRequestPending ||
+      this.printMode !== 'off'
+    )
+      return;
+    this.activeTab = 'coding';
+    this.reviewPanelCollapsed = false;
+    this.changeDetector.markForCheck();
+    if (!this.solutionVisible && this.reviewSolution.prefill.status !== 'available') return;
+    this.solutionRequestError = '';
+    if (!this.solutionVisible) {
+      // Material choice controls commit their form value on blur. Moving focus
+      // into the parent document does not consistently blur them in every browser.
+      (this.playerInputDocument?.activeElement as HTMLElement | null)?.blur?.();
+    }
+    if (!this.solutionVisible && this.responseChangedAt !== null) {
+      // Input reports are debounced by the player. Keep the original frame until
+      // it acknowledges the last interaction, including browsers without unload reports.
+      this.solutionRequestPending = true;
+      this.solutionRequestTimer = setTimeout(() => {
+        this.cancelSolutionRequest();
+        this.solutionRequestError =
+          'Der aktuelle Antwortstand wurde noch nicht vom Player gemeldet. Bitte erneut versuchen.';
+        this.changeDetector.markForCheck();
+      }, 2500);
+      return;
+    }
+    this.applySolutionToggle();
+  }
+
+  private applySolutionToggle() {
+    this.solutionVisible = !this.solutionVisible;
+    this.onPagingModeChange();
+  }
+
+  private clearPlayerRefresh() {
+    this.cancelSolutionRequest();
+    this.stopObservingPlayerInputs();
+    if (this.playerRefreshTimer) clearTimeout(this.playerRefreshTimer);
+    this.playerRefreshTimer = null;
+  }
+
+  private cancelSolutionRequest() {
+    if (this.solutionRequestTimer) clearTimeout(this.solutionRequestTimer);
+    this.solutionRequestTimer = null;
+    this.solutionRequestPending = false;
+  }
+
+  private observePlayerInputs() {
+    this.stopObservingPlayerInputs();
+    if (!this.reviewMode) return;
+    const doc = this.playerFrame?.nativeElement?.contentDocument;
+    if (!doc) return;
+    this.playerInputDocument = doc;
+    doc.addEventListener('input', this.playerInputHandler, true);
+    doc.addEventListener('click', this.playerControlHandler, true);
+    doc.addEventListener('keydown', this.playerControlHandler, true);
+  }
+
+  private stopObservingPlayerInputs() {
+    this.playerInputDocument?.removeEventListener('input', this.playerInputHandler, true);
+    this.playerInputDocument?.removeEventListener('click', this.playerControlHandler, true);
+    this.playerInputDocument?.removeEventListener('keydown', this.playerControlHandler, true);
+    this.playerInputDocument = null;
+  }
+
   private onPlayerMessage(event: MessageEvent) {
+    const msg = event.data;
+    if (!msg || typeof msg !== 'object') return;
+    const retiringSource = this.retiringResponseSource;
+    if (
+      retiringSource &&
+      event.source === retiringSource.window &&
+      msg.sessionId === retiringSource.sessionId
+    ) {
+      if (msg.type === 'vopStateChangedNotification') this.captureResponseData(msg);
+      return;
+    }
     const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
     if (!frameWindow || event.source !== frameWindow) return;
 
-    const msg = event.data;
-    if (!msg || typeof msg !== 'object') return;
     if (msg.sessionId !== undefined && msg.sessionId !== this.playerSessionId) return;
 
     switch (msg.type) {
       case 'vopReadyNotification': {
+        this.observePlayerInputs();
         this.playerFrameReady = true;
         this.startPlayerIfReady();
         break;
       }
       case 'vopStateChangedNotification': {
+        if (
+          this.reviewMode &&
+          this.playerSessionId &&
+          msg.sessionId === this.playerSessionId &&
+          !this.solutionVisible &&
+          this.printMode === 'off'
+        ) {
+          this.captureResponseData(msg);
+          if (
+            this.responseChangedAt !== null &&
+            typeof msg.unitState?.dataParts?.elementCodes === 'string' &&
+            this.playerMessageTime(msg.timeStamp) >= this.responseChangedAt
+          ) {
+            this.responseChangedAt = null;
+            if (this.solutionRequestPending) this.applySolutionToggle();
+          }
+        }
         const pages = msg.playerState?.validPages;
         if (pages && typeof pages === 'object') {
           // Verona 6 uses ordered { id, label } entries; older players use a map.
@@ -1289,6 +1560,26 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         return;
     }
     this.changeDetector.markForCheck();
+  }
+
+  private captureResponseData(msg: Record<string, any>) {
+    const dataParts = msg['unitState']?.dataParts;
+    if (!dataParts || typeof dataParts !== 'object' || Array.isArray(dataParts)) return;
+    const time = this.playerMessageTime(msg['timeStamp']);
+    for (const [key, value] of Object.entries(dataParts)) {
+      if (typeof value !== 'string') continue;
+      if (Number.isFinite(time) && time < (this.responseDataTimes[key] ?? -Infinity)) continue;
+      this.responseData[key] = value;
+      if (Number.isFinite(time)) this.responseDataTimes[key] = time;
+    }
+  }
+
+  private playerMessageTime(value: unknown): number {
+    return typeof value === 'number'
+      ? Number.isFinite(value)
+        ? value
+        : Number.NaN
+      : Date.parse(String(value));
   }
 
   private updateCurrentPage(id: unknown) {
@@ -1406,6 +1697,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .then((definition) => {
         if (token !== this.unitLoadToken) return;
         this.definitionContent = definition;
+        this.updateReviewSolution();
         this.initializePageNavigation();
         this.startPlayerIfReady();
         this.changeDetector.markForCheck();
@@ -1470,6 +1762,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         if (token !== this.unitLoadToken) return;
         this.codingSchemeLoading = false;
         this.codingSchemeError = 'Kodierung konnte nicht geladen werden.';
+        this.changeDetector.markForCheck();
       });
   }
 
@@ -1484,11 +1777,15 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
           ? (codingScheme as any).variableCodings
           : [];
       const codingSchemeAsText = CodingSchemeTextFactory.asText(variableCodings);
-      if (codingSchemeAsText.some((coding) => typeof coding.id !== 'string' || !coding.id.trim())) {
+      if (
+        codingSchemeAsText.some((coding) => typeof coding.id !== 'string' || !coding.id.trim()) ||
+        new Set(codingSchemeAsText.map((coding) => coding.id.toLowerCase())).size !==
+          codingSchemeAsText.length
+      ) {
         throw new Error('Coding variables require a non-empty ID');
       }
-      codingSchemeAsText.forEach((coding) => {
-        const rawVariable = variableCodings.find((variable: any) => variable.id === coding.id);
+      codingSchemeAsText.forEach((coding, index) => {
+        const rawVariable = variableCodings[index];
         if (!rawVariable) return;
         (coding as any).manualInstructionText = rawVariable.manualInstruction;
         coding.codes.forEach((code) => {
@@ -1496,17 +1793,56 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
             (candidate: any) =>
               (candidate.id === null ? 'null' : candidate.id?.toString(10)) === code.id,
           );
-          if (rawCode) (code as any).manualInstructionText = rawCode.manualInstruction;
+          code.ruleSetDescriptions ??= [];
+          if (rawCode) {
+            (code as any).manualInstructionText = rawCode.manualInstruction;
+            (code as any).description = rawCode.label;
+            if (
+              !code.ruleSetDescriptions.length &&
+              ['RESIDUAL', 'RESIDUAL_AUTO'].includes(rawCode.type)
+            ) {
+              code.ruleSetDescriptions = ['Alle anderen Antworten.'];
+            }
+          }
         });
       });
       this.codingSchemeAsText = codingSchemeAsText;
+      this.codingVariables = variableCodings;
+      this.updateReviewSolution();
       this.codingSchemeError = '';
     } catch {
       this.codingSchemeAsText = null;
+      this.codingVariables = [];
+      this.updateReviewSolution();
       this.codingSchemeError = 'Kodierung konnte nicht gelesen werden.';
     } finally {
       this.codingSchemeLoading = false;
+      this.changeDetector.markForCheck();
     }
+  }
+
+  private updateReviewSolution() {
+    const relevantVariables = this.codingVariables.filter((_, index) => {
+      const coding = this.codingSchemeAsText?.[index];
+      return (
+        coding && !this.isAudioVideoCodingVariable(coding) && this.isRelevantCodingVariable(coding)
+      );
+    });
+    this.reviewSolution = deriveReviewSolution(
+      this.codingVariables,
+      relevantVariables,
+      (variable) => {
+        if (!this.definitionContent) return undefined;
+        for (const id of [variable.alias, variable.id]) {
+          if (typeof id !== 'string' || !id.trim()) continue;
+          const target = this.voud.resolvePlayerResponseTarget(this.definitionContent, id);
+          // The supported ASPECT player does not reliably render scalar toggle-button
+          // prefills. Keep these variables in the readable coding fallback.
+          if (target && target.elementType.trim().toLowerCase() !== 'toggle-button') return target;
+        }
+        return undefined;
+      },
+    );
   }
 
   private startPlayerIfReady() {
@@ -1515,13 +1851,21 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
     this.startSessionCounter += 1;
     this.playerSessionId = `review-${this.unitId}-${this.startSessionCounter}`;
+    this.personalResponseSession =
+      this.reviewMode && !this.solutionVisible && this.printMode === 'off';
     this.sendToPlayer({
       type: 'vopStartCommand',
       sessionId: this.playerSessionId,
       unitDefinition: this.definitionContent,
-      unitState: { dataParts: {} },
+      unitState: {
+        dataParts:
+          this.solutionVisible && this.reviewSolution.prefill.status === 'available'
+            ? mergePlayerSolutionIntoDataParts({}, this.reviewSolution.prefill.responses)
+            : { ...this.responseData },
+      },
       playerConfig: {
         stateReportPolicy: 'none',
+        startPage: String(this.playerPageIds[this.currentPage - 1] ?? this.currentPage - 1),
         pagingMode:
           this.pagingMode === 'view-all' || this.pagingMode === 'print-ids'
             ? 'concat-scroll'

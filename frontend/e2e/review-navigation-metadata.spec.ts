@@ -106,6 +106,139 @@ async function installContent(page: Page) {
   );
 }
 
+test('shows readable coding and a reversible partial solution in the booklet review', async ({
+  page,
+}, testInfo) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await installContent(page);
+  const scheme = {
+    variableCodings: [
+      {
+        id: 'internal-answer',
+        alias: 'ANSWER',
+        label: 'Kurzantwort',
+        sourceType: 'BASE',
+        manualInstruction: '<p>Die Hauptstadt nennen.</p>',
+        codes: [
+          {
+            id: 1,
+            type: 'FULL_CREDIT',
+            score: 1,
+            label: 'Erwartet wird Berlin',
+            manualInstruction: '<p>Sinngemäße Antworten akzeptieren.</p>',
+            ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['Berlin'] }] }],
+          },
+          { id: 0, type: 'RESIDUAL_AUTO', score: 0 },
+        ],
+      },
+      {
+        id: 'essay',
+        label: 'Begründung',
+        sourceType: 'BASE',
+        codeModel: 'MANUAL_ONLY',
+        manualInstruction:
+          '<p>Die Begründung muss einen nachvollziehbaren Zusammenhang enthalten.</p>',
+        codes: [
+          {
+            id: 1,
+            type: 'FULL_CREDIT',
+            score: 1,
+            manualInstruction: '<p>Ein schlüssiges Beispiel genügt.</p>',
+          },
+        ],
+      },
+    ],
+  };
+  await page.route(`**/api/view/acp/${acpId}/units/review-u*`, (route) =>
+    route.fulfill({
+      json: {
+        id: 'review-u1',
+        name: 'Aufgabe 1',
+        items: [],
+        codingScheme: scheme,
+        dependencies: [
+          { type: 'PLAYER', downloadUrl: '/review-solution/player' },
+          { type: 'UNIT_DEFINITION', downloadUrl: '/review-solution/definition' },
+        ],
+      },
+    }),
+  );
+  const solutionPlayer = `<!doctype html><html><body><label>Antwort <input id="answer"></label>
+    <script>
+      let sessionId, currentPage;
+      const input = document.getElementById('answer');
+      function report() {
+        parent.postMessage({ type:'vopStateChangedNotification', sessionId, timeStamp:new Date().toISOString(),
+          unitState:{dataParts:{elementCodes:JSON.stringify([{id:'ANSWER',status:'VALUE_CHANGED',value:input.value}])}},
+          playerState:{validPages:[{id:'0'},{id:'1'}],currentPage}}, '*');
+      }
+      input.oninput = () => setTimeout(report, 100);
+      addEventListener('unload', report);
+      addEventListener('message', event => {
+        const msg = event.data;
+        if (msg.type === 'vopStartCommand') {
+          sessionId = msg.sessionId; currentPage = msg.playerConfig.startPage || '0';
+          const responses = JSON.parse(msg.unitState.dataParts.elementCodes || '[]');
+          input.value = responses.find(r => r.id === 'ANSWER')?.value || '';
+          document.body.dataset.session = sessionId; report();
+        }
+        if (msg.type === 'vopPageNavigationCommand' && msg.sessionId === sessionId) {
+          currentPage = msg.target; report();
+        }
+      });
+      parent.postMessage({type:'vopReadyNotification'}, '*');
+    </script></body></html>`;
+  await page.route('**/review-solution/*', (route) =>
+    new URL(route.request().url()).pathname.endsWith('/player')
+      ? route.fulfill({ contentType: 'text/html', body: solutionPlayer })
+      : route.fulfill({
+          json: {
+            pages: [{}, { elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
+          },
+        }),
+  );
+  await page.goto(reviewUrl);
+  const answer = page
+    .frameLocator('app-unit-view iframe')
+    .getByRole('textbox', { name: 'Antwort' });
+  await answer.fill('Hamburg');
+  await page.getByRole('button', { name: 'Nächste Seite →', exact: true }).click();
+  await expect(page.locator('.page-info')).toHaveText('Seite 2 / 2');
+  // Match ASPECT: its debounced input report can still be pending when the frame unloads.
+  await answer.fill('Letzte eigene Eingabe');
+  await page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }).click();
+  await expect(answer).toHaveValue('Berlin');
+  await expect(page.locator('.page-info')).toHaveText('Seite 2 / 2');
+  const coding = page.locator('.coding-content');
+  await expect(coding).toContainText('Teilweise Musterlösung: 1 von 2');
+  await expect(coding).toContainText('Sinngemäße Antworten akzeptieren.');
+  await expect(coding).toContainText("Übereinstimmung (Zahl/Text) mit 'Berlin'");
+  await expect(coding).toContainText('Ein schlüssiges Beispiel genügt.');
+  await page.screenshot({
+    path: testInfo.outputPath('review-solution-desktop.png'),
+    fullPage: true,
+  });
+  await answer.fill('Änderung im Lösungsmodus');
+  await page.getByRole('button', { name: 'Musterlösung ausblenden', exact: true }).click();
+  await expect(answer).toHaveValue('Letzte eigene Eingabe');
+  await page.getByRole('button', { name: 'Weiter →', exact: true }).click();
+  await expect(answer).toHaveValue('');
+  await expect(
+    page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'false');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }).click();
+  await expect(answer).toHaveValue('Berlin');
+  await expect(coding).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath('review-solution-mobile.png'),
+    fullPage: true,
+  });
+  expect(errors).toEqual([]);
+});
+
 test('synchronizes initial totals, both navigation directions, display modes and unit changes', async ({
   page,
 }, testInfo) => {

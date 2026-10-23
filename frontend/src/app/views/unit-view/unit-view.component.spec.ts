@@ -54,6 +54,7 @@ describe('UnitViewComponent', () => {
     definition: string | Promise<string> = JSON.stringify({
       pages: [{ alwaysVisible: true }, {}, {}],
     }),
+    codingScheme?: unknown,
   ) {
     const api = {
       appendAuthToken: (url: string) => url,
@@ -62,6 +63,7 @@ describe('UnitViewComponent', () => {
           id: 'u1',
           name: 'Aufgabe',
           items: [],
+          codingScheme,
           dependencies: [
             { type: 'PLAYER', downloadUrl: '/player' },
             { type: 'UNIT_DEFINITION', downloadUrl: '/definition' },
@@ -101,6 +103,305 @@ describe('UnitViewComponent', () => {
     };
     return { fixture, component: fixture.componentInstance, frame, postMessage, message };
   }
+
+  const solutionScheme = {
+    variableCodings: [
+      {
+        id: 'internal-answer',
+        alias: 'ANSWER',
+        label: 'Antwort',
+        manualInstruction: '<p>Allgemeine Hinweise zur Antwort</p>',
+        sourceType: 'BASE',
+        codes: [
+          {
+            id: 1,
+            type: 'FULL_CREDIT',
+            score: 1,
+            label: 'Die Antwort nennt Berlin',
+            manualInstruction: '<p>Sinngemäße Antworten akzeptieren</p>',
+            ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['Berlin'] }] }],
+          },
+          { id: 0, type: 'RESIDUAL_AUTO', score: 0 },
+        ],
+      },
+    ],
+  };
+
+  it('shows aliased manual instructions, custom labels and searchable automatic rules', async () => {
+    const { fixture, component } = await playerFixture(undefined, solutionScheme);
+    component.activeTab = 'coding';
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    const panel = fixture.nativeElement.querySelector('.coding-content') as HTMLElement;
+    expect(panel.textContent).toContain('Allgemeine Hinweise zur Antwort');
+    expect(panel.textContent).toContain('Sinngemäße Antworten akzeptieren');
+    expect(panel.textContent).toContain('Die Antwort nennt Berlin');
+    expect(panel.textContent).toContain("Übereinstimmung (Zahl/Text) mit 'Berlin'");
+    expect(panel.textContent).toContain('Alle anderen Antworten');
+    component.codingFilterText = 'Berlin';
+    expect(component.visibleCodingSchemeAsText).toHaveLength(1);
+    component.codingFilterText = 'unbekannt';
+    expect(component.visibleCodingSchemeAsText).toHaveLength(0);
+  });
+
+  it('keeps toggle-button coding readable without claiming an unverified scalar player solution', async () => {
+    const scheme = JSON.parse(JSON.stringify(solutionScheme));
+    scheme.variableCodings[0].codes[0].ruleSets[0].rules[0].parameters = ['2'];
+    const { component } = await playerFixture(
+      JSON.stringify({
+        pages: [
+          {
+            elements: [
+              {
+                id: 'input',
+                alias: 'ANSWER',
+                type: 'toggle-button',
+                options: ['A', 'B', 'C'],
+              },
+            ],
+          },
+        ],
+      }),
+      scheme,
+    );
+    expect(component.reviewSolution.prefill.status).toBe('unavailable');
+    expect(component.reviewSolution.unavailableVariables).toEqual(['ANSWER']);
+    expect(component.visibleCodingSchemeAsText).toHaveLength(1);
+  });
+
+  it('restores personal data parts and the page after hiding the solution, ignoring stale and synthetic states', async () => {
+    const definition = JSON.stringify({
+      pages: [{}, { elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
+    });
+    const { fixture, component, message, frame } = await playerFixture(definition, solutionScheme);
+    const send = vi.spyOn(component as any, 'sendToPlayer');
+    await message({ type: 'vopReadyNotification' });
+    const ownSession = component.playerSessionId;
+    const ownSource = frame.contentWindow!;
+    const ownAnswers = JSON.stringify([
+      { id: 'ANSWER', value: 'Hamburg', status: 'VALUE_CHANGED' },
+    ]);
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: ownSession,
+      timeStamp: '2026-10-23T10:00:02Z',
+      unitState: { dataParts: { elementCodes: ownAnswers } },
+      playerState: { currentPage: '1' },
+    });
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: ownSession,
+      timeStamp: '2026-10-23T10:00:01Z',
+      unitState: { dataParts: { elementCodes: '[]', other: 'retain me' } },
+    });
+    const ready = async () => {
+      fixture.detectChanges();
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(fixture.nativeElement.querySelector('iframe')).not.toBeNull();
+      });
+      const frame = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          source: frame.contentWindow,
+          data: { type: 'vopReadyNotification' },
+        }),
+      );
+      await fixture.whenStable();
+      return frame;
+    };
+    component.toggleSolution();
+    fixture.detectChanges();
+    // ASPECT emits its final answer state on unload, after the frame has been removed.
+    const finalAnswers = JSON.stringify([{ id: 'ANSWER', value: 'Bonn', status: 'VALUE_CHANGED' }]);
+    await message(
+      {
+        type: 'vopStateChangedNotification',
+        sessionId: ownSession,
+        timeStamp: '2026-10-23T10:00:03Z',
+        unitState: { dataParts: { elementCodes: finalAnswers } },
+      },
+      ownSource,
+    );
+    const solutionFrame = await ready();
+    const solutionStart = send.mock.calls.at(-1)![0];
+    expect(solutionStart.playerConfig.startPage).toBe('1');
+    expect(JSON.parse(solutionStart.unitState.dataParts.elementCodes)).toEqual([
+      { id: 'ANSWER', value: 'Berlin', status: 'VALUE_CHANGED' },
+    ]);
+    expect(solutionStart.unitState.dataParts.other).toBeUndefined();
+    for (const sessionId of [ownSession, component.playerSessionId]) {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          source: solutionFrame.contentWindow,
+          data: {
+            type: 'vopStateChangedNotification',
+            sessionId,
+            unitState: { dataParts: { elementCodes: '[]' } },
+          },
+        }),
+      );
+    }
+    component.toggleSolution();
+    await ready();
+    const restoredStart = send.mock.calls.at(-1)![0];
+    expect(restoredStart.unitState.dataParts).toEqual({
+      elementCodes: finalAnswers,
+      other: 'retain me',
+    });
+    expect(restoredStart.playerConfig.startPage).toBe('1');
+    expect(component.solutionVisible).toBe(false);
+
+    // Print modes ignore response values in ASPECT. They must neither claim an active
+    // solution nor replace the buffered personal answers with empty print responses.
+    component.toggleSolution();
+    await ready();
+    component.pagingMode = 'view-all';
+    component.onPagingModeChange();
+    const printFrame = await ready();
+    const printSource = printFrame.contentWindow!;
+    const printSession = component.playerSessionId;
+    expect(component.solutionVisible).toBe(false);
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        source: printFrame.contentWindow,
+        data: {
+          type: 'vopStateChangedNotification',
+          sessionId: component.playerSessionId,
+          unitState: { dataParts: { elementCodes: '[]' } },
+        },
+      }),
+    );
+    component.pagingMode = 'buttons';
+    component.onPagingModeChange();
+    fixture.detectChanges();
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        source: printSource,
+        data: {
+          type: 'vopStateChangedNotification',
+          sessionId: printSession,
+          unitState: { dataParts: { elementCodes: '[]' } },
+        },
+      }),
+    );
+    await ready();
+    expect(send.mock.calls.at(-1)![0].unitState.dataParts.elementCodes).toBe(finalAnswers);
+
+    // A unit change cancels a pending frame restart and clears all solution/answer state.
+    component.toggleSolution();
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    await ready();
+    expect(component.solutionVisible).toBe(false);
+    expect(send.mock.calls.at(-1)![0].unitState.dataParts).toEqual({});
+    expect(send.mock.calls.at(-1)![0].sessionId).toContain('u2');
+  });
+
+  it('opens a readable explanation without changing the player for unsupported solutions', async () => {
+    const { fixture, component, message, postMessage } = await playerFixture();
+    await message({ type: 'vopReadyNotification' });
+    component.reviewPanelCollapsed = true;
+    component.toggleSolution();
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(component.solutionVisible).toBe(false);
+    expect(component.reviewPanelCollapsed).toBe(false);
+    expect(component.activeTab).toBe('coding');
+    expect(postMessage).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.querySelector('.solution-info').textContent).toContain(
+      'Keine eindeutige Musterlösung',
+    );
+  });
+
+  it.each(['iso', 'milliseconds'])(
+    'waits for a fresh player response with %s timestamps after an input before showing the solution',
+    async (format) => {
+      const { component, frame, message } = await playerFixture(
+        JSON.stringify({
+          pages: [{ elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
+        }),
+        solutionScheme,
+      );
+      await message({ type: 'vopReadyNotification' });
+      const sessionId = component.playerSessionId;
+      frame.contentDocument!.dispatchEvent(new Event('input', { bubbles: true }));
+      component.toggleSolution();
+      expect(component.solutionRequestPending).toBe(true);
+      expect(component.solutionVisible).toBe(false);
+      expect(component.playerSessionId).toBe(sessionId);
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId,
+        timeStamp: format === 'iso' ? new Date(Date.now() - 1000).toISOString() : Date.now() - 1000,
+        unitState: { dataParts: { elementCodes: '[]' } },
+      });
+      expect(component.solutionRequestPending).toBe(true);
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId,
+        timeStamp: format === 'iso' ? new Date(Date.now() + 1).toISOString() : Date.now() + 1,
+        unitState: {
+          dataParts: {
+            elementCodes: JSON.stringify([
+              { id: 'ANSWER', status: 'VALUE_CHANGED', value: 'Meine letzte Eingabe' },
+            ]),
+          },
+        },
+      });
+      expect(component.solutionRequestPending).toBe(false);
+      expect(component.solutionVisible).toBe(true);
+    },
+  );
+
+  it('keeps the personal player when a fresh response does not arrive', async () => {
+    const { component, frame, message } = await playerFixture(
+      JSON.stringify({
+        pages: [{ elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
+      }),
+      solutionScheme,
+    );
+    await message({ type: 'vopReadyNotification' });
+    const sessionId = component.playerSessionId;
+    vi.useFakeTimers();
+    try {
+      frame.contentDocument!.dispatchEvent(new Event('input', { bubbles: true }));
+      component.toggleSolution();
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(component.solutionRequestPending).toBe(false);
+      expect(component.solutionVisible).toBe(false);
+      expect(component.playerSessionId).toBe(sessionId);
+      expect(component.solutionRequestError).toContain('noch nicht vom Player gemeldet');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it.each([
+    { role: 'option', type: 'click', key: '' },
+    { role: 'radio', type: 'click', key: '' },
+    { role: 'radio', type: 'keydown', key: 'ArrowRight' },
+  ])('waits for custom $role controls changed via $type', async ({ role, type, key }) => {
+    const { component, frame, message } = await playerFixture(
+      JSON.stringify({
+        pages: [{ elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
+      }),
+      solutionScheme,
+    );
+    await message({ type: 'vopReadyNotification' });
+    const doc = frame.contentDocument!;
+    const control = doc.createElement('button');
+    control.setAttribute('role', role);
+    doc.body.append(control);
+    control.dispatchEvent(
+      type === 'keydown'
+        ? new KeyboardEvent(type, { key, bubbles: true })
+        : new Event(type, { bubbles: true }),
+    );
+    component.toggleSolution();
+    expect(component.solutionRequestPending).toBe(true);
+    expect(component.solutionVisible).toBe(false);
+  });
 
   it('shows the initial scroll-page count and synchronizes internal player navigation', async () => {
     const { fixture, component, postMessage, message } = await playerFixture();
@@ -426,8 +727,8 @@ describe('UnitViewComponent', () => {
     expect(
       Array.from(
         fixture.nativeElement.querySelectorAll('.coding-variable h4') as NodeListOf<HTMLElement>,
-      ).map((heading) => heading.textContent?.trim()),
-    ).toEqual(['Variable 1', 'Variable 2']);
+      ).map((heading) => heading.textContent?.trim().replace(/\s+/g, ' ')),
+    ).toEqual(['VAR_1 – Variable 1', 'VAR_2 – Variable 2']);
     expect(fixture.nativeElement.textContent).not.toContain('Audio 1');
     expect(fixture.nativeElement.textContent).not.toContain('Textinhalt');
     expect(fixture.nativeElement.querySelector('.coding-visibility-toggle')).toBeNull();
@@ -445,8 +746,8 @@ describe('UnitViewComponent', () => {
     expect(
       Array.from(
         fixture.nativeElement.querySelectorAll('.coding-variable h4') as NodeListOf<HTMLElement>,
-      ).map((heading) => heading.textContent?.trim()),
-    ).toEqual(['Variable 1']);
+      ).map((heading) => heading.textContent?.trim().replace(/\s+/g, ' ')),
+    ).toEqual(['VAR_1 – Variable 1']);
     codingFilter.value = '';
     codingFilter.dispatchEvent(new Event('input'));
     fixture.detectChanges();
