@@ -12,7 +12,11 @@ import {
   CommentTargetType,
 } from "../database/entities";
 
-import { ReviewGroup } from "../database/entities/acp-access-config.entity";
+import {
+  CommentCategory,
+  ReviewGroup,
+} from "../database/entities/acp-access-config.entity";
+import { commentAuthorName } from "./comment-author-name";
 
 export type CommentVisibilityMode = "PRIVATE" | "SHARED" | "GROUP";
 
@@ -26,6 +30,7 @@ export interface CommentActor {
   votingEnabled?: boolean;
   votingTargets?: string[];
   groups?: ReviewGroup[];
+  categories?: CommentCategory[];
   ungroupedShared?: boolean;
 }
 
@@ -44,7 +49,10 @@ export class ReviewPolicyService {
       credentialId: credential ? req.user?.sub : undefined,
       credentialUsername: credential ? req.user?.username : undefined,
       authorLabel:
-        String(req.user?.username || "Unbekannt").trim() || "Unbekannt",
+        commentAuthorName(
+          !credential && req.user?.displayName,
+          req.user?.username,
+        ) || "Unbekannt",
       isManager: this.isManagerRequest(req),
       canParticipate: Boolean(
         req.user?.sub && req.acpCapabilities?.includes("review:participate"),
@@ -200,6 +208,7 @@ export class ReviewPolicyService {
       where: { acpId },
     });
     if (actor) {
+      actor.categories = config?.commentCategories || [];
       actor.votingTargets = this.commentTargets(config?.featureConfig || {});
       actor.votingEnabled =
         config?.featureConfig?.enableReview === true &&
@@ -221,6 +230,29 @@ export class ReviewPolicyService {
       );
     }
     return (config?.featureConfig || {}) as Record<string, unknown>;
+  }
+
+  async getCommentCategories(acpId: string): Promise<CommentCategory[]> {
+    const config = await this.accessConfigRepository.findOne({
+      where: { acpId },
+    });
+    return config?.commentCategories || [];
+  }
+
+  selectCategory(
+    actor: CommentActor,
+    requested?: string | null,
+    current?: string | null,
+  ): string | null {
+    if (requested === undefined) return current || null;
+    if (requested === null) return null;
+    const category = actor.categories?.find((entry) => entry.id === requested);
+    if (!category || (category.archived && requested !== current)) {
+      throw new BadRequestException(
+        "Bitte eine verfügbare Kommentarkategorie wählen",
+      );
+    }
+    return category.id;
   }
 
   async prepareVisibility(

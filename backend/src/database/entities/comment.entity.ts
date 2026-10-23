@@ -69,6 +69,9 @@ export class Comment {
   @Column({ name: "group_id", type: "uuid", nullable: true })
   groupId?: string | null;
 
+  @Column({ name: "category_id", type: "uuid", nullable: true })
+  categoryId?: string | null;
+
   @Column({ name: "comment_text", type: "text" })
   commentText!: string;
 

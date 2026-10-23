@@ -51,6 +51,26 @@ describe("ReviewPolicyService", () => {
     ).toBe(true);
   });
 
+  it.each([
+    [
+      { displayName: "Person Name", username: "person@example.org" },
+      "Person Name",
+    ],
+    [{ displayName: "person@example.org", username: "person" }, "person"],
+    [{ displayName: "  ", username: "person" }, "person"],
+    [{ username: "person@example.org" }, "Unbekannt"],
+    [
+      {
+        type: "credential",
+        displayName: "Not the credential",
+        username: "Kuerzel",
+      },
+      "Kuerzel",
+    ],
+  ])("uses a name instead of email for actor %j", (user, expected) => {
+    expect(policy.resolveActor({ user }).authorLabel).toBe(expected);
+  });
+
   it("keeps review participation behind its own request policy", () => {
     expect(() =>
       policy.assertCanParticipateRequest({

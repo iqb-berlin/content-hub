@@ -37,10 +37,25 @@
           }
         </div>
 
-        @if (snapshot?.visibilityMode === 'GROUP') {
-          <p class="comment-status">Bewertungen sind nur im geteilten Modus verfügbar.</p>
-        }
         <div class="new-comment-form">
+          @if (snapshot?.categories?.length || selectedCategoryId) {
+            <label
+              >Kategorie
+              <select
+                aria-label="Kategorie für neuen Kommentar"
+                [(ngModel)]="selectedCategoryId"
+                [disabled]="busy"
+              >
+                <option value="">Ohne Kategorie</option>
+                @for (category of availableCategories; track category.id) {
+                  <option [value]="category.id">{{ category.name }}</option>
+                }
+                @if (unavailableCategoryName(selectedCategoryId); as name) {
+                  <option [value]="selectedCategoryId" disabled>{{ name }}</option>
+                }
+              </select>
+            </label>
+          }
           @if (snapshot?.visibilityMode === 'GROUP') {
             <label
               >Review-Gruppe
@@ -115,8 +130,13 @@
                     >
                       {{
                         repliesExpanded(thread.id)
-                          ? 'Antworten einklappen'
-                          : thread.replies.length + ' Antworten aufklappen'
+                          ? thread.replies.length === 1
+                            ? 'Antwort einklappen'
+                            : 'Antworten einklappen'
+                          : thread.replies.length +
+                            (thread.replies.length === 1
+                              ? ' Antwort aufklappen'
+                              : ' Antworten aufklappen')
                       }}
                     </button>
                   }
@@ -129,6 +149,27 @@
 
                 @if (replyingTo === thread.id) {
                   <div class="reply-form">
+                    @if (snapshot?.categories?.length || replyCategoryId(thread.id)) {
+                      <label
+                        >Kategorie
+                        <select
+                          aria-label="Kategorie für Antwort"
+                          [ngModel]="replyCategoryId(thread.id)"
+                          (ngModelChange)="setReplyCategoryId(thread.id, $event)"
+                          [disabled]="busy"
+                        >
+                          <option value="">Ohne Kategorie</option>
+                          @for (category of availableCategories; track category.id) {
+                            <option [value]="category.id">{{ category.name }}</option>
+                          }
+                          @if (unavailableCategoryName(replyCategoryId(thread.id)); as name) {
+                            <option [value]="replyCategoryId(thread.id)" disabled>
+                              {{ name }}
+                            </option>
+                          }
+                        </select>
+                      </label>
+                    }
                     <textarea
                       rows="2"
                       maxlength="10000"
@@ -201,6 +242,26 @@
       <p class="comment-text">Dieser Kommentar wurde gelöscht.</p>
     } @else if (editingCommentId === comment.id) {
       <div class="edit-form">
+        @if (snapshot?.categories?.length || editCategoryId) {
+          <label
+            >Kategorie
+            <select
+              aria-label="Kategorie bearbeiten"
+              [(ngModel)]="editCategoryId"
+              [disabled]="busy"
+            >
+              <option value="">Ohne Kategorie</option>
+              @for (category of availableCategories; track category.id) {
+                <option [value]="category.id">{{ category.name }}</option>
+              }
+              @if (unavailableCategoryName(editCategoryId); as name) {
+                <option [value]="editCategoryId" [disabled]="editCategoryId !== comment.categoryId">
+                  {{ name }}
+                </option>
+              }
+            </select>
+          </label>
+        }
         <textarea rows="3" maxlength="10000" [(ngModel)]="editText"></textarea>
         <div>
           <button
@@ -217,6 +278,9 @@
         </div>
       </div>
     } @else {
+      @if (comment.categoryName) {
+        <span class="visibility-badge">Kategorie: {{ comment.categoryName }}</span>
+      }
       <p class="comment-text">{{ comment.commentText }}</p>
       @if (snapshot?.visibilityMode === 'SHARED' && !comment.legacyReadOnly) {
         <div class="comment-votes" role="group" aria-label="Kommentarbewertung">

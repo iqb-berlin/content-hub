@@ -55,6 +55,12 @@ textarea {
   resize: vertical;
 }
 
+select {
+  max-width: 100%;
+  padding: 4px;
+  margin-left: 8px;
+}
+
 .thread-list {
   display: grid;
   gap: 12px;

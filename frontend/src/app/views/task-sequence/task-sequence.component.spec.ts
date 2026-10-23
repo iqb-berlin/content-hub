@@ -34,7 +34,15 @@ vi.mock('../unit-view/unit-view.component', async () => {
     standalone: true,
     template:
       '<div class="unit-review-stub" [attr.data-unit-id]="unitId" [attr.data-booklet-id]="bookletId" [attr.data-review-mode]="reviewMode">{{ unitId }}</div>',
-    inputs: ['acpId', 'unitId', 'bookletId', 'embedded', 'reviewMode', 'featureConfigOverride'],
+    inputs: [
+      'acpId',
+      'unitId',
+      'bookletId',
+      'bookletName',
+      'embedded',
+      'reviewMode',
+      'featureConfigOverride',
+    ],
   })(UnitViewStub);
   return { UnitViewComponent: UnitViewStub };
 });
@@ -167,7 +175,7 @@ describe('Booklet navigation', () => {
       ) as NodeListOf<HTMLButtonElement>;
       expect(buttons.length).toBe(3);
       expect(buttons[1].textContent).toContain('Mathematik / Geometrie');
-      expect(buttons[1].textContent).toContain('(B)');
+      expect(buttons[1].textContent).toContain('Alias: B');
       buttons[1].click();
       fixture.detectChanges();
       expect(component.currentUnit?.occurrenceId).toBe('second');
@@ -181,6 +189,10 @@ describe('Booklet navigation', () => {
       expect(embeddedUnit.dataset['bookletId']).toBe('booklet-1');
       expect(embeddedUnit.dataset['reviewMode']).toBe(String(canReview === true));
       expect(component.showUnitListBtn).toBe(true);
+      expect(fixture.nativeElement.querySelector('.nav-info strong').textContent).toBe(
+        'Aufgabe 1 erneut (u1)',
+      );
+      expect(component.breadcrumbs.at(-1)?.label).toBe('Review-Booklet');
       expect(fixture.nativeElement.querySelector('.seq-header')).toBeNull();
       expect(fixture.nativeElement.textContent).not.toContain('Vollansicht');
       expect(fixture.nativeElement.textContent).toContain('Vollbild');
@@ -207,6 +219,13 @@ describe('Booklet navigation', () => {
       fixture.detectChanges();
       expect(component.currentUnit?.id).toBe('u2');
       expect(component.canGoNext).toBe(false);
+      expect(
+        (
+          fixture.nativeElement.querySelector(
+            '.sequence-navigation button:last-child',
+          ) as HTMLButtonElement
+        ).disabled,
+      ).toBe(true);
       expect(
         (fixture.nativeElement.querySelector('.unit-review-stub') as HTMLElement).dataset['unitId'],
       ).toBe('u2');
@@ -301,10 +320,10 @@ describe('Booklet navigation', () => {
     const bookletButton = fixture.nativeElement.querySelector(
       'button[aria-controls="review-booklet-list"]',
     ) as HTMLButtonElement;
-    expect(bookletButton.textContent).toContain('booklet-1');
+    expect(bookletButton.textContent).toContain('Erstes Testheft');
     expect(bookletButton.textContent).toContain('1/2');
     expect(bookletButton.getAttribute('aria-label')).toContain(
-      'Testheft wechseln, aktuell booklet-1',
+      'Testheft wechseln, aktuell Erstes Testheft',
     );
     bookletButton.click();
     fixture.detectChanges();
@@ -346,6 +365,6 @@ describe('Booklet navigation', () => {
     expect(component.currentIndex).toBe(0);
     expect(component.currentUnit?.id).toBe('u3');
     expect(component.currentBookletPosition).toBe(2);
-    expect(component.breadcrumbs.at(-1)?.label).toBe('booklet-2');
+    expect(component.breadcrumbs.at(-1)?.label).toBe('Zweites Testheft');
   });
 });

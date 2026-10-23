@@ -254,6 +254,22 @@ describe('AccessConfigComponent', () => {
     expect(component.featureConfig.showUnitListOnStartPage).toBe(false);
   });
 
+  it('defaults Studio comments to off and persists explicit activation and deactivation', () => {
+    const component = new AccessConfigComponent(route as any, api as any);
+    component.loadConfig();
+    expect(component.featureConfig.showStudioItemComments).toBe(false);
+    for (const enabled of [true, false]) {
+      component.featureConfig.showStudioItemComments = enabled;
+      component.saveFeatures();
+      expect(api.updateAccessConfig).toHaveBeenLastCalledWith(
+        '',
+        expect.objectContaining({
+          featureConfig: expect.objectContaining({ showStudioItemComments: enabled }),
+        }),
+      );
+    }
+  });
+
   it('saves access and features together and clears the dirty state after success', () => {
     const component = new AccessConfigComponent(route as any, api as any);
     component.loadConfig();

@@ -183,6 +183,27 @@ describe('Unit review comment drafts', () => {
     );
   });
 
+  it('uses the canonical task label and singular reply text in the real review thread', () => {
+    api.getViewUnit.mockReturnValue(of({ id: 'U', name: 'Zaubern', items: [], dependencies: [] }));
+    fixture.componentInstance['loadUnit']();
+    const child = thread()!;
+    child.snapshot!.comments = [root, { ...root, id: 'reply', parentCommentId: 'root' }] as any;
+    detect();
+    expect(fixture.nativeElement.querySelector('h1').textContent).toBe('Zaubern (U)');
+    expect(fixture.nativeElement.querySelector('.comment-panel-header strong').textContent).toBe(
+      'Kommentare zur Aufgabe Zaubern (U)',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('Bewertungen sind nur');
+    const toggle = fixture.nativeElement.querySelector(
+      '.thread-actions .link-button',
+    ) as HTMLButtonElement;
+    expect(toggle.textContent?.trim()).toBe('1 Antwort aufklappen');
+    toggle.click();
+    detect();
+    expect(toggle.textContent?.trim()).toBe('Antwort einklappen');
+    expect(fixture.nativeElement.querySelectorAll('.reply-card')).toHaveLength(1);
+  });
+
   it('keeps item, unit and booklet drafts separate and restores the selected item on return', () => {
     enableItemComments();
     select('.comment-scope-select select', 'item');

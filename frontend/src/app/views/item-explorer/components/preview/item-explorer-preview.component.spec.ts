@@ -1,12 +1,22 @@
-import { Component, ElementRef, inject, NO_ERRORS_SCHEMA } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  inject,
+  NO_ERRORS_SCHEMA,
+  provideZonelessChangeDetection,
+  ɵresolveComponentResources,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
-import { ItemExplorerFacade } from '../../item-explorer.facade';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ItemExplorerPreviewComponent } from './item-explorer-preview.component';
+import { ItemExplorerFacade } from '../../item-explorer.facade';
+import { ItemCommentThreadComponent } from '../../../comment-thread/item-comment-thread.component';
+import { ApiService } from '../../../../core/services/api.service';
 import template from './item-explorer-preview.component.html?raw';
+import commentThreadTemplate from '../../../comment-thread/item-comment-thread.component.html?raw';
 
 @Component({
   standalone: true,
@@ -105,6 +115,56 @@ describe('ItemExplorerPreviewComponent', () => {
       }
     },
   );
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('shows Studio comments only for the selected item when the ACP enables them', async () => {
+    const comments = [{ id: 1, body: 'Studio hint for item 1', hidden: false }];
+    const item = { itemId: 'i1', unitId: 'u1', uuid: 'a', studioComments: comments };
+    const vm = {
+      selectedItem: item,
+      filteredItems: [item],
+      showStudioItemComments: false,
+      isItemExcluded: () => false,
+      updateItemCommentCount: vi.fn(),
+    };
+    const feature = {
+      previewViewModel: vm,
+      registerPlayerDom: vi.fn(),
+      unregisterPlayerDom: vi.fn(),
+      playerFrameChanged: vi.fn(),
+    };
+    await ɵresolveComponentResources(async (url: string) => {
+      if (url.endsWith('item-explorer-preview.component.html')) return template;
+      if (url.endsWith('item-comment-thread.component.html')) return commentThreadTemplate;
+      if (url.endsWith('.css')) return '';
+      throw new Error(`Unexpected component resource: ${url}`);
+    });
+    (ItemCommentThreadComponent as any).ctorParameters = () => [{ type: ApiService }];
+    await TestBed.configureTestingModule({
+      imports: [ItemExplorerPreviewComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ItemExplorerFacade, useValue: feature },
+        { provide: ApiService, useValue: {} },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ItemExplorerPreviewComponent);
+    const root: HTMLElement = fixture.nativeElement;
+    fixture.detectChanges();
+    expect(root.querySelector('[aria-label="Studio-Kommentare"]')).toBeNull();
+
+    vm.showStudioItemComments = true;
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    expect(root.querySelector('[aria-label="Studio-Kommentare"]')?.textContent).toContain(
+      'Studio hint for item 1',
+    );
+    vm.selectedItem = { ...item, itemId: 'i2', uuid: 'b', studioComments: [] };
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    expect(root.querySelector('[aria-label="Studio-Kommentare"]')).toBeNull();
+  });
 
   it('exposes metadata and exclusion state with the matching semantics', () => {
     expect(template.match(/class="btn btn-outline btn-sm btn-state"/g)).toHaveLength(4);

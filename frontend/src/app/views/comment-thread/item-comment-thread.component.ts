@@ -13,6 +13,7 @@ import { Subject, Subscription, takeUntil, timeout } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { Comment, CommentThreadSnapshot, ReviewCommentTarget } from '../../core/models/api.models';
 import { CommentThreadDrafts } from './comment-thread-drafts';
+import { unitLabel } from '../../shared/unit-label';
 
 interface CommentThreadGroup {
   id: string;
@@ -31,7 +32,9 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   @Input() acpId = '';
   @Input() targetType: ReviewCommentTarget['targetType'] = 'ITEM';
   @Input() bookletId = '';
+  @Input() bookletName = '';
   @Input() unitId = '';
+  @Input() unitName = '';
   @Input() itemId = '';
   @Input() enabled = false;
   @Input() refreshToken = 0;
@@ -109,6 +112,41 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   set selectedGroupId(value: string) {
     this.drafts.selectedGroups.set(this.targetKey, value);
   }
+  get selectedCategoryId(): string {
+    return this.drafts.selectedCategories.get(this.targetKey) || '';
+  }
+
+  set selectedCategoryId(value: string) {
+    this.drafts.selectedCategories.set(this.targetKey, value);
+  }
+
+  get editCategoryId(): string {
+    return this.drafts.edits.get(this.targetKey)?.categoryId || '';
+  }
+
+  set editCategoryId(value: string) {
+    const edit = this.drafts.edits.get(this.targetKey);
+    if (edit) edit.categoryId = value;
+  }
+
+  get availableCategories() {
+    return (this.snapshot?.categories || []).filter((category) => !category.archived);
+  }
+
+  unavailableCategoryName(id: string): string {
+    if (!id || this.availableCategories.some((category) => category.id === id)) return '';
+    const category = this.snapshot?.categories?.find((entry) => entry.id === id);
+    return category ? `${category.name} (archiviert)` : 'Kategorie nicht mehr verfügbar';
+  }
+
+  replyCategoryId(rootId: string): string {
+    return this.drafts.replyCategories.get(this.replyDraftKey(rootId)) || '';
+  }
+
+  setReplyCategoryId(rootId: string, value: string): void {
+    this.drafts.replyCategories.set(this.replyDraftKey(rootId), value);
+  }
+
   private accessDenied = false;
   private readonly poll = setInterval(() => {
     if (this.hasTarget && !this.loading && !this.busy) this.loadThread(true);
@@ -168,15 +206,16 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   }
 
   get contextLabel(): string {
-    if (this.targetType === 'BOOKLET') return `Testheft ${this.bookletId}`;
-    if (this.targetType === 'UNIT') return `Unit ${this.unitId}`;
+    if (this.targetType === 'BOOKLET') return `Testheft ${this.bookletName || this.bookletId}`;
+    if (this.targetType === 'UNIT')
+      return `Aufgabe ${unitLabel({ id: this.unitId, name: this.unitName })}`;
     if (this.targetType === 'CODING') return `Kodierung ${this.unitId} · ${this.itemId}`;
     return `Item ${this.unitId} · ${this.itemId}`;
   }
 
   get commentHeading(): string {
-    if (this.targetType === 'BOOKLET') return `Kommentare zum Testheft ${this.bookletId}`;
-    if (this.targetType === 'UNIT') return `Kommentare zur Unit ${this.unitId}`;
+    if (this.targetType === 'BOOKLET') return `Kommentare zum ${this.contextLabel}`;
+    if (this.targetType === 'UNIT') return `Kommentare zur ${this.contextLabel}`;
     if (this.targetType === 'CODING') {
       return `Kommentare zur Kodierung ${this.unitId} · ${this.itemId}`;
     }
@@ -189,8 +228,8 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
 
   get newCommentPlaceholder(): string {
     if (this.targetType === 'ITEM') return 'Kommentar zu diesem Item …';
-    if (this.targetType === 'BOOKLET') return `Kommentar zum Testheft ${this.bookletId} …`;
-    if (this.targetType === 'UNIT') return `Kommentar zur Unit ${this.unitId} …`;
+    if (this.targetType === 'BOOKLET') return `Kommentar zum ${this.contextLabel} …`;
+    if (this.targetType === 'UNIT') return `Kommentar zur ${this.contextLabel} …`;
     return `Kommentar zur Kodierung ${this.unitId} · ${this.itemId} …`;
   }
 
@@ -329,6 +368,13 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
       this.error = 'Bitte die Review-Gruppe für diesen Entwurf wählen.';
       return;
     }
+    const categoryId = parentCommentId
+      ? this.replyCategoryId(parentCommentId)
+      : this.selectedCategoryId;
+    if (categoryId && !this.availableCategories.some((category) => category.id === categoryId)) {
+      this.error = 'Bitte eine verfügbare Kategorie oder „Ohne Kategorie“ wählen.';
+      return;
+    }
     const targetKey = this.targetKey;
     const acpId = this.acpId;
     const replyDraftKey = parentCommentId ? this.replyDraftKey(parentCommentId, targetKey) : '';
@@ -337,6 +383,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     this.busy = true;
     const input = {
       commentText: text.trim(),
+      ...(categoryId ? { categoryId } : {}),
       ...(!parentCommentId && this.snapshot?.visibilityMode === 'GROUP' && this.selectedGroupId
         ? { groupId: this.selectedGroupId }
         : {}),
@@ -354,10 +401,12 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
       next: () => {
         if (parentCommentId) {
           this.replyDrafts.delete(replyDraftKey);
+          this.drafts.replyCategories.delete(replyDraftKey);
           this.expandedThreadsFor(targetKey).add(parentCommentId);
           this.drafts.replyTargets.delete(targetKey);
         } else {
           this.newDrafts.delete(targetKey);
+          this.drafts.selectedCategories.delete(targetKey);
         }
         this.busy = false;
         if (targetKey === this.targetKey) this.loadThread();
@@ -384,7 +433,11 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   }
 
   startEdit(comment: Comment): void {
-    this.drafts.edits.set(this.targetKey, { comment: { ...comment }, text: comment.commentText });
+    this.drafts.edits.set(this.targetKey, {
+      comment: { ...comment },
+      text: comment.commentText,
+      categoryId: comment.categoryId || '',
+    });
   }
 
   cancelEdit(): void {
@@ -401,6 +454,9 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     this.api
       .updateItemComment(this.acpId, comment.id, {
         commentText: this.editText.trim(),
+        ...(this.editCategoryId !== (this.editingComment?.categoryId || '')
+          ? { categoryId: this.editCategoryId || null }
+          : {}),
         version,
       })
       .pipe(takeUntil(this.destroy$), takeUntil(this.sessionChanged$))

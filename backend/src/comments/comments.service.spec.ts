@@ -201,8 +201,7 @@ describe("CommentsService", () => {
 
   it("exports comments with proper author fallback chains", async () => {
     const date = new Date("2026-01-01T00:00:00.000Z");
-    const spyByAcp = jest
-      .spyOn(service, "findByAcp")
+    commentRepository.find
       .mockResolvedValueOnce([
         {
           targetType: CommentTargetType.ITEM,
@@ -211,7 +210,16 @@ describe("CommentsService", () => {
           createdAt: date,
           user: { displayName: "Display Name", username: "user-a" },
           credentialUsername: "credential-a",
-        } as any,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          targetType: CommentTargetType.UNIT,
+          targetId: "unit-1",
+          commentText: "user text",
+          createdAt: date,
+          user: { username: "user-b" },
+        },
       ])
       .mockResolvedValueOnce([
         {
@@ -221,18 +229,8 @@ describe("CommentsService", () => {
           createdAt: date,
           user: null,
           credentialUsername: null,
-        } as any,
+        },
       ]);
-
-    const spyByUser = jest.spyOn(service, "findByUser").mockResolvedValue([
-      {
-        targetType: CommentTargetType.UNIT,
-        targetId: "unit-1",
-        commentText: "user text",
-        createdAt: date,
-        user: { username: "user-b" },
-      } as any,
-    ]);
 
     const all = await service.exportComments("acp-1");
     const user = await service.exportComments("acp-1", "u-1");
@@ -242,13 +240,57 @@ describe("CommentsService", () => {
     expect(user[0].author).toBe("user-b");
     expect(unknownAuthor[0].author).toBe("Unknown");
 
-    expect(spyByAcp).toHaveBeenCalledTimes(2);
-    expect(spyByUser).toHaveBeenCalledWith("acp-1", "u-1");
+    expect(commentRepository.find).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({ acpId: "acp-1", userId: "u-1" }),
+      }),
+    );
   });
+
+  it.each([
+    [
+      { displayName: "Person Name", username: "person@example.org" },
+      "Person Name",
+    ],
+    [{ displayName: "person@example.org", username: "person" }, "person"],
+    [null, "Unknown"],
+  ])(
+    "replaces legacy email labels with a current name in threads and exports",
+    async (user, expected) => {
+      accessConfigRepository.findOne.mockResolvedValue({
+        featureConfig: {
+          enableReview: true,
+          enableCommenting: true,
+          commentTargets: ["ITEM"],
+          commentVisibilityMode: "PRIVATE",
+        },
+      });
+      const comment = {
+        id: "legacy-email",
+        userId: "user-1",
+        targetType: CommentTargetType.ITEM,
+        targetId: "unit-1_item-1",
+        unitId: "unit-1",
+        itemId: "item-1",
+        authorLabel: "person@example.org",
+        commentText: "Existing comment",
+        createdAt: new Date("2026-01-01T00:00:00Z"),
+        user,
+      } as any;
+      commentRepository.find.mockResolvedValue([comment]);
+      const actor = { userId: "user-1", authorLabel: "ME", isManager: false };
+      expect(
+        (await service.getItemThread("acp-1", "unit-1", "item-1", actor))
+          .comments[0].authorLabel,
+      ).toBe(expected);
+      expect((await service.exportComments("acp-1"))[0].author).toBe(expected);
+    },
+  );
 
   it("exports comments by credential and prefers credential author", async () => {
     const date = new Date("2026-01-01T00:00:00.000Z");
-    jest.spyOn(service, "findByCredential").mockResolvedValue([
+    commentRepository.find.mockResolvedValue([
       {
         targetType: CommentTargetType.ITEM,
         targetId: "item-1",

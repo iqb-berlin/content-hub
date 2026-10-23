@@ -459,6 +459,7 @@ export interface ItemExplorerTableColumnLayout {
 }
 
 export interface FeatureConfig {
+  showStudioItemComments?: boolean;
   // Preserve extension keys while requiring callers to narrow unknown values.
   [key: string]: unknown;
   allowIndexDownload?: boolean;
@@ -466,6 +467,7 @@ export interface FeatureConfig {
   allowFileDownload?: boolean;
   enableUnitView?: boolean;
   showMetadata?: boolean;
+  hideReviewDeveloperNames?: boolean;
   showRichText?: boolean;
   showCodingScheme?: boolean;
   enableUnitListNavigation?: boolean;
@@ -506,11 +508,26 @@ export interface FeatureConfig {
 
 export type CommentTargetType = 'BOOKLET' | 'UNIT' | 'ITEM' | 'CODING' | 'TASK_SEQUENCE';
 
+export interface StudioItemComment {
+  id: number;
+  body: string;
+  userName?: string;
+  createdAt?: string;
+  parentId?: number;
+  hidden: boolean;
+}
+
 export interface ReviewCommentTarget {
   targetType: Exclude<CommentTargetType, 'TASK_SEQUENCE'>;
   bookletId?: string;
   unitId?: string;
   itemId?: string;
+}
+
+export interface CommentCategory {
+  id: string;
+  name: string;
+  archived: boolean;
 }
 
 export interface Comment {
@@ -528,6 +545,8 @@ export interface Comment {
   parentVisible?: boolean;
   groupId?: string | null;
   groupName?: string | null;
+  categoryId?: string | null;
+  categoryName?: string | null;
   commentText: string;
   authorLabel?: string;
   createdAt: string;
@@ -548,6 +567,7 @@ export interface CommentThreadSnapshot {
   visibilityMode: 'PRIVATE' | 'SHARED' | 'GROUP';
   defaultGroupId?: string | null;
   groups?: { id: string; name: string; archived: boolean }[];
+  categories?: CommentCategory[];
   comments: Comment[];
 }
 

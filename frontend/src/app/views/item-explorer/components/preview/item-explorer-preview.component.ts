@@ -7,11 +7,18 @@ import { ItemExplorerPreviewViewModel } from '../../item-explorer.view-models';
 import { ItemExplorerPlayerDomPort } from '../../item-explorer.dom-ports';
 import { presentPlayerPreviewTriggers } from '../../../../core/utils/player-preview-triggers';
 import { ItemCommentThreadComponent } from '../../../comment-thread/item-comment-thread.component';
+import { StudioItemCommentsComponent } from '../studio-comments/studio-item-comments.component';
 
 @Component({
   selector: 'app-item-explorer-preview',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ItemCommentThreadComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ItemCommentThreadComponent,
+    StudioItemCommentsComponent,
+  ],
   templateUrl: './item-explorer-preview.component.html',
   styleUrl: './item-explorer-preview.component.css',
 })

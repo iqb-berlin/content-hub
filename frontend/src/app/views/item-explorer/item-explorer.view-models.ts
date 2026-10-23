@@ -246,6 +246,7 @@ export type ItemExplorerPreviewViewModel = ReadonlyViewModelSlice<
     | 'showPreviewStartPageSelector'
     | 'setPreviewStartPage'
     | 'setPreviewStateValue'
+    | 'showStudioItemComments'
     | 'applyCustomPreviewTarget'
     | 'acpId'
     | 'canEditExplorer'

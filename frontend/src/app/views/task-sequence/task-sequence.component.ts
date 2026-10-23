@@ -23,6 +23,7 @@ import { ApiService } from '../../core/services/api.service';
 import { FeatureConfig, TaskSequence } from '../../core/models/api.models';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/breadcrumb.component';
 import { sequenceLabel } from '../../shared/sequence-label';
+import { unitLabel } from '../../shared/unit-label';
 import { ItemCommentThreadComponent } from '../comment-thread/item-comment-thread.component';
 import { UnitViewComponent } from '../unit-view/unit-view.component';
 
@@ -49,7 +50,7 @@ interface ReviewBookletOption {
                 (click)="downloadSequence()"
                 [disabled]="!hasUnits"
               >
-                ⬇️ Download
+                ⬇️ Download Aufgabenfolge
               </button>
             }
           </div>
@@ -79,7 +80,9 @@ interface ReviewBookletOption {
             @if (hasUnits && currentUnit) {
               <span class="nav-info">
                 Aufgabe {{ currentIndex + 1 }} / {{ sequence.units.length }}:
-                <strong>{{ currentUnit.name || currentUnit.id }}</strong>
+                <strong>{{
+                  isBooklet ? unitLabel(currentUnit) : currentUnit.name || currentUnit.id
+                }}</strong>
                 @if (currentUnit.blockPath?.length) {
                   <small> · {{ currentUnit.blockPath?.join(' / ') }}</small>
                 }
@@ -94,12 +97,12 @@ interface ReviewBookletOption {
           <div class="workspace-actions">
             @if (isBooklet && reviewBooklets.length > 1) {
               <button
-                class="btn btn-outline btn-sm btn-state"
+                class="btn btn-outline btn-sm btn-state booklet-switcher"
                 (click)="toggleBookletList()"
                 [attr.aria-expanded]="bookletListOpen"
                 [attr.aria-label]="
                   'Testheft wechseln, aktuell ' +
-                  sequenceId +
+                  bookletName +
                   ', ' +
                   currentBookletPosition +
                   ' von ' +
@@ -109,7 +112,7 @@ interface ReviewBookletOption {
                 title="Testheft wechseln"
               >
                 <span aria-hidden="true">📚</span>
-                <code class="selected-booklet-id">{{ sequenceId }}</code>
+                <span class="selected-booklet-id">{{ bookletName }}</span>
                 <span class="selection-position"
                   >· {{ currentBookletPosition || '–' }}/{{ reviewBooklets.length }}</span
                 >
@@ -122,7 +125,7 @@ interface ReviewBookletOption {
                 (click)="downloadSequence()"
                 [disabled]="!hasUnits"
               >
-                ⬇️ Download
+                ⬇️ Download Testheft
               </button>
             }
             @if (showUnitListBtn) {
@@ -148,6 +151,7 @@ interface ReviewBookletOption {
               [acpId]="acpId"
               [unitId]="currentUnit.id"
               [bookletId]="sequenceId"
+              [bookletName]="bookletName"
               [embedded]="true"
               [reviewMode]="isBooklet && canReview"
               [featureConfigOverride]="featureConfig"
@@ -183,9 +187,9 @@ interface ReviewBookletOption {
                     @if (unit.blockPath?.length) {
                       <small>{{ unit.blockPath?.join(' / ') }} · </small>
                     }
-                    {{ unit.name || unit.id }}
+                    {{ isBooklet ? unitLabel(unit) : unit.name || unit.id }}
                     @if (unit.alias) {
-                      ({{ unit.alias }})
+                      <small> · Alias: {{ unit.alias }}</small>
                     }
                   </span>
                 </button>
@@ -297,15 +301,33 @@ interface ReviewBookletOption {
         flex: 1;
         justify-content: center;
       }
+      .workspace-actions {
+        min-width: 0;
+        flex-wrap: wrap;
+      }
+      .booklet-switcher {
+        min-width: 0;
+        max-width: 100%;
+      }
       .nav-info {
         font-size: 0.95rem;
         color: var(--color-text-secondary);
+      }
+      .sequence-navigation .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: var(--color-border);
+        border-color: var(--color-border);
+        color: var(--color-text-secondary);
+        box-shadow: none;
       }
       .selection-position {
         color: var(--color-text-secondary);
         font-variant-numeric: tabular-nums;
       }
       .selected-booklet-id {
+        min-width: 0;
+        overflow-wrap: anywhere;
         color: inherit;
         font-family: inherit;
         font-size: inherit;
@@ -485,6 +507,9 @@ interface ReviewBookletOption {
           width: 100%;
           justify-content: center;
         }
+        .booklet-switcher {
+          flex-basis: 100%;
+        }
       }
     `,
   ],
@@ -500,6 +525,11 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   currentIndex = 0;
   breadcrumbs: BreadcrumbItem[] = [];
   reviewBooklets: ReviewBookletOption[] = [];
+  readonly unitLabel = unitLabel;
+
+  get bookletName(): string {
+    return this.sequence ? sequenceLabel(this.sequence) || 'Testheft' : 'Testheft';
+  }
 
   unitListOpen = false;
   bookletListOpen = false;
@@ -596,7 +626,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
           { label: 'Assessment Content Pool', route: ['/'] },
           { label: 'ACP', route: ['/view', this.acpId] },
           {
-            label: this.isBooklet ? this.sequenceId : this.sequence.name || 'Aufgabenfolge',
+            label: this.isBooklet ? this.bookletName : this.sequence.name || 'Aufgabenfolge',
           },
         ];
       });

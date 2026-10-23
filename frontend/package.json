@@ -29,7 +29,7 @@
     "@iqbspecs/coding-scheme": "^3.4.1",
     "@iqbspecs/variable-info": "^1.3.0",
     "angular-oauth2-oidc": "^20.0.2",
-    "dompurify": "^3.4.13",
+    "dompurify": "^3.4.17",
     "marked": "^18.0.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
