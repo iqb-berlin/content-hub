@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 
 interface InitScriptTarget {
-  addInitScript(script: (accessToken: string) => void, token: string): Promise<void>;
+  addInitScript(script: (accessToken: string) => void, token: string): Promise<unknown>;
 }
 
 function encode(value: object): string {

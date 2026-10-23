@@ -127,6 +127,10 @@ existing application servers are never reused. Trace, screenshot, and video diag
 only for failed tests. CI supplies its own isolated PostgreSQL service and performs browser
 installation automatically.
 
+The permanent [synthetic ASPECT pool](synthetic-aspect-pool.md) adds real-player
+Booklet review checks in Chromium, Firefox and WebKit and produces a portable
+screenshot/video gallery on every run and in CI.
+
 ## What to Test for Common Change Types
 
 ### Authentication or access changes

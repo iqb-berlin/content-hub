@@ -43,5 +43,8 @@ tmp/
 __pycache__/
 *.pyc
 
+# Reproducible browser review artifacts
+frontend/synthetic-review-report/
+
 # Local credential export
 non_iqb_login_password.csv

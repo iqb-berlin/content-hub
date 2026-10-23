@@ -1,0 +1,328 @@
+{
+  "id": "u6",
+  "name": "Klappliste und Schaltflächen",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "version": "4.6.0",
+    "stateVariables": [],
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "heading-choice",
+                "alias": "heading-choice",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 60,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#243b4d",
+                  "fontSize": 18,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 150
+                },
+                "type": "text",
+                "text": "<p style=\"color:#54748a;font-size:14px\">WEITERE ANTWORTFORMATE · SYNTHETISCHE DEMO</p><h2>Ein Ziel wählen</h2><p>Wähle jeweils das Ziel des Ausflugs.</p>"
+              },
+              {
+                "id": "dropdown-id",
+                "alias": "LISTE",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 240,
+                  "height": 83,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "label": "Ziel auswählen",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "dropdown",
+                "options": [
+                  {
+                    "id": "list0",
+                    "type": "text",
+                    "text": "Bahnhof"
+                  },
+                  {
+                    "id": "list1",
+                    "type": "text",
+                    "text": "See"
+                  },
+                  {
+                    "id": "list2",
+                    "type": "text",
+                    "text": "Schule"
+                  }
+                ],
+                "allowUnset": false
+              },
+              {
+                "id": "toggle-id",
+                "alias": "SCHALTER",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 3,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 30,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 100,
+                  "selectionColor": "#c9e0e0"
+                },
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "toggle-button",
+                "options": [
+                  {
+                    "id": "toggle0",
+                    "type": "text",
+                    "text": "Bahnhof"
+                  },
+                  {
+                    "id": "toggle1",
+                    "type": "text",
+                    "text": "See"
+                  },
+                  {
+                    "id": "toggle2",
+                    "type": "text",
+                    "text": "Schule"
+                  }
+                ],
+                "strikeOtherOptions": false,
+                "strikeSelectedOption": false,
+                "verticalOrientation": false
+              }
+            ],
+            "height": 400,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": "auto",
+                "unit": ""
+              },
+              {
+                "value": "auto",
+                "unit": ""
+              },
+              {
+                "value": "auto",
+                "unit": ""
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 24,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50
+      }
+    ],
+    "enableSectionNumbering": false,
+    "sectionNumberingPosition": "left",
+    "showUnitNavNext": false
+  },
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "coding-LISTE",
+        "alias": "LISTE",
+        "label": "Klappliste",
+        "sourceType": "BASE",
+        "manualInstruction": "",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Richtige Antwort",
+            "ruleSets": [
+              {
+                "rules": [
+                  {
+                    "method": "MATCH",
+                    "parameters": [
+                      "2"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 0,
+            "type": "RESIDUAL_AUTO",
+            "score": 0,
+            "ruleSets": []
+          }
+        ]
+      },
+      {
+        "id": "coding-SCHALTER",
+        "alias": "SCHALTER",
+        "label": "Schaltfläche",
+        "sourceType": "BASE",
+        "manualInstruction": "",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Richtige Antwort",
+            "ruleSets": [
+              {
+                "rules": [
+                  {
+                    "method": "MATCH",
+                    "parameters": [
+                      "2"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 0,
+            "type": "RESIDUAL_AUTO",
+            "score": 0,
+            "ruleSets": []
+          }
+        ]
+      }
+    ]
+  }
+}

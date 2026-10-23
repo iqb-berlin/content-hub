@@ -21,7 +21,7 @@ export default defineConfig({
   workers: 1,
   timeout: 60_000,
   expect: { timeout: 10_000 },
-  reporter: [['html', { open: 'never' }], ['list']],
+  reporter: [['html', { open: 'never' }], ['list'], ['./e2e/synthetic-media-reporter.ts']],
   use: {
     baseURL: `http://127.0.0.1:${frontendPort}`,
     trace: 'retain-on-failure',
@@ -36,13 +36,13 @@ export default defineConfig({
     {
       name: 'firefox',
       testMatch:
-        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression|review-navigation-metadata)\.spec\.ts/,
+        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression|review-navigation-metadata|synthetic-aspect(?:-media)?)\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
       testMatch:
-        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression|review-navigation-metadata)\.spec\.ts/,
+        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression|review-navigation-metadata|synthetic-aspect(?:-media)?)\.spec\.ts/,
       use: { ...devices['Desktop Safari'] },
     },
   ],

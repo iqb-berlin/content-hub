@@ -4,6 +4,7 @@ import { join } from "path";
 import { DataSource } from "typeorm";
 import * as bcrypt from "bcryptjs";
 import { AppModule } from "../../src/app.module";
+import { seedSyntheticPool } from "./seed-synthetic-pool";
 import {
   AccessModel,
   Acp,
@@ -802,6 +803,8 @@ async function seed(): Promise<void> {
         }),
       );
     }
+
+    await seedSyntheticPool(dataSource, fixtureDirectory, manager.id);
 
     process.stdout.write(
       JSON.stringify({
