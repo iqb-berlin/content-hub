@@ -524,6 +524,12 @@ export interface ReviewCommentTarget {
   itemId?: string;
 }
 
+export interface CommentCategory {
+  id: string;
+  name: string;
+  archived: boolean;
+}
+
 export interface Comment {
   id: string;
   acpId: string;
@@ -539,6 +545,8 @@ export interface Comment {
   parentVisible?: boolean;
   groupId?: string | null;
   groupName?: string | null;
+  categoryId?: string | null;
+  categoryName?: string | null;
   commentText: string;
   authorLabel?: string;
   createdAt: string;
@@ -559,6 +567,7 @@ export interface CommentThreadSnapshot {
   visibilityMode: 'PRIVATE' | 'SHARED' | 'GROUP';
   defaultGroupId?: string | null;
   groups?: { id: string; name: string; archived: boolean }[];
+  categories?: CommentCategory[];
   comments: Comment[];
 }
 

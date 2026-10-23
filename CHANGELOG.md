@@ -8,7 +8,8 @@ All notable changes to ContentPool are documented in this file. Releases use
 
 ### Changes
 
-- None.
+- Add configurable ACP comment categories with optional assignments, archival,
+  category filters and CSV/XLSX export columns. Refs #239.
 
 ### Breaking changes
 
@@ -20,11 +21,13 @@ All notable changes to ContentPool are documented in this file. Releases use
 
 ### Database migrations
 
-- Classification: `none`
+- Classification: `additive`
+- `1789700000000-CommentCategories` adds categories and optional comment assignments.
 
 ### Rollback
 
-- No special instructions.
+- The category migration refuses rollback while configured categories or
+  assignments exist, preserving review data.
 
 ## [0.6.0] - 2026-09-20
 

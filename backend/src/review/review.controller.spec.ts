@@ -61,6 +61,7 @@ describe("ReviewController stale memberships", () => {
         {},
       );
       expect(result).toEqual({
+        categories: [],
         enableReview: false,
         hideReviewDeveloperNames: false,
         visibilityMode: "GROUP",

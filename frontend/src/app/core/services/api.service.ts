@@ -551,20 +551,26 @@ export class ApiService {
       commentText: string;
       parentCommentId?: string;
       groupId?: string;
+      categoryId?: string | null;
     },
   ): Observable<Comment> {
     return this.http.post<Comment>(`${this.API}/acp/${acpId}/review/comments`, data);
   }
   createReviewComment(
     acpId: string,
-    data: ReviewCommentTarget & { commentText: string; parentCommentId?: string; groupId?: string },
+    data: ReviewCommentTarget & {
+      commentText: string;
+      parentCommentId?: string;
+      groupId?: string;
+      categoryId?: string | null;
+    },
   ): Observable<Comment> {
     return this.http.post<Comment>(`${this.API}/acp/${acpId}/review/comments`, data);
   }
   updateItemComment(
     acpId: string,
     commentId: string,
-    data: { commentText: string; version: number },
+    data: { commentText: string; version: number; categoryId?: string | null },
   ): Observable<Comment> {
     return this.http.patch<Comment>(`${this.API}/acp/${acpId}/review/comments/${commentId}`, data);
   }

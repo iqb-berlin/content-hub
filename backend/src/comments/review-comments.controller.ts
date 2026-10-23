@@ -74,6 +74,11 @@ class CreateItemReviewCommentDto {
   @IsUUID()
   groupId?: string;
 
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string | null;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsUUID()
@@ -87,6 +92,11 @@ class VoteDto {
 }
 
 class UpdateReviewCommentDto {
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string | null;
+
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
@@ -276,6 +286,7 @@ export class ReviewCommentsController {
           commentText: dto.commentText,
           parentCommentId: dto.parentCommentId,
           groupId: dto.groupId,
+          categoryId: dto.categoryId,
         },
         this.reviewPolicy.resolveActor(req),
       );
@@ -288,6 +299,7 @@ export class ReviewCommentsController {
         commentText: dto.commentText,
         parentCommentId: dto.parentCommentId,
         groupId: dto.groupId,
+        categoryId: dto.categoryId,
       },
       this.reviewPolicy.resolveActor(req),
     );
@@ -339,6 +351,7 @@ export class ReviewCommentsController {
       dto.commentText,
       dto.version,
       this.reviewPolicy.resolveActor(req),
+      dto.categoryId,
     );
   }
 

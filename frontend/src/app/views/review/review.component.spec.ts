@@ -40,6 +40,53 @@ function setup() {
 }
 
 describe('Review configuration', () => {
+  it('restores category and group deletions together after a rejected save', () => {
+    const { component, api } = setup();
+    const category = { id: 'c', name: 'Fachlich', archived: false };
+    const group = { id: 'g', name: 'Group', archived: false, members: [] };
+    component.config!.categories = [category];
+    component.config!.groups = [group];
+    component.removeCategory(category);
+    component.groupToDelete = group;
+    component.confirmGroupDeletion();
+    api.configureReview.mockReturnValue(
+      throwError(() => ({ status: 400, error: { message: 'Kategorie wird verwendet' } })),
+    );
+    component.configure();
+    expect(api.configureReview).toHaveBeenCalledWith(
+      'acp',
+      expect.objectContaining({ deletedCategoryIds: ['c'] }),
+    );
+    expect(component.config!.categories).toEqual([category]);
+    expect(component.config!.groups).toEqual([group]);
+    expect(component.deletedCategoryIds).toEqual([]);
+    component.config!.categories![0].archived = true;
+    expect(component.config!.categories![0].id).toBe('c');
+    component.ngOnDestroy();
+  });
+
+  it('uses the category filter for display and exports, including uncategorized comments', () => {
+    const { component, api } = setup();
+    component.comments = [
+      { id: 'a', categoryId: 'c', categoryName: 'Fachlich', commentText: 'A' },
+      { id: 'b', categoryId: null, commentText: 'B' },
+    ];
+    component.categoryFilter = 'c';
+    expect(component.filteredComments.map((comment) => comment.id)).toEqual(['a']);
+    component.exportComments('csv');
+    expect(api.exportMyReviewCommentsCsv).toHaveBeenLastCalledWith('acp', { categoryId: 'c' });
+    component.categoryFilter = 'uncategorized';
+    expect(component.filteredComments.map((comment) => comment.id)).toEqual(['b']);
+    component.exportComments();
+    expect(api.exportVisibleReviewComments).toHaveBeenLastCalledWith('acp', {
+      categoryId: 'uncategorized',
+    });
+    component.resetFilters();
+    expect(component.filteredComments).toHaveLength(2);
+    expect(component.displayFilters).toEqual({});
+    component.ngOnDestroy();
+  });
+
   it('loads, saves and restores the developer-name visibility setting', () => {
     const { component, api } = setup();
     const config = { ...component.config!, hideReviewDeveloperNames: true };
