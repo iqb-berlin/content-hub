@@ -1,0 +1,74 @@
+name: Weekly Browser E2E
+
+on:
+  schedule:
+    - cron: '17 4 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-browser-e2e-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  browser-e2e:
+    name: Browser E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+        env:
+          POSTGRES_DB: contentpool_e2e
+          POSTGRES_USER: contentpool
+          POSTGRES_PASSWORD: contentpool_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U contentpool -d contentpool_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: contentpool
+      DB_PASSWORD: contentpool_dev
+      DB_DATABASE: contentpool_e2e
+      DB_SYNCHRONIZE: true
+      DB_RUN_MIGRATIONS: false
+      JWT_SECRET: ci-test-secret-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium firefox webkit
+        working-directory: frontend
+      - run: npm run e2e
+        working-directory: frontend
+        env:
+          BROWSER_E2E_SKIP_BROWSER_INSTALL: 'true'
+          BROWSER_E2E_USE_EXISTING_DATABASE: true
+          BROWSER_E2E_DATABASE_PORT: 5432
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-playwright-diagnostics
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 7

@@ -505,28 +505,30 @@ test('hides, persists, and restores the position column through column managemen
     await expect(positionHeader).toHaveCount(0);
     await expect(page.locator('tbody tr td.number-col')).toHaveCount(0);
     await page.reload();
+    await expect(page.locator('tbody tr')).toHaveCount(2);
+    await expect(page.getByRole('columnheader', { name: /^Item-ID/ })).toBeVisible();
     await expect(positionHeader).toHaveCount(0);
 
     const tableScroll = page.locator('.table-scroll');
     await tableScroll.evaluate((element) => {
       element.scrollLeft = element.scrollWidth;
     });
-    const leadingAlignment = await page.locator('table.explorer-table').evaluate((table) => {
-      const itemId = Array.from(
-        table.querySelectorAll<HTMLElement>('thead tr:first-child th'),
-      ).find((header) => header.textContent?.trim().startsWith('Item-ID'));
-      const selection = table.querySelector<HTMLElement>('thead th.collection-select-col');
-      const scroller = table.closest<HTMLElement>('.table-scroll');
-      if (!itemId || !scroller) throw new Error('Leading table cells are missing');
-      return {
-        itemIdLeft: itemId.getBoundingClientRect().left,
-        expectedLeft:
-          selection?.getBoundingClientRect().right ?? scroller.getBoundingClientRect().left,
-      };
-    });
-    expect(
-      Math.abs(leadingAlignment.itemIdLeft - leadingAlignment.expectedLeft),
-    ).toBeLessThanOrEqual(1);
+    await expect
+      .poll(async () =>
+        page.locator('table.explorer-table').evaluate((table) => {
+          const itemId = Array.from(
+            table.querySelectorAll<HTMLElement>('thead tr:first-child th'),
+          ).find((header) => header.textContent?.trim().startsWith('Item-ID'));
+          const selection = table.querySelector<HTMLElement>('thead th.collection-select-col');
+          const scroller = table.closest<HTMLElement>('.table-scroll');
+          if (!itemId || !scroller) throw new Error('Leading table cells are missing');
+          return Math.abs(
+            itemId.getBoundingClientRect().left -
+              (selection?.getBoundingClientRect().right ?? scroller.getBoundingClientRect().left),
+          );
+        }),
+      )
+      .toBeLessThanOrEqual(1);
 
     await page.getByRole('button', { name: /Spalten verwalten/ }).click();
     await expect(positionCheckbox).not.toBeChecked();

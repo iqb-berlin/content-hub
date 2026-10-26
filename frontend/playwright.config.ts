@@ -3,6 +3,14 @@ import { defineConfig, devices } from '@playwright/test';
 const backendPort = 3100;
 const frontendPort = 4300;
 const databaseName = process.env['DB_DATABASE'] || '';
+const crossBrowserSpecs = [
+  '**/item-explorer-sticky-visual.spec.ts',
+  '**/item-comment-refresh.spec.ts',
+  '**/item-explorer-interaction-regression.spec.ts',
+  '**/review-navigation-metadata.spec.ts',
+  '**/critical-journeys-cross-browser.spec.ts',
+  '**/item-explorer-reduced-view.spec.ts',
+];
 
 if (process.env['NODE_ENV'] !== 'test' || !databaseName.toLowerCase().includes('e2e')) {
   throw new Error('Run browser tests through `npm run e2e` to use the isolated E2E environment.');
@@ -35,14 +43,12 @@ export default defineConfig({
     },
     {
       name: 'firefox',
-      testMatch:
-        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression|review-navigation-metadata|item-explorer-reduced-view)\.spec\.ts/,
+      testMatch: crossBrowserSpecs,
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
-      testMatch:
-        /(?:item-explorer-sticky-visual|item-comment-refresh|item-explorer-interaction-regression|review-navigation-metadata|item-explorer-reduced-view)\.spec\.ts/,
+      testMatch: crossBrowserSpecs,
       use: { ...devices['Desktop Safari'] },
     },
   ],
