@@ -155,6 +155,32 @@ export interface FileUploadResponse {
   files: AcpFile[];
 }
 
+export interface UploadPreflightIssue {
+  severity: 'error' | 'warning' | 'info';
+  code: string;
+  message: string;
+  fileName?: string;
+  sourcePaths?: string[];
+}
+
+export interface UploadPreflightReport {
+  canUpload: boolean;
+  selectedFileCount: number;
+  expandedFileCount: number;
+  acceptedFileCount: number;
+  identicalDuplicates: Array<{
+    fileName: string;
+    keptSource: string;
+    ignoredSources: string[];
+  }>;
+  existingConflicts: Array<{
+    fileName: string;
+    sourcePath: string;
+    existingFileIds: string[];
+  }>;
+  issues: UploadPreflightIssue[];
+}
+
 export type FileProcessingJobStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 export type FileProcessingJobType = 'upload-process' | 'archive-download';

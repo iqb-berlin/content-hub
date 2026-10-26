@@ -8,6 +8,7 @@ import {
   FileProcessingJob,
   FilePreviewResponse,
   FileUploadResponse,
+  UploadPreflightReport,
   UploadValidationSummary,
   UnitFileValidationResult,
 } from '../../core/models/api.models';
@@ -155,6 +156,49 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
       <div class="alert alert-info">
         Konfliktprüfung: {{ lastConflictSummary.conflicts }} doppelte Datei(en) erkannt,
         {{ lastConflictSummary.replaced }} ersetzt, {{ lastConflictSummary.skipped }} übersprungen.
+      </div>
+    }
+
+    @if (lastPreflightReport) {
+      <div
+        class="alert"
+        [class.alert-success]="lastPreflightReport.canUpload"
+        [class.alert-danger]="!lastPreflightReport.canUpload"
+      >
+        <strong>Upload-Vorprüfung:</strong>
+        {{ lastPreflightReport.acceptedFileCount }} von
+        {{ lastPreflightReport.expandedFileCount }} entpackten Datei(en) werden übernommen.
+        @if (lastPreflightReport.identicalDuplicates.length) {
+          <div style="margin-top:6px">
+            Identische Dubletten wurden einmalig übernommen:
+            @for (duplicate of lastPreflightReport.identicalDuplicates; track duplicate.fileName) {
+              <div>
+                - {{ duplicate.fileName }}: {{ duplicate.keptSource }}; ignoriert:
+                {{ duplicate.ignoredSources.join(', ') }}
+              </div>
+            }
+          </div>
+        }
+        @if (lastPreflightReport.issues.length) {
+          <div style="margin-top:6px">
+            @for (issue of lastPreflightReport.issues; track preflightIssueTrack(issue, $index)) {
+              <div>
+                -
+                {{
+                  issue.severity === 'error'
+                    ? 'Fehler'
+                    : issue.severity === 'warning'
+                      ? 'Warnung'
+                      : 'Hinweis'
+                }}:
+                {{ issue.message }}
+                @if (issue.sourcePaths?.length) {
+                  <span> ({{ issue.sourcePaths?.join(', ') }})</span>
+                }
+              </div>
+            }
+          </div>
+        }
       </div>
     }
 
@@ -735,6 +779,7 @@ export class FilesComponent implements OnInit {
   lastSyncReport: any = null;
   lastValidationSummary: UploadValidationSummary | null = null;
   lastConflictSummary: { conflicts: number; replaced: number; skipped: number } | null = null;
+  lastPreflightReport: UploadPreflightReport | null = null;
   selectedPreviewFile: AcpFile | null = null;
   selectedPreview: FilePreviewResponse | null = null;
   previewLoading = false;
@@ -1020,6 +1065,7 @@ export class FilesComponent implements OnInit {
     this.lastSyncReport = null;
     this.lastValidationSummary = null;
     this.lastConflictSummary = null;
+    this.lastPreflightReport = null;
     this.processingJob = null;
     this.processing = false;
     this.uploadPercent = 0;
@@ -1077,6 +1123,7 @@ export class FilesComponent implements OnInit {
     }
 
     this.uploading = true;
+    this.uploadProgress = 'Dateien und ZIP-Inhalte werden vorgeprüft.';
     const chunkSize = 50;
     const totalBytes = nonConflictingFiles
       .concat(replacementFiles)
@@ -1124,6 +1171,15 @@ export class FilesComponent implements OnInit {
     };
 
     try {
+      this.lastPreflightReport = await this.runUploadPreflight(
+        nonConflictingFiles.concat(replacementFiles),
+        replacementFiles.length ? 'overwrite' : undefined,
+      );
+      if (!this.lastPreflightReport.canUpload) {
+        this.uploadError = this.formatPreflightBlockers(this.lastPreflightReport);
+        return;
+      }
+      this.uploadProgress = 'Vorprüfung bestanden. Dateien werden hochgeladen.';
       await uploadInChunks(nonConflictingFiles);
       await uploadInChunks(replacementFiles, 'overwrite');
 
@@ -1434,6 +1490,10 @@ export class FilesComponent implements OnInit {
     return `${issue?.severity || 'unknown'}-${issue?.message || ''}-${issue?.path || ''}-${index}`;
   }
 
+  preflightIssueTrack(issue: { code?: string; message?: string }, index: number): string {
+    return `${issue.code || 'issue'}-${issue.message || ''}-${index}`;
+  }
+
   conflictTrack(entry: UploadConflictEntry, index: number): string {
     return `${entry.selectedIndex}-${this.normalizeFileName(entry.incoming.name)}-${index}`;
   }
@@ -1519,6 +1579,33 @@ export class FilesComponent implements OnInit {
     });
 
     return conflicts;
+  }
+
+  private async runUploadPreflight(
+    files: File[],
+    conflictStrategy?: 'overwrite',
+  ): Promise<UploadPreflightReport> {
+    const formData = new FormData();
+    for (const file of files) formData.append('files', file);
+    return firstValueFrom(
+      this.api.preflightUpload(
+        this.acpId,
+        formData,
+        conflictStrategy ? { conflictStrategy } : undefined,
+      ),
+    );
+  }
+
+  private formatPreflightBlockers(report: UploadPreflightReport): string {
+    const blockers = report.issues
+      .filter((issue) => issue.severity === 'error')
+      .map((issue) => {
+        const sources = issue.sourcePaths?.length ? ` (${issue.sourcePaths.join(', ')})` : '';
+        return `${issue.message}${sources}`;
+      });
+    return blockers.length
+      ? `Upload nicht gestartet: ${blockers.join(' ')}`
+      : 'Upload nicht gestartet: Die Vorprüfung ist fehlgeschlagen.';
   }
 
   private updateUploadProgress(
@@ -1874,6 +1961,11 @@ export class FilesComponent implements OnInit {
 
   private getUploadErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
+      const preflight = error.error?.preflight as UploadPreflightReport | undefined;
+      if (preflight?.issues) {
+        this.lastPreflightReport = preflight;
+        return this.formatPreflightBlockers(preflight);
+      }
       const conflicts = Array.isArray(error.error?.conflicts)
         ? error.error.conflicts.filter((entry: unknown) => typeof entry === 'string')
         : [];

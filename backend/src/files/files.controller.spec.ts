@@ -45,6 +45,15 @@ describe("FilesController", () => {
       findByAcp: jest.fn().mockResolvedValue([baseFile]),
       findByIdForAcp: jest.fn().mockResolvedValue(baseFile),
       uploadMultiple: jest.fn().mockResolvedValue([baseFile]),
+      preflightUpload: jest.fn().mockResolvedValue({
+        canUpload: true,
+        selectedFileCount: 1,
+        expandedFileCount: 1,
+        acceptedFileCount: 1,
+        identicalDuplicates: [],
+        existingConflicts: [],
+        issues: [],
+      }),
       deleteAll: jest.fn().mockResolvedValue(undefined),
       deleteForAcp: jest.fn().mockResolvedValue(undefined),
       deleteManyForAcp: jest.fn().mockResolvedValue(["file-1", "file-2"]),
@@ -779,6 +788,22 @@ describe("FilesController", () => {
     expect(payload).toEqual({
       files: [baseFile],
     });
+  });
+
+  it("preflights files without storing them", async () => {
+    const files = [{ originalname: "bundle.zip" } as any];
+
+    const payload = await controller.preflightUpload(
+      "acp-1",
+      files,
+      "overwrite",
+    );
+
+    expect(filesService.preflightUpload).toHaveBeenCalledWith("acp-1", files, {
+      conflictStrategy: "overwrite",
+    });
+    expect(payload.canUpload).toBe(true);
+    expect(filesService.uploadMultiple).not.toHaveBeenCalled();
   });
 
   it("starts upload processing as background job", async () => {

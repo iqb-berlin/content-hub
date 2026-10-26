@@ -8,8 +8,9 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
 import { assertUuidParam } from "../common/uuid-param";
 import { Acp, AcpFile } from "../database/entities";
-import { ArchiveExpansionService } from "./archive-expansion.service";
 import { FileStorageService } from "./file-storage.service";
+import { UploadPreflightService } from "./upload-preflight.service";
+import type { UploadPreflightReport } from "./upload-preflight.service";
 
 export type UploadConflictStrategy = "reject" | "overwrite" | "keep-both";
 
@@ -26,7 +27,7 @@ export class FileMutationService {
     @InjectRepository(Acp)
     private readonly acpRepository: Repository<Acp>,
     private readonly dataSource: DataSource,
-    private readonly archiveExpansionService: ArchiveExpansionService,
+    private readonly uploadPreflightService: UploadPreflightService,
     private readonly fileStorageService: FileStorageService,
   ) {}
 
@@ -60,26 +61,13 @@ export class FileMutationService {
       throw new BadRequestException("At least one file is required");
     }
 
-    await this.getAcpOrFail(acpId);
-    const normalizedFiles =
-      options.expandArchives === false
-        ? files
-        : await this.archiveExpansionService.expand(files);
-    const filesToPersist = this.resolveIncomingFiles(
-      normalizedFiles,
+    const prepared = await this.uploadPreflightService.prepare(acpId, files, {
       conflictStrategy,
-    );
-    if (conflictStrategy === "reject") {
-      const existingFiles = await this.fileRepository.find({
-        where: { acpId },
-        order: { originalName: "ASC" },
-      });
-      this.assertNoRejectedConflicts(
-        filesToPersist,
-        this.groupByNormalizedName(existingFiles),
-        conflictStrategy,
-      );
-    }
+      expandArchives: options.expandArchives,
+      semanticScope: this.containsArchive(files) ? "complete" : "partial",
+    });
+    this.uploadPreflightService.assertCanUpload(prepared.report);
+    const filesToPersist = prepared.files;
 
     const stagedFiles: AcpFile[] = [];
     try {
@@ -135,32 +123,20 @@ export class FileMutationService {
     }
   }
 
-  private resolveIncomingFiles(
+  async preflightUpload(
+    acpId: string,
     files: Express.Multer.File[],
-    conflictStrategy: UploadConflictStrategy,
-  ): Express.Multer.File[] {
-    const byName = new Map<string, Express.Multer.File>();
-    const duplicates = new Set<string>();
-
-    for (const file of files) {
-      const name = String(file?.originalname || "").trim();
-      const key = this.normalizeFileName(name);
-      if (!key) {
-        throw new BadRequestException("All files must include a filename");
-      }
-      if (byName.has(key)) {
-        duplicates.add(name);
-      }
-      byName.set(key, file);
-    }
-
-    if (conflictStrategy === "reject" && duplicates.size) {
-      this.throwConflict(duplicates);
-    }
-    if (conflictStrategy === "overwrite") {
-      return Array.from(byName.values());
-    }
-    return files;
+    options: UploadMultipleOptions = {},
+  ): Promise<UploadPreflightReport> {
+    const conflictStrategy = this.resolveConflictStrategy(
+      options.conflictStrategy,
+    );
+    const prepared = await this.uploadPreflightService.prepare(acpId, files, {
+      conflictStrategy,
+      expandArchives: options.expandArchives,
+      semanticScope: "complete",
+    });
+    return prepared.report;
   }
 
   private assertNoRejectedConflicts(
@@ -238,6 +214,23 @@ export class FileMutationService {
     return String(fileName || "")
       .trim()
       .toLowerCase();
+  }
+
+  private containsArchive(files: Express.Multer.File[]): boolean {
+    return files.some((file) => {
+      const name = String(file?.originalname || "")
+        .trim()
+        .toLowerCase();
+      const mimeType = String(file?.mimetype || "")
+        .split(";")[0]
+        .trim()
+        .toLowerCase();
+      return (
+        name.endsWith(".zip") ||
+        mimeType === "application/zip" ||
+        mimeType === "application/x-zip-compressed"
+      );
+    });
   }
 
   private async getAcpOrFail(acpId: string): Promise<Acp> {

@@ -26,6 +26,7 @@ import { FileCatalogCache } from "./file-catalog.cache";
 import { ItemListParser } from "./item-list.parser";
 import { NumberedItemListCache } from "./numbered-item-list.cache";
 import { UnitViewResolver } from "./unit-view.resolver";
+import { UploadPreflightService } from "./upload-preflight.service";
 
 const MAX_UPLOAD_FILE_SIZE_BYTES = 512 * 1024 * 1024;
 
@@ -52,6 +53,7 @@ const MAX_UPLOAD_FILE_SIZE_BYTES = 512 * 1024 * 1024;
   providers: [
     FilesService,
     ArchiveExpansionService,
+    UploadPreflightService,
     FileMutationService,
     FileStorageService,
     FileCatalogCache,

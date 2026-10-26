@@ -466,6 +466,18 @@ describe('ApiService', () => {
       );
     });
 
+    it('should preflight uploads without progress event mode', () => {
+      const formData = new FormData();
+      httpClientMock.post.mockReturnValue(of({ canUpload: true }));
+
+      service.preflightUpload('acp1', formData, { conflictStrategy: 'overwrite' }).subscribe();
+
+      expect(httpClientMock.post).toHaveBeenCalledWith(
+        '/api/acp/acp1/files/upload-preflight?conflictStrategy=overwrite',
+        formData,
+      );
+    });
+
     it('should start file processing', () => {
       httpClientMock.post.mockReturnValue(of({ id: 'job-1' }));
 

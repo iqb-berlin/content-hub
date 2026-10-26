@@ -1,10 +1,19 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import * as path from "path";
 
+export interface UploadSource {
+  archiveName?: string;
+  path: string;
+}
+
+export type ExpandedUploadFile = Express.Multer.File & {
+  uploadSource?: UploadSource;
+};
+
 @Injectable()
 export class ArchiveExpansionService {
-  async expand(files: Express.Multer.File[]): Promise<Express.Multer.File[]> {
-    const expandedFiles: Express.Multer.File[] = [];
+  async expand(files: Express.Multer.File[]): Promise<ExpandedUploadFile[]> {
+    const expandedFiles: ExpandedUploadFile[] = [];
 
     for (const file of files) {
       const incomingName = String(file?.originalname || "").trim();
@@ -13,7 +22,10 @@ export class ArchiveExpansionService {
       }
 
       if (!this.isZipUpload(file)) {
-        expandedFiles.push(file);
+        expandedFiles.push({
+          ...file,
+          uploadSource: { path: incomingName },
+        });
         continue;
       }
 
@@ -47,7 +59,7 @@ export class ArchiveExpansionService {
 
   private async extractZipEntries(
     uploadedZip: Express.Multer.File,
-  ): Promise<Express.Multer.File[]> {
+  ): Promise<ExpandedUploadFile[]> {
     const JSZip = require("jszip");
 
     let archive: any;
@@ -59,7 +71,7 @@ export class ArchiveExpansionService {
       );
     }
 
-    const extractedFiles: Express.Multer.File[] = [];
+    const extractedFiles: ExpandedUploadFile[] = [];
     const archiveEntries = Object.values(archive.files || {});
 
     for (const entry of archiveEntries as Array<{
@@ -91,6 +103,10 @@ export class ArchiveExpansionService {
         mimetype: this.inferMimeTypeFromFileName(extractedName),
         size: buffer.length,
         buffer,
+        uploadSource: {
+          archiveName: uploadedZip.originalname,
+          path: originalEntryName.replace(/\\/g, "/"),
+        },
       });
     }
 

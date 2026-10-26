@@ -36,6 +36,7 @@ import {
   UploadMultipleOptions,
 } from "./file-mutation.service";
 import { FileStorageService } from "./file-storage.service";
+import type { UploadPreflightReport } from "./upload-preflight.service";
 export type FilePreviewMode =
   | "text"
   | "image"
@@ -224,6 +225,14 @@ export class FilesService {
     );
     this.unitParserService.invalidateFileCaches(acpId);
     return savedFiles;
+  }
+
+  async preflightUpload(
+    acpId: string,
+    files: Express.Multer.File[],
+    options: UploadMultipleOptions = {},
+  ): Promise<UploadPreflightReport> {
+    return this.fileMutationService.preflightUpload(acpId, files, options);
   }
 
   async download(id: string): Promise<{ buffer: Buffer; file: AcpFile }> {

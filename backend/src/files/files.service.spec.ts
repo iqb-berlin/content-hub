@@ -22,6 +22,7 @@ import { DataSource } from "typeorm";
 import { ArchiveExpansionService } from "./archive-expansion.service";
 import { FileMutationService } from "./file-mutation.service";
 import { FileStorageService } from "./file-storage.service";
+import { UploadPreflightService } from "./upload-preflight.service";
 import { createAcpFileFixture, TEST_UUIDS } from "../testing/test-fixtures";
 
 jest.mock("fs/promises", () => ({
@@ -168,6 +169,7 @@ describe("FilesService", () => {
         FilesService,
         { provide: ReviewManifestService, useValue: manifestService },
         ArchiveExpansionService,
+        UploadPreflightService,
         FileMutationService,
         FileStorageService,
         { provide: getRepositoryToken(AcpFile), useValue: repo },
@@ -297,7 +299,10 @@ describe("FilesService", () => {
 
       const JSZip = require("jszip");
       const zip = new JSZip();
-      zip.file("nested/unit-1.xml", "<Unit />");
+      zip.file(
+        "nested/unit-1.xml",
+        "<Unit><Metadata><Id>unit-1</Id><Label>Unit 1</Label></Metadata></Unit>",
+      );
       zip.file("unit-1.vomd", '{"items":[]}');
       zip.file("__MACOSX/ignored.txt", "ignore");
       zip.file(".DS_Store", "ignore");
@@ -319,7 +324,7 @@ describe("FilesService", () => {
           acpId: acpId,
           originalName: "unit-1.xml",
           fileType: "application/xml",
-          fileSize: 8,
+          fileSize: 70,
         }),
       );
       expect(repo.create).toHaveBeenNthCalledWith(
@@ -336,6 +341,136 @@ describe("FilesService", () => {
         "unit-1.xml",
         "unit-1.vomd",
       ]);
+    });
+
+    it("deduplicates identical same-name ZIP entries and reports their paths", async () => {
+      repo.find.mockResolvedValue([]);
+      const JSZip = require("jszip");
+      const zip = new JSZip();
+      zip.file("players/a/player.html", "same-player");
+      zip.file("players/b/player.html", "same-player");
+      const buffer = await zip.generateAsync({ type: "nodebuffer" });
+      const upload = {
+        originalname: "bundle.zip",
+        mimetype: "application/zip",
+        size: buffer.length,
+        buffer,
+      } as Express.Multer.File;
+
+      const preflight = await service.preflightUpload(acpId, [upload]);
+      const result = await service.uploadMultiple(acpId, [upload]);
+
+      expect(preflight.canUpload).toBe(true);
+      expect(preflight.acceptedFileCount).toBe(1);
+      expect(preflight.identicalDuplicates).toEqual([
+        {
+          fileName: "player.html",
+          keptSource: "bundle.zip/players/a/player.html",
+          ignoredSources: ["bundle.zip/players/b/player.html"],
+        },
+      ]);
+      expect(result.map((file) => file.originalName)).toEqual(["player.html"]);
+      expect(repo.create).toHaveBeenCalledTimes(1);
+    });
+
+    it("blocks different same-name ZIP entries and reports both archive paths", async () => {
+      repo.find.mockResolvedValue([]);
+      const JSZip = require("jszip");
+      const zip = new JSZip();
+      zip.file(
+        "old/MMV047.xml",
+        "<Unit><Metadata><Id>MMV047</Id></Metadata></Unit>",
+      );
+      zip.file(
+        "new/MMV047.xml",
+        "<Unit><Metadata><Id>MMV047</Id></Metadata><BaseVariables/></Unit>",
+      );
+      const buffer = await zip.generateAsync({ type: "nodebuffer" });
+      const upload = {
+        originalname: "bundle.zip",
+        mimetype: "application/zip",
+        size: buffer.length,
+        buffer,
+      } as Express.Multer.File;
+
+      const preflight = await service.preflightUpload(acpId, [upload]);
+
+      expect(preflight.canUpload).toBe(false);
+      expect(preflight.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "duplicate-content-conflict",
+            sourcePaths: [
+              "bundle.zip/old/MMV047.xml",
+              "bundle.zip/new/MMV047.xml",
+            ],
+          }),
+        ]),
+      );
+      await expect(service.uploadMultiple(acpId, [upload])).rejects.toThrow(
+        ConflictException,
+      );
+      expect(repo.save).not.toHaveBeenCalled();
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it("blocks invalid JSON-like unit files during preflight", async () => {
+      repo.find.mockResolvedValue([]);
+      const upload = {
+        originalname: "UNIT-1.vocs",
+        mimetype: "application/json",
+        size: 7,
+        buffer: Buffer.from("{broken"),
+      } as Express.Multer.File;
+
+      const preflight = await service.preflightUpload(acpId, [upload]);
+
+      expect(preflight.canUpload).toBe(false);
+      expect(preflight.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "invalid-json",
+            fileName: "UNIT-1.vocs",
+          }),
+        ]),
+      );
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it("blocks missing booklet unit references and only warns about extra units", async () => {
+      repo.find.mockResolvedValue([]);
+      const booklet = {
+        originalname: "booklet.xml",
+        mimetype: "application/xml",
+        buffer: Buffer.from(
+          '<Booklet><Metadata><Id>B1</Id><Label>Booklet</Label></Metadata><Units><Unit id="MISSING" /></Units></Booklet>',
+        ),
+      } as Express.Multer.File;
+      booklet.size = booklet.buffer.length;
+      const unit = {
+        originalname: "EXTRA.xml",
+        mimetype: "application/xml",
+        buffer: Buffer.from(
+          "<Unit><Metadata><Id>EXTRA</Id><Label>Extra</Label></Metadata></Unit>",
+        ),
+      } as Express.Multer.File;
+      unit.size = unit.buffer.length;
+
+      const preflight = await service.preflightUpload(acpId, [booklet, unit]);
+
+      expect(preflight.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "missing-unit-reference",
+            severity: "error",
+          }),
+          expect.objectContaining({
+            code: "unreferenced-unit",
+            severity: "warning",
+          }),
+        ]),
+      );
+      expect(preflight.canUpload).toBe(false);
     });
 
     it("should preserve archive-like uploads when expansion is disabled", async () => {
@@ -450,7 +585,7 @@ describe("FilesService", () => {
         acpRepo.findOne.mock.invocationCallOrder[1],
       );
       expect(acpRepo.findOne.mock.invocationCallOrder[1]).toBeLessThan(
-        repo.find.mock.invocationCallOrder[0],
+        repo.find.mock.invocationCallOrder[1],
       );
       expect(repo.save.mock.invocationCallOrder[0]).toBeLessThan(
         repo.remove.mock.invocationCallOrder[0],

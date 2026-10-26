@@ -375,6 +375,28 @@ export class FilesController {
     };
   }
 
+  @Post("upload-preflight")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ACP_MANAGER")
+  @ApiBearerAuth()
+  @UseInterceptors(FilesInterceptor("files", 2000))
+  @ApiConsumes("multipart/form-data")
+  @ApiQuery({
+    name: "conflictStrategy",
+    required: false,
+    description: "reject | overwrite | keep-both",
+  })
+  @ApiOperation({ summary: "Validate an upload without persisting files" })
+  async preflightUpload(
+    @UuidParam("acpId") acpId: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Query("conflictStrategy") conflictStrategy?: string,
+  ) {
+    return this.filesService.preflightUpload(acpId, files, {
+      conflictStrategy,
+    });
+  }
+
   @Post("bulk-download")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("ACP_MANAGER")
