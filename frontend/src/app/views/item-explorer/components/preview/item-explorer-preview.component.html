@@ -1,439 +1,458 @@
 <div class="preview-panel" tabindex="0" role="region" aria-label="Item-Vorschau">
   @if (vm.selectedItem) {
-    <div
-      class="preview-target-info card"
-      [class.unavailable]="!vm.canPreviewSelectedItem || !!vm.previewUnavailableReason"
-    >
-      <div class="preview-target-header">
-        <strong>Item</strong>
-        <code>{{ vm.selectedItem.unitId }}{{ vm.selectedItem.itemId }}</code>
-        @if (vm.selectedItem.subId) {
-          <span class="player-target-badge secondary">
-            {{ vm.itemSubIdLabel }}:
-            {{ vm.selectedItem.subIdDisplay || vm.selectedItem.subId }}
-          </span>
-        }
-        @if (vm.isItemExcluded(vm.selectedItem)) {
-          <span class="excluded-item-badge">Ausgeschlossen</span>
-        }
-        @if (vm.selectedItemTarget && vm.selectedItemTarget !== vm.selectedPreviewTarget) {
-          <span
-            class="player-target-badge secondary"
-            tabindex="0"
-            [title]="
-              'Dieses Item ist im Kodierschema der Variable ' +
-              vm.selectedItemTarget +
-              ' zugeordnet. ' +
-              (vm.selectedPreviewTarget
-                ? 'Die Player-Vorschau zeigt die zugehörige Stelle ' +
-                  vm.selectedPreviewTarget +
-                  '.'
-                : 'Für die Player-Vorschau ist derzeit kein Ziel zugeordnet.')
-            "
-          >
-            Kodiervariable: {{ vm.selectedItemTarget }}
-          </span>
-        }
-        @if (vm.selectedPreviewTarget) {
-          <span
-            class="player-target-badge"
-            tabindex="0"
-            [title]="
-              'Die Vorschau springt zur Variable „' +
-              vm.selectedPreviewTarget +
-              '“ innerhalb der Aufgabe. Das ist die Zuordnung dieses Items zur angezeigten Stelle im Player.'
-            "
-            >Player-Ziel: {{ vm.selectedPreviewTarget }}</span
-          >
-        } @else {
-          <span class="player-target-badge unmapped">Kein Player-Ziel</span>
-        }
-      </div>
-      @if (vm.syntheticPreviewState) {
-        <p class="preview-state-note">
-          Vorbereiteter Vorschauzustand: Die Sichtbarkeitsregeln bleiben aktiv. Dieser Zustand kann
-          nicht als Antwort gespeichert werden.
-        </p>
-      }
-      @if (vm.presentationMessage) {
-        <p class="preview-state-note" role="status">{{ vm.presentationMessage }}</p>
-      }
-      <details #previewSettings class="preview-settings">
-        <summary
-          class="btn btn-outline btn-sm"
-          title="Seitendarstellung und Zuordnung der Vorschau einstellen"
-        >
-          Vorschau einstellen ▾
-        </summary>
-        <div class="preview-settings-body">
-          @if (vm.itemExplorerConditionalVisibilityEnabled) {
-            <div class="preview-target-selector">
-              <label for="preview-context-mode">Ansicht</label>
-              <select
-                id="preview-context-mode"
-                [ngModel]="vm.previewMode"
-                (ngModelChange)="vm.setPreviewMode($event)"
-              >
-                <option value="reference">Referenzansicht des Items</option>
-                <option value="answers">Bearbeitungsstand</option>
-                <option value="flow">Regulärer Aufgabenablauf</option>
-              </select>
-              <small
-                >Die Referenzansicht verwendet den Itemkontext. Gespeicherte Antworten werden nur im
-                Bearbeitungsstand geladen.</small
-              >
-            </div>
+    @if (vm.showItemInfo) {
+      <div
+        class="preview-target-info card"
+        [class.unavailable]="!vm.canPreviewSelectedItem || !!vm.previewUnavailableReason"
+      >
+        <div class="preview-target-header">
+          <strong>Item</strong>
+          <code>{{ vm.selectedItem.unitId }}{{ vm.selectedItem.itemId }}</code>
+          @if (vm.selectedItem.subId) {
+            <span class="player-target-badge secondary">
+              {{ vm.itemSubIdLabel }}:
+              {{ vm.selectedItem.subIdDisplay || vm.selectedItem.subId }}
+            </span>
           }
-          <div class="preview-target-selector">
-            <label for="preview-paging-mode">Seitendarstellung</label>
-            <select
-              class="btn btn-outline btn-sm"
-              id="preview-paging-mode"
-              aria-label="Seitendarstellung der Player-Vorschau"
-              [ngModel]="vm.pagingMode"
-              (ngModelChange)="vm.setPagingMode($event)"
-              (change)="vm.onPagingModeChange()"
-              [disabled]="!vm.canPreviewSelectedItem"
+          @if (vm.isItemExcluded(vm.selectedItem)) {
+            <span class="excluded-item-badge">Ausgeschlossen</span>
+          }
+          @if (vm.selectedItemTarget && vm.selectedItemTarget !== vm.selectedPreviewTarget) {
+            <span
+              class="player-target-badge secondary"
+              tabindex="0"
+              [title]="
+                'Dieses Item ist im Kodierschema der Variable ' +
+                vm.selectedItemTarget +
+                ' zugeordnet. ' +
+                (vm.selectedPreviewTarget
+                  ? 'Die Player-Vorschau zeigt die zugehörige Stelle ' +
+                    vm.selectedPreviewTarget +
+                    '.'
+                  : 'Für die Player-Vorschau ist derzeit kein Ziel zugeordnet.')
+              "
             >
-              <option value="buttons">Seiten mit Schaltflächen</option>
-              <option value="separate">Einzelseiten</option>
-              <option value="concat-scroll">Fortlaufend scrollen</option>
-              <option value="concat-scroll-snap">Scrollen mit Einrasten</option>
-              <option value="view-all">Alle Seiten (Druckansicht)</option>
-              <option value="print-ids">Alle Seiten mit IDs (Druckansicht)</option>
-            </select>
-          </div>
-          @if (vm.canEditExplorer && vm.itemExplorerConditionalVisibilityEnabled) {
-            <div class="preview-target-controls">
-              <button
-                type="button"
+              Kodiervariable: {{ vm.selectedItemTarget }}
+            </span>
+          }
+          @if (vm.selectedPreviewTarget) {
+            <span
+              class="player-target-badge"
+              tabindex="0"
+              [title]="
+                'Die Vorschau springt zur Variable „' +
+                vm.selectedPreviewTarget +
+                '“ innerhalb der Aufgabe. Das ist die Zuordnung dieses Items zur angezeigten Stelle im Player.'
+              "
+              >Player-Ziel: {{ vm.selectedPreviewTarget }}</span
+            >
+          } @else {
+            <span class="player-target-badge unmapped">Kein Player-Ziel</span>
+          }
+        </div>
+        @if (vm.syntheticPreviewState) {
+          <p class="preview-state-note">
+            Vorbereiteter Vorschauzustand: Die Sichtbarkeitsregeln bleiben aktiv. Dieser Zustand
+            kann nicht als Antwort gespeichert werden.
+          </p>
+        }
+        @if (vm.presentationMessage) {
+          <p class="preview-state-note" role="status">{{ vm.presentationMessage }}</p>
+        }
+        <details #previewSettings class="preview-settings">
+          <summary
+            class="btn btn-outline btn-sm"
+            title="Seitendarstellung und Zuordnung der Vorschau einstellen"
+          >
+            Vorschau einstellen ▾
+          </summary>
+          <div class="preview-settings-body">
+            @if (vm.itemExplorerConditionalVisibilityEnabled) {
+              <div class="preview-target-selector">
+                <label for="preview-context-mode">Ansicht</label>
+                <select
+                  id="preview-context-mode"
+                  [ngModel]="vm.previewMode"
+                  (ngModelChange)="vm.setPreviewMode($event)"
+                >
+                  <option value="reference">Referenzansicht des Items</option>
+                  <option value="answers">Bearbeitungsstand</option>
+                  <option value="flow">Regulärer Aufgabenablauf</option>
+                </select>
+                <small
+                  >Die Referenzansicht verwendet den Itemkontext. Gespeicherte Antworten werden nur
+                  im Bearbeitungsstand geladen.</small
+                >
+              </div>
+            }
+            <div class="preview-target-selector">
+              <label for="preview-paging-mode">Seitendarstellung</label>
+              <select
                 class="btn btn-outline btn-sm"
-                (click)="vm.capturePreviewContext()"
-                [disabled]="
-                  vm.preparingPresentation ||
-                  !vm.hasCurrentResponseState ||
-                  vm.isCorrectSolutionActive ||
-                  !vm.canPreviewSelectedItem
-                "
+                id="preview-paging-mode"
+                aria-label="Seitendarstellung der Player-Vorschau"
+                [ngModel]="vm.pagingMode"
+                (ngModelChange)="vm.setPagingMode($event)"
+                (change)="vm.onPagingModeChange()"
+                [disabled]="!vm.canPreviewSelectedItem"
               >
-                Diese Itemansicht als Kontext übernehmen
-              </button>
-              @if (vm.hasPreviewContext) {
+                <option value="buttons">Seiten mit Schaltflächen</option>
+                <option value="separate">Einzelseiten</option>
+                <option value="concat-scroll">Fortlaufend scrollen</option>
+                <option value="concat-scroll-snap">Scrollen mit Einrasten</option>
+                <option value="view-all">Alle Seiten (Druckansicht)</option>
+                <option value="print-ids">Alle Seiten mit IDs (Druckansicht)</option>
+              </select>
+            </div>
+            @if (vm.canEditExplorer && vm.itemExplorerConditionalVisibilityEnabled) {
+              <div class="preview-target-controls">
                 <button
                   type="button"
                   class="btn btn-outline btn-sm"
-                  (click)="vm.clearPreviewContext()"
+                  (click)="vm.capturePreviewContext()"
+                  [disabled]="
+                    vm.preparingPresentation ||
+                    !vm.hasCurrentResponseState ||
+                    vm.isCorrectSolutionActive ||
+                    !vm.canPreviewSelectedItem
+                  "
                 >
-                  Übernommenen Kontext zurücksetzen
+                  Diese Itemansicht als Kontext übernehmen
                 </button>
-              }
-            </div>
-            @if (vm.showPreviewStartPageSelector) {
-              <div class="preview-target-selector">
-                <label for="preview-start-page">Aufgabenkontext</label>
-                <select
-                  class="preview-target-select"
-                  id="preview-start-page"
-                  [ngModel]="vm.previewStartPage"
-                  (ngModelChange)="vm.setPreviewStartPage($event)"
-                >
-                  <option value="">Keine feste Aufgabenseite (Standard)</option>
-                  @for (page of vm.previewStartPages; track page) {
-                    <option [value]="page">Aufgabenseite {{ page + 1 }}</option>
-                  }
-                </select>
-                <small>
-                  Legt fest, bei welcher Aufgabenseite der dauerhaft sichtbare Stimulus geprüft
-                  wird. Eine Auswahl ist nur nötig, wenn der Zustand nicht eindeutig ableitbar ist.
-                </small>
-              </div>
-            }
-            @for (variable of vm.previewStateVariables; track variable.id) {
-              <div class="preview-target-selector">
-                <label [for]="'preview-state-' + variable.id">{{ variable.label }}</label>
-                <input
-                  class="preview-target-input"
-                  [id]="'preview-state-' + variable.id"
-                  [ngModel]="variable.value"
-                  (change)="vm.setPreviewStateValue(variable.id, $any($event.target).value)"
-                  placeholder="Automatisch"
-                />
-              </div>
-            }
-            <small
-              >Leere Werte folgen der Aufgabenkonfiguration. Ein übernommener Kontext gehört zur
-              Referenzansicht und wird getrennt von Antworten gespeichert.</small
-            >
-          }
-          @if (vm.canEditExplorer) {
-            <div class="preview-target-controls">
-              @if (vm.showPreviewTargetSelector) {
-                <div class="preview-target-selector">
-                  <label for="item-explorer-preview-target-select">Sprungziel</label>
-                  <select
-                    id="item-explorer-preview-target-select"
-                    class="preview-target-select"
-                    [ngModel]="vm.selectedPreviewTargetId"
-                    (ngModelChange)="vm.setSelectedPreviewTargetId($event)"
-                    (ngModelChange)="vm.onPreviewTargetSelectionChange()"
+                @if (vm.hasPreviewContext) {
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    (click)="vm.clearPreviewContext()"
                   >
-                    <option value="">{{ vm.previewTargetDefaultOptionLabel }}</option>
-                    @for (option of vm.previewTargetOptions; track option.id) {
-                      <option [value]="option.id">{{ option.label }}</option>
+                    Übernommenen Kontext zurücksetzen
+                  </button>
+                }
+              </div>
+              @if (vm.showPreviewStartPageSelector) {
+                <div class="preview-target-selector">
+                  <label for="preview-start-page">Aufgabenkontext</label>
+                  <select
+                    class="preview-target-select"
+                    id="preview-start-page"
+                    [ngModel]="vm.previewStartPage"
+                    (ngModelChange)="vm.setPreviewStartPage($event)"
+                  >
+                    <option value="">Keine feste Aufgabenseite (Standard)</option>
+                    @for (page of vm.previewStartPages; track page) {
+                      <option [value]="page">Aufgabenseite {{ page + 1 }}</option>
                     }
                   </select>
-                </div>
-              }
-
-              @if (vm.showPlayerTargetInfo) {
-                @if (
-                  vm.hasStoredPreviewTargetOverride &&
-                  vm.selectedItemTarget &&
-                  vm.selectedPreviewTarget
-                ) {
-                  <p>
-                    Das Item referenziert standardmäßig
-                    <code>{{ vm.selectedItemTarget }}</code
-                    >. Für die Vorschau wird aktuell manuell
-                    <code>{{ vm.selectedPreviewTarget }}</code> verwendet.
-                  </p>
-                } @else if (
-                  vm.selectedItemUsesDerivedTarget &&
-                  vm.selectedItemTarget &&
-                  vm.selectedPreviewTarget
-                ) {
-                  <p>
-                    Das Item referenziert im Kodierschema die abhängige Variable
-                    <code>{{ vm.selectedItemTarget }}</code
-                    >. Für die Vorschau wird standardmäßig zur Basisvariable
-                    <code>{{ vm.selectedPreviewTarget }}</code> gesprungen.
-                  </p>
-                } @else if (vm.selectedPreviewTarget && !vm.previewUnavailableReason) {
-                  <p>
-                    Der Listeneintrag springt im Player zur Variable
-                    <code>{{ vm.selectedPreviewTarget }}</code
-                    >.
-                  </p>
-                } @else if (vm.selectedPreviewTarget) {
-                  <p>
-                    Für diesen Listeneintrag ist die Player-Variable
-                    <code>{{ vm.selectedPreviewTarget }}</code> hinterlegt, konnte aber nicht
-                    zuverlässig in der Aufgabendefinition aufgelöst werden.
-                  </p>
-                } @else {
-                  <p>
-                    Für diesen Listeneintrag ist keine Player-Variable hinterlegt. Sie können unten
-                    ein alternatives Sprungziel auswählen oder manuell eintragen.
-                  </p>
-                }
-              }
-
-              <details class="preview-correction">
-                <summary class="btn btn-outline btn-sm">Zuordnung korrigieren …</summary>
-                <div class="preview-target-selector">
-                  <label for="item-explorer-custom-preview-target">Manuelles Sprungziel</label>
-                  <div class="preview-target-custom-row">
-                    <input
-                      id="item-explorer-custom-preview-target"
-                      type="text"
-                      class="preview-target-input"
-                      placeholder="z.B. VAR_12 oder alias_12"
-                      [ngModel]="vm.customPreviewTargetDraft"
-                      (ngModelChange)="vm.setCustomPreviewTargetDraft($event)"
-                      (keydown.enter)="vm.applyCustomPreviewTarget()"
-                    />
-                    <button class="btn btn-outline btn-sm" (click)="vm.applyCustomPreviewTarget()">
-                      Übernehmen
-                    </button>
-                  </div>
                   <small>
-                    Für VOUD-IDs oder Aliasse, die nicht im Kodierschema angeboten werden.
+                    Legt fest, bei welcher Aufgabenseite der dauerhaft sichtbare Stimulus geprüft
+                    wird. Eine Auswahl ist nur nötig, wenn der Zustand nicht eindeutig ableitbar
+                    ist.
                   </small>
                 </div>
-
-                @if (vm.hasStoredPreviewTargetOverride) {
-                  <div class="preview-target-actions">
-                    <button
-                      class="btn btn-outline btn-sm"
-                      [disabled]="!vm.hasStoredPreviewTargetOverride"
-                      (click)="vm.resetPreviewTargetSelection()"
+              }
+              @for (variable of vm.previewStateVariables; track variable.id) {
+                <div class="preview-target-selector">
+                  <label [for]="'preview-state-' + variable.id">{{ variable.label }}</label>
+                  <input
+                    class="preview-target-input"
+                    [id]="'preview-state-' + variable.id"
+                    [ngModel]="variable.value"
+                    (change)="vm.setPreviewStateValue(variable.id, $any($event.target).value)"
+                    placeholder="Automatisch"
+                  />
+                </div>
+              }
+              <small
+                >Leere Werte folgen der Aufgabenkonfiguration. Ein übernommener Kontext gehört zur
+                Referenzansicht und wird getrennt von Antworten gespeichert.</small
+              >
+            }
+            @if (vm.canEditExplorer) {
+              <div class="preview-target-controls">
+                @if (vm.showPreviewTargetSelector) {
+                  <div class="preview-target-selector">
+                    <label for="item-explorer-preview-target-select">Sprungziel</label>
+                    <select
+                      id="item-explorer-preview-target-select"
+                      class="preview-target-select"
+                      [ngModel]="vm.selectedPreviewTargetId"
+                      (ngModelChange)="vm.setSelectedPreviewTargetId($event)"
+                      (ngModelChange)="vm.onPreviewTargetSelectionChange()"
                     >
-                      Standardziel verwenden
-                    </button>
-                    @if (vm.hasStoredPreviewTargetOverride && vm.selectedPreviewTarget) {
-                      <small>
-                        Manueller Override aktiv:
-                        <code>{{ vm.selectedPreviewTarget }}</code>
-                      </small>
-                    }
+                      <option value="">{{ vm.previewTargetDefaultOptionLabel }}</option>
+                      @for (option of vm.previewTargetOptions; track option.id) {
+                        <option [value]="option.id">{{ option.label }}</option>
+                      }
+                    </select>
                   </div>
                 }
-              </details>
-            </div>
 
-            @if (vm.previewUnavailableReason && vm.showPlayerTargetInfo) {
-              <p class="preview-warning">{{ vm.previewUnavailableMessage }}</p>
+                @if (vm.showPlayerTargetInfo) {
+                  @if (
+                    vm.hasStoredPreviewTargetOverride &&
+                    vm.selectedItemTarget &&
+                    vm.selectedPreviewTarget
+                  ) {
+                    <p>
+                      Das Item referenziert standardmäßig
+                      <code>{{ vm.selectedItemTarget }}</code
+                      >. Für die Vorschau wird aktuell manuell
+                      <code>{{ vm.selectedPreviewTarget }}</code> verwendet.
+                    </p>
+                  } @else if (
+                    vm.selectedItemUsesDerivedTarget &&
+                    vm.selectedItemTarget &&
+                    vm.selectedPreviewTarget
+                  ) {
+                    <p>
+                      Das Item referenziert im Kodierschema die abhängige Variable
+                      <code>{{ vm.selectedItemTarget }}</code
+                      >. Für die Vorschau wird standardmäßig zur Basisvariable
+                      <code>{{ vm.selectedPreviewTarget }}</code> gesprungen.
+                    </p>
+                  } @else if (vm.selectedPreviewTarget && !vm.previewUnavailableReason) {
+                    <p>
+                      Der Listeneintrag springt im Player zur Variable
+                      <code>{{ vm.selectedPreviewTarget }}</code
+                      >.
+                    </p>
+                  } @else if (vm.selectedPreviewTarget) {
+                    <p>
+                      Für diesen Listeneintrag ist die Player-Variable
+                      <code>{{ vm.selectedPreviewTarget }}</code> hinterlegt, konnte aber nicht
+                      zuverlässig in der Aufgabendefinition aufgelöst werden.
+                    </p>
+                  } @else {
+                    <p>
+                      Für diesen Listeneintrag ist keine Player-Variable hinterlegt. Sie können
+                      unten ein alternatives Sprungziel auswählen oder manuell eintragen.
+                    </p>
+                  }
+                }
+
+                <details class="preview-correction">
+                  <summary class="btn btn-outline btn-sm">Zuordnung korrigieren …</summary>
+                  <div class="preview-target-selector">
+                    <label for="item-explorer-custom-preview-target">Manuelles Sprungziel</label>
+                    <div class="preview-target-custom-row">
+                      <input
+                        id="item-explorer-custom-preview-target"
+                        type="text"
+                        class="preview-target-input"
+                        placeholder="z.B. VAR_12 oder alias_12"
+                        [ngModel]="vm.customPreviewTargetDraft"
+                        (ngModelChange)="vm.setCustomPreviewTargetDraft($event)"
+                        (keydown.enter)="vm.applyCustomPreviewTarget()"
+                      />
+                      <button
+                        class="btn btn-outline btn-sm"
+                        (click)="vm.applyCustomPreviewTarget()"
+                      >
+                        Übernehmen
+                      </button>
+                    </div>
+                    <small>
+                      Für VOUD-IDs oder Aliasse, die nicht im Kodierschema angeboten werden.
+                    </small>
+                  </div>
+
+                  @if (vm.hasStoredPreviewTargetOverride) {
+                    <div class="preview-target-actions">
+                      <button
+                        class="btn btn-outline btn-sm"
+                        [disabled]="!vm.hasStoredPreviewTargetOverride"
+                        (click)="vm.resetPreviewTargetSelection()"
+                      >
+                        Standardziel verwenden
+                      </button>
+                      @if (vm.hasStoredPreviewTargetOverride && vm.selectedPreviewTarget) {
+                        <small>
+                          Manueller Override aktiv:
+                          <code>{{ vm.selectedPreviewTarget }}</code>
+                        </small>
+                      }
+                    </div>
+                  }
+                </details>
+              </div>
+
+              @if (vm.previewUnavailableReason && vm.showPlayerTargetInfo) {
+                <p class="preview-warning">{{ vm.previewUnavailableMessage }}</p>
+              }
             }
-          }
-        </div>
-      </details>
-      @if (vm.previewUnavailableReason) {
-        <div class="preview-warning">
-          {{ vm.previewUnavailableMessage }}
-          @if (vm.canEditExplorer) {
-            <button
-              type="button"
-              class="btn btn-outline btn-sm"
-              (click)="previewSettings.open = true"
-            >
-              Zuordnung prüfen
-            </button>
-          }
-        </div>
-      }
-    </div>
+          </div>
+        </details>
+        @if (vm.previewUnavailableReason) {
+          <div class="preview-warning">
+            {{ vm.previewUnavailableMessage }}
+            @if (vm.canEditExplorer) {
+              <button
+                type="button"
+                class="btn btn-outline btn-sm"
+                (click)="previewSettings.open = true"
+              >
+                Zuordnung prüfen
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
 
     @if (vm.showStudioItemComments && vm.selectedItem.studioComments?.length) {
       <app-studio-item-comments [comments]="vm.selectedItem.studioComments!" />
     }
 
-    <!-- Player -->
-    <div
-      #playerContainer
-      class="player-container card"
-      [class.player-fullscreen-fallback]="isPlayerFullscreenFallback"
-      [class.view-all-mode]="vm.pagingMode === 'view-all' || vm.pagingMode === 'print-ids'"
-    >
-      <div class="player-display-toolbar">
-        <strong>Player-Vorschau</strong>
-        <button
-          type="button"
-          class="btn btn-outline btn-sm btn-state"
-          (click)="vm.toggleCorrectSolution()"
-          [disabled]="!vm.canPreviewSelectedItem && !vm.correctSolutionRequested"
-          [attr.aria-pressed]="vm.correctSolutionRequested"
-          [title]="vm.correctSolutionToggleTitle"
-        >
-          <svg class="preview-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="m4 13 5 5L20 6M4 6h8" />
-          </svg>
-          {{ vm.correctSolutionRequested ? 'Musterlösung ausblenden' : 'Musterlösung anzeigen' }}
-        </button>
-        <button
-          #fullscreenToggle
-          type="button"
-          class="btn btn-outline btn-sm btn-state"
-          (click)="togglePlayerFullscreen()"
-          [attr.aria-pressed]="isPlayerFullscreen"
-          [attr.aria-label]="
-            isPlayerFullscreen
-              ? 'Vollbild der Player-Vorschau beenden'
-              : 'Player-Vorschau im Vollbild anzeigen'
-          "
-          [title]="
-            isPlayerFullscreen
-              ? 'Vollbild der Player-Vorschau beenden (auch mit Esc)'
-              : 'Player-Vorschau im Vollbild anzeigen'
-          "
-        >
-          <svg class="preview-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            @if (isPlayerFullscreen) {
-              <path d="M8 3v5H3m13-5v5h5M3 16h5v5m13-5h-5v5" />
-            } @else {
-              <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
-            }
-          </svg>
-          {{ isPlayerFullscreen ? 'Vollbild beenden' : 'Vollbild' }}
-        </button>
-      </div>
-      @if (vm.correctSolutionRequested) {
-        <div
-          class="correct-solution-status"
-          [class.unavailable]="!vm.correctSolutionAvailable"
-          role="status"
-          aria-live="polite"
-        >
-          <strong>
-            {{
-              vm.isCorrectSolutionActive
-                ? 'Musterlösung – nicht gespeichert'
-                : 'Keine eindeutige Musterlösung'
-            }}
-          </strong>
-          @if (vm.isCorrectSolutionActive) {
-            <span>{{ vm.correctSolutionPrefill.message }}</span>
-          } @else {
-            <span
-              >Aus den hinterlegten Bewertungsregeln lässt sich keine eindeutige Antwort
-              ableiten.</span
+    @if (vm.showPlayerPreview) {
+      <!-- Player -->
+      <div
+        #playerContainer
+        class="player-container card"
+        [class.player-fullscreen-fallback]="isPlayerFullscreenFallback"
+        [class.view-all-mode]="vm.pagingMode === 'view-all' || vm.pagingMode === 'print-ids'"
+      >
+        <div class="player-display-toolbar">
+          <strong>Player-Vorschau</strong>
+          <button
+            type="button"
+            class="btn btn-outline btn-sm btn-state"
+            (click)="vm.toggleCorrectSolution()"
+            [disabled]="!vm.canPreviewSelectedItem && !vm.correctSolutionRequested"
+            [attr.aria-pressed]="vm.correctSolutionRequested"
+            [title]="vm.correctSolutionToggleTitle"
+          >
+            <svg
+              class="preview-action-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
             >
-            <details class="correct-solution-technical-details">
-              <summary>Technische Details</summary>
-              <span>{{ vm.correctSolutionPrefill.message }}</span>
-            </details>
-          }
-        </div>
-      }
-      @if (vm.previewUnavailableReason) {
-        <div class="empty-state">
-          <div style="font-size: 2.5rem; margin-bottom: 12px">🧭</div>
-          <h3>Keine zielgenaue Player-Vorschau</h3>
-          <p>{{ vm.previewUnavailableMessage }}</p>
-          @if (vm.canOpenFullUnit) {
-            <a
-              class="btn btn-outline"
-              [routerLink]="['/view', vm.acpId, 'unit', vm.selectedItem.unitId]"
-              >Gesamte Aufgabe öffnen</a
+              <path d="m4 13 5 5L20 6M4 6h8" />
+            </svg>
+            {{ vm.correctSolutionRequested ? 'Musterlösung ausblenden' : 'Musterlösung anzeigen' }}
+          </button>
+          <button
+            #fullscreenToggle
+            type="button"
+            class="btn btn-outline btn-sm btn-state"
+            (click)="togglePlayerFullscreen()"
+            [attr.aria-pressed]="isPlayerFullscreen"
+            [attr.aria-label]="
+              isPlayerFullscreen
+                ? 'Vollbild der Player-Vorschau beenden'
+                : 'Player-Vorschau im Vollbild anzeigen'
+            "
+            [title]="
+              isPlayerFullscreen
+                ? 'Vollbild der Player-Vorschau beenden (auch mit Esc)'
+                : 'Player-Vorschau im Vollbild anzeigen'
+            "
+          >
+            <svg
+              class="preview-action-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
             >
-          }
-        </div>
-      } @else if (vm.isPreviewLoading) {
-        <div class="empty-state">
-          <div class="spinner"></div>
-          <p>Aufgabe wird geladen...</p>
-        </div>
-      } @else if (vm.shouldRenderPlayerFrame) {
-        @if (vm.preparingPresentation) {
-          <div class="preview-update-status" role="status" aria-live="polite">
-            <div class="spinner"></div>
-            <span>Itemansicht wird vorbereitet …</span>
-          </div>
-        }
-        @if (vm.previewUpdateInProgress) {
-          <div class="preview-update-status" role="status" aria-live="polite">
-            <div class="spinner"></div>
-            <span>
-              Gespeicherter Zustand wird geladen …
-              @if (vm.previewSlow) {
-                Das dauert länger als erwartet, möglicherweise wegen WLAN oder VPN.
+              @if (isPlayerFullscreen) {
+                <path d="M8 3v5H3m13-5v5h5M3 16h5v5m13-5h-5v5" />
+              } @else {
+                <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
               }
-            </span>
+            </svg>
+            {{ isPlayerFullscreen ? 'Vollbild beenden' : 'Vollbild' }}
+          </button>
+        </div>
+        @if (vm.correctSolutionRequested) {
+          <div
+            class="correct-solution-status"
+            [class.unavailable]="!vm.correctSolutionAvailable"
+            role="status"
+            aria-live="polite"
+          >
+            <strong>
+              {{
+                vm.isCorrectSolutionActive
+                  ? 'Musterlösung – nicht gespeichert'
+                  : 'Keine eindeutige Musterlösung'
+              }}
+            </strong>
+            @if (vm.isCorrectSolutionActive) {
+              <span>{{ vm.correctSolutionPrefill.message }}</span>
+            } @else {
+              <span
+                >Aus den hinterlegten Bewertungsregeln lässt sich keine eindeutige Antwort
+                ableiten.</span
+              >
+              <details class="correct-solution-technical-details">
+                <summary>Technische Details</summary>
+                <span>{{ vm.correctSolutionPrefill.message }}</span>
+              </details>
+            }
           </div>
         }
-        <iframe
-          #playerFrame
-          [srcdoc]="vm.playerSrcDoc"
-          class="player-iframe"
-          [title]="'Player-Vorschau für Item ' + vm.selectedItem.itemId"
-          [class.view-all-mode]="vm.pagingMode === 'view-all' || vm.pagingMode === 'print-ids'"
-          [style.height]="vm.playerHeight"
-          sandbox="allow-scripts allow-same-origin allow-downloads"
-          (load)="vm.onPlayerLoaded()"
-        >
-        </iframe>
-      } @else {
-        <div class="empty-state">
-          <div style="font-size: 2.5rem; margin-bottom: 12px">🎮</div>
-          <h3>Kein Player verfügbar</h3>
-        </div>
-      }
-      @if (vm.isPreviewLoading && vm.previewSlow) {
-        <p class="slow-load-hint" role="status" aria-live="polite">
-          Das Laden dauert länger als erwartet, möglicherweise wegen WLAN oder VPN. Aktuelle Phase:
-          {{ vm.previewLoadPhase }}.
-        </p>
-      }
-    </div>
+        @if (vm.previewUnavailableReason) {
+          <div class="empty-state">
+            <div style="font-size: 2.5rem; margin-bottom: 12px">🧭</div>
+            <h3>Keine zielgenaue Player-Vorschau</h3>
+            <p>{{ vm.previewUnavailableMessage }}</p>
+            @if (vm.canOpenFullUnit) {
+              <a
+                class="btn btn-outline"
+                [routerLink]="['/view', vm.acpId, 'unit', vm.selectedItem.unitId]"
+                >Gesamte Aufgabe öffnen</a
+              >
+            }
+          </div>
+        } @else if (vm.isPreviewLoading) {
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <p>Aufgabe wird geladen...</p>
+          </div>
+        } @else if (vm.shouldRenderPlayerFrame) {
+          @if (vm.preparingPresentation) {
+            <div class="preview-update-status" role="status" aria-live="polite">
+              <div class="spinner"></div>
+              <span>Itemansicht wird vorbereitet …</span>
+            </div>
+          }
+          @if (vm.previewUpdateInProgress) {
+            <div class="preview-update-status" role="status" aria-live="polite">
+              <div class="spinner"></div>
+              <span>
+                Gespeicherter Zustand wird geladen …
+                @if (vm.previewSlow) {
+                  Das dauert länger als erwartet, möglicherweise wegen WLAN oder VPN.
+                }
+              </span>
+            </div>
+          }
+          <iframe
+            #playerFrame
+            [srcdoc]="vm.playerSrcDoc"
+            class="player-iframe"
+            [title]="'Player-Vorschau für Item ' + vm.selectedItem.itemId"
+            [class.view-all-mode]="vm.pagingMode === 'view-all' || vm.pagingMode === 'print-ids'"
+            [style.height]="vm.playerHeight"
+            sandbox="allow-scripts allow-same-origin allow-downloads"
+            (load)="vm.onPlayerLoaded()"
+          >
+          </iframe>
+        } @else {
+          <div class="empty-state">
+            <div style="font-size: 2.5rem; margin-bottom: 12px">🎮</div>
+            <h3>Kein Player verfügbar</h3>
+          </div>
+        }
+        @if (vm.isPreviewLoading && vm.previewSlow) {
+          <p class="slow-load-hint" role="status" aria-live="polite">
+            Das Laden dauert länger als erwartet, möglicherweise wegen WLAN oder VPN. Aktuelle
+            Phase:
+            {{ vm.previewLoadPhase }}.
+          </p>
+        }
+      </div>
+    }
 
     <!-- Item Navigation -->
     <div class="item-nav">

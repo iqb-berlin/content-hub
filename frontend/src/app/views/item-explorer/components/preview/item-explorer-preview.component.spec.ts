@@ -79,9 +79,14 @@ describe('ItemExplorerPreviewComponent', () => {
     }
   });
 
-  it.each([false, true])(
-    'offers the complete unit only with effective access (%s)',
-    async (canOpenFullUnit) => {
+  it.each([
+    [false, false],
+    [false, true],
+    [true, false],
+    [true, true],
+  ])(
+    'offers the complete unit with effective access %s and a visible player %s',
+    async (canOpenFullUnit, showPlayerPreview) => {
       const item = { itemId: 'item', unitId: 'unit' };
       const feature = {
         registerPlayerDom: vi.fn(),
@@ -92,6 +97,8 @@ describe('ItemExplorerPreviewComponent', () => {
           selectedItem: item,
           selectedIndex: 0,
           filteredItems: [item],
+          showItemInfo: true,
+          showPlayerPreview,
           isItemExcluded: () => false,
           previewUnavailableReason: 'unsupported condition',
           previewUnavailableMessage: 'Keine Vorschau verfügbar.',
@@ -107,7 +114,7 @@ describe('ItemExplorerPreviewComponent', () => {
         fixture.detectChanges();
         await fixture.whenStable();
         const link = fixture.nativeElement.querySelector('.empty-state a');
-        expect(Boolean(link)).toBe(canOpenFullUnit);
+        expect(Boolean(link)).toBe(canOpenFullUnit && showPlayerPreview);
         if (link) expect(link.getAttribute('href')).toBe('/view/acp/unit/unit');
       } finally {
         fixture.destroy();
