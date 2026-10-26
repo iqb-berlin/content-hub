@@ -21,6 +21,7 @@ import {
   IsArray,
   ArrayMaxSize,
   ValidateNested,
+  ValidateIf,
   IsUUID,
   IsString,
   MaxLength,
@@ -64,6 +65,9 @@ class CommentCategoryDto {
 }
 class ReviewConfigDto {
   @IsBoolean() enableReview!: boolean;
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  hideReviewMetadata?: boolean;
   @IsOptional() @IsBoolean() hideReviewDeveloperNames?: boolean;
   @IsInt() @Min(1) configVersion!: number;
   @IsIn(["PRIVATE", "SHARED", "GROUP"]) visibilityMode!:
@@ -292,6 +296,9 @@ export class ReviewController {
       config.featureConfig = {
         ...config.featureConfig,
         enableReview: dto.enableReview,
+        ...(dto.hideReviewMetadata !== undefined
+          ? { hideReviewMetadata: dto.hideReviewMetadata }
+          : {}),
         ...(dto.hideReviewDeveloperNames !== undefined
           ? { hideReviewDeveloperNames: dto.hideReviewDeveloperNames }
           : {}),
@@ -353,6 +360,7 @@ export class ReviewController {
   private configView(config: AcpAccessConfig) {
     return {
       enableReview: config.featureConfig.enableReview === true,
+      hideReviewMetadata: config.featureConfig.hideReviewMetadata === true,
       hideReviewDeveloperNames:
         config.featureConfig.hideReviewDeveloperNames === true,
       visibilityMode: config.featureConfig.commentVisibilityMode || "PRIVATE",
