@@ -14,6 +14,10 @@ import {
   FeatureConfig,
   UpdateAccessConfigRequest,
 } from '../../core/models/api.models';
+import {
+  EXPLORER_OPTIONAL_HEADER_ACTIONS,
+  normalizeReducedView,
+} from '../../core/models/item-explorer-reduced-view';
 import { AcpManagerContextComponent } from '../shared/acp-manager-context.component';
 
 @Component({
@@ -516,6 +520,129 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
           Verwaltung konfigurierbar. Die Hervorhebung gilt auch in der separaten Item-Ansicht.
         </p>
         <div class="explorer-options">
+          @if (configLoaded) {
+            <p class="help-text reviewer-view-intro">
+              Vereinfachen Sie den Item-Explorer für Reviewer: Blenden Sie nicht benötigte
+              Schaltflächen, die Leiste über der Tabelle oder die Item- und Player-Vorschau aus. Die
+              Tabelle nutzt den frei werdenden Platz.
+            </p>
+            <details class="settings-details reviewer-view-settings">
+              <summary>Ansicht für Reviewer vereinfachen</summary>
+              <p class="help-text">
+                Diese Vorgaben gelten für Reviewer und für die „Leseansicht“ im Item-Explorer. Ihre
+                Bearbeitungsansicht bleibt vollständig. Daten und Berechtigungen bleiben
+                unverändert.
+              </p>
+              <p class="help-text">
+                Wählen Sie ein Ausgangsprofil. Danach können Sie die sichtbaren Bereiche einzeln
+                anpassen.
+              </p>
+              <div
+                class="reviewer-view-profiles"
+                role="group"
+                aria-label="Ausgangsprofil für die Reviewer-Ansicht"
+              >
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="applyReducedViewProfile('full')"
+                  aria-label="Vollständig"
+                  aria-describedby="reviewer-profile-full-description"
+                >
+                  <strong>Vollständig</strong>
+                  <span id="reviewer-profile-full-description"
+                    >Alle bisherigen Bereiche anzeigen.</span
+                  >
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="applyReducedViewProfile('review')"
+                  aria-label="Review mit Vorschau"
+                  aria-describedby="reviewer-profile-review-description"
+                >
+                  <strong>Review mit Vorschau</strong>
+                  <span id="reviewer-profile-review-description"
+                    >Tabellenleiste ausblenden; Item und Player bleiben sichtbar.</span
+                  >
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="applyReducedViewProfile('table')"
+                  aria-label="Nur Tabelle"
+                  aria-describedby="reviewer-profile-table-description"
+                >
+                  <strong>Nur Tabelle</strong>
+                  <span id="reviewer-profile-table-description"
+                    >Titelkopf, Tabellenleiste und Vorschaubereich ausblenden.</span
+                  >
+                </button>
+              </div>
+              <label class="feature-toggle">
+                <input type="checkbox" [(ngModel)]="reducedView.enabled" />
+                <span>Vereinfachte Ansicht für Reviewer aktivieren</span>
+              </label>
+              @if (reducedView.enabled) {
+                <p class="help-text">
+                  Angehakte Bereiche und Aktionen bleiben für Reviewer sichtbar.
+                </p>
+                <label class="feature-toggle">
+                  <input type="checkbox" [(ngModel)]="reducedView.showHeader" />
+                  <span>Titel und optionale Aktionen im Kopfbereich anzeigen</span>
+                </label>
+                @for (action of reducedViewActions; track action.id) {
+                  <label class="feature-toggle">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="reducedView.headerActions[action.id]"
+                      [disabled]="!reducedView.showHeader"
+                    />
+                    <span
+                      >{{ action.label
+                      }}{{ action.managerOnly ? ' (nur mit Verwaltungsrecht)' : '' }}</span
+                    >
+                  </label>
+                }
+                <p class="help-text">
+                  Vollbild sowie erlaubte Sortier-, Download- und Speicheraktionen bleiben
+                  erreichbar. Manager können die Leseansicht jederzeit verlassen.
+                </p>
+                <label class="feature-toggle">
+                  <input type="checkbox" [(ngModel)]="reducedView.showTableToolbarArea" />
+                  <span
+                    >Bedienbereich oberhalb der Tabelle anzeigen (Suche, Ausblendungen und
+                    Auswahllisten)</span
+                  >
+                </label>
+                <label class="feature-toggle">
+                  <input type="checkbox" [(ngModel)]="reducedView.showExplorerItemPanel" />
+                  <span>Gesamten Item- und Vorschaubereich anzeigen</span>
+                </label>
+                @if (reducedView.showExplorerItemPanel) {
+                  <label class="feature-toggle">
+                    <input type="checkbox" [(ngModel)]="reducedView.showItemInfo" />
+                    <span>Bereich „Item“ mit Vorschau-Einstellungen anzeigen</span>
+                  </label>
+                  <label class="feature-toggle">
+                    <input type="checkbox" [(ngModel)]="reducedView.showPlayerPreview" />
+                    <span>Player-Vorschau anzeigen</span>
+                  </label>
+                }
+                <p class="help-text">
+                  Lade-, Fehler- und Speicherhinweise bleiben sichtbar. Beim Ausblenden des gesamten
+                  Vorschaubereichs entfallen auch dessen Review-Kommentare. Studio-Kommentare werden
+                  in der reduzierten Ansicht nicht angezeigt. Die bisherige Breitenaufteilung bleibt
+                  erhalten.
+                </p>
+              }
+              <p class="help-text">
+                „Änderungen speichern“ übernimmt die Vorgaben ACP-weit für neue Aufrufe. Eine
+                Veröffentlichung des Explorers ist dafür nicht nötig. Prüfen Sie das Ergebnis
+                anschließend im Item-Explorer über „Leseansicht“.
+              </p>
+            </details>
+          }
           <details class="settings-details">
             <summary>Inhalte und Darstellung</summary>
             <label class="feature-toggle">
@@ -935,6 +1062,32 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
         margin: 0;
         min-width: 0;
       }
+      .reviewer-view-profiles {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 12px 0;
+      }
+      .reviewer-view-profiles .btn {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 12px;
+        white-space: normal;
+        text-align: left;
+      }
+      .reviewer-view-profiles .btn span {
+        font-size: 0.82rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--color-text-secondary);
+      }
+      @media (max-width: 700px) {
+        .reviewer-view-profiles {
+          grid-template-columns: 1fr;
+        }
+      }
       .save-bar {
         position: sticky;
         bottom: 0;
@@ -1193,6 +1346,24 @@ export class AccessConfigComponent implements OnInit {
   credentialCount = 0;
   dateError = '';
   featureConfig: FeatureConfig = {};
+  readonly reducedViewActions = EXPLORER_OPTIONAL_HEADER_ACTIONS;
+  get reducedView() {
+    return this.featureConfig.itemExplorerReducedView!;
+  }
+
+  applyReducedViewProfile(profile: 'full' | 'review' | 'table'): void {
+    const config = normalizeReducedView(undefined);
+    config.enabled = profile !== 'full';
+    if (config.enabled) {
+      config.showTableToolbarArea = false;
+      config.headerActions.columnManager = false;
+    }
+    if (profile === 'table') {
+      config.showHeader = false;
+      config.showExplorerItemPanel = false;
+    }
+    this.featureConfig.itemExplorerReducedView = config;
+  }
   commentTargets: string[] = [];
   availableTags: string[] = [];
   newTag = '';
@@ -1499,6 +1670,9 @@ export class AccessConfigComponent implements OnInit {
   }
 
   private applyFeatureConfigDefaults() {
+    this.featureConfig.itemExplorerReducedView = normalizeReducedView(
+      this.featureConfig.itemExplorerReducedView,
+    );
     // Match the viewer API: existing ACPs without this flag allow the Explorer.
     if (this.featureConfig['enableItemList'] === undefined) {
       this.featureConfig['enableItemList'] = true;
