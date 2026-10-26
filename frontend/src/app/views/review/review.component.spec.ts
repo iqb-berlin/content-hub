@@ -87,24 +87,27 @@ describe('Review configuration', () => {
     component.ngOnDestroy();
   });
 
-  it('loads, saves and restores the developer-name visibility setting', () => {
-    const { component, api } = setup();
-    const config = { ...component.config!, hideReviewDeveloperNames: true };
-    api.getReviewConfig.mockReturnValue(of(config));
-    component.loadConfig();
-    expect(component.config!.hideReviewDeveloperNames).toBe(true);
-    component.config!.hideReviewDeveloperNames = false;
-    api.configureReview.mockReturnValue(of({ ...component.config!, configVersion: 2 }));
-    component.configure();
-    expect(api.configureReview).toHaveBeenCalledWith(
-      'acp',
-      expect.objectContaining({
-        hideReviewDeveloperNames: false,
-      }),
-    );
-    expect(component.config!.hideReviewDeveloperNames).toBe(false);
-    component.ngOnDestroy();
-  });
+  it.each(['hideReviewMetadata', 'hideReviewDeveloperNames'] as const)(
+    'loads, saves and restores %s',
+    (setting) => {
+      const { component, api } = setup();
+      const config = { ...component.config!, [setting]: true };
+      api.getReviewConfig.mockReturnValue(of(config));
+      component.loadConfig();
+      expect(component.config![setting]).toBe(true);
+      component.config![setting] = false;
+      api.configureReview.mockReturnValue(of({ ...component.config!, configVersion: 2 }));
+      component.configure();
+      expect(api.configureReview).toHaveBeenCalledWith(
+        'acp',
+        expect.objectContaining({
+          [setting]: false,
+        }),
+      );
+      expect(component.config![setting]).toBe(false);
+      component.ngOnDestroy();
+    },
+  );
   it('keeps both personal formats separate from the manager export', () => {
     const { component, api } = setup();
     component.access = { canManageReview: true, canReview: true } as any;
