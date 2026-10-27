@@ -47,7 +47,12 @@ async function mediaReady(frame: FrameLocator, selector: string) {
   await expect(media).toHaveAttribute('data-synthetic-played', 'true');
 }
 
-async function probe(page: Page, unit: FormatUnit, frame: FrameLocator) {
+async function probe(
+  page: Page,
+  unit: FormatUnit,
+  frame: FrameLocator,
+  capture: () => Promise<void>,
+) {
   switch (unit.probe) {
     case 'text-field':
     case 'text-field-simple':
@@ -292,11 +297,15 @@ async function probe(page: Page, unit: FormatUnit, frame: FrameLocator) {
           .poll(() => frame.locator('audio').evaluate((e) => (e as HTMLAudioElement).currentTime))
           .toBeGreaterThan(0);
       }
+      await expect(frame.getByRole('button', { name: 'See', exact: true })).toBeVisible();
+      await capture();
       await frame.getByRole('button', { name: 'See', exact: true }).click();
       await expect(frame.getByText('Keine weiteren Seiten.', { exact: false })).toBeVisible();
       break;
     case 'speed-image-answer':
       await expect(frame.locator('.answers img')).toHaveCount(2);
+      await expect(frame.locator('.answers img').first()).toBeVisible();
+      await capture();
       await frame.locator('.answers img').first().click();
       await expect(frame.getByText('Keine weiteren Seiten.', { exact: false })).toBeVisible();
       break;
@@ -310,6 +319,8 @@ async function probe(page: Page, unit: FormatUnit, frame: FrameLocator) {
             .evaluate((e) => (e as HTMLAudioElement).currentTime),
         )
         .toBeGreaterThan(0);
+      await expect(frame.getByRole('button', { name: 'See', exact: true })).toBeVisible();
+      await capture();
       await frame.getByRole('button', { name: 'See', exact: true }).click();
       await expect(frame.getByText('Keine weiteren Seiten.', { exact: false })).toBeVisible();
       break;
@@ -317,6 +328,7 @@ async function probe(page: Page, unit: FormatUnit, frame: FrameLocator) {
       await frame.getByRole('button', { name: '1', exact: true }).click();
       await frame.getByRole('button', { name: '2', exact: true }).click();
       await expect(frame.locator('.number-result-box')).toHaveText(['1', '2']);
+      await capture();
       await frame.locator('.unit-nav-next button').click();
       await expect(frame.getByText('Keine weiteren Seiten.', { exact: false })).toBeVisible();
       break;
@@ -326,6 +338,7 @@ async function probe(page: Page, unit: FormatUnit, frame: FrameLocator) {
         .filter({ hasText: /^\s*See\s*$/ })
         .click();
       await expect(frame.locator('.question span.selected')).toContainText('See');
+      await capture();
       await frame.locator('.unit-nav-next button').click();
       await expect(frame.getByText('Keine weiteren Seiten.', { exact: false })).toBeVisible();
       break;
@@ -333,6 +346,7 @@ async function probe(page: Page, unit: FormatUnit, frame: FrameLocator) {
       await frame.getByRole('button', { name: 'See', exact: true }).click();
       await frame.getByRole('button', { name: 'Bahnhof', exact: true }).click();
       await expect(frame.locator('.answers button.selected')).toHaveCount(2);
+      await capture();
       await frame.locator('.unit-nav-next button').click();
       await expect(frame.getByText('Keine weiteren Seiten.', { exact: false })).toBeVisible();
       break;
@@ -447,7 +461,13 @@ for (const unit of playerPool.units) {
         .digest('hex'),
     ).toBe(player.sha256);
     const frame = await openFormat(page, unit);
-    await probe(page, unit, frame);
+    const path = testInfo.outputPath(`${unit.id}.png`);
+    const capture = async () => {
+      await page.screenshot({ path, fullPage: true, animations: 'disabled', caret: 'hide' });
+    };
+    // Multi advances immediately after an answer. Capture the visible format
+    // before leaving it, then independently verify the actual response below.
+    await probe(page, unit, frame, capture);
     if (unit.expected.response) {
       await expect
         .poll(() =>
@@ -479,8 +499,7 @@ for (const unit of playerPool.units) {
       });
       expect(time).toBeGreaterThanOrEqual(0);
     }
-    const path = testInfo.outputPath(`${unit.id}.png`);
-    await page.screenshot({ path, fullPage: true, animations: 'disabled', caret: 'hide' });
+    if (unit.player !== 'speed-multi') await capture();
     await testInfo.attach(`${unit.player}: ${unit.name}`, { path, contentType: 'image/png' });
   });
 }
