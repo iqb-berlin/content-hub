@@ -12,13 +12,31 @@ import { TaskSequenceComponent } from './task-sequence.component';
 vi.mock('../comment-thread/item-comment-thread.component', async () => {
   const { Component } = await import('@angular/core');
   class Stub {}
-  Component({ selector: 'app-item-comment-thread', standalone: true, template: '' })(Stub);
+  Component({
+    selector: 'app-item-comment-thread',
+    standalone: true,
+    template: '',
+    inputs: ['acpId', 'targetType', 'bookletId', 'enabled'],
+  })(Stub);
   return { ItemCommentThreadComponent: Stub };
 });
 vi.mock('../unit-view/unit-view.component', async () => {
   const { Component } = await import('@angular/core');
   class Stub {}
-  Component({ selector: 'app-unit-view', standalone: true, template: '' })(Stub);
+  Component({
+    selector: 'app-unit-view',
+    standalone: true,
+    template: '',
+    inputs: [
+      'acpId',
+      'unitId',
+      'bookletId',
+      'bookletName',
+      'embedded',
+      'reviewMode',
+      'featureConfigOverride',
+    ],
+  })(Stub);
   return { UnitViewComponent: Stub };
 });
 
@@ -52,15 +70,7 @@ async function setup(url: string, pending?: Subject<TaskSequence>) {
         useValue: { isLoggedIn: false, isAdmin: false, currentUser$: of(null) },
       },
     ],
-  })
-    .overrideComponent(TaskSequenceComponent, {
-      set: {
-        // Exercise the real router without loading player/comment dependencies.
-        imports: [],
-        template: '<div></div>',
-      },
-    })
-    .compileComponents();
+  }).compileComponents();
   const harness = await RouterTestingHarness.create();
   const component = await harness.navigateByUrl(url, TaskSequenceComponent);
   const router = TestBed.inject(Router);
@@ -166,5 +176,63 @@ describe('Booklet task links', () => {
     expect(component.currentIndex).toBe(0);
     expect(component.currentUnit?.id).toBe('other');
     expect(component.invalidUnitLink).toBe(false);
+  });
+
+  it('blocks stale task navigation until the selected booklet finishes loading', async () => {
+    const { component, router, harness, api } = await setup(`${baseUrl}?kind=booklet&position=2`);
+    const pending = new Subject<TaskSequence>();
+    const root = harness.fixture.nativeElement as HTMLElement;
+    const embeddedUnit = root.querySelector('app-unit-view');
+    const taskListButton = Array.from(root.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Aufgabenliste'),
+    )!;
+    component.reviewBooklets = [{ id: 'booklet-1' }, { id: 'booklet-2' }];
+    api.getViewSequence.mockImplementation((_acpId: string, id: string) =>
+      id === 'booklet-2' ? pending : of(sequence),
+    );
+    taskListButton.click();
+    harness.detectChanges();
+    expect(root.querySelectorAll('.unit-direct-link')).toHaveLength(3);
+
+    component.switchBooklet('booklet-2');
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    const switchedUrl = '/view/acp-1/sequence/booklet-2?kind=booklet';
+    expect(router.url).toBe(switchedUrl);
+    expect(component.canGoPrev).toBe(false);
+    expect(component.canGoNext).toBe(false);
+    for (const button of root.querySelectorAll<HTMLButtonElement>('.sequence-navigation button')) {
+      expect(button.disabled).toBe(true);
+    }
+    expect(taskListButton.disabled).toBe(true);
+    expect(root.querySelector('.workspace-actions a')).toBeNull();
+    expect(root.querySelector('.unit-direct-link')).toBeNull();
+    expect(root.querySelector('app-unit-view')).toBe(embeddedUnit);
+
+    component.next();
+    component.prev();
+    component.jumpTo(1);
+    component.toggleUnitList();
+    await harness.fixture.whenStable();
+    expect(router.url).toBe(switchedUrl);
+    expect(component.unitListOpen).toBe(false);
+    expect(api.getViewSequence).toHaveBeenCalledTimes(2);
+
+    pending.next({ id: 'booklet-2', units: [{ id: 'other-1' }, { id: 'other-2' }] });
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    expect(component.currentUnit?.id).toBe('other-1');
+    expect(component.canGoNext).toBe(true);
+    expect(taskListButton.disabled).toBe(false);
+    expect(root.querySelector('app-unit-view')).toBe(embeddedUnit);
+    expect(root.querySelector('.workspace-actions a')?.getAttribute('href')).toBe(
+      `${switchedUrl}&position=1`,
+    );
+
+    component.next();
+    await harness.fixture.whenStable();
+    expect(router.url).toBe(`${switchedUrl}&position=2`);
+    expect(component.currentUnit?.id).toBe('other-2');
+    expect(api.getViewSequence).toHaveBeenCalledTimes(2);
   });
 });
