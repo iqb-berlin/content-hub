@@ -130,6 +130,18 @@ describe('UnitViewComponent', () => {
   };
 
   const poolDirectory = resolve(__dirname, '../../../../../test-fixtures/synthetic-aspect');
+  it('lets non-ASPECT players choose their initial page instead of sending a nonexistent page zero', async () => {
+    const { message, postMessage } = await playerFixture(
+      '<fieldset><legend>Erste Seite</legend></fieldset>',
+    );
+    await message({ type: 'vopReadyNotification' });
+    const start = postMessage.mock.calls
+      .map(([value]) => value)
+      .find((value) => value.type === 'vopStartCommand');
+    expect(start).toBeDefined();
+    expect(start.playerConfig).not.toHaveProperty('startPage');
+  });
+
   const syntheticPool = JSON.parse(readFileSync(resolve(poolDirectory, 'pool.json'), 'utf8')) as {
     units: {
       id: string;

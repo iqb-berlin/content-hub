@@ -1,0 +1,204 @@
+{
+  "id": "aspect-geometry",
+  "name": "ASPECT: GeoGebra",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "version": "4.12.0",
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "type": "text",
+                "id": "heading",
+                "alias": "heading",
+                "value": null,
+                "label": "Deine Antwort",
+                "styling": {
+                  "fontSize": 20,
+                  "fontColor": "#000000",
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135
+                },
+                "text": "<p><strong>ASPECT: GeoGebra</strong> · Synthetische Aufgabe</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1,
+                "isRelevantForPresentationComplete": true,
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                }
+              },
+              {
+                "type": "geometry",
+                "id": "input",
+                "alias": "ANSWER",
+                "value": null,
+                "label": "Deine Antwort",
+                "styling": {
+                  "fontSize": 20,
+                  "fontColor": "#000000",
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "transparent"
+                },
+                "appDefinition": "UEsDBBQAAAAIALh0W10mJMRBuQEAAEYDAAAMAAAAZ2VvZ2VicmEueG1sfVNNc9sgEP0rDPfajj+SdkYok+bUQ09qe+gNwVqiQaCBlSXl13dBdu1xZnpBy9uv93ZR8Tx1lp0gROOd4A+rDWfglNfGNYIPePz0mT+XRQO+gTpIdvShkyj4IQX+Szus9qsvu13CZN8LrqyM0SjOeisxpQg+cma04HF22AKSj4oOpixG47Qf2Wg0toI/bqhEC6ZpqceeLuuyWOc4GJQ12kj3y8BYFtG8w/+SlPdBV3NE6Nj0G4IXfJvC5rN9IDsqaYHIJ/hqUzKcKkCkCUQmJ4iCYxiAsyYkBVf7W/zqLSFHaSNBvTcOX2WPQ8jD23EWEqcX11iocE71HzhTLai32k8VKSAij0utH3MPKSXpvZP6BsGBTZIccRr8ENlJ2ktbStCgTEeXBd4mSKaeP53BBdPQBMix0uY9ZjqL72Zcd+D6pnMk2Qpp2QwNJiXVZZGLblonWOjAIcMsZUGZlTVQvRfyx5b27Os/oPAyxbM3X6ghOV+99YEFkrGlwdDANk+c1fTdp7dl+1YSuVWmZ+UM4YZuLvbd6w+6Ipvy5Od8vqeTXJlgWsIS/nTF7sdwFkbW7SDSwzz/FeVfUEsBAhQDFAAAAAgAuHRbXSYkxEG5AQAARgMAAAwAAAAAAAAAAAAAAIABAAAAAGdlb2dlYnJhLnhtbFBLBQYAAAAAAQABADoAAADjAQAAAAA=",
+                "trackedVariables": [
+                  {
+                    "id": "A",
+                    "value": ""
+                  }
+                ],
+                "dimensions": {
+                  "width": 600,
+                  "height": 400,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "fileName": "",
+                "showResetIcon": true,
+                "enableUndoRedo": true,
+                "showToolbar": true,
+                "enableShiftDragZoom": false,
+                "showZoomButtons": false,
+                "showFullscreenButton": false,
+                "customToolbar": "",
+                "trackedExpectedVariables": [],
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                }
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": "auto",
+                "unit": ""
+              },
+              {
+                "value": "auto",
+                "unit": ""
+              }
+            ],
+            "height": 500,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50
+      }
+    ],
+    "stateVariables": [],
+    "enableSectionNumbering": false,
+    "sectionNumberingPosition": "left",
+    "showUnitNavNext": false
+  },
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "coding-ANSWER",
+        "alias": "ANSWER",
+        "label": "ASPECT: GeoGebra",
+        "sourceType": "BASE",
+        "codeModel": "MANUAL_ONLY",
+        "manualInstruction": "<p>Synthetischer Prüffall. Die Eingabe wird im echten Player überprüft; für dieses Format wird keine automatische Vorbelegung zugesichert.</p>",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Erwartete Interaktion",
+            "manualInstruction": "<p>1 Punkt: Interaktion wie in der Abdeckungsmatrix beschrieben.</p>"
+          }
+        ]
+      }
+    ]
+  }
+}

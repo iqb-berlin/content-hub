@@ -40,4 +40,8 @@ release artifact, update version/source/checksum in `pool.json` and verify all
 cases and review media. Do not update expected answers merely to make a test pass.
 Definitions may need an explicit migration when changing player versions.
 
+The [format and player-family pool](../synthetic-players/README.md) adds 44 tasks
+covering the complete pinned ASPECT element catalogue, ABI, both Speedtest players,
+Simple HTML and the experimental ItemBuilder wrapper.
+
 See [running, CI and media instructions](../../docs/development/synthetic-aspect-pool.md).

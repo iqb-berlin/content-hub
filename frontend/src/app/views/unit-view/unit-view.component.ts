@@ -1865,7 +1865,11 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       },
       playerConfig: {
         stateReportPolicy: 'none',
-        startPage: String(this.playerPageIds[this.currentPage - 1] ?? this.currentPage - 1),
+        // Other player families choose their own initial page identifiers. In
+        // particular Simple uses 1-based pages; an invented "0" makes it crash.
+        ...(this.playerPageIds.length
+          ? { startPage: String(this.playerPageIds[this.currentPage - 1]) }
+          : {}),
         pagingMode:
           this.pagingMode === 'view-all' || this.pagingMode === 'print-ids'
             ? 'concat-scroll'

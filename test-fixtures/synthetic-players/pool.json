@@ -1,0 +1,957 @@
+{
+  "version": 1,
+  "data": "synthetic",
+  "acpId": "30000000-0000-4000-8000-000000000002",
+  "bookletId": "synthetic-formats",
+  "players": [
+    {
+      "id": "aspect",
+      "file": "../synthetic-aspect/iqb-player-aspect-3.0.1.html",
+      "version": "3.0.1",
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/download/editor/3.0.1%2Bplayer/3.0.1/iqb-player-aspect-3.0.1.html",
+      "definitionVersion": "4.12.0",
+      "sha256": "54ee0f792c105c933b1c811ded0ee54eefae8502fa690edb18f6dd0b71c803c2"
+    },
+    {
+      "id": "abi",
+      "version": "5.0.0",
+      "file": "players/verona-player-abi-5.0.0.html",
+      "definitionVersion": "iqb-scripted@1.2",
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/download/5.0.0/verona-player-abi-5.0.0.html",
+      "sha256": "56f794fc5a34ebdd7b1d11f2d5601ca6377d4f04be73dee8f516a25f2ab144ef"
+    },
+    {
+      "id": "speed-multi",
+      "version": "3.3.0",
+      "file": "players/iqb-player-speedtest-3.3.0.html",
+      "definitionVersion": "2.1.0",
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/download/3.3.0/iqb-player-speedtest-3.3.0.html",
+      "sha256": "c2b9df06e6e436775f2b1d70ea0a4099292d4ae1186334b0c0556d8d2a5f2580"
+    },
+    {
+      "id": "speed-mono",
+      "version": "1.2.0",
+      "file": "players/verona-player-speedtest-1.2.0.html",
+      "definitionVersion": "plain text",
+      "source": "https://github.com/iqb-berlin/verona-player-speedtest/releases/download/1.2.0/verona-player-speedtest-1.2.0.html",
+      "sha256": "ae691f8f55e40e1f39dc7a73de5b5ff7aa6dae2bfadaabfb59614784491c18c9"
+    },
+    {
+      "id": "simple",
+      "version": "6.0.4",
+      "file": "players/verona-player-simple-6.0.html",
+      "definitionVersion": "html",
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/download/6.0.4/verona-player-simple-6.0.html",
+      "sha256": "83bf94d50399c7e3cda431ad277826b12e0c47278c6c7233a436bc9dc3bb239f"
+    },
+    {
+      "id": "ib",
+      "version": "0.2.0",
+      "file": "players/verona-player-ib-0.2.html",
+      "definitionVersion": "ItemBuilder 9.9.0",
+      "source": "https://raw.githubusercontent.com/iqb-berlin/verona-modules-ib/285e155db7637edfca75191c00c722afe736f510/src/verona-player-ib-0.2.html",
+      "sha256": "298fc62dd8b0645e21862b678c3d66f77cb17eb4edd6be28a3f89d69c0e24bac"
+    }
+  ],
+  "units": [
+    {
+      "id": "aspect-radio",
+      "name": "ASPECT: Einfachauswahl",
+      "file": "aspect-radio.json",
+      "player": "aspect",
+      "formats": [
+        "radio"
+      ],
+      "probe": "radio",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-text-field",
+      "name": "ASPECT: Kurzantwort",
+      "file": "aspect-text-field.json",
+      "player": "aspect",
+      "formats": [
+        "text-field"
+      ],
+      "probe": "text-field",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-text-field-simple",
+      "name": "ASPECT: Einfaches Textfeld",
+      "file": "aspect-text-field-simple.json",
+      "player": "aspect",
+      "formats": [
+        "text-field-simple"
+      ],
+      "probe": "text-field-simple",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-text-area",
+      "name": "ASPECT: Offene Antwort",
+      "file": "aspect-text-area.json",
+      "player": "aspect",
+      "formats": [
+        "text-area"
+      ],
+      "probe": "text-area",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-checkbox",
+      "name": "ASPECT: Mehrfachauswahl",
+      "file": "aspect-checkbox.json",
+      "player": "aspect",
+      "formats": [
+        "checkbox"
+      ],
+      "probe": "checkbox",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-dropdown",
+      "name": "ASPECT: Klappliste",
+      "file": "aspect-dropdown.json",
+      "player": "aspect",
+      "formats": [
+        "dropdown"
+      ],
+      "probe": "dropdown",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-toggle",
+      "name": "ASPECT: Schaltflächenauswahl",
+      "file": "aspect-toggle.json",
+      "player": "aspect",
+      "formats": [
+        "toggle-button"
+      ],
+      "probe": "toggle-button",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-images",
+      "name": "ASPECT: Bildauswahl",
+      "file": "aspect-images.json",
+      "player": "aspect",
+      "formats": [
+        "radio-group-images"
+      ],
+      "probe": "radio-group-images",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-likert",
+      "name": "ASPECT: Likert-Tabelle",
+      "file": "aspect-likert.json",
+      "player": "aspect",
+      "formats": [
+        "likert",
+        "likert-row"
+      ],
+      "probe": "likert",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-slider",
+      "name": "ASPECT: Schieberegler",
+      "file": "aspect-slider.json",
+      "player": "aspect",
+      "formats": [
+        "slider"
+      ],
+      "probe": "slider",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-spelling",
+      "name": "ASPECT: Wortkorrektur",
+      "file": "aspect-spelling.json",
+      "player": "aspect",
+      "formats": [
+        "spell-correct"
+      ],
+      "probe": "spell-correct",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-math-field",
+      "name": "ASPECT: Formeleingabe",
+      "file": "aspect-math-field.json",
+      "player": "aspect",
+      "formats": [
+        "math-field"
+      ],
+      "probe": "math-field",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-math-area",
+      "name": "ASPECT: Text mit Mathematik",
+      "file": "aspect-math-area.json",
+      "player": "aspect",
+      "formats": [
+        "text-area-math"
+      ],
+      "probe": "text-area-math",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-arithmetic",
+      "name": "ASPECT: Schriftliches Rechnen",
+      "file": "aspect-arithmetic.json",
+      "player": "aspect",
+      "formats": [
+        "math-table"
+      ],
+      "probe": "math-table",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-drag",
+      "name": "ASPECT: Zuordnen",
+      "file": "aspect-drag.json",
+      "player": "aspect",
+      "formats": [
+        "drop-list"
+      ],
+      "probe": "drag",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-sort",
+      "name": "ASPECT: Reihenfolge",
+      "file": "aspect-sort.json",
+      "player": "aspect",
+      "formats": [
+        "drop-list-sort"
+      ],
+      "probe": "sort",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-cloze",
+      "name": "ASPECT: Lückentext",
+      "file": "aspect-cloze.json",
+      "player": "aspect",
+      "formats": [
+        "cloze"
+      ],
+      "probe": "cloze",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-hotspot",
+      "name": "ASPECT: Bildbereich auswählen",
+      "file": "aspect-hotspot.json",
+      "player": "aspect",
+      "formats": [
+        "hotspot-image"
+      ],
+      "probe": "hotspot-image",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-marking",
+      "name": "ASPECT: Text markieren",
+      "file": "aspect-marking.json",
+      "player": "aspect",
+      "formats": [
+        "text",
+        "marking-panel"
+      ],
+      "probe": "marking",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-image",
+      "name": "ASPECT: Bild",
+      "file": "aspect-image.json",
+      "player": "aspect",
+      "formats": [
+        "image"
+      ],
+      "probe": "image",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-audio",
+      "name": "ASPECT: Audio",
+      "file": "aspect-audio.json",
+      "player": "aspect",
+      "formats": [
+        "audio"
+      ],
+      "probe": "audio",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-video",
+      "name": "ASPECT: Video",
+      "file": "aspect-video.json",
+      "player": "aspect",
+      "formats": [
+        "video"
+      ],
+      "probe": "video",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-frame",
+      "name": "ASPECT: Rahmen",
+      "file": "aspect-frame.json",
+      "player": "aspect",
+      "formats": [
+        "frame"
+      ],
+      "probe": "frame",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-button",
+      "name": "ASPECT: Aktionsknopf",
+      "file": "aspect-button.json",
+      "player": "aspect",
+      "formats": [
+        "button"
+      ],
+      "probe": "button",
+      "expected": {
+        "pageCount": 2,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-trigger",
+      "name": "ASPECT: Auslöser",
+      "file": "aspect-trigger.json",
+      "player": "aspect",
+      "formats": [
+        "trigger"
+      ],
+      "probe": "trigger",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-table",
+      "name": "ASPECT: Tabelle mit Eingabe",
+      "file": "aspect-table.json",
+      "player": "aspect",
+      "formats": [
+        "table"
+      ],
+      "probe": "table",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "aspect-periodic",
+      "name": "ASPECT: Periodensystem",
+      "file": "aspect-periodic.json",
+      "player": "aspect",
+      "formats": [
+        "widget-periodic-table"
+      ],
+      "probe": "widget-periodic-table",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "widget-request-only",
+      "limitation": "Content Pool has no host widget provider."
+    },
+    {
+      "id": "aspect-molecule",
+      "name": "ASPECT: Molekül-Editor",
+      "file": "aspect-molecule.json",
+      "player": "aspect",
+      "formats": [
+        "widget-molecule-editor"
+      ],
+      "probe": "widget-molecule-editor",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "widget-request-only",
+      "limitation": "Content Pool has no host widget provider."
+    },
+    {
+      "id": "aspect-geometry",
+      "name": "ASPECT: GeoGebra",
+      "file": "aspect-geometry.json",
+      "player": "aspect",
+      "formats": [
+        "geometry"
+      ],
+      "probe": "geometry",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "abi-inputs",
+      "name": "ABI: Text, Zahlen und Auswahl",
+      "file": "abi-inputs.json",
+      "player": "abi",
+      "formats": [
+        "input-text",
+        "input-text-multiline",
+        "input-number",
+        "checkbox",
+        "checkboxes",
+        "multiple-choice",
+        "drop-down",
+        "likert"
+      ],
+      "probe": "abi",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "abi-dynamic",
+      "name": "ABI: Bedingungen und Unterformulare",
+      "file": "abi-dynamic.json",
+      "player": "abi",
+      "formats": [
+        "if",
+        "repeat",
+        "navigation"
+      ],
+      "probe": "abi-dynamic",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "speed-text",
+      "name": "Speed Multi: Textauswahl",
+      "file": "speed-text.json",
+      "player": "speed-multi",
+      "formats": [
+        "question:text",
+        "answer:text"
+      ],
+      "probe": "speed-choice",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ],
+        "response": {
+          "value": 0,
+          "code": 1,
+          "score": 1
+        }
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "speed-image",
+      "name": "Speed Multi: Bildfrage",
+      "file": "speed-image.json",
+      "player": "speed-multi",
+      "formats": [
+        "question:image",
+        "answer:text"
+      ],
+      "probe": "speed-choice",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ],
+        "response": {
+          "value": 0,
+          "code": 1,
+          "score": 1
+        }
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "speed-image-answer",
+      "name": "Speed Multi: Bildantwort",
+      "file": "speed-image-answer.json",
+      "player": "speed-multi",
+      "formats": [
+        "question:text",
+        "answer:image"
+      ],
+      "probe": "speed-image-answer",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ],
+        "response": {
+          "value": 0,
+          "code": 1,
+          "score": 1
+        }
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "speed-audio",
+      "name": "Speed Multi: Audiofrage",
+      "file": "speed-audio.json",
+      "player": "speed-multi",
+      "formats": [
+        "question:audio",
+        "answer:text"
+      ],
+      "probe": "speed-audio",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ],
+        "response": {
+          "value": 0,
+          "code": 1,
+          "score": 1
+        }
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "speed-audio-answer",
+      "name": "Speed Multi: Audioantwort",
+      "file": "speed-audio-answer.json",
+      "player": "speed-multi",
+      "formats": [
+        "question:text",
+        "answer:audio"
+      ],
+      "probe": "speed-audio-answer",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ],
+        "response": {
+          "value": 0,
+          "code": 1,
+          "score": 1
+        }
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "speed-number",
+      "name": "Speed Multi: Zahleneingabe",
+      "file": "speed-number.json",
+      "player": "speed-multi",
+      "formats": [
+        "question:image",
+        "answer:number"
+      ],
+      "probe": "speed-number",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ],
+        "response": {
+          "value": 12,
+          "code": 1,
+          "score": 1
+        }
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "speed-word",
+      "name": "Speed Multi: Wortauswahl",
+      "file": "speed-word.json",
+      "player": "speed-multi",
+      "formats": [
+        "question:word-select",
+        "answer:text"
+      ],
+      "probe": "speed-word",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ],
+        "response": {
+          "value": [
+            3
+          ],
+          "code": 1,
+          "score": 1
+        }
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "speed-inline",
+      "name": "Speed Multi: Eingebettete Auswahl",
+      "file": "speed-inline.json",
+      "player": "speed-multi",
+      "formats": [
+        "question:inline-answers",
+        "answer:text"
+      ],
+      "probe": "speed-inline",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ],
+        "response": {
+          "value": 0,
+          "code": 1,
+          "score": 1
+        }
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "speed-multiple",
+      "name": "Speed Multi: Mehrfachauswahl",
+      "file": "speed-multiple.json",
+      "player": "speed-multi",
+      "formats": [
+        "question:text",
+        "answer:text",
+        "multiple-selection"
+      ],
+      "probe": "speed-multiple",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ],
+        "response": {
+          "value": [
+            0,
+            1
+          ],
+          "code": 1,
+          "score": 1
+        }
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "mono-binary",
+      "name": "Speed Mono: Richtig oder falsch",
+      "file": "mono-binary.json",
+      "player": "speed-mono",
+      "formats": [
+        "two-buttons",
+        "response-time"
+      ],
+      "probe": "mono-binary",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "mono-ternary",
+      "name": "Speed Mono: Drei Antwortoptionen",
+      "file": "mono-ternary.json",
+      "player": "speed-mono",
+      "formats": [
+        "three-buttons",
+        "response-time"
+      ],
+      "probe": "mono-ternary",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "simple-html",
+      "name": "Simple: HTML-Formulare",
+      "file": "simple-html.json",
+      "player": "simple",
+      "formats": [
+        "text",
+        "textarea",
+        "number",
+        "checkbox",
+        "radio",
+        "select",
+        "select-multiple",
+        "range",
+        "date",
+        "time",
+        "color",
+        "contenteditable",
+        "fieldset-pages"
+      ],
+      "probe": "simple",
+      "expected": {
+        "pageCount": 2,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "interaction"
+    },
+    {
+      "id": "ib-basic",
+      "name": "ItemBuilder: Eingabe und Auswahl",
+      "file": "ib-basic.json",
+      "player": "ib",
+      "formats": [
+        "text",
+        "checkbox",
+        "navigation"
+      ],
+      "probe": "ib",
+      "expected": {
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ANSWER"
+        ]
+      },
+      "coverage": "experimental-integration"
+    }
+  ],
+  "media": [
+    {
+      "file": "media/point.ggb",
+      "sha256": "f2518e41ab467bb1b0cd74b57f4af7802188b04178dda8c6ca3759eedf8b5b6c"
+    },
+    {
+      "file": "media/shapes.svg",
+      "sha256": "7ff9912ca58ae4dba4effa89c466108f90b20a2c53d57995aba0d72f0d2293b9"
+    },
+    {
+      "file": "media/shapes.webm",
+      "sha256": "80a2bf22eb6ec1a7e7c90ca58d0df6229e3641fae9cd935865c1ce84d174f0fb"
+    },
+    {
+      "file": "media/tone.wav",
+      "sha256": "352b9bd41553ac92a191d383a178c75315b6d0b4994ae14267593624912243b4"
+    }
+  ]
+}

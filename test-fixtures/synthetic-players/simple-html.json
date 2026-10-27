@@ -1,0 +1,25 @@
+{
+  "id": "simple-html",
+  "name": "Simple: HTML-Formulare",
+  "definition": "<style>body{font:18px sans-serif}label{display:block;margin:.6rem}input,textarea,select{font:inherit}</style><fieldset id=\"page-one\"><legend>Synthetische HTML-Eingaben</legend><label>Kurzantwort <input name=\"ANSWER\" type=\"text\"></label><label>Begründung <textarea name=\"LONG\"></textarea></label><label>Anzahl <input name=\"NUMBER\" type=\"number\" min=\"0\" max=\"10\"></label><label><input name=\"CHECK\" type=\"checkbox\"> Wasser</label><label><input name=\"CHOICE\" type=\"radio\" value=\"See\"> See</label><label><input name=\"CHOICE\" type=\"radio\" value=\"Bahnhof\"> Bahnhof</label><label>Ziel <select name=\"LIST\"><option>Bahnhof</option><option>See</option></select></label><label>Proviant <select multiple name=\"MULTI\"><option>Brot</option><option>Wasser</option><option>Apfel</option></select></label><label>Entfernung <input name=\"RANGE\" type=\"range\" min=\"0\" max=\"10\" value=\"0\"></label></fieldset><fieldset id=\"page-two\"><legend>Weitere HTML-Eingaben</legend><label>Datum <input name=\"DATE\" type=\"date\"></label><label>Uhrzeit <input name=\"TIME\" type=\"time\"></label><label>Farbe <input name=\"COLOR\" type=\"color\"></label><div contenteditable=\"true\" role=\"textbox\" aria-label=\"Freier Text\" name=\"EDIT\">Start</div></fieldset>",
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "ANSWER",
+        "alias": "ANSWER",
+        "label": "Simple: HTML-Formulare",
+        "sourceType": "BASE",
+        "codeModel": "MANUAL_ONLY",
+        "manualInstruction": "<p>Synthetisches Beispiel. Die Kodierung bleibt lesbar; dieser Player verwendet ein eigenes Antwortformat.</p>",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Prüfantwort"
+          }
+        ]
+      }
+    ]
+  }
+}

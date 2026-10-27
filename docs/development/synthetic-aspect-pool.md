@@ -1,15 +1,19 @@
-# Synthetischer ASPECT-Testaufgabenpool
+# Synthetischer Formate- und Player-Testaufgabenpool
 
 Der [versionierte Pool](../../test-fixtures/synthetic-aspect/README.md) ergänzt die
 schnellen Tests mit vereinfachten Verona-Testplayern um Prüfungen mit echtem ASPECT.
-Er benutzt dieselbe isolierte Datenbank und dieselben Server wie die regulären
+Zusätzlich enthält der [Formate- und Playerpool](../../test-fixtures/synthetic-players/README.md)
+44 synthetische Aufgaben für sechs Playerfamilien. Der gemeinsame Aufbau benutzt
+dieselbe isolierte Datenbank und dieselben Server wie die regulären
 Playwright-Tests. Seed und Konfiguration verweigern den Betrieb außerhalb der
 E2E-Umgebung; bestehende Entwicklungsserver werden nicht wiederverwendet.
 
 ## Ausführen
 
 Voraussetzungen: Node.js, installierte Backend-/Frontend-Abhängigkeiten und Docker
-mit laufendem Daemon. Aus dem Repository:
+mit laufendem Daemon. Der erste Seed benötigt HTTPS-Zugriff auf die festgelegten
+GeoGebra- und DIPF-Runtime-Dateien. Weitere Läufe nutzen einen weiterhin
+prüfsummengeprüften Cache im E2E-Fixtureverzeichnis. Aus dem Repository:
 
 ```bash
 cd frontend
@@ -34,7 +38,8 @@ gemeinsame Entwicklungsdatenbank verwenden. Dateien entstehen unter dem bestehen
 
 ## Prüfumfang
 
-Je Browser werden 19 unabhängige Tests ausgeführt, insgesamt 57. Sie prüfen die
+Je Browser werden 69 unabhängige Tests ausgeführt, insgesamt 207: die bisherigen
+19 ASPECT-Reviewfälle, 44 Formatprüfungen und sechs Playerfamilien-Rundgänge. Sie prüfen die
 echten API-Dateiverweise und die Player-Version, Mehrseitigkeit und Alias-Zuordnung,
 sofortiges Umschalten nach Eingaben, Wiederherstellung, Suchfilter, interaktive und
 Druckdarstellungen, Teilmusterlösungen, offene und mehrdeutige Kodierung, fehlende
@@ -42,9 +47,18 @@ und beschädigte Kodierung, verzögerte Downloads, Auswahlfelder, Aufgabenwechse
 und Desktop-/Tablet-/Mobilansichten. Jeder Test prüft zusätzlich, dass keine
 unbehandelten Browserfehler und keine schreibenden API-Aufrufe entstehen.
 
-Die sechs Soll-Ergebnisse aus `pool.json` werden zusätzlich in der regulären
+Die sechs bisherigen Soll-Ergebnisse aus `synthetic-aspect/pool.json` werden zusätzlich in der regulären
 Komponentensuite gegen die Review-Komponente geprüft. Der Seed verifiziert die
-SHA-256-Prüfsumme des originalen ASPECT-Releaseplayers vor seiner Registrierung.
+SHA-256-Prüfsummen sämtlicher Originalplayer und externer Runtimes. Ein weiterer
+Test prüft den [versionierten Formatkatalog](../../test-fixtures/synthetic-players/catalogue.json)
+gegen die tatsächlichen Definitionen: alle 30 ASPECT-Elementtypen, alle ABI-Eingaben
+und sämtliche Speedtest-Multi-Stimulus- und Antwortarten.
+
+Die zusätzlichen Browserfälle kontrollieren echte Eingaben, Auswahlen,
+Drag-and-drop, Sortierung, Textmarkierung, Medienwiedergabe, Formeln und GeoGebra.
+Periodensystem und Molekül-Editor werden als Verona-Widget-Anfrage geprüft;
+Content Pool besitzt dafür noch keinen Host-Widgetanbieter. Dieser begrenzte
+Prüfumfang ist in der Matrix ausdrücklich als `widget-request-only` markiert.
 
 ## Bilder und Videos reproduzieren
 
@@ -52,9 +66,12 @@ Derselbe Befehl erzeugt nach jedem Lauf:
 
 - `frontend/synthetic-review-report/index.html`: eigenständig lokal öffnende Galerie,
 - `manifest.json`: Ergebnis je Test und Browser, Git-Revision, Player-/Definitionsversion,
-  Fixture-Prüfsummen und Prüfsummen der Medien,
+  Fixture-Prüfsummen, Player-/Runtime-Herkunft, tatsächlich geprüfte Formate
+  je Browser und Prüfsummen der Medien,
 - je Browser drei Ansichten (390, 768 und 1440 Pixel), sieben Bilder des geprüften
-  Rundgangs, eine Druckansicht und ein WebM-Video des tatsächlichen Browserablaufs.
+  Rundgangs, eine Druckansicht und ein WebM-Video des tatsächlichen Browserablaufs;
+  zusätzlich je Formatprüfung ein Bild und je Playerfamilie ein Reviewbild sowie
+  ein Video. Ein vollständiger Lauf erzeugt 183 Bilder und 21 WebM-Videos.
 
 Den gesamten Ordner kopieren oder als ZIP weitergeben. Er enthält keine externen
 Medienverweise, Traces oder Sitzungsdateien. Bei Fehlern zeigt die Galerie den
@@ -78,7 +95,12 @@ im verpflichtenden Frontend-Lint-Job.
 
 ## Erweitern
 
-Eine neue ausschließlich synthetische JSON-Aufgabe und ihren Eintrag mit festen
+Neue Format-/Familienfälle gehören nach `test-fixtures/synthetic-players/`; die
+Abdeckungsmatrix und ein echter Browser-Prüfschritt sind mitzuführen. Die Herkunft
+und Prüfsummen neuer Player und Runtime-Ressourcen müssen feststehen.
+
+Für ein weiteres ASPECT-Review-Szenario eine ausschließlich synthetische JSON-Aufgabe
+und ihren Eintrag mit festen
 Sollwerten in `pool.json` anlegen. Die Definition muss zur festgelegten Player-Version
 passen. Neue Browserfälle auf die öffentlich sichtbaren Werte prüfen; die
 Musterlösung nicht durch vorbefüllte Antworten im Testplayer simulieren. Für einen

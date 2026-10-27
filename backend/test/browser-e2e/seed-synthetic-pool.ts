@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { DataSource } from "typeorm";
+import { prepareSyntheticResources } from "./synthetic-resources";
 import {
   AccessModel,
   Acp,
@@ -17,34 +18,57 @@ export async function seedSyntheticPool(
   fixtureDirectory: string,
   managerId: string,
 ): Promise<void> {
-  const source = resolve(__dirname, "../../../test-fixtures/synthetic-aspect");
+  await seedPool(dataSource, fixtureDirectory, managerId, "synthetic-aspect");
+  await prepareSyntheticResources(fixtureDirectory);
+  await seedPool(dataSource, fixtureDirectory, managerId, "synthetic-players");
+}
+
+async function seedPool(
+  dataSource: DataSource,
+  fixtureDirectory: string,
+  managerId: string,
+  folder: string,
+): Promise<void> {
+  const source = resolve(__dirname, "../../../test-fixtures", folder);
   const pool = JSON.parse(await readFile(join(source, "pool.json"), "utf8"));
-  const player = await readFile(join(source, pool.player.file));
-  if (
-    createHash("sha256").update(player).digest("hex") !== pool.player.sha256
-  ) {
-    throw new Error("Synthetic ASPECT player checksum mismatch.");
-  }
-  const directory = join(fixtureDirectory, "synthetic-aspect");
+  const players = pool.players || [{ id: "aspect", ...pool.player }];
+  const directory = join(fixtureDirectory, folder);
   await mkdir(directory, { recursive: true });
   const units = await Promise.all(
     pool.units.map(async (entry: { file: string }) =>
       JSON.parse(await readFile(join(source, entry.file), "utf8")),
     ),
   );
-  const files: { name: string; type: string; content: string | Buffer }[] = [
-    { name: pool.player.file, type: "PLAYER", content: player },
-    {
-      name: "synthetic-booklet.xml",
-      type: "BOOKLET",
-      content: `<Booklet><Metadata><Id>${pool.bookletId}</Id><Label>Synthetische ASPECT-Aufgaben</Label></Metadata><Units>${units.map((unit) => `<Unit id="${unit.id}"/>`).join("")}</Units></Booklet>`,
-    },
-  ];
-  const indexUnits = units.map((unit) => {
+  const files: { name: string; type: string; content: string | Buffer }[] = [];
+  for (const player of players) {
+    const content = await readFile(join(source, player.file));
+    if (createHash("sha256").update(content).digest("hex") !== player.sha256) {
+      throw new Error(`Synthetic ${player.id} player checksum mismatch.`);
+    }
+    files.push({
+      name: player.file.split("/").pop()!,
+      type: "PLAYER",
+      content,
+    });
+  }
+  files.push({
+    name: "synthetic-booklet.xml",
+    type: "BOOKLET",
+    content: `<Booklet><Metadata><Id>${pool.bookletId}</Id><Label>Synthetische Aufgaben</Label></Metadata><Units>${units.map((unit) => `<Unit id="${unit.id}"/>`).join("")}</Units></Booklet>`,
+  });
+  const indexUnits = units.map((unit, index) => {
+    const player = players.find(
+      (candidate: { id: string }) =>
+        candidate.id === (pool.units[index].player || "aspect"),
+    );
+    if (!player) throw new Error(`Unknown synthetic player for ${unit.id}.`);
     files.push({
       name: `${unit.id}.voud`,
       type: "UNIT_DEFINITION",
-      content: JSON.stringify(unit.definition),
+      content:
+        typeof unit.definition === "string"
+          ? unit.definition
+          : JSON.stringify(unit.definition),
     });
     if (unit.codingScheme)
       files.push({
@@ -59,7 +83,7 @@ export async function seedSyntheticPool(
       richText:
         "<p>Synthetischer Zusatztext in der normalen Aufgabenansicht.</p>",
       dependencies: [
-        { id: pool.player.file, type: "PLAYER" },
+        { id: player.file.split("/").pop()!, type: "PLAYER" },
         { id: `${unit.id}.voud`, type: "UNIT_DEFINITION" },
         ...(unit.codingScheme
           ? [{ id: `${unit.id}.vocs`, type: "CODING_SCHEME" }]
@@ -70,14 +94,17 @@ export async function seedSyntheticPool(
   await dataSource.getRepository(Acp).save(
     dataSource.getRepository(Acp).create({
       id: pool.acpId,
-      packageId: "synthetic-aspect-e2e",
-      name: "Synthetischer ASPECT-Testpool",
+      packageId: `${folder}-e2e`,
+      name:
+        folder === "synthetic-aspect"
+          ? "Synthetischer ASPECT-Testpool"
+          : "Synthetischer Formate- und Player-Testpool",
       description:
         "Ausschließlich künstliche Testaufgaben, keine Erhebungsdaten.",
       settings: {},
       acpIndex: {
         version: "0.5.0",
-        packageId: "synthetic-aspect-e2e",
+        packageId: `${folder}-e2e`,
         assessmentParts: [
           {
             id: "synthetic-part",

@@ -1,0 +1,25 @@
+{
+  "id": "abi-inputs",
+  "name": "ABI: Text, Zahlen und Auswahl",
+  "definition": "iqb-scripted::1.2\ntitle::Synthetische ABI-Eingaben\nheader::Alle Eingabeformate\ntext::Künstliche Daten für den Browser-Test.\nhtml::<strong>Synthetischer Hinweis</strong>\nhr\nrem::Nur synthetische Inhalte\ninput-text::ANSWER::0::Kurzantwort::::1\ninput-text::LONG::0::Begründung::::3\ninput-number::NUMBER::0::Anzahl::::0::10\ncheckbox::CHECK::0::Wasser mitnehmen\ncheckboxes-start::Proviant\ncheckbox::BREAD::0::Brot\ncheckbox::APPLE::0::Apfel\ncheckboxes-end\nmultiple-choice::CHOICE::1::Ziel::1::Bahnhof##See##Schule\ndrop-down::LIST::1::Verkehrsmittel::1::Bus##Fahrrad\nlikert-start::0::1::Nein##Ja\nlikert::SCALE::Wasser ist sinnvoll\nlikert-end",
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "ANSWER",
+        "alias": "ANSWER",
+        "label": "ABI: Text, Zahlen und Auswahl",
+        "sourceType": "BASE",
+        "codeModel": "MANUAL_ONLY",
+        "manualInstruction": "<p>Synthetisches Beispiel. Die Kodierung bleibt lesbar; dieser Player verwendet ein eigenes Antwortformat.</p>",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Prüfantwort"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -37,6 +37,38 @@ const testResult = (
 ) => ({ status, duration: 123, attachments, retry: 0 }) as TestResult;
 
 describe('Synthetic media reporter', () => {
+  it('does not claim coverage for an unexecuted player format', async () => {
+    const { reporter, outputDir } = setup();
+    await reporter.onEnd(fullResult('passed'));
+    const manifest = JSON.parse(readFileSync(join(outputDir, 'manifest.json'), 'utf8'));
+    expect(manifest.players).toHaveLength(6);
+    expect(manifest.formatCoverage).toHaveLength(44);
+    expect(
+      manifest.formatCoverage.every(
+        (unit: { verifiedIn: string[] }) => unit.verifiedIn.length === 0,
+      ),
+    ).toBe(true);
+    expect(
+      manifest.formatCoverage.find((unit: { id: string }) => unit.id === 'aspect-periodic')
+        .coverage,
+    ).toBe('widget-request-only');
+  });
+
+  it('rejects a passing player-family review without its video', async () => {
+    const { reporter, directory } = setup();
+    vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+    const path = join(directory, 'state.png');
+    writeFileSync(path, 'synthetic image');
+    reporter.onTestEnd(
+      testCase(
+        'keeps readable coding and navigation in review for abi',
+        '/e2e/synthetic-players-media.spec.ts',
+      ),
+      testResult([{ name: 'review', contentType: 'image/png', path }]),
+    );
+    expect(await reporter.onEnd(fullResult('passed'))).toEqual({ status: 'failed' });
+  });
+
   it('rejects a passing walkthrough with incomplete recordings', async () => {
     const { reporter, outputDir } = setup();
     vi.spyOn(process.stderr, 'write').mockReturnValue(true);
