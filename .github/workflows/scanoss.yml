@@ -1,27 +1,14 @@
 name: External code provenance
 
+# External API calls are deliberate release checks, not automatic PR/weekly traffic.
 on:
-  pull_request:
-    paths:
-      - 'backend/src/**'
-      - 'backend/test/**'
-      - 'frontend/src/**'
-      - 'frontend/e2e/**'
-      - 'keycloak/**'
-      - 'scripts/**'
-      - 'nginx/**'
-      - 'test-fixtures/**'
-      - 'compliance/scanoss-requirements.txt'
-      - '.github/workflows/scanoss.yml'
-  schedule:
-    - cron: '45 6 * * 1'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: scanoss-${{ github.event.pull_request.number || github.ref }}
+  group: scanoss-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -44,62 +31,25 @@ jobs:
       - name: Test report validation
         run: python -m unittest discover -s scripts -p test_scanoss_summary.py
       - name: Prepare tracked scan input
-        id: source
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          scan_paths=(
-            backend/src backend/test frontend/src frontend/e2e
-            keycloak scripts nginx test-fixtures
-          )
           mkdir -p "$RUNNER_TEMP/scanoss-source" dist/scanoss
           git rev-parse HEAD > dist/scanoss/revision.txt
           scanoss-py version > dist/scanoss/tool-version.txt
-
-          if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            git diff --name-only --diff-filter=ACMR -z "$BASE_SHA" HEAD \
-              -- "${scan_paths[@]}" > dist/scanoss/scanned-files.zlist
-            if [[ ! -s dist/scanoss/scanned-files.zlist ]]; then
-              : > dist/scanoss/scanned-files.txt
-              printf 'No tracked source files in scope changed; scan skipped.\n' \
-                > dist/scanoss/status.txt
-              echo "has_sources=false" >> "$GITHUB_OUTPUT"
-              echo "mode=pull-request-delta" >> "$GITHUB_OUTPUT"
-              echo "No tracked source files in the SCANOSS scope changed." \
-                >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
-            tar --null --files-from=dist/scanoss/scanned-files.zlist -cf - \
-              | tar -xf - -C "$RUNNER_TEMP/scanoss-source"
-            tr '\0' '\n' < dist/scanoss/scanned-files.zlist \
-              > dist/scanoss/scanned-files.txt
-            scan_mode="pull-request-delta"
-          else
-            git archive HEAD \
-              | tar -x -C "$RUNNER_TEMP/scanoss-source"
-            git ls-files \
-              > dist/scanoss/scanned-files.txt
-            scan_mode="full"
-          fi
-
-          echo "has_sources=true" >> "$GITHUB_OUTPUT"
-          printf '%s\n' "$scan_mode" > dist/scanoss/mode.txt
-          echo "mode=$scan_mode" >> "$GITHUB_OUTPUT"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/scanoss-source"
+          git ls-files > dist/scanoss/scanned-files.txt
+          printf 'full\n' > dist/scanoss/mode.txt
           printf 'Scan prepared but not completed.\n' > dist/scanoss/status.txt
 
       - name: Scan tracked source against SCANOSS
         id: scan
-        if: steps.source.outputs.has_sources == 'true'
         env:
-          EVENT_NAME: ${{ github.event_name }}
           SCANOSS_API_URL: ${{ vars.SCANOSS_API_URL || 'https://api.osskb.org' }}
           SCANOSS_API_KEY: ${{ secrets.SCANOSS_API_KEY }}
         run: |
           set -euo pipefail
           scan_args=(
-            scan --skip-settings-file --threads 1 --timeout 60 --retry 1
+            scan --skip-settings-file --threads 1 --timeout 60 --retry 0
             --apiurl "$SCANOSS_API_URL"
             --output dist/scanoss/results.json
           )
@@ -111,17 +61,13 @@ jobs:
           scanoss-py "${scan_args[@]}" \
             2>&1 | tee dist/scanoss/scan.log
           scan_exit=${PIPESTATUS[0]}
+          printf '%s\n' "$scan_exit" > dist/scanoss/exit-code.txt
           set -e
 
           if (( scan_exit != 0 )); then
-            if [[ "$EVENT_NAME" == "pull_request" ]] \
-              && grep -Eqi 'rate.?limit|HTTP (429|503)|Retry-After|service unavailable|timed? out|timeout|connection (refused|reset)|temporary failure|name or service not known|remote disconnected' \
-                dist/scanoss/scan.log; then
-              printf 'Configured SCANOSS API unavailable; scan incomplete.\n' \
-                > dist/scanoss/status.txt
-              echo "status=unavailable" >> "$GITHUB_OUTPUT"
-              exit 1
-            fi
+            printf 'Configured SCANOSS API did not complete the scan; evidence incomplete.\n' \
+              > dist/scanoss/status.txt
+            echo "status=incomplete" >> "$GITHUB_OUTPUT"
             exit "$scan_exit"
           fi
 
@@ -131,16 +77,16 @@ jobs:
           printf 'Scan completed successfully.\n' > dist/scanoss/status.txt
           echo "status=complete" >> "$GITHUB_OUTPUT"
 
-      - name: Report incomplete PR scan
-        if: always() && steps.scan.outputs.status == 'unavailable'
+      - name: Report incomplete scan
+        if: always() && steps.scan.outputs.status == 'incomplete'
         run: |
-          echo "::warning title=SCANOSS API unavailable::The configured SCANOSS API did not complete this PR scan. The scan is incomplete; run it locally or retry later."
+          echo "::warning title=SCANOSS API unavailable::The configured SCANOSS API did not complete this scan. Evidence remains incomplete; retry later or use complete reviewed local evidence for this commit."
           {
             echo "## SCANOSS scan incomplete"
             echo
             echo "> [!WARNING]"
-            echo "> The configured SCANOSS API was unavailable or rate-limited."
-            echo "> This is not a clean scan result. Run the listed PR files locally or retry later."
+            echo "> The configured SCANOSS API did not complete the scan."
+            echo "> This is not a clean scan result. Retry later; local scans use the same API and its limits."
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload scan evidence
         if: always()

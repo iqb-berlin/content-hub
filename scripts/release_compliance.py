@@ -10,8 +10,12 @@ import re
 import runpy
 import subprocess
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 from typing import Any
+
+import local_compliance as local
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,7 +95,8 @@ def findings(scanoss: dict[str, Any], scancode: dict[str, Any]) -> dict[str, Any
 
 def validate_review(
     issue: dict[str, Any], repository: str, issue_url: str, commit: str,
-    required_findings: dict[str, Any], scanoss_run: int, compliance_run: int,
+    required_findings: dict[str, Any], scanoss_run: int | None = None,
+    compliance_run: int | None = None, local_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     require(re.fullmatch(r"[0-9a-f]{40}", commit), "Invalid source commit")
     prefix = f"https://github.com/{repository}/issues/"
@@ -118,9 +123,17 @@ def validate_review(
     require(record.get("source_commit") == commit, "Review is for a different commit")
     require(record.get("reviewer") == closer.get("login"),
             "Named reviewer must be the human who completed the issue")
-    require(record.get("scanoss_run_id") == scanoss_run and
-            record.get("compliance_run_id") == compliance_run,
-            "Review is for different scan runs")
+    if local_evidence is not None:
+        require(record.get("local_evidence") == local_evidence and
+                "scanoss_run_id" not in record and "compliance_run_id" not in record,
+                "Review is for different local evidence or mixes evidence modes")
+    else:
+        require(type(scanoss_run) is int and scanoss_run > 0 and
+                type(compliance_run) is int and compliance_run > 0 and
+                "local_evidence" not in record and
+                record.get("scanoss_run_id") == scanoss_run and
+                record.get("compliance_run_id") == compliance_run,
+                "Review is for different scan runs")
     checks = record.get("checks", {})
     require(isinstance(checks, dict) and all(checks.get(key) is True for key in CHECKS),
             "Rights, assets, distribution notices and scope checks must be complete")
@@ -155,6 +168,39 @@ def gh_json(*args: str) -> dict[str, Any]:
     return json.loads(subprocess.check_output(["gh", "api", *args], text=True))
 
 
+def download_local(record: dict[str, Any], repository: str, commit: str,
+                   destination: Path) -> dict[str, Any]:
+    reference = record.get("local_evidence")
+    require(isinstance(reference, dict) and
+            reference.get("release_tag") == f"compliance-{commit}" and
+            reference.get("asset_name") == local.ASSET_NAME and
+            isinstance(reference.get("sha256"), str) and
+            re.fullmatch(r"[0-9a-f]{64}", reference["sha256"]),
+            "Invalid local evidence reference")
+    require("scanoss_run_id" not in record and "compliance_run_id" not in record,
+            "Choose local evidence or workflow runs, not both")
+    # Download only a fixed-name asset from this repository, never an arbitrary
+    # URL from an issue. The completed human record binds its immutable checksum.
+    release = gh_json(f"repos/{repository}/releases/tags/{reference['release_tag']}")
+    require(release.get("tag_name") == reference["release_tag"] and
+            release.get("prerelease") is True and not release.get("draft"),
+            "Local evidence must be published as an evidence prerelease")
+    assets = [asset for asset in release.get("assets", [])
+              if asset.get("name") == local.ASSET_NAME]
+    require(len(assets) == 1 and 0 < assets[0].get("size", 0) <= local.MAX_ARCHIVE,
+            "Local evidence asset missing or too large")
+    archive = destination / local.ASSET_NAME
+    subprocess.run(["gh", "release", "download", reference["release_tag"],
+                    "--repo", repository, "--pattern", local.ASSET_NAME,
+                    "--dir", str(destination)], check=True)
+    require(archive.stat().st_size <= local.MAX_ARCHIVE and
+            local.digest(archive.read_bytes()) == reference["sha256"],
+            "Local evidence archive differs from the human-reviewed checksum")
+    local.unpack(archive, destination, ROOT, commit)
+    (destination / "evidence-release.json").write_text(json.dumps(release, indent=2) + "\n")
+    return reference
+
+
 def collect(args: argparse.Namespace) -> None:
     require(re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", args.repository),
             "Invalid repository")
@@ -173,21 +219,11 @@ def collect(args: argparse.Namespace) -> None:
     record = json.loads(records[0])
     destination = args.output_dir
     destination.mkdir(parents=True, exist_ok=False)
-    for field, workflow, artifacts in (
-        ("scanoss_run_id", "scanoss.yml", ("scanoss-code-provenance",)),
-        ("compliance_run_id", "compliance.yml", ("source-license-scan", "dependency-sboms")),
-    ):
-        run_id = record.get(field)
-        require(type(run_id) is int and run_id > 0, f"Invalid {field}")
-        run = gh_json(f"repos/{args.repository}/actions/runs/{run_id}")
-        validate_run(run, workflow, args.commit)
-        (destination / f"{field}.json").write_text(json.dumps(run, indent=2) + "\n")
-        for artifact in artifacts:
-            target = destination / artifact
-            subprocess.run(["gh", "run", "download", str(run_id), "--repo", args.repository,
-                            "--name", artifact, "--dir", str(target)], check=True)
-            require((target / "revision.txt").read_text().strip() == args.commit,
-                    f"{artifact}: evidence revision mismatch")
+    local_reference = None
+    if "local_evidence" in record:
+        local_reference = download_local(record, args.repository, args.commit, destination)
+    else:
+        collect_runs(record, args.repository, args.commit, destination)
     scanoss_dir = destination / "scanoss-code-provenance"
     require((scanoss_dir / "mode.txt").read_text().strip() == "full",
             "SCANOSS evidence is not a full scan")
@@ -196,20 +232,36 @@ def collect(args: argparse.Namespace) -> None:
     required_findings = findings(read_json(scanoss_dir / "results.json"), read_json(
         destination / "source-license-scan/source-license-scan.json"))
     reviewed = validate_review(issue, args.repository, args.review_issue, args.commit,
-                              required_findings, record["scanoss_run_id"],
-                              record["compliance_run_id"])
+                              required_findings, record.get("scanoss_run_id"),
+                              record.get("compliance_run_id"), local_reference)
     sboms = destination / "dependency-sboms"
     subprocess.run([sys.executable, str(ROOT / "scripts/check-dependency-licenses.py"),
                     "--policy", str(ROOT / "compliance/dependency-license-policy.json"),
-                    *(str(sboms / name) for name in (
-                        "backend-runtime.cdx.json", "frontend-runtime.cdx.json",
-                        "keycloak-altcha-runtime.json"))], check=True)
+                    *(str(sboms / name) for name in local.SBOMS[:3])], check=True)
     for name, value in (("review-issue.json", issue), ("review-record.json", reviewed),
                         ("findings.json", required_findings)):
         (destination / name).write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
     (destination / "revision.txt").write_text(args.commit + "\n")
     (destination / "LICENSE").write_bytes((ROOT / "LICENSE").read_bytes())
     print(f"Human review and full scan evidence verified for {args.commit}")
+
+
+def collect_runs(record: dict[str, Any], repository: str, commit: str, destination: Path) -> None:
+    for field, workflow, artifacts in (
+        ("scanoss_run_id", "scanoss.yml", ("scanoss-code-provenance",)),
+        ("compliance_run_id", "compliance.yml", ("source-license-scan", "dependency-sboms")),
+    ):
+        run_id = record.get(field)
+        require(type(run_id) is int and run_id > 0, f"Invalid {field}")
+        run = gh_json(f"repos/{repository}/actions/runs/{run_id}")
+        validate_run(run, workflow, commit)
+        (destination / f"{field}.json").write_text(json.dumps(run, indent=2) + "\n")
+        for artifact in artifacts:
+            target = destination / artifact
+            subprocess.run(["gh", "run", "download", str(run_id), "--repo", repository,
+                            "--name", artifact, "--dir", str(target)], check=True)
+            require((target / "revision.txt").read_text().strip() == commit,
+                    f"{artifact}: evidence revision mismatch")
 
 
 def main() -> int:
@@ -222,10 +274,11 @@ def main() -> int:
     collect_parser.add_argument("--output-dir", type=Path, required=True)
     draft = commands.add_parser("draft-review")
     draft.add_argument("--commit", required=True)
-    draft.add_argument("--scanoss", type=Path, required=True)
-    draft.add_argument("--scancode", type=Path, required=True)
-    draft.add_argument("--scanoss-run-id", type=int, required=True)
-    draft.add_argument("--compliance-run-id", type=int, required=True)
+    draft.add_argument("--local-evidence", type=Path)
+    draft.add_argument("--scanoss", type=Path)
+    draft.add_argument("--scancode", type=Path)
+    draft.add_argument("--scanoss-run-id", type=int)
+    draft.add_argument("--compliance-run-id", type=int)
     draft.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -233,11 +286,30 @@ def main() -> int:
             collect(args)
         else:
             require(re.fullmatch(r"[0-9a-f]{40}", args.commit), "Invalid source commit")
-            required_findings = findings(read_json(args.scanoss), read_json(args.scancode))
+            workflow_args = (args.scanoss, args.scancode, args.scanoss_run_id, args.compliance_run_id)
+            if args.local_evidence:
+                require(not any(value is not None for value in workflow_args),
+                        "Choose local evidence or workflow reports, not both")
+                with tempfile.TemporaryDirectory() as temporary:
+                    directory = Path(temporary)
+                    local.unpack(args.local_evidence, directory, ROOT, args.commit)
+                    required_findings = findings(read_json(directory / local.SCANOSS / "results.json"),
+                                                 read_json(directory / local.SCANCODE /
+                                                           "source-license-scan.json"))
+                evidence = {"local_evidence": {
+                    "release_tag": f"compliance-{args.commit}", "asset_name": local.ASSET_NAME,
+                    "sha256": local.digest(args.local_evidence.read_bytes()),
+                }}
+            else:
+                require(all(value is not None for value in workflow_args) and
+                        args.scanoss_run_id > 0 and args.compliance_run_id > 0,
+                        "Workflow reports require both reports and positive full-run IDs")
+                required_findings = findings(read_json(args.scanoss), read_json(args.scancode))
+                evidence = {"scanoss_run_id": args.scanoss_run_id,
+                            "compliance_run_id": args.compliance_run_id}
             record = {
                 "source_commit": args.commit, "reviewer": "",
-                "scanoss_run_id": args.scanoss_run_id,
-                "compliance_run_id": args.compliance_run_id,
+                **evidence,
                 "checks": dict.fromkeys(CHECKS, False),
                 "decisions": {key: {"path": value["path"], "resolution": "pending",
                                     "reason": "", "evidence": ""}
@@ -249,7 +321,7 @@ def main() -> int:
                                    "All decisions below are pending human review. "
                                    f"Finding details: {inventory.name}.\n\n```json\n" +
                                    json.dumps(record, indent=2, ensure_ascii=False) + "\n```\n")
-    except (ComplianceError, ValueError, KeyError, TypeError, OSError,
+    except (ComplianceError, ValueError, KeyError, TypeError, OSError, zipfile.BadZipFile,
             subprocess.CalledProcessError) as error:
         print(f"Release compliance incomplete: {error}", file=sys.stderr)
         return 1
