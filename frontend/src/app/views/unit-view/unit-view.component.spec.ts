@@ -490,6 +490,56 @@ describe('UnitViewComponent', () => {
     expect(component.currentPage).toBe(1);
   });
 
+  it.each([
+    { reviewMode: true, showMetadata: true, hideReviewMetadata: true, visible: false },
+    { reviewMode: true, showMetadata: false, hideReviewMetadata: true, visible: false },
+    { reviewMode: true, showMetadata: false, hideReviewMetadata: false, visible: true },
+    { reviewMode: true, showMetadata: false, hideReviewMetadata: undefined, visible: true },
+    { reviewMode: false, showMetadata: true, hideReviewMetadata: true, visible: true },
+    { reviewMode: false, showMetadata: false, hideReviewMetadata: false, visible: false },
+  ])(
+    'applies metadata visibility independently in review and ordinary views: %j',
+    async ({ reviewMode, showMetadata, hideReviewMetadata, visible }) => {
+      const { fixture, component } = await playerFixture();
+      fixture.componentRef.setInput('reviewMode', reviewMode);
+      fixture.componentRef.setInput('featureConfigOverride', {
+        showMetadata,
+        hideReviewMetadata,
+        showCodingScheme: true,
+      } satisfies FeatureConfig);
+      fixture.detectChanges();
+      component.panelVisible = true;
+      component.reviewPanelCollapsed = false;
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+      const tabs = Array.from(
+        fixture.nativeElement.querySelectorAll('.panel-tabs button'),
+      ) as HTMLElement[];
+      expect(tabs.some((tab) => tab.textContent?.trim() === 'Metadaten')).toBe(visible);
+    },
+  );
+
+  it('removes an open metadata panel when hidden and keeps it hidden after unit changes', async () => {
+    const { fixture, component } = await playerFixture();
+    component.reviewPanelCollapsed = false;
+    component.activeTab = 'metadata';
+    component.unitMetadata = [{ id: 'subject', label: 'Fach', value: 'Deutsch' }];
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.meta-dl').textContent).toContain('Deutsch');
+    fixture.componentRef.setInput('featureConfigOverride', { hideReviewMetadata: true });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.meta-dl')).toBeNull();
+    expect(component.activeTab).toBe('comments');
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.showMetadata).toBe(false);
+    fixture.componentRef.setInput('featureConfigOverride', { hideReviewMetadata: false });
+    fixture.detectChanges();
+    expect(component.showMetadata).toBe(true);
+  });
+
   it.each([true, false])(
     'filters developer metadata only in Review (reviewMode: %s)',
     async (reviewMode) => {

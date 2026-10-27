@@ -299,6 +299,75 @@ test('synchronizes initial totals, both navigation directions, display modes and
   expect(errors).toEqual([]);
 });
 
+test('persists hiding the metadata tab across reload and task changes and can restore it', async ({
+  page,
+  request,
+}, testInfo) => {
+  const headers = { Authorization: `Bearer ${createOidcAppToken(managerId, 'e2e-manager')}` };
+  const initialResponse = await request.get(configUrl, { headers });
+  expect(initialResponse.ok()).toBe(true);
+  const initial = await initialResponse.json();
+  await installContent(page);
+  try {
+    await page.goto(`/view/${acpId}/review/manage`);
+    const setting = page.getByRole('checkbox', {
+      name: 'Reiter „Metadaten“ ausblenden',
+      exact: true,
+    });
+    const developerSetting = page.getByRole('checkbox', {
+      name: 'Namen und Kürzel der Aufgabenentwickler/innen ausblenden',
+    });
+    await setting.check();
+    await expect(developerSetting).toBeDisabled();
+    const saved = page.waitForResponse(
+      (response) => response.url().endsWith(configUrl) && response.request().method() === 'PUT',
+    );
+    await page.getByRole('button', { name: 'Review-Konfiguration speichern', exact: true }).click();
+    expect((await saved).ok()).toBe(true);
+    await page.reload();
+    await expect(setting).toBeChecked();
+    await page.goto(reviewUrl);
+    await expect(
+      page.getByRole('heading', { name: 'Aufgabe 1 (review-u1)', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Kodierung', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Metadaten', exact: true })).toHaveCount(0);
+    await expect(page.locator('.meta-dl')).toHaveCount(0);
+    await page.screenshot({
+      path: testInfo.outputPath('review-metadata-tab-hidden.png'),
+      fullPage: true,
+    });
+    await page.getByRole('button', { name: 'Weiter →', exact: true }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Aufgabe 2 (review-u2)', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Metadaten', exact: true })).toHaveCount(0);
+
+    await page.goto(`/view/${acpId}/unit/review-u1`);
+    await page.getByRole('button', { name: 'Zusatzdaten anzeigen', exact: true }).click();
+    await expect(page.locator('.meta-dl')).toContainText('Deutsch');
+
+    await page.goto(`/view/${acpId}/review/manage`);
+    await setting.uncheck();
+    await expect(developerSetting).toBeEnabled();
+    const shown = page.waitForResponse(
+      (response) => response.url().endsWith(configUrl) && response.request().method() === 'PUT',
+    );
+    await page.getByRole('button', { name: 'Review-Konfiguration speichern', exact: true }).click();
+    expect((await shown).ok()).toBe(true);
+    await page.goto(reviewUrl);
+    await page.getByRole('button', { name: 'Metadaten', exact: true }).click();
+    await expect(page.locator('.meta-dl')).toContainText('Deutsch');
+  } finally {
+    const current = await (await request.get(configUrl, { headers })).json();
+    const restored = await request.put(configUrl, {
+      headers,
+      data: { ...current, hideReviewMetadata: initial.hideReviewMetadata },
+    });
+    expect(restored.ok()).toBe(true);
+  }
+});
+
 test('persists the visibility choice and limits hiding to review metadata', async ({
   page,
   request,

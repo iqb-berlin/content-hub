@@ -131,6 +131,7 @@ describe("ViewsService", () => {
           id: "u1",
           name: "Unit",
           occurrenceId: "b1:path",
+          linkId: "Y5gRx3-5hT2cV0WQ",
           blockPath: ["Block"],
         },
       ],

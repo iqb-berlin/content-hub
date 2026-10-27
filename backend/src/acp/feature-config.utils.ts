@@ -183,6 +183,29 @@ function normalizeMetadataColumns(
   };
 }
 
+function normalizeReducedView(value: unknown): UnknownRecord {
+  const source = asRecord(value);
+  const actions = asRecord(source.headerActions);
+  return {
+    enabled: source.enabled === true,
+    headerActions: Object.fromEntries(
+      [
+        "readonlyPreview",
+        "columnManager",
+        "importParameters",
+        "clearEmpiricalDifficulties",
+        "renumberReferences",
+        "history",
+      ].map((id) => [id, actions[id] !== false]),
+    ),
+    showHeader: source.showHeader !== false,
+    showTableToolbarArea: source.showTableToolbarArea !== false,
+    showItemInfo: source.showItemInfo !== false,
+    showPlayerPreview: source.showPlayerPreview !== false,
+    showExplorerItemPanel: source.showExplorerItemPanel !== false,
+  };
+}
+
 /**
  * Canonical feature-config representation:
  * - use `metadataColumns` as the single source of truth
@@ -203,6 +226,11 @@ export function normalizeFeatureConfig(featureConfig: unknown): UnknownRecord {
   normalized.enablePlayerFocusHighlight =
     source.enablePlayerFocusHighlight === true;
   normalized.showStudioItemComments = source.showStudioItemComments === true;
+  if (source.itemExplorerReducedView !== undefined) {
+    normalized.itemExplorerReducedView = normalizeReducedView(
+      source.itemExplorerReducedView,
+    );
+  }
 
   normalized.enablePersonalItemData = source.enablePersonalItemData === true;
   normalized.enableItemCollections = source.enableItemCollections === true;

@@ -248,43 +248,136 @@ describe("Review visibility, groups and synchronization API", () => {
     if (app) await app.close();
   });
 
-  it("persists developer-name visibility with validation, manager grants and version checks", async () => {
-    expect(config.hideReviewDeveloperNames).toBe(false);
-    await saveConfig({ hideReviewDeveloperNames: true });
-    expect(config.hideReviewDeveloperNames).toBe(true);
-    const saved = { ...config };
-    for (const actor of actors.slice(0, 4)) {
+  it.each(["hideReviewMetadata", "hideReviewDeveloperNames"])(
+    "persists %s with validation, manager grants and version checks",
+    async (setting) => {
+      expect(config[setting]).toBe(false);
+      await saveConfig({ [setting]: true });
+      expect(config[setting]).toBe(true);
+      const saved = { ...config };
+      for (const actor of actors.slice(0, 4)) {
+        await request(server)
+          .put(configApi())
+          .set(headers(actor.token))
+          .send({ ...config, [setting]: false })
+          .expect(403);
+      }
+      const invalidValues =
+        setting === "hideReviewMetadata" ? ["false", 1, null] : ["false", 1];
+      for (const value of invalidValues) {
+        await request(server)
+          .put(configApi())
+          .set(headers(manager))
+          .send({ ...config, [setting]: value })
+          .expect(400);
+      }
+      await saveConfig({ [setting]: undefined });
+      expect(config[setting]).toBe(true);
       await request(server)
         .put(configApi())
-        .set(headers(actor.token))
-        .send({ ...config, hideReviewDeveloperNames: false })
+        .set(headers(manager))
+        .send({ ...saved, [setting]: false })
+        .expect(409);
+      expect(
+        (await db.getRepository(AcpAccessConfig).findOneByOrFail({ acpId }))
+          .featureConfig[setting],
+      ).toBe(true);
+      for (const actor of actors) {
+        const start = await request(server)
+          .get(`/api/view/acp/${acpId}`)
+          .set(headers(actor.token))
+          .expect(200);
+        expect(start.body.featureConfig[setting]).toBe(true);
+      }
+      await saveConfig({ [setting]: false });
+      expect(config[setting]).toBe(false);
+    },
+  );
+
+  it.each(["hideReviewMetadata", "hideReviewDeveloperNames"])(
+    "protects %s from stale and unauthorized general access updates",
+    async (setting) => {
+      const isolatedAcp = await db.getRepository(Acp).save({
+        packageId: `review-access-${setting}-${Date.now()}`,
+        name: "Review visibility ownership",
+        acpIndex: {},
+      });
+      const repository = db.getRepository(AcpAccessConfig);
+      await repository.save({
+        acpId: isolatedAcp.id,
+        accessModel: "PUBLIC" as any,
+        featureConfig: { enableReview: true, showMetadata: true },
+      });
+      await db.getRepository(AcpUserRole).save({
+        acpId: isolatedAcp.id,
+        userId: actors[0].id,
+        role: "ACP_MANAGER" as any,
+        capabilities: [],
+      });
+      const accessUrl = `/api/acp/${isolatedAcp.id}/access`;
+      const reviewUrl = `/api/view/acp/${isolatedAcp.id}/review/config`;
+      const staleAccess = await request(server)
+        .get(accessUrl)
+        .set(headers(actors[0].token))
+        .expect(200);
+      const initial = await request(server)
+        .get(reviewUrl)
+        .set(headers(manager))
+        .expect(200);
+      const hidden = await request(server)
+        .put(reviewUrl)
+        .set(headers(manager))
+        .send({ ...initial.body, [setting]: true })
+        .expect(200);
+      const saved = await repository.findOneByOrFail({ acpId: isolatedAcp.id });
+
+      for (const token of [actors[0].token, manager]) {
+        for (const incoming of [undefined, false, "false", null, [true]]) {
+          const response = await request(server)
+            .put(accessUrl)
+            .set(headers(token))
+            .send({
+              accessModel: "PUBLIC",
+              featureConfig: {
+                ...staleAccess.body.featureConfig,
+                ...(incoming !== undefined ? { [setting]: incoming } : {}),
+                showMetadata: false,
+              },
+            })
+            .expect(200);
+          expect(response.body.featureConfig[setting]).toBe(true);
+          expect(response.body.featureConfig.showMetadata).toBe(false);
+        }
+      }
+      const current = await request(server)
+        .get(reviewUrl)
+        .set(headers(manager))
+        .expect(200);
+      expect(current.body).toEqual(hidden.body);
+      const stored = await repository.findOneByOrFail({
+        acpId: isolatedAcp.id,
+      });
+      expect(stored.reviewConfigVersion).toBe(saved.reviewConfigVersion);
+      expect(stored.reviewRevision).toBe(saved.reviewRevision);
+      await request(server)
+        .put(reviewUrl)
+        .set(headers(actors[0].token))
+        .send({ ...hidden.body, [setting]: false })
         .expect(403);
-    }
-    await request(server)
-      .put(configApi())
-      .set(headers(manager))
-      .send({ ...config, hideReviewDeveloperNames: "false" })
-      .expect(400);
-    const { hideReviewDeveloperNames: _hidden, ...legacyConfig } = config;
-    await saveConfig({ ...legacyConfig, hideReviewDeveloperNames: undefined });
-    expect(config.hideReviewDeveloperNames).toBe(true);
-    await request(server)
-      .put(configApi())
-      .set(headers(manager))
-      .send({ ...saved, hideReviewDeveloperNames: false })
-      .expect(409);
-    expect(
-      (await db.getRepository(AcpAccessConfig).findOneByOrFail({ acpId }))
-        .featureConfig.hideReviewDeveloperNames,
-    ).toBe(true);
-    const start = await request(server)
-      .get(`/api/view/acp/${acpId}`)
-      .set(headers(manager))
-      .expect(200);
-    expect(start.body.featureConfig.hideReviewDeveloperNames).toBe(true);
-    await saveConfig({ hideReviewDeveloperNames: false });
-    expect(config.hideReviewDeveloperNames).toBe(false);
-  });
+      await request(server)
+        .put(reviewUrl)
+        .set(headers(manager))
+        .send({ ...initial.body, [setting]: false })
+        .expect(409);
+      const restored = await request(server)
+        .put(reviewUrl)
+        .set(headers(manager))
+        .send({ ...hidden.body, [setting]: false })
+        .expect(200);
+      expect(restored.body[setting]).toBe(false);
+      expect(restored.body.configVersion).toBe(hidden.body.configVersion + 1);
+    },
+  );
 
   it("requires confirmation, preserves comments and rejects stale configuration", async () => {
     for (const actor of actors.slice(0, 4))

@@ -22,6 +22,7 @@ type EditableCommentCategory = Omit<CommentCategory, 'id'> & { id?: string };
 
 interface ReviewConfig {
   enableReview: boolean;
+  hideReviewMetadata?: boolean;
   hideReviewDeveloperNames?: boolean;
   visibilityMode: 'PRIVATE' | 'SHARED' | 'GROUP';
   configVersion: number;
@@ -401,7 +402,19 @@ interface ReviewConfig {
         <fieldset [disabled]="busy">
           <legend>Metadaten in der Prüfansicht</legend>
           <label>
-            <input type="checkbox" [(ngModel)]="config.hideReviewDeveloperNames" />
+            <input type="checkbox" [(ngModel)]="config.hideReviewMetadata" />
+            Reiter „Metadaten“ ausblenden
+          </label>
+          <p>
+            Blendet den gesamten Metadaten-Reiter in der Testheft-Prüfansicht für alle
+            Review-Teilnehmenden aus. Die Einstellung gilt nach dem Speichern.
+          </p>
+          <label>
+            <input
+              type="checkbox"
+              [(ngModel)]="config.hideReviewDeveloperNames"
+              [disabled]="config.hideReviewMetadata === true"
+            />
             Namen und Kürzel der Aufgabenentwickler/innen ausblenden
           </label>
           <p>

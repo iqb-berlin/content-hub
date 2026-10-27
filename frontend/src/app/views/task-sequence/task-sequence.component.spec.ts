@@ -152,6 +152,10 @@ describe('Booklet navigation', () => {
       }).compileComponents();
       const fixture = TestBed.createComponent(TaskSequenceComponent);
       const component = fixture.componentInstance;
+      vi.spyOn(TestBed.inject(Router), 'navigate').mockImplementation(async (_commands, extras) => {
+        routeQueryParamMap.next(convertToParamMap(extras?.queryParams || {}));
+        return true;
+      });
       fixture.detectChanges();
       await vi.waitFor(() => expect(component.hasUnits).toBe(true));
       fixture.detectChanges();
@@ -308,6 +312,10 @@ describe('Booklet navigation', () => {
 
     const fixture = TestBed.createComponent(TaskSequenceComponent);
     const component = fixture.componentInstance;
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockImplementation(async (_commands, extras) => {
+      routeQueryParamMap.next(convertToParamMap(extras?.queryParams || {}));
+      return true;
+    });
     fixture.detectChanges();
     expect(component.currentUnit?.id).toBe('u1');
     component.next();

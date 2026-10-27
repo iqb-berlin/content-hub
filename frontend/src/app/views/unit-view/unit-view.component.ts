@@ -1220,7 +1220,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private applyFeatureConfig(featureConfig: FeatureConfig) {
-    this.showMetadata = this.reviewMode || !!featureConfig.showMetadata;
+    this.showMetadata = this.reviewMode
+      ? featureConfig.hideReviewMetadata !== true
+      : !!featureConfig.showMetadata;
     this.showCodingScheme = this.reviewMode || !!featureConfig.showCodingScheme;
     this.showRichText = !this.reviewMode && !!featureConfig.showRichText;
     this.showMetadataToggle = this.showMetadata || this.showCodingScheme || this.showRichText;

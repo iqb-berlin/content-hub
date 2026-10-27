@@ -459,6 +459,7 @@ export interface ItemExplorerTableColumnLayout {
 }
 
 export interface FeatureConfig {
+  itemExplorerReducedView?: import('./item-explorer-reduced-view').ItemExplorerReducedView;
   showStudioItemComments?: boolean;
   // Preserve extension keys while requiring callers to narrow unknown values.
   [key: string]: unknown;
@@ -467,6 +468,7 @@ export interface FeatureConfig {
   allowFileDownload?: boolean;
   enableUnitView?: boolean;
   showMetadata?: boolean;
+  hideReviewMetadata?: boolean;
   hideReviewDeveloperNames?: boolean;
   showRichText?: boolean;
   showCodingScheme?: boolean;
@@ -742,6 +744,7 @@ export interface TaskSequence {
     id: string;
     name: string;
     occurrenceId?: string;
+    linkId?: string;
     alias?: string;
     blockPath?: string[];
   }[];

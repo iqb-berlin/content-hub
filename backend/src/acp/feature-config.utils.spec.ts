@@ -292,3 +292,68 @@ describe("normalizeFeatureConfig", () => {
     });
   });
 });
+
+describe("reduced Explorer feature configuration", () => {
+  it("keeps existing ACPs opt-in and normalizes malformed settings", () => {
+    expect(normalizeFeatureConfig({})).not.toHaveProperty(
+      "itemExplorerReducedView",
+    );
+    for (const value of [
+      null,
+      [],
+      true,
+      "false",
+      { enabled: "true", headerActions: [] },
+    ]) {
+      expect(
+        normalizeFeatureConfig({ itemExplorerReducedView: value })
+          .itemExplorerReducedView,
+      ).toMatchObject({
+        enabled: false,
+        showHeader: true,
+        showTableToolbarArea: true,
+        showItemInfo: true,
+        showPlayerPreview: true,
+        showExplorerItemPanel: true,
+        headerActions: { columnManager: true, readonlyPreview: true },
+      });
+    }
+  });
+
+  it("preserves explicit visibility choices and strips unsupported nested keys", () => {
+    const normalized = normalizeFeatureConfig({
+      itemExplorerReducedView: {
+        enabled: true,
+        showHeader: false,
+        showTableToolbarArea: false,
+        showItemInfo: false,
+        showPlayerPreview: false,
+        showExplorerItemPanel: false,
+        extension: "not supported",
+        headerActions: {
+          columnManager: false,
+          readonlyPreview: false,
+          unknown: false,
+        },
+      },
+    });
+    expect(normalized.itemExplorerReducedView).toMatchObject({
+      enabled: true,
+      showHeader: false,
+      showTableToolbarArea: false,
+      showItemInfo: false,
+      showPlayerPreview: false,
+      showExplorerItemPanel: false,
+      headerActions: {
+        columnManager: false,
+        readonlyPreview: false,
+        history: true,
+      },
+    });
+    expect(normalized.itemExplorerReducedView).not.toHaveProperty("extension");
+    expect(
+      (normalized.itemExplorerReducedView as any).headerActions,
+    ).not.toHaveProperty("unknown");
+    expect(normalizeFeatureConfig(normalized)).toEqual(normalized);
+  });
+});
