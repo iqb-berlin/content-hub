@@ -358,7 +358,12 @@ export class AcpService {
         if (dto.featureConfig)
           config.featureConfig = normalizeFeatureConfig({
             ...dto.featureConfig,
+            // Review-owned settings only change through the versioned review API.
             enableReview: config.featureConfig.enableReview === true,
+            hideReviewMetadata:
+              config.featureConfig.hideReviewMetadata === true,
+            hideReviewDeveloperNames:
+              config.featureConfig.hideReviewDeveloperNames === true,
             commentVisibilityMode:
               config.featureConfig.commentVisibilityMode || "PRIVATE",
             ungroupedVisibilityMode:
@@ -377,6 +382,8 @@ export class AcpService {
             [PLAYER_FOCUS_HIGHLIGHT_FEATURE_KEY]: false,
             ...(dto.featureConfig || {}),
             enableReview: false,
+            hideReviewMetadata: false,
+            hideReviewDeveloperNames: false,
             commentVisibilityMode: "PRIVATE",
             ungroupedVisibilityMode: "PRIVATE",
           }),
