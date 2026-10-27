@@ -44,8 +44,20 @@ const sequence: TaskSequence = {
   id: 'booklet-1',
   name: 'Testheft',
   units: [
-    { id: 'u1', name: 'Aufgabe 1', occurrenceId: 'booklet-1::0/0', alias: 'A' },
-    { id: 'u1', name: 'Aufgabe 1', occurrenceId: 'booklet-1::1/0 & B', alias: 'B' },
+    {
+      id: 'u1',
+      name: 'Aufgabe 1',
+      occurrenceId: 'booklet-1::0/0',
+      linkId: 'Y5gRx3-5hT2cV0WQ',
+      alias: 'A',
+    },
+    {
+      id: 'u1',
+      name: 'Aufgabe 1',
+      occurrenceId: 'booklet-1::1/0 & B',
+      linkId: 'qN2y7_rP0G1x8A6B',
+      alias: 'B',
+    },
     { id: 'u2', name: 'Aufgabe 2' },
   ],
 };
@@ -92,6 +104,83 @@ describe('Booklet task links', () => {
     expect(api.getViewSequence).toHaveBeenCalledOnce();
   });
 
+  it('opens the short link for a repeated occurrence and generates only short links', async () => {
+    const occurrence = sequence.units[1].linkId!;
+    const { component, harness, router } = await setup(
+      `${baseUrl}?kind=booklet&occurrence=${occurrence}`,
+    );
+    expect(component.currentIndex).toBe(1);
+    expect(component.currentUnit?.alias).toBe('B');
+    expect(component.invalidUnitLink).toBe(false);
+    expect(router.url).toBe(`${baseUrl}?kind=booklet&occurrence=${occurrence}`);
+    const root = harness.fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.workspace-actions a')?.getAttribute('href')).toBe(router.url);
+    root
+      .querySelector<HTMLButtonElement>('button[aria-controls="task-sequence-unit-list"]')!
+      .click();
+    harness.detectChanges();
+    expect(
+      Array.from(root.querySelectorAll('.unit-direct-link'), (link) => link.getAttribute('href')),
+    ).toEqual([
+      `${baseUrl}?kind=booklet&occurrence=${sequence.units[0].linkId}`,
+      `${baseUrl}?kind=booklet&occurrence=${sequence.units[1].linkId}`,
+      `${baseUrl}?kind=booklet&position=3`,
+    ]);
+  });
+
+  it('reports an old short link as stale instead of selecting the new unit at that path', async () => {
+    const pending = new Subject<TaskSequence>();
+    const { component, harness, router } = await setup(
+      `${baseUrl}?kind=booklet&occurrence=${sequence.units[1].linkId}`,
+      pending,
+    );
+    pending.next({
+      ...sequence,
+      units: sequence.units.map((unit, index) => ({
+        ...unit,
+        id: `replacement-${index}`,
+        linkId: `changed-version-${index}`,
+      })),
+    });
+    harness.detectChanges();
+    expect(component.currentIndex).toBe(0);
+    expect(component.invalidUnitLink).toBe(true);
+    expect(
+      (harness.fixture.nativeElement as HTMLElement).querySelector('[role="status"]')?.textContent,
+    ).toContain('ungültig oder veraltet');
+    component.next();
+    await harness.fixture.whenStable();
+    expect(component.invalidUnitLink).toBe(false);
+    expect(component.currentIndex).toBe(1);
+    expect(router.parseUrl(router.url).queryParams['occurrence']).toBe('changed-version-1');
+  });
+
+  it('rejects ambiguous short link IDs', async () => {
+    const pending = new Subject<TaskSequence>();
+    const { component, harness } = await setup(
+      `${baseUrl}?kind=booklet&occurrence=duplicate`,
+      pending,
+    );
+    pending.next({
+      ...sequence,
+      units: sequence.units.map((unit) => ({ ...unit, linkId: 'duplicate' })),
+    });
+    harness.detectChanges();
+    expect(component.currentIndex).toBe(0);
+    expect(component.invalidUnitLink).toBe(true);
+  });
+
+  it('still generates long links for older API responses without short IDs', async () => {
+    const pending = new Subject<TaskSequence>();
+    const { component, harness } = await setup(`${baseUrl}?kind=booklet`, pending);
+    pending.next({
+      ...sequence,
+      units: sequence.units.map((unit) => ({ ...unit, linkId: undefined })),
+    });
+    harness.detectChanges();
+    expect(component.unitLinkParams(1).occurrence).toBe(sequence.units[1].occurrenceId);
+  });
+
   it('keeps URL and selection synchronized without fetching the booklet again', async () => {
     const { component, router, harness, api } = await setup(`${baseUrl}?kind=booklet&keep=yes`);
     component.next();
@@ -100,7 +189,7 @@ describe('Booklet task links', () => {
     expect(router.parseUrl(router.url).queryParams).toEqual({
       kind: 'booklet',
       keep: 'yes',
-      occurrence: sequence.units[1].occurrenceId,
+      occurrence: sequence.units[1].linkId,
     });
     component.next();
     await harness.fixture.whenStable();
@@ -117,9 +206,7 @@ describe('Booklet task links', () => {
     component.jumpTo(0);
     await harness.fixture.whenStable();
     expect(component.currentIndex).toBe(0);
-    expect(router.parseUrl(router.url).queryParams['occurrence']).toBe(
-      sequence.units[0].occurrenceId,
-    );
+    expect(router.parseUrl(router.url).queryParams['occurrence']).toBe(sequence.units[0].linkId);
     expect(api.getViewSequence).toHaveBeenCalledOnce();
     await harness.navigateByUrl(`${baseUrl}?kind=booklet&position=3`, TaskSequenceComponent);
     expect(component.currentIndex).toBe(2);

@@ -66,17 +66,38 @@ Die Links lassen sich über das Browsermenü kopieren oder in einem neuen Tab
 öffnen. Zurück, Weiter und die Aufgabenliste aktualisieren ebenfalls die URL;
 Neuladen sowie Zurück/Vorwärts im Browser stellen die Auswahl wieder her.
 
-`/view/:acpId/sequence/:bookletId?kind=booklet&occurrence=:occurrenceId`
+`/view/:acpId/sequence/:bookletId?kind=booklet&occurrence=:linkId`
 adressiert ein bestimmtes Vorkommen, auch wenn dieselbe Aufgabe mehrmals im
-Testheft enthalten ist. Die Vorkommens-ID wird als Queryparameter URL-kodiert.
-Für ältere Daten ohne Vorkommens-ID gibt es `position` als einsbasierte Position
-in der Aufgabenliste. Links ohne Auswahl öffnen weiterhin die erste Aufgabe.
-Beim Testheftwechsel wird die Auswahl zurückgesetzt.
+Testheft enthalten ist. Neue Links verwenden eine 16-stellige, URL-sichere
+`linkId`, zum Beispiel `?kind=booklet&occurrence=Y5gRx3-5hT2cV0WQ`.
+Das Backend berechnet sie ohne Speicherung aus Booklet-ID, geordnetem
+Navigationsbaum und Position des Vorkommens. Der Baum berücksichtigt Unit-IDs,
+Aliase sowie Block-IDs und Verschachtelung. Änderungen an dieser Struktur
+machen alle bisherigen Kurzlinks dieses Testhefts ungültig. Anzeigetitel,
+XML-Formatierung und Dateinamen ändern die Kurzlinks nicht; Änderungen an
+anderen Testheften ebenfalls nicht.
 
-Bei unbekannten, mehrdeutigen oder ungültigen Zielen erscheint ein Hinweis;
-die Ansicht zeigt die erste Aufgabe an. Der nächste Navigationsschritt erzeugt
-wieder einen gültigen Link. Strukturänderungen können Vorkommens-IDs und
-Positionen verändern. Die Links verwenden weiterhin die reguläre ACP-Zugriffsprüfung.
+Das Format verwendet SHA-256 mit der Kennzeichnung `booklet-task-link-v1`:
+Zuerst wird der Navigationsbaum gehasht, dann zusammen mit dem
+nullbasierten Vorkommensindex erneut gehasht. Die ersten 16
+Base64url-Zeichen (96 Bit) bilden die `linkId`. Die Baumdarstellung enthält
+`[kind, id, children]` für Blöcke und `[kind, id, alias-or-null]` für Units;
+Bezeichnungen und Quellpfade sind ausgeschlossen. Dieses Format ist Teil
+des Linkvertrags und muss bei unveränderter Struktur stabil bleiben.
+
+Bisherige lange `occurrenceId`-Links werden weiterhin aufgelöst. Ältere
+Antworten ohne `linkId` verwenden beim Erzeugen von Links die vorhandene
+`occurrenceId`; ohne beide Kennungen gibt es `position` als einsbasierte
+Position in der Aufgabenliste. Diese älteren Linkformen bieten keine
+Absicherung gegen Strukturänderungen. Links ohne Auswahl öffnen weiterhin
+die erste Aufgabe. Beim Testheftwechsel wird die Auswahl zurückgesetzt.
+
+Bei unbekannten, mehrdeutigen oder ungültigen Zielen erscheint der Hinweis,
+dass der Direktlink ungültig oder veraltet ist; die Ansicht zeigt die erste
+Aufgabe an. Veraltete Kurzlinks fallen nicht auf eine inzwischen anders
+belegte Strukturposition zurück. Der nächste Navigationsschritt erzeugt
+wieder einen gültigen Link. Die Links verwenden weiterhin die reguläre
+ACP-Zugriffsprüfung.
 
 ## Laufzeitmodell und Fehler
 

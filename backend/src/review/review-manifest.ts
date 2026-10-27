@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   getAssessmentParts,
   getIndexUnits,
@@ -14,6 +15,7 @@ export interface ReviewOccurrence {
   name: string;
   alias?: string;
   occurrenceId: string;
+  linkId: string;
   blockPath: string[];
 }
 export interface ReviewBooklet {
@@ -45,6 +47,14 @@ const reference = (value: any): string =>
     ? value.trim()
     : String(value?.moduleId || value?.id || "").trim();
 
+// Labels and source-file locations do not change navigation identity.
+const navigationIdentity = (nodes: NavigationNode[]): unknown[] =>
+  nodes.map((node) =>
+    node.kind === "BLOCK"
+      ? [node.kind, node.id, navigationIdentity(node.children || [])]
+      : [node.kind, node.id, node.alias ?? null],
+  );
+
 /** Shared navigation/target contract; no persistence or presentation dependencies. */
 export function buildReviewManifest(
   rawIndex: unknown,
@@ -73,6 +83,15 @@ export function buildReviewManifest(
       return;
     }
     if (!booklet.legacy) bookletIds.add(booklet.id);
+    const revision = createHash("sha256")
+      .update(
+        JSON.stringify([
+          "booklet-task-link-v1",
+          booklet.id,
+          navigationIdentity(booklet.children),
+        ]),
+      )
+      .digest();
     const walk = (nodes: NavigationNode[], labels: string[]) => {
       for (const node of nodes) {
         if (node.kind === "BLOCK")
@@ -85,6 +104,11 @@ export function buildReviewManifest(
             name: unitsById.get(node.id)?.name || node.id,
             alias: node.alias,
             occurrenceId: `${encodeURIComponent(booklet.id)}:${node.path}`,
+            linkId: createHash("sha256")
+              .update(revision)
+              .update(`:${booklet.units.length}`)
+              .digest("base64url")
+              .slice(0, 16),
             blockPath: labels,
           });
         }

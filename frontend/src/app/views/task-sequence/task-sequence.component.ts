@@ -165,7 +165,8 @@ interface ReviewBookletOption {
 
         @if (invalidUnitLink) {
           <p role="status" class="help-text">
-            Die verlinkte Aufgabe wurde in diesem Testheft nicht gefunden.
+            Die verlinkte Aufgabe wurde in diesem Testheft nicht gefunden. Der Direktlink ist
+            ungültig oder veraltet.
             @if (hasUnits) {
               Die erste Aufgabe wird angezeigt.
             }
@@ -782,7 +783,8 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
     occurrence: string | null;
     position: number | null;
   } {
-    const occurrence = this.sequence?.units[index]?.occurrenceId || null;
+    const unit = this.sequence?.units[index];
+    const occurrence = unit?.linkId || unit?.occurrenceId || null;
     return { kind: 'booklet', occurrence, position: occurrence ? null : index + 1 };
   }
 
@@ -795,7 +797,10 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
 
     let index = -1;
     if (occurrence !== null && position === null && params.getAll('occurrence').length === 1) {
-      index = this.sequence!.units.findIndex((unit) => unit.occurrenceId === occurrence);
+      const matches = this.sequence!.units.map((unit, index) => ({ unit, index })).filter(
+        ({ unit }) => unit.linkId === occurrence || unit.occurrenceId === occurrence,
+      );
+      if (matches.length === 1) index = matches[0].index;
     } else if (
       occurrence === null &&
       position !== null &&
@@ -895,6 +900,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
       .map((unit: any) => ({
         id: unit.id.trim(),
         occurrenceId: unit.occurrenceId,
+        linkId: unit.linkId,
         alias: unit.alias,
         blockPath: unit.blockPath,
         name:
