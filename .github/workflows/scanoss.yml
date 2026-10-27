@@ -10,6 +10,7 @@ on:
       - 'keycloak/**'
       - 'scripts/**'
       - 'nginx/**'
+      - 'test-fixtures/**'
       - 'compliance/scanoss-requirements.txt'
       - '.github/workflows/scanoss.yml'
   schedule:
@@ -51,7 +52,7 @@ jobs:
           set -euo pipefail
           scan_paths=(
             backend/src backend/test frontend/src frontend/e2e
-            keycloak scripts nginx
+            keycloak scripts nginx test-fixtures
           )
           mkdir -p "$RUNNER_TEMP/scanoss-source" dist/scanoss
           git rev-parse HEAD > dist/scanoss/revision.txt
@@ -76,9 +77,9 @@ jobs:
               > dist/scanoss/scanned-files.txt
             scan_mode="pull-request-delta"
           else
-            git archive HEAD "${scan_paths[@]}" \
+            git archive HEAD \
               | tar -x -C "$RUNNER_TEMP/scanoss-source"
-            git ls-files -- "${scan_paths[@]}" \
+            git ls-files \
               > dist/scanoss/scanned-files.txt
             scan_mode="full"
           fi

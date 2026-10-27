@@ -35,11 +35,12 @@ the SHA when a new Action release is selected.
 
 The separate `External code provenance` workflow runs on pull requests changing
 application source, tests, Keycloak extensions and themes, scripts, nginx
-configuration or the scan configuration. On pull requests it scans the complete contents of only
+configuration, test fixtures or the scan configuration. On pull requests it scans
+the complete contents of only
 the added, changed, copied or renamed files in that scope. Every Monday and on
-manual runs it scans a clean archive of all tracked files in those directories,
-including tests and vendored Keycloak theme scripts. It does not scan the entire
-repository or untracked working files. SCANOSS's default file-type and directory exclusions still apply.
+manual runs it scans a clean archive of the entire tracked repository, including
+tests, test fixtures and vendored Keycloak theme scripts. It does not scan
+untracked working files. SCANOSS's default file-type and directory exclusions still apply.
 Dependency inventories and ScanCode cover different concerns and remain in
 place.
 
@@ -182,7 +183,7 @@ The pipeline uses open source tools with pinned versions:
 
 - CycloneDX for npm 6.0.0 (Apache-2.0)
 - CycloneDX Maven plugin 2.9.3 (Apache-2.0)
-- ScanCode Toolkit 32.5.0 (Apache-2.0)
+- ScanCode Toolkit 32.5.0 (Apache-2.0), with compatible Pluggy 1.6.0 pinned
 - SCANOSS Python client 1.54.2 (MIT)
 - Syft 1.51.1 (Apache-2.0)
 - Dolos 2.9.3 (MIT)
