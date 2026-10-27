@@ -48,4 +48,16 @@ if name != "Apache License, Version 2.0":
 if url != "https://www.apache.org/licenses/LICENSE-2.0.txt":
     fail("Keycloak extension pom.xml has the wrong license URL")
 
-print("Apache-2.0 license text and package metadata are consistent")
+notices = ROOT / "keycloak/extensions/altcha/licenses"
+manifest = json.loads((notices / "manifest.json").read_text())
+for component in manifest["components"]:
+    version = pom.findtext(
+        f"m:properties/m:{component['version_property']}", namespaces=namespace
+    )
+    if version != component["version"]:
+        fail(f"bundled notice for {component['artifact']} needs a version review")
+    digest = hashlib.sha256((notices / component["file"]).read_bytes()).hexdigest()
+    if digest != component["sha256"]:
+        fail(f"bundled notice for {component['artifact']} has changed")
+
+print("Apache-2.0 metadata and version-specific bundled notices are consistent")

@@ -11,6 +11,7 @@ on:
       - frontend/package.json
       - frontend/package-lock.json
       - keycloak/extensions/altcha/pom.xml
+      - keycloak/extensions/altcha/licenses/**
       - compliance/scancode-requirements.txt
       - compliance/dependency-license-policy.json
       - scripts/check-dependency-licenses.py

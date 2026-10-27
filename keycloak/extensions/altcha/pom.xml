@@ -59,6 +59,10 @@
   <build>
     <resources>
       <resource>
+        <directory>licenses</directory>
+        <targetPath>META-INF/licenses</targetPath>
+      </resource>
+      <resource>
         <directory>src/main/resources</directory>
       </resource>
       <resource>

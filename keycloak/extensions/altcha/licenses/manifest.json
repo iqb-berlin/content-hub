@@ -1,0 +1,23 @@
+{
+  "description": "Original notices for libraries bundled in the shaded ALTCHA provider; retain separately from the project license.",
+  "components": [
+    {
+      "artifact": "org.altcha:altcha",
+      "version": "2.0.1",
+      "version_property": "altcha.version",
+      "license": "MIT",
+      "file": "altcha-2.0.1-LICENSE.txt",
+      "source": "https://raw.githubusercontent.com/altcha-org/altcha-lib-java/5ba5379025c041d22e7e58d2e0dd97eeabf658c9/LICENSE.txt",
+      "sha256": "08737cdc4e5f089847c2feb285fbd68061839df4263407feffcc237497752267"
+    },
+    {
+      "artifact": "org.json:json",
+      "version": "20240303",
+      "version_property": "org-json.version",
+      "license": "Public Domain",
+      "file": "json-20240303-LICENSE.txt",
+      "source": "https://raw.githubusercontent.com/stleary/JSON-java/20240303/LICENSE",
+      "sha256": "83234710f4ba5839c9b945e0980ba9b314339bdf85d0800cb04f9416f70fa892"
+    }
+  ]
+}

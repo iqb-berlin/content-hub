@@ -151,6 +151,10 @@ The runtime archive and application images include the project Apache-2.0 text.
 The frontend image also serves Angular's extracted `3rdpartylicenses.txt`.
 Backend dependencies retain their shipped notices, and the shaded Keycloak
 extension retains the project license and merged dependency LICENSE/NOTICE files.
+Because the published ALTCHA and JSON-java JARs omit their license text, their
+upstream version-specific notices are also included under `META-INF/licenses`,
+with source URLs and checksums. Dependency version changes require updating this
+notice manifest; CI verifies the versions and copied texts.
 The root and package license copies are checked for consistency.
 
 A completed review supports a statement such as: “Version X was checked for
