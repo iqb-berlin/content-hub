@@ -743,6 +743,7 @@ export interface TaskSequence {
     id: string;
     name: string;
     occurrenceId?: string;
+    linkId?: string;
     alias?: string;
     blockPath?: string[];
   }[];

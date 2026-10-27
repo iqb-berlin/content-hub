@@ -23,7 +23,11 @@ test('copies an exact repeated occurrence into a new tab and survives reload', a
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   // All content, manifest parsing and permissions come from the isolated backend.
+  const sequenceResponse = page.waitForResponse((response) =>
+    response.url().includes(`/api/view/acp/${acpId}/sequences/${journeyBookletId}?`),
+  );
   await page.goto(baseUrl);
+  const booklet = await (await sequenceResponse).json();
   await expectPosition(page, 1);
   await page.getByRole('button', { name: '📋 Aufgabenliste', exact: true }).click();
   const links = page.locator('.unit-direct-link');
@@ -31,7 +35,9 @@ test('copies an exact repeated occurrence into a new tab and survives reload', a
   const hrefs = await links.evaluateAll((anchors) => anchors.map((a) => a.getAttribute('href')!));
   expect(new Set(hrefs).size).toBe(3);
   const secondHref = hrefs[1];
-  expect(new URL(secondHref, page.url()).searchParams.get('occurrence')).toBeTruthy();
+  expect(new URL(secondHref, page.url()).searchParams.get('occurrence')).toMatch(
+    /^[A-Za-z0-9_-]{16}$/,
+  );
   await links.nth(1).click();
   await expectPosition(page, 2);
   await expect(page).toHaveURL(secondHref);
@@ -48,6 +54,11 @@ test('copies an exact repeated occurrence into a new tab and survives reload', a
     await expectPosition(copied, 2);
     await copied.reload();
     await expectPosition(copied, 2);
+    await copied.goto(`${baseUrl}&occurrence=${encodeURIComponent(booklet.units[1].occurrenceId)}`);
+    await expectPosition(copied, 2);
+    await expect(
+      copied.getByRole('link', { name: '🔗 Direktlink zur Aufgabe', exact: true }),
+    ).toHaveAttribute('href', secondHref);
     await copied.setViewportSize({ width: 390, height: 844 });
     await expect(
       copied.getByRole('link', { name: '🔗 Direktlink zur Aufgabe', exact: true }),
@@ -116,6 +127,7 @@ test('reports a stale link and lets navigation recover to a valid target', async
   await expect(page.getByRole('status')).toContainText(
     'Die verlinkte Aufgabe wurde in diesem Testheft nicht gefunden.',
   );
+  await expect(page.getByRole('status')).toContainText('ungültig oder veraltet');
   await page.getByRole('button', { name: 'Weiter →', exact: true }).click();
   await expectPosition(page, 2);
   await expect(

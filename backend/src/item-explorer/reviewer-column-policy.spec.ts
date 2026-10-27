@@ -369,6 +369,9 @@ describe("Restricted review navigation", () => {
       expect(new Set(booklet.units.map((unit) => unit.occurrenceId)).size).toBe(
         2,
       );
+      expect(booklet.units.map((unit) => unit.linkId)).toEqual(
+        original.booklets[0].units.map((unit) => unit.linkId),
+      );
       expect(() =>
         booklet.units.forEach((unit) => unit.blockPath.length),
       ).not.toThrow();
@@ -477,6 +480,7 @@ describe("Restricted review navigation", () => {
         visible.includes("system:unitLabel") ? "SECRET_UNIT" : "",
       );
       expect(result.units[0].occurrenceId).toBe(original.units[0].occurrenceId);
+      expect(result.units[0].linkId).toBe(original.units[0].linkId);
       expect(Array.isArray(result.units[0].blockPath)).toBe(true);
       expect(JSON.stringify(original)).toBe(before);
       expect(await project(null)).toBeNull();
