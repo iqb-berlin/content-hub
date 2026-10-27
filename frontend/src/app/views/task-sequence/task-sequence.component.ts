@@ -8,7 +8,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import {
   catchError,
   of,
@@ -35,7 +35,13 @@ interface ReviewBookletOption {
 @Component({
   selector: 'app-task-sequence',
   standalone: true,
-  imports: [FormsModule, BreadcrumbComponent, ItemCommentThreadComponent, UnitViewComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    BreadcrumbComponent,
+    ItemCommentThreadComponent,
+    UnitViewComponent,
+  ],
   template: `
     @if (sequence) {
       <app-breadcrumb [items]="breadcrumbs" />
@@ -70,6 +76,7 @@ interface ReviewBookletOption {
         #reviewWorkspace
         class="review-workspace"
         [class.fullscreen-fallback]="isFallbackFullscreen"
+        [attr.aria-busy]="sequenceLoading"
       >
         <!-- Navigation bar -->
         <div class="nav-bar">
@@ -95,6 +102,17 @@ interface ReviewBookletOption {
             </button>
           </div>
           <div class="workspace-actions">
+            @if (isBooklet && currentUnit && !sequenceLoading) {
+              <a
+                class="btn btn-outline btn-sm"
+                [routerLink]="['/view', acpId, 'sequence', sequenceId]"
+                [queryParams]="unitLinkParams(currentIndex)"
+                queryParamsHandling="merge"
+                title="Link zur aktuellen Aufgabe kopieren oder in einem neuen Tab öffnen"
+              >
+                🔗 Direktlink zur Aufgabe
+              </a>
+            }
             @if (isBooklet && reviewBooklets.length > 1) {
               <button
                 class="btn btn-outline btn-sm btn-state booklet-switcher"
@@ -132,6 +150,7 @@ interface ReviewBookletOption {
               <button
                 class="btn btn-outline btn-sm btn-state"
                 (click)="toggleUnitList()"
+                [disabled]="sequenceLoading"
                 [attr.aria-expanded]="unitListOpen"
                 aria-controls="task-sequence-unit-list"
               >
@@ -143,6 +162,16 @@ interface ReviewBookletOption {
             </button>
           </div>
         </div>
+
+        @if (invalidUnitLink) {
+          <p role="status" class="help-text">
+            Die verlinkte Aufgabe wurde in diesem Testheft nicht gefunden. Der Direktlink ist
+            ungültig oder veraltet.
+            @if (hasUnits) {
+              Die erste Aufgabe wird angezeigt.
+            }
+          </p>
+        }
 
         <!-- Current unit review -->
         @if (hasUnits && currentUnit) {
@@ -176,23 +205,39 @@ interface ReviewBookletOption {
                 <button class="btn btn-outline btn-sm" (click)="unitListOpen = false">✕</button>
               </div>
               @for (unit of sequence.units; track unit.occurrenceId || $index; let i = $index) {
-                <button
-                  class="unit-list-item"
-                  [class.active]="i === currentIndex"
-                  [attr.aria-current]="i === currentIndex ? 'step' : null"
-                  (click)="jumpTo(i)"
-                >
-                  <span class="unit-num">{{ i + 1 }}</span>
-                  <span>
-                    @if (unit.blockPath?.length) {
-                      <small>{{ unit.blockPath?.join(' / ') }} · </small>
-                    }
-                    {{ isBooklet ? unitLabel(unit) : unit.name || unit.id }}
-                    @if (unit.alias) {
-                      <small> · Alias: {{ unit.alias }}</small>
-                    }
-                  </span>
-                </button>
+                <div class="unit-list-row">
+                  <button
+                    class="unit-list-item"
+                    [class.active]="i === currentIndex"
+                    [attr.aria-current]="i === currentIndex ? 'step' : null"
+                    (click)="jumpTo(i)"
+                  >
+                    <span class="unit-num">{{ i + 1 }}</span>
+                    <span>
+                      @if (unit.blockPath?.length) {
+                        <small>{{ unit.blockPath?.join(' / ') }} · </small>
+                      }
+                      {{ isBooklet ? unitLabel(unit) : unit.name || unit.id }}
+                      @if (unit.alias) {
+                        <small> · Alias: {{ unit.alias }}</small>
+                      }
+                    </span>
+                  </button>
+                  @if (isBooklet) {
+                    <a
+                      class="unit-direct-link"
+                      [routerLink]="['/view', acpId, 'sequence', sequenceId]"
+                      [queryParams]="unitLinkParams(i)"
+                      queryParamsHandling="merge"
+                      [attr.aria-label]="
+                        'Direktlink zu Aufgabe ' + (i + 1) + ': ' + unitLabel(unit)
+                      "
+                      title="Direktlink zur Aufgabe"
+                      (click)="unitListOpen = false"
+                      >🔗</a
+                    >
+                  }
+                </div>
               }
             </div>
           </div>
@@ -421,6 +466,19 @@ interface ReviewBookletOption {
         text-align: left;
         transition: background 0.15s;
       }
+      .unit-list-row {
+        display: flex;
+        align-items: center;
+      }
+      .unit-list-row .unit-list-item {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .unit-direct-link {
+        padding: 12px;
+        flex-shrink: 0;
+      }
       .unit-list-item:hover {
         background: var(--color-bg);
       }
@@ -522,7 +580,9 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   sequenceKind?: 'booklet';
   canReview = false;
   sequence: TaskSequence | null = null;
+  sequenceLoading = false;
   currentIndex = 0;
+  invalidUnitLink = false;
   breadcrumbs: BreadcrumbItem[] = [];
   reviewBooklets: ReviewBookletOption[] = [];
   readonly unitLabel = unitLabel;
@@ -607,14 +667,25 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
             previous.sequenceId === current.sequenceId &&
             previous.sequenceKind === current.sequenceKind,
         ),
-        switchMap(({ sequenceId, sequenceKind }) =>
-          this.api
+        switchMap(({ sequenceId, sequenceKind }) => {
+          this.sequenceLoading = true;
+          this.unitListOpen = false;
+          this.changeDetector.markForCheck();
+          return this.api
             .getViewSequence(this.acpId, sequenceId, sequenceKind)
-            .pipe(map((sequence) => ({ sequence, sequenceId, sequenceKind }))),
-        ),
+            .pipe(
+              switchMap((sequence) =>
+                (sequenceKind === 'booklet'
+                  ? this.route.queryParamMap
+                  : of(this.route.snapshot.queryParamMap)
+                ).pipe(map((queryParams) => ({ sequence, sequenceId, sequenceKind, queryParams }))),
+              ),
+            );
+        }),
         takeUntil(this.destroy$),
       )
-      .subscribe(({ sequence, sequenceId, sequenceKind }) => {
+      .subscribe(({ sequence, sequenceId, sequenceKind, queryParams }) => {
+        this.sequenceLoading = false;
         this.sequenceId = sequenceId;
         this.sequenceKind = sequenceKind;
         this.currentIndex = 0;
@@ -622,6 +693,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
         this.closeBookletList();
         if (this.featureConfig) this.applyFeatureConfig(this.featureConfig);
         this.sequence = this.normalizeSequence(sequence);
+        this.selectLinkedUnit(queryParams);
         this.breadcrumbs = [
           { label: 'Assessment Content Pool', route: ['/'] },
           { label: 'ACP', route: ['/view', this.acpId] },
@@ -629,6 +701,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
             label: this.isBooklet ? this.bookletName : this.sequence.name || 'Aufgabenfolge',
           },
         ];
+        this.changeDetector.markForCheck();
       });
   }
 
@@ -653,11 +726,16 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   }
 
   get canGoPrev(): boolean {
-    return this.hasUnits && this.currentIndex > 0;
+    return !this.sequenceLoading && this.hasUnits && this.currentIndex > 0;
   }
 
   get canGoNext(): boolean {
-    return this.hasUnits && !!this.sequence && this.currentIndex < this.sequence.units.length - 1;
+    return (
+      !this.sequenceLoading &&
+      this.hasUnits &&
+      !!this.sequence &&
+      this.currentIndex < this.sequence.units.length - 1
+    );
   }
 
   get currentBookletPosition(): number {
@@ -677,24 +755,70 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
 
   prev() {
     if (!this.canGoPrev) return;
-    this.currentIndex -= 1;
+    this.jumpTo(this.currentIndex - 1);
   }
 
   next() {
     if (!this.canGoNext) return;
-    this.currentIndex += 1;
+    this.jumpTo(this.currentIndex + 1);
   }
 
   jumpTo(index: number) {
-    if (!this.sequence?.units?.length) return;
+    if (this.sequenceLoading || !this.sequence?.units?.length) return;
     const max = this.sequence.units.length - 1;
-    if (index < 0 || index > max) return;
-    this.currentIndex = index;
+    if (!Number.isInteger(index) || index < 0 || index > max) return;
+    if (this.isBooklet) {
+      void this.router.navigate(['/view', this.acpId, 'sequence', this.sequenceId], {
+        queryParams: this.unitLinkParams(index),
+        queryParamsHandling: 'merge',
+      });
+    } else {
+      this.currentIndex = index;
+    }
     this.unitListOpen = false;
   }
 
+  unitLinkParams(index: number): {
+    kind: 'booklet';
+    occurrence: string | null;
+    position: number | null;
+  } {
+    const unit = this.sequence?.units[index];
+    const occurrence = unit?.linkId || unit?.occurrenceId || null;
+    return { kind: 'booklet', occurrence, position: occurrence ? null : index + 1 };
+  }
+
+  private selectLinkedUnit(params: ParamMap) {
+    this.invalidUnitLink = false;
+    if (!this.isBooklet) return;
+    const occurrence = params.get('occurrence');
+    const position = params.get('position');
+    if (occurrence === null && position === null) return;
+
+    let index = -1;
+    if (occurrence !== null && position === null && params.getAll('occurrence').length === 1) {
+      const matches = this.sequence!.units.map((unit, index) => ({ unit, index })).filter(
+        ({ unit }) => unit.linkId === occurrence || unit.occurrenceId === occurrence,
+      );
+      if (matches.length === 1) index = matches[0].index;
+    } else if (
+      occurrence === null &&
+      position !== null &&
+      params.getAll('position').length === 1 &&
+      /^[1-9]\d*$/.test(position)
+    ) {
+      const value = Number(position);
+      if (Number.isSafeInteger(value)) index = value - 1;
+    }
+    if (index >= 0 && index < this.sequence!.units.length) {
+      this.currentIndex = index;
+    } else {
+      this.invalidUnitLink = true;
+    }
+  }
+
   toggleUnitList() {
-    if (!this.hasUnits) return;
+    if (this.sequenceLoading || !this.hasUnits) return;
     this.closeBookletList();
     this.unitListOpen = !this.unitListOpen;
   }
@@ -776,6 +900,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
       .map((unit: any) => ({
         id: unit.id.trim(),
         occurrenceId: unit.occurrenceId,
+        linkId: unit.linkId,
         alias: unit.alias,
         blockPath: unit.blockPath,
         name:

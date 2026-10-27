@@ -256,6 +256,7 @@ export class ReviewerColumnPolicy {
         id: unit.id,
         name: unitLabels ? unit.name : "",
         occurrenceId: unit.occurrenceId,
+        linkId: unit.linkId,
         blockPath: bookletLabels ? [...unit.blockPath] : [],
       })),
     };

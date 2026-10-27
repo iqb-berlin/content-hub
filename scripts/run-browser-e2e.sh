@@ -8,6 +8,12 @@ USE_EXISTING_DATABASE="${BROWSER_E2E_USE_EXISTING_DATABASE:-false}"
 DATABASE_CONTAINER_STARTED=false
 SEED_SCRIPT="${BROWSER_E2E_SEED_SCRIPT:-test:e2e:seed-browser}"
 SKIP_BROWSER_INSTALL="${BROWSER_E2E_SKIP_BROWSER_INSTALL:-false}"
+RUN_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/content-pool-e2e.XXXXXXXX")"
+
+# The seed, uploads, and snapshots must never share the application's regular
+# storage directory (or a previous browser run's fixture files).
+export BROWSER_E2E_FIXTURE_DIR="$RUN_DIRECTORY/fixtures"
+export FILE_STORAGE_PATH="$RUN_DIRECTORY/uploads"
 
 # Do not leave an older successful gallery behind if setup fails before Playwright.
 rm -rf "$REPOSITORY_ROOT/frontend/synthetic-review-report"
@@ -30,6 +36,9 @@ export BROWSER_E2E_FRONTEND_PORT=4300
 cleanup() {
   if [[ "$USE_EXISTING_DATABASE" != "true" && "$DATABASE_CONTAINER_STARTED" == "true" ]]; then
     docker stop "$DATABASE_CONTAINER" >/dev/null 2>&1 || true
+  fi
+  if [[ "$RUN_DIRECTORY" == "${TMPDIR:-/tmp}/content-pool-e2e."* && -d "$RUN_DIRECTORY" ]]; then
+    rm -rf -- "$RUN_DIRECTORY"
   fi
 }
 trap cleanup EXIT
