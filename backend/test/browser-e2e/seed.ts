@@ -7,6 +7,7 @@ import {
   journeyFiles,
   journeyUnitId,
   journeyUnitName,
+  journeyBookletId,
 } from "../../../test-fixtures/browser-journey-package";
 import { AppModule } from "../../src/app.module";
 import {
@@ -828,10 +829,12 @@ async function seed(): Promise<void> {
       { id: "10000000-0000-4000-8000-000000000304", name: "explorer-chromium" },
       { id: "10000000-0000-4000-8000-000000000305", name: "explorer-firefox" },
       { id: "10000000-0000-4000-8000-000000000306", name: "explorer-webkit" },
+      { id: "10000000-0000-4000-8000-000000000307", name: "review-links" },
     ];
     for (const project of isolatedProjects) {
       const realTask =
-        project.name === "review" || project.name.startsWith("explorer-");
+        project.name.startsWith("review") ||
+        project.name.startsWith("explorer-");
       const acpIndex = structuredClone(regressionAcp.acpIndex);
       acpIndex.packageId = `browser-e2e-${project.name}`;
       if (project.name === "files" || realTask) {
@@ -842,6 +845,25 @@ async function seed(): Promise<void> {
           {
             id: "journey-part",
             name: "Browseraufgabe",
+            ...(project.name === "review-links"
+              ? {
+                  instruments: [
+                    {
+                      id: "link-test",
+                      testcenterBooklet: [
+                        {
+                          id: journeyBookletId,
+                          definitionId: "journey-review.xml",
+                        },
+                        {
+                          id: "review-other",
+                          definitionId: "review-other.xml",
+                        },
+                      ],
+                    },
+                  ],
+                }
+              : {}),
             units: [
               {
                 id: journeyUnitId,
@@ -940,7 +962,29 @@ async function seed(): Promise<void> {
         );
       }
       if (realTask) {
-        for (const file of journeyFiles) {
+        const projectFiles = [...journeyFiles];
+        if (project.name === "review-links") {
+          const booklet = (id: string, units: string) =>
+            Buffer.from(
+              `<Booklet><Metadata><Id>${id}</Id><Label>${id}</Label></Metadata><Units>${units}</Units></Booklet>`,
+            );
+          const bookletIndex = projectFiles.findIndex(
+            (file) => file.type === "BOOKLET_XML",
+          );
+          projectFiles[bookletIndex] = {
+            ...projectFiles[bookletIndex],
+            buffer: booklet(
+              journeyBookletId,
+              `<Unit id="${journeyUnitId}" alias="first"/><Testlet id="repeat"><Unit id="${journeyUnitId}" alias="second"/><Unit id="${journeyUnitId}" alias="third"/></Testlet>`,
+            ),
+          };
+          projectFiles.push({
+            name: "review-other.xml",
+            type: "BOOKLET_XML",
+            buffer: booklet("review-other", `<Unit id="${journeyUnitId}"/>`),
+          });
+        }
+        for (const file of projectFiles) {
           const filePath = join(projectDirectory, file.name);
           await writeFile(filePath, file.buffer);
           await dataSource.getRepository(AcpFile).save(
