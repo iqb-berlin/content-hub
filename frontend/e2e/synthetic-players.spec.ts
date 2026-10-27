@@ -193,22 +193,33 @@ async function probe(page: Page, unit: FormatUnit, frame: FrameLocator) {
       const geometry = frame.locator('aspect-geometry');
       await expect(geometry.locator('canvas').first()).toBeVisible({ timeout: 30_000 });
       await expect(geometry.locator('.GeoGebraFrame')).toBeVisible();
-      // A real pointer drag in the applet, followed by an independent geometry API read.
+      // Select the point in the real applet and move it with the keyboard;
+      // read the resulting coordinate independently through the geometry API.
       const before = await geometry.evaluate((element) => {
         const api = (
           element.ownerDocument.defaultView as unknown as Window & {
-            input: { getXcoord: (id: string) => number };
+            input: {
+              getXcoord: (id: string) => number;
+              getYcoord: (id: string) => number;
+              getXML: () => string;
+            };
           }
         ).input;
-        return api.getXcoord('A');
+        const xml = new DOMParser().parseFromString(api.getXML(), 'application/xml');
+        const coordinates = xml.querySelector('euclidianView coordSystem')!;
+        return {
+          x: api.getXcoord('A'),
+          pixelX:
+            Number(coordinates.getAttribute('xZero')) +
+            api.getXcoord('A') * Number(coordinates.getAttribute('scale')),
+          pixelY:
+            Number(coordinates.getAttribute('yZero')) -
+            api.getYcoord('A') * Number(coordinates.getAttribute('yscale')),
+        };
       });
       const canvas = geometry.locator('canvas').first();
-      const bounds = await canvas.boundingBox();
-      expect(bounds).not.toBeNull();
-      await page.mouse.move(bounds!.x + 250, bounds!.y + 200);
-      await page.mouse.down();
-      await page.mouse.move(bounds!.x + 300, bounds!.y + 200, { steps: 12 });
-      await page.mouse.up();
+      await canvas.click({ position: { x: before.pixelX, y: before.pixelY } });
+      await page.keyboard.press('ArrowRight');
       await expect
         .poll(() =>
           geometry.evaluate((element) =>
@@ -219,7 +230,7 @@ async function probe(page: Page, unit: FormatUnit, frame: FrameLocator) {
             ).input.getXcoord('A'),
           ),
         )
-        .not.toBe(before);
+        .not.toBe(before.x);
       break;
     }
     case 'abi':

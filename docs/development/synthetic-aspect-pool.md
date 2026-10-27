@@ -3,17 +3,17 @@
 Der [versionierte Pool](../../test-fixtures/synthetic-aspect/README.md) ergänzt die
 schnellen Tests mit vereinfachten Verona-Testplayern um Prüfungen mit echtem ASPECT.
 Zusätzlich enthält der [Formate- und Playerpool](../../test-fixtures/synthetic-players/README.md)
-44 synthetische Aufgaben für sechs Playerfamilien. Der gemeinsame Aufbau benutzt
+44 weitere synthetische Aufgaben: insgesamt 50 Aufgaben für sechs Playerfamilien. Der gemeinsame Aufbau benutzt
 dieselbe isolierte Datenbank und dieselben Server wie die regulären
 Playwright-Tests. Seed und Konfiguration verweigern den Betrieb außerhalb der
 E2E-Umgebung; bestehende Entwicklungsserver werden nicht wiederverwendet.
 
 ## Ausführen
 
-Voraussetzungen: Node.js, installierte Backend-/Frontend-Abhängigkeiten und Docker
+Voraussetzungen: Node.js, `curl`, installierte Backend-/Frontend-Abhängigkeiten und Docker
 mit laufendem Daemon. Der erste Seed benötigt HTTPS-Zugriff auf die festgelegten
 GeoGebra- und DIPF-Runtime-Dateien. Weitere Läufe nutzen einen weiterhin
-prüfsummengeprüften Cache im E2E-Fixtureverzeichnis. Aus dem Repository:
+prüfsummengeprüften Cache unter `backend/node_modules/.cache/synthetic-player-resources`. Aus dem Repository:
 
 ```bash
 cd frontend
@@ -33,8 +33,8 @@ Die Suite läuft auch bei `npm run e2e` automatisch mit. `--headed` zeigt den Br
 Für einen eigenen **wegwerfbaren** PostgreSQL-Testserver unterstützt der bestehende
 Wrapper `BROWSER_E2E_USE_EXISTING_DATABASE=true` und `BROWSER_E2E_DATABASE_PORT`.
 Dabei wird die Datenbank `contentpool_e2e` vollständig zurückgesetzt. Keine
-gemeinsame Entwicklungsdatenbank verwenden. Dateien entstehen unter dem bestehenden
-`BROWSER_E2E_FIXTURE_DIR` (Standard `/tmp/content-pool-browser-e2e`).
+gemeinsame Entwicklungsdatenbank verwenden. Aufgaben-, Upload- und Snapshot-Dateien entstehen in einem frischen temporären
+Laufverzeichnis und werden nach dem Lauf entfernt. Der Downloadcache bleibt erhalten.
 
 ## Prüfumfang
 

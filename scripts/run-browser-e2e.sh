@@ -26,7 +26,6 @@ export DB_PASSWORD=contentpool_dev
 export DB_DATABASE=contentpool_e2e
 export DB_SYNCHRONIZE=true
 export DB_RUN_MIGRATIONS=false
-export FILE_STORAGE_PATH="${BROWSER_E2E_FIXTURE_DIR:-/tmp/content-pool-browser-e2e}/storage"
 export JWT_SECRET=browser-e2e-secret-at-least-32-characters
 export PORT=3100
 export CORS_ORIGIN=http://127.0.0.1:4300

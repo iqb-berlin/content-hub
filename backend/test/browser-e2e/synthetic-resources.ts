@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
 
@@ -23,13 +25,17 @@ export async function prepareSyntheticResources(
   const resources = JSON.parse(
     await readFile(join(source, "resources.json"), "utf8"),
   );
-  const storage = resolve(fixtureDirectory, "storage");
+  const storage = resolve(fixtureDirectory, "../uploads");
   if (resolve(process.env.FILE_STORAGE_PATH || "") !== storage) {
     throw new Error(
-      "Synthetic resources require FILE_STORAGE_PATH in the E2E fixture directory.",
+      "Synthetic resources require FILE_STORAGE_PATH in the isolated E2E run directory.",
     );
   }
-  const cache = join(fixtureDirectory, "resource-cache");
+  // Keep only immutable, hash-verified downloads between isolated runs.
+  const cache = resolve(
+    __dirname,
+    "../../node_modules/.cache/synthetic-player-resources",
+  );
   await mkdir(cache, { recursive: true });
   const download = async (entry: Download): Promise<Buffer> => {
     const cachedFile = join(cache, entry.sha256);
@@ -40,12 +46,25 @@ export async function prepareSyntheticResources(
       // Populate the cache once; every reuse still verifies its contents.
     }
     if (!content) {
-      const response = await fetch(entry.source, {
-        signal: AbortSignal.timeout(120_000),
-      });
-      if (!response.ok)
-        throw new Error(`Synthetic resource download failed: ${entry.source}`);
-      content = Buffer.from(await response.arrayBuffer());
+      // curl handles redirects and address-family fallback for these upstream hosts.
+      const { stdout } = await promisify(execFile)(
+        "curl",
+        [
+          "--fail",
+          "--location",
+          "--silent",
+          "--show-error",
+          "--connect-timeout",
+          "10",
+          "--max-time",
+          "120",
+          "--retry",
+          "2",
+          entry.source,
+        ],
+        { encoding: "buffer", maxBuffer: 64 * 1024 * 1024 },
+      );
+      content = stdout;
     }
     if (createHash("sha256").update(content).digest("hex") !== entry.sha256) {
       throw new Error(`Synthetic resource checksum mismatch: ${entry.source}`);
