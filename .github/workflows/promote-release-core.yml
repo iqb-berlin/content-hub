@@ -28,11 +28,11 @@ jobs:
       issues: read
       packages: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -108,6 +108,12 @@ jobs:
           fi
           expected_version="${stable#v}"
           test "$(git show "${source_commit}:VERSION" | tr -d '[:space:]')" = "$expected_version"
+      - name: Require archived compliance evidence for the candidate
+        run: |
+          test -s dist/compliance-evidence.tar.gz
+          expected="$(./scripts/release_manifest.py get --manifest dist/release-manifest.json --field sourceCommit)"
+          actual="$(tar -xOf dist/compliance-evidence.tar.gz ./revision.txt)"
+          test "$actual" = "$expected"
       - name: Promote image manifests without rebuilding
         env:
           STABLE: ${{ steps.release.outputs.stable }}
@@ -139,8 +145,13 @@ jobs:
             --release "$STABLE" \
             --output dist/release-manifest.stable.json
           mv dist/release-manifest.stable.json dist/release-manifest.json
-          archive="$(./scripts/release_manifest.py get --manifest dist/release-manifest.json --field runtime.archive)"
-          (cd dist && sha256sum "$archive" release-manifest.json > SHA256SUMS)
+          checksums="$(mktemp)"
+          (
+            cd dist
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' \
+              | sort -z | xargs -0 sha256sum
+          ) > "$checksums"
+          mv "$checksums" dist/SHA256SUMS
       - name: Publish stable tag and release
         env:
           GH_TOKEN: ${{ github.token }}

@@ -7,6 +7,10 @@ on:
         description: Release candidate number
         required: true
         type: number
+      compliance_review:
+        description: Completed human license review issue for this source commit
+        required: true
+        type: string
       migration_classification:
         description: Database migration compatibility
         required: true
@@ -31,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       checks: read
+      actions: read
+      issues: read
       contents: read
       packages: read
     outputs:
@@ -38,10 +44,10 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       built_at: ${{ steps.identity.outputs.built_at }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '22'
       - name: Validate canonical release metadata
@@ -86,6 +92,23 @@ jobs:
             echo "release-gate for ${GITHUB_SHA} is ${conclusion}" >&2
             exit 1
           }
+      - name: Require full scans and completed human license review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMPLIANCE_REVIEW: ${{ inputs.compliance_review }}
+        run: |
+          python3 scripts/release_compliance.py collect \
+            --repository "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA" \
+            --review-issue "$COMPLIANCE_REVIEW" \
+            --output-dir "$RUNNER_TEMP/compliance-evidence"
+          tar -C "$RUNNER_TEMP/compliance-evidence" -czf compliance-evidence.tar.gz .
+      - name: Preserve verified compliance evidence for publication
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-compliance-evidence
+          path: compliance-evidence.tar.gz
+          if-no-files-found: error
+          retention-days: 7
       - name: Reject reused release candidate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -103,8 +126,8 @@ jobs:
             fi
             echo "Retrying ${RELEASE} after an incomplete publication"
           fi
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -148,10 +171,10 @@ jobs:
     outputs:
       digest: ${{ steps.image.outputs.digest }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -175,7 +198,7 @@ jobs:
       - name: Build backend once
         id: build
         if: steps.existing.outputs.exists != 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ./backend
           file: ./backend/Dockerfile.prod
@@ -198,7 +221,7 @@ jobs:
           [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
       - name: Scan published backend image
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.BACKEND_IMAGE }}@${{ steps.image.outputs.digest }}
           severity: CRITICAL,HIGH
@@ -217,10 +240,10 @@ jobs:
     outputs:
       digest: ${{ steps.image.outputs.digest }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -244,7 +267,7 @@ jobs:
       - name: Build frontend once
         id: build
         if: steps.existing.outputs.exists != 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ./frontend
           file: ./frontend/Dockerfile.prod
@@ -267,7 +290,7 @@ jobs:
           [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
       - name: Scan published frontend image
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.FRONTEND_IMAGE }}@${{ steps.image.outputs.digest }}
           severity: CRITICAL,HIGH
@@ -281,17 +304,29 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
       packages: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download verified compliance evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name verified-compliance-evidence --dir dist
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          syft-version: v1.51.1
       - name: Build runtime bundle and manifest
         env:
           RELEASE: ${{ needs.validate.outputs.release }}
@@ -318,7 +353,22 @@ jobs:
             --required-configuration CONTENT_POOL_BACKEND_IMAGE \
             --required-configuration CONTENT_POOL_FRONTEND_IMAGE \
             --output dist/release-manifest.json
-          (cd dist && sha256sum "$archive" release-manifest.json > SHA256SUMS)
+          for platform in linux/amd64 linux/arm64; do
+            platform_name="${platform//\//-}"
+            syft scan "${BACKEND_IMAGE}@${BACKEND_DIGEST}" \
+              --platform "$platform" \
+              --output "cyclonedx-json=dist/backend-${platform_name}.cdx.json"
+            syft scan "${FRONTEND_IMAGE}@${FRONTEND_DIGEST}" \
+              --platform "$platform" \
+              --output "cyclonedx-json=dist/frontend-${platform_name}.cdx.json"
+          done
+          checksums="$(mktemp)"
+          (
+            cd dist
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' \
+              | sort -z | xargs -0 sha256sum
+          ) > "$checksums"
+          mv "$checksums" dist/SHA256SUMS
       - name: Publish verified image tags
         env:
           RELEASE: ${{ needs.validate.outputs.release }}

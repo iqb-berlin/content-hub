@@ -72,6 +72,8 @@ For ACP managers who need a task-oriented user guide, see:
 
 ### Operations
 
+- [Compliance Reports](compliance.md)
+  Generated SBOMs, license scans, similarity summaries, retention, and release evidence.
 - [Releases and Promotion](operations/releases.md)
   SemVer, release candidates, staging evidence, digest promotion, rollback, and restore.
 - [Deployment](operations/deployment.md)
@@ -94,3 +96,5 @@ Several operational documents already exist at the repository root and remain us
 The files in `docs/` are intended to be the main navigable knowledge base for the
 application. The root-level documents are still helpful as focused runbooks for
 deployment, identity provider setup, and release readiness.
+
+- [SCANOSS baseline review, 2026-09-10](scanoss-review-2026-09-10.md) — technical findings and unresolved provenance.

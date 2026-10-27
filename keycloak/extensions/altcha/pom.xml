@@ -9,6 +9,14 @@
   <version>1.0.0</version>
   <packaging>jar</packaging>
 
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -49,6 +57,20 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>licenses</directory>
+        <targetPath>META-INF/licenses</targetPath>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>${project.basedir}/../../..</directory>
+        <targetPath>META-INF</targetPath>
+        <includes><include>LICENSE</include></includes>
+      </resource>
+    </resources>
     <finalName>content-pool-keycloak-altcha</finalName>
     <plugins>
       <plugin>
@@ -68,6 +90,14 @@
             </goals>
             <configuration>
               <createDependencyReducedPom>false</createDependencyReducedPom>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/LICENSE</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/NOTICE</resource>
+                </transformer>
+              </transformers>
               <filters>
                 <filter>
                   <artifact>*:*</artifact>

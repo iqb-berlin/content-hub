@@ -1,0 +1,155 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      routine-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      routine-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: maven
+    directory: /keycloak/extensions/altcha
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      routine-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /compliance
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      routine-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      routine-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      routine-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      routine-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      routine-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /nginx
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      routine-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]

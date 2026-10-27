@@ -8,7 +8,10 @@ decision in the release issue or operational change record.
 - [ ] Release PR updates `VERSION`, package versions, and `CHANGELOG.md`
 - [ ] Migration classification is `none` or `backward-compatible`
 - [ ] Required GitHub `release-gate` succeeded for the candidate commit
-- [ ] RC GitHub prerelease contains runtime archive, manifest, and checksums
+- [ ] Complete ScanCode, SCANOSS and dependency reports for the exact source commit (validated local bundle or successful full workflows)
+- [ ] Human license review issue completed with the exact evidence checksum or workflow IDs, plus a decision and evidence for every finding
+- [ ] Contributor rights, bundled assets and distribution notices checked within the stated scope
+- [ ] RC GitHub prerelease contains runtime archive, manifest, compliance evidence, SBOMs and checksums
 - [ ] Backend and frontend images passed the release image scan
 
 ## 2. Staging deployment
