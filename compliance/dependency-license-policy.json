@@ -39,10 +39,5 @@
       "source": "https://registry.npmjs.org/streamsearch/1.1.0"
     }
   },
-  "reviewed_exceptions": {
-    "pkg:npm/buffers@0.1.1": {
-      "expected_licenses": [],
-      "reason": "The published package contains neither license metadata nor a license file. This exact existing transitive version is accepted pending removal; any version or observed-license change requires a new review."
-    }
-  }
+  "reviewed_exceptions": {}
 }

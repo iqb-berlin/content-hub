@@ -171,7 +171,11 @@ def check_sboms(
                 expressions.append(override["expression"])
                 used_overrides.add(purl)
 
-            if any(expression_is_allowed(value, allowed, aliases) for value in expressions):
+            # A flat CycloneDX license list does not establish an OR choice.
+            # Explicit SPDX OR expressions are handled inside expression_is_allowed.
+            if expressions and all(
+                expression_is_allowed(value, allowed, aliases) for value in expressions
+            ):
                 continue
 
             if isinstance(purl, str) and purl in exceptions:

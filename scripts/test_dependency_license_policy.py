@@ -58,6 +58,23 @@ class DependencyLicensePolicyTest(unittest.TestCase):
             with self.subTest(candidate=candidate), self.assertRaises(module.PolicyError):
                 self.check(candidate)
 
+    def test_flat_license_list_does_not_imply_a_choice(self) -> None:
+        candidate = component("pkg:npm/mixed@1.0.0")
+        candidate["licenses"] = [
+            {"license": {"id": "MIT"}},
+            {"license": {"id": "GPL-3.0-only"}},
+        ]
+        with self.assertRaises(module.PolicyError):
+            self.check(candidate)
+        candidate["licenses"][1] = {"license": {"id": "Zlib"}}
+        self.assertEqual(self.check(candidate).checked_components, 1)
+
+    def test_allowed_entry_does_not_hide_malformed_expression(self) -> None:
+        candidate = component("pkg:npm/mixed@1.0.0", "MIT")
+        candidate["licenses"].append({"expression": "GPL-3.0-only OR ()"})
+        with self.assertRaises(module.PolicyError):
+            self.check(candidate)
+
     def test_rejects_malformed_license_expression(self) -> None:
         with self.assertRaises(module.PolicyError):
             self.check(component("pkg:npm/a@1.0.0", "MIT OR ()"))

@@ -27,6 +27,8 @@ if license_digest != EXPECTED_LICENSE_SHA256:
     fail("LICENSE is not the canonical Apache License 2.0 text")
 
 for project in ("backend", "frontend"):
+    if (ROOT / project / "LICENSE").read_bytes() != (ROOT / "LICENSE").read_bytes():
+        fail(f"{project}/LICENSE differs from the canonical project license")
     package = json.loads((ROOT / project / "package.json").read_text())
     package_lock = json.loads((ROOT / project / "package-lock.json").read_text())
     if package.get("license") != SPDX_ID:

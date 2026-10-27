@@ -19,4 +19,15 @@ mvn --batch-mode --no-transfer-progress \
   -DoutputFormat=json \
   -DoutputDirectory="$output_dir" \
   -DoutputName=keycloak-altcha-runtime \
-  -DincludeTestScope=false
+  -DincludeTestScope=false \
+  -DincludeProvidedScope=false
+# Keep the platform/provided dependencies visible for human review, separately
+# from the libraries actually shipped in the shaded provider JAR.
+mvn --batch-mode --no-transfer-progress \
+  -f keycloak/extensions/altcha/pom.xml \
+  org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeBom \
+  -DoutputFormat=json \
+  -DoutputDirectory="$output_dir" \
+  -DoutputName=keycloak-altcha-platform \
+  -DincludeTestScope=false \
+  -DincludeProvidedScope=true

@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - LICENSE
+      - backend/LICENSE
+      - frontend/LICENSE
       - backend/package.json
       - backend/package-lock.json
       - frontend/package.json
@@ -49,7 +51,9 @@ jobs:
       - name: Verify Apache-2.0 declarations
         run: python3 scripts/check-license-metadata.py
       - name: Generate CycloneDX SBOMs
-        run: ./scripts/generate-dependency-sboms.sh dist/compliance
+        run: |
+          ./scripts/generate-dependency-sboms.sh dist/compliance
+          git rev-parse HEAD > dist/compliance/revision.txt
       - name: Enforce reviewed dependency license policy
         run: |
           python3 scripts/check-dependency-licenses.py \
@@ -61,7 +65,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: dependency-sboms
-          path: dist/compliance/*.json
+          path: |
+            dist/compliance/*.json
+            dist/compliance/revision.txt
           if-no-files-found: error
           retention-days: 30
 
@@ -90,18 +96,20 @@ jobs:
             -r compliance/scancode-requirements.txt
       - name: Scan a clean source archive
         run: |
-          mkdir -p "$RUNNER_TEMP/content-pool-source" dist/compliance
+          mkdir -p "$RUNNER_TEMP/content-pool-source" dist/compliance/source
           git archive HEAD | tar -x -C "$RUNNER_TEMP/content-pool-source"
           .venv/scancode/bin/scancode \
             --license --copyright --package \
             --processes 2 \
-            --json-pp dist/compliance/source-license-scan.json \
+            --json-pp dist/compliance/source/source-license-scan.json \
             "$RUNNER_TEMP/content-pool-source"
+          git rev-parse HEAD > dist/compliance/source/revision.txt
+          .venv/scancode/bin/scancode --version > dist/compliance/source/tool-version.txt
       - name: Upload source license report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: source-license-scan
-          path: dist/compliance/source-license-scan.json
+          path: dist/compliance/source/
           if-no-files-found: error
           retention-days: 90
 

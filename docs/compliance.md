@@ -12,8 +12,12 @@ backend, frontend, and Keycloak extension. The resulting `dependency-sboms`
 artifact is retained for 30 days. The same job verifies that the canonical
 Apache-2.0 license text and package declarations remain consistent. It also
 enforces `compliance/dependency-license-policy.json` against every component in
-the three SBOMs. A dependency with missing metadata or without at least one
-reviewed license choice blocks the pull request. Version-specific metadata
+the three runtime SBOMs. The Keycloak runtime BOM excludes Maven `provided`
+dependencies, which are supplied by the Keycloak platform and are not bundled
+in the shaded provider JAR. A separate `keycloak-altcha-platform.json` retains
+the complete inventory, including those platform dependencies, for human review.
+A dependency with missing metadata or without approved
+license terms blocks the pull request. Version-specific metadata
 overrides and reviewed exceptions are explicit; an update to such a component
 therefore requires another review instead of silently inheriting the decision.
 The same generator and policy check run in the CI security job required by the
@@ -30,12 +34,12 @@ the SHA when a new Action release is selected.
 ## External code provenance (SCANOSS)
 
 The separate `External code provenance` workflow runs on pull requests changing
-application source, tests, Keycloak extensions, scripts, nginx configuration or
-the scan configuration. On pull requests it scans the complete contents of only
+application source, tests, Keycloak extensions and themes, scripts, nginx
+configuration or the scan configuration. On pull requests it scans the complete contents of only
 the added, changed, copied or renamed files in that scope. Every Monday and on
 manual runs it scans a clean archive of all tracked files in those directories,
-including tests. It does not scan the entire repository or untracked working
-files. SCANOSS's default file-type and directory exclusions still apply.
+including tests and vendored Keycloak theme scripts. It does not scan the entire
+repository or untracked working files. SCANOSS's default file-type and directory exclusions still apply.
 Dependency inventories and ScanCode cover different concerns and remain in
 place.
 
@@ -43,9 +47,9 @@ The pinned Python client uses the free public `https://api.osskb.org` API withou
 an API key. Fingerprints and file metadata (including paths) leave the runner;
 raw source text is not uploaded. The public service may have availability or
 throughput limits. A recognised temporary API or rate-limit failure on a pull
-request produces an explicit warning and an incomplete status without blocking
-the pull request. Unexpected client errors, invalid reports and report-validation
-errors still fail. API failures also fail weekly and manual full scans. An
+request fails the scan check and produces an explicit warning and an incomplete
+status. Unexpected client errors, invalid reports and report-validation errors
+still fail. API failures also fail weekly and manual full scans. An
 unavailable scan is never presented as a clean result.
 
 For a dedicated or self-hosted endpoint, set the repository variable
@@ -57,11 +61,11 @@ variable is absent.
 The `scanoss-code-provenance` artifact retains raw JSON when available, a
 summary, status, scan log, scanned-file list, Git revision and tool version for
 30 days. On pull requests the revision is the checked-out test merge commit.
-Findings are advisory: reviewers must examine source URLs, actual licenses and
-attribution requirements before merging. A match can be legitimate reuse,
+Findings require human assessment: reviewers must examine source URLs, actual
+licenses and attribution requirements before merging. A match can be legitimate reuse,
 common code or the project's own public code. Document the review decision in
 the pull request. The job summary and `status.txt` distinguish a completed scan
-from an unavailable advisory scan. No matches do not establish originality or
+from an unavailable scan. No matches do not establish originality or
 rights clearance.
 
 For a local check, install `compliance/scanoss-requirements.txt` in a virtual
@@ -86,11 +90,91 @@ not establish authorship, plagiarism, or a license violation.
 
 ## Releases
 
-The release-candidate workflow uses Syft to generate CycloneDX JSON SBOMs for
-both published container images and both supported platforms. These SBOMs are
-created from the immutable image digests, covered by `SHA256SUMS`, and attached
-to the GitHub prerelease. Stable promotion carries the same SBOMs forward
-without rebuilding the images.
+A release candidate requires full successful `Compliance` and `External code
+provenance` workflow runs for the exact source commit. PR delta scans, incomplete
+runs, old revisions and expired artifacts do not meet this requirement. Run the
+two workflows manually on `master` after merging the release changes; a weekly
+run on the same commit can also be used. Scan failures keep clearance open.
+
+A human maintainer creates a license review issue from the template and records
+both run IDs and the exact source commit. Download the two source reports and
+prepare the per-finding record locally:
+
+```sh
+python3 scripts/release_compliance.py draft-review \
+  --commit <40-character-source-commit> \
+  --scanoss <scanoss-code-provenance/results.json> \
+  --scancode <source-license-scan/source-license-scan.json> \
+  --scanoss-run-id <full-SCANOSS-run-id> \
+  --compliance-run-id <full-Compliance-run-id> \
+  --output <review-draft.md>
+```
+
+This command writes a pending draft and a companion `.findings.json` inventory
+with source details; it never approves a finding. Inspect that inventory and the
+raw reports, then paste the draft’s one JSON record into the issue. Every SCANOSS match, ScanCode license detection and
+historical baseline finding needs a reason, evidence and one resolution:
+`standard-pattern`, `licensed-reuse`, `independent-origin` or `removed`.
+Licensed reuse additionally needs the applicable license. An accepted-risk note
+or a missing original is not clearance. For replacement code, document its
+independent origin; do not merely rewrite code to reduce a scanner match.
+
+The `reviewer` is the GitHub login of the human maintainer who completes and
+closes the issue. The issue must be owned by a repository maintainer and closed
+as completed, with rights, assets, notices and software scope checks confirmed.
+Editing or commenting after completion requires reopening and completing the
+record again, so the recorded human decision cannot be reused for later edits.
+The existing protected production environment supplies the final human approval;
+its reviewer configuration must be maintained in GitHub. The validator checks
+the record and identity, not whether a person's legal judgment was correct.
+Unclear rights questions go to the responsible IQB legal contact.
+
+Pass this issue URL as `compliance_review` when starting the release-candidate
+workflow. Before image builds, the gate validates the issue, downloads the exact
+scan runs, verifies revisions and completeness, reruns dependency policy, and
+checks all required decisions. No approval is manufactured by CI or an AI tool.
+
+The resulting `compliance-evidence.tar.gz` contains the raw reports, run metadata,
+review issue snapshot, decisions, finding inventory and source revision. It is
+attached to the GitHub prerelease and included in `SHA256SUMS`. Stable promotion
+requires that archive and carries it forward without rebuilding. Release assets
+have no Actions artifact expiry; retain them for the lifetime of the release and
+include them in the organization's normal backup. Temporary scan artifacts keep
+their 30/90-day limits, so archive them before they expire.
+
+Syft also generates CycloneDX JSON SBOMs for both published container images and
+both supported platforms from immutable image digests. They are checksummed and
+attached to the prerelease, and carried forward on stable promotion.
+
+The runtime archive and application images include the project Apache-2.0 text.
+The frontend image also serves Angular's extracted `3rdpartylicenses.txt`.
+Backend dependencies retain their shipped notices, and the shaded Keycloak
+extension retains the project license and merged dependency LICENSE/NOTICE files.
+The root and package license copies are checked for consistency.
+
+A completed review supports a statement such as: “Version X was checked for
+software licenses and identifiable code provenance under the documented process;
+no unresolved findings remained within that scope at the time of review.”
+It is not a guarantee against third-party claims. Uploaded assessment content,
+images and texts require their own rights process and are outside this review.
+
+## Costs and availability
+
+No paid scan subscription is required by the default configuration. OSSKB is
+currently free on a best-effort basis and can rate-limit clients; it does not
+guarantee accuracy or availability. Do not evade limits. Retry later or explicitly
+configure an approved service. Tooling remains usable locally, but local-only
+reports do not automatically substitute for the release workflow evidence.
+
+Standard GitHub-hosted runners for this public repository are currently free.
+Artifact/cache quotas and repository visibility changes can affect costs. Check
+organization billing budgets and retain release evidence without accumulating
+unneeded temporary artifacts. These conditions are not a promise of perpetual
+free hosting; human review also requires staff time.
+
+Sources: [OSSKB terms](https://www.softwaretransparency.org/terms),
+[GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions),
+[Apache-2.0 distribution conditions](https://www.apache.org/licenses/LICENSE-2.0).
 
 ## Tooling
 
@@ -109,5 +193,13 @@ and project-specific exceptions.
 
 ## Review of the first SCANOSS baseline
 
+The [27 October retrieval follow-up](provenance-follow-up-2026-10-27.json)
+records fresh attempts to fetch the seven missing files and their reported
+versions. Both original raw URLs and exact-version commit lookups still returned
+404. The cases remain pending; this is retrieval evidence, not rights clearance.
+
+
 The [57-finding technical review](scanoss-review-2026-09-10.md) records source
-comparisons and unresolved cases. It is not a license allowlist or legal sign-off.
+comparisons and unresolved cases. It is not a license allowlist or legal sign-off. All 57
+assessments, including the seven unavailable sources, remain subject to human
+release review.

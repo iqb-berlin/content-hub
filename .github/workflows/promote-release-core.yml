@@ -108,6 +108,12 @@ jobs:
           fi
           expected_version="${stable#v}"
           test "$(git show "${source_commit}:VERSION" | tr -d '[:space:]')" = "$expected_version"
+      - name: Require archived compliance evidence for the candidate
+        run: |
+          test -s dist/compliance-evidence.tar.gz
+          expected="$(./scripts/release_manifest.py get --manifest dist/release-manifest.json --field sourceCommit)"
+          actual="$(tar -xOf dist/compliance-evidence.tar.gz ./revision.txt)"
+          test "$actual" = "$expected"
       - name: Promote image manifests without rebuilding
         env:
           STABLE: ${{ steps.release.outputs.stable }}

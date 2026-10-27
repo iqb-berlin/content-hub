@@ -7,6 +7,10 @@ on:
         description: Release candidate number
         required: true
         type: number
+      compliance_review:
+        description: Completed human license review issue for this source commit
+        required: true
+        type: string
       migration_classification:
         description: Database migration compatibility
         required: true
@@ -31,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       checks: read
+      actions: read
+      issues: read
       contents: read
       packages: read
     outputs:
@@ -86,6 +92,23 @@ jobs:
             echo "release-gate for ${GITHUB_SHA} is ${conclusion}" >&2
             exit 1
           }
+      - name: Require full scans and completed human license review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMPLIANCE_REVIEW: ${{ inputs.compliance_review }}
+        run: |
+          python3 scripts/release_compliance.py collect \
+            --repository "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA" \
+            --review-issue "$COMPLIANCE_REVIEW" \
+            --output-dir "$RUNNER_TEMP/compliance-evidence"
+          tar -C "$RUNNER_TEMP/compliance-evidence" -czf compliance-evidence.tar.gz .
+      - name: Preserve verified compliance evidence for publication
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-compliance-evidence
+          path: compliance-evidence.tar.gz
+          if-no-files-found: error
+          retention-days: 7
       - name: Reject reused release candidate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -281,6 +304,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
       packages: write
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -292,6 +316,13 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download verified compliance evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name verified-compliance-evidence --dir dist
       - name: Install Syft
         uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:

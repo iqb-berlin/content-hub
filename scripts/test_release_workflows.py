@@ -43,6 +43,15 @@ class ReleaseWorkflowTest(unittest.TestCase):
         self.assertIn("! -name SHA256SUMS", self.candidate)
         self.assertIn("! -name SHA256SUMS", self.core)
 
+    def test_compliance_is_verified_before_builds_and_preserved_on_promotion(self) -> None:
+        validation = self.candidate.split("  backend:", 1)[0]
+        self.assertIn("scripts/release_compliance.py collect", validation)
+        self.assertIn("inputs.compliance_review", validation)
+        self.assertIn("name: verified-compliance-evidence", validation)
+        self.assertIn("--name verified-compliance-evidence --dir dist", self.candidate)
+        archive_check = self.core.index("test -s dist/compliance-evidence.tar.gz")
+        self.assertLess(archive_check, self.core.index("name: Promote image manifests"))
+
     def test_staging_and_exception_promotions_are_separate(self) -> None:
         core_call = "uses: ./.github/workflows/promote-release-core.yml"
         self.assertIn(core_call, self.staging)
