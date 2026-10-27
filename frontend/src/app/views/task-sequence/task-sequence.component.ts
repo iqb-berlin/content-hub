@@ -76,6 +76,7 @@ interface ReviewBookletOption {
         #reviewWorkspace
         class="review-workspace"
         [class.fullscreen-fallback]="isFallbackFullscreen"
+        [attr.aria-busy]="sequenceLoading"
       >
         <!-- Navigation bar -->
         <div class="nav-bar">
@@ -101,7 +102,7 @@ interface ReviewBookletOption {
             </button>
           </div>
           <div class="workspace-actions">
-            @if (isBooklet && currentUnit) {
+            @if (isBooklet && currentUnit && !sequenceLoading) {
               <a
                 class="btn btn-outline btn-sm"
                 [routerLink]="['/view', acpId, 'sequence', sequenceId]"
@@ -149,6 +150,7 @@ interface ReviewBookletOption {
               <button
                 class="btn btn-outline btn-sm btn-state"
                 (click)="toggleUnitList()"
+                [disabled]="sequenceLoading"
                 [attr.aria-expanded]="unitListOpen"
                 aria-controls="task-sequence-unit-list"
               >
@@ -577,6 +579,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   sequenceKind?: 'booklet';
   canReview = false;
   sequence: TaskSequence | null = null;
+  sequenceLoading = false;
   currentIndex = 0;
   invalidUnitLink = false;
   breadcrumbs: BreadcrumbItem[] = [];
@@ -663,8 +666,11 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
             previous.sequenceId === current.sequenceId &&
             previous.sequenceKind === current.sequenceKind,
         ),
-        switchMap(({ sequenceId, sequenceKind }) =>
-          this.api
+        switchMap(({ sequenceId, sequenceKind }) => {
+          this.sequenceLoading = true;
+          this.unitListOpen = false;
+          this.changeDetector.markForCheck();
+          return this.api
             .getViewSequence(this.acpId, sequenceId, sequenceKind)
             .pipe(
               switchMap((sequence) =>
@@ -673,11 +679,12 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
                   : of(this.route.snapshot.queryParamMap)
                 ).pipe(map((queryParams) => ({ sequence, sequenceId, sequenceKind, queryParams }))),
               ),
-            ),
-        ),
+            );
+        }),
         takeUntil(this.destroy$),
       )
       .subscribe(({ sequence, sequenceId, sequenceKind, queryParams }) => {
+        this.sequenceLoading = false;
         this.sequenceId = sequenceId;
         this.sequenceKind = sequenceKind;
         this.currentIndex = 0;
@@ -718,11 +725,16 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   }
 
   get canGoPrev(): boolean {
-    return this.hasUnits && this.currentIndex > 0;
+    return !this.sequenceLoading && this.hasUnits && this.currentIndex > 0;
   }
 
   get canGoNext(): boolean {
-    return this.hasUnits && !!this.sequence && this.currentIndex < this.sequence.units.length - 1;
+    return (
+      !this.sequenceLoading &&
+      this.hasUnits &&
+      !!this.sequence &&
+      this.currentIndex < this.sequence.units.length - 1
+    );
   }
 
   get currentBookletPosition(): number {
@@ -751,7 +763,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   }
 
   jumpTo(index: number) {
-    if (!this.sequence?.units?.length) return;
+    if (this.sequenceLoading || !this.sequence?.units?.length) return;
     const max = this.sequence.units.length - 1;
     if (!Number.isInteger(index) || index < 0 || index > max) return;
     if (this.isBooklet) {
@@ -801,7 +813,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   }
 
   toggleUnitList() {
-    if (!this.hasUnits) return;
+    if (this.sequenceLoading || !this.hasUnits) return;
     this.closeBookletList();
     this.unitListOpen = !this.unitListOpen;
   }
