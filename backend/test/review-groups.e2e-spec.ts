@@ -294,6 +294,91 @@ describe("Review visibility, groups and synchronization API", () => {
     },
   );
 
+  it.each(["hideReviewMetadata", "hideReviewDeveloperNames"])(
+    "protects %s from stale and unauthorized general access updates",
+    async (setting) => {
+      const isolatedAcp = await db.getRepository(Acp).save({
+        packageId: `review-access-${setting}-${Date.now()}`,
+        name: "Review visibility ownership",
+        acpIndex: {},
+      });
+      const repository = db.getRepository(AcpAccessConfig);
+      await repository.save({
+        acpId: isolatedAcp.id,
+        accessModel: "PUBLIC" as any,
+        featureConfig: { enableReview: true, showMetadata: true },
+      });
+      await db.getRepository(AcpUserRole).save({
+        acpId: isolatedAcp.id,
+        userId: actors[0].id,
+        role: "ACP_MANAGER" as any,
+        capabilities: [],
+      });
+      const accessUrl = `/api/acp/${isolatedAcp.id}/access`;
+      const reviewUrl = `/api/view/acp/${isolatedAcp.id}/review/config`;
+      const staleAccess = await request(server)
+        .get(accessUrl)
+        .set(headers(actors[0].token))
+        .expect(200);
+      const initial = await request(server)
+        .get(reviewUrl)
+        .set(headers(manager))
+        .expect(200);
+      const hidden = await request(server)
+        .put(reviewUrl)
+        .set(headers(manager))
+        .send({ ...initial.body, [setting]: true })
+        .expect(200);
+      const saved = await repository.findOneByOrFail({ acpId: isolatedAcp.id });
+
+      for (const token of [actors[0].token, manager]) {
+        for (const incoming of [undefined, false, "false", null, [true]]) {
+          const response = await request(server)
+            .put(accessUrl)
+            .set(headers(token))
+            .send({
+              accessModel: "PUBLIC",
+              featureConfig: {
+                ...staleAccess.body.featureConfig,
+                ...(incoming !== undefined ? { [setting]: incoming } : {}),
+                showMetadata: false,
+              },
+            })
+            .expect(200);
+          expect(response.body.featureConfig[setting]).toBe(true);
+          expect(response.body.featureConfig.showMetadata).toBe(false);
+        }
+      }
+      const current = await request(server)
+        .get(reviewUrl)
+        .set(headers(manager))
+        .expect(200);
+      expect(current.body).toEqual(hidden.body);
+      const stored = await repository.findOneByOrFail({
+        acpId: isolatedAcp.id,
+      });
+      expect(stored.reviewConfigVersion).toBe(saved.reviewConfigVersion);
+      expect(stored.reviewRevision).toBe(saved.reviewRevision);
+      await request(server)
+        .put(reviewUrl)
+        .set(headers(actors[0].token))
+        .send({ ...hidden.body, [setting]: false })
+        .expect(403);
+      await request(server)
+        .put(reviewUrl)
+        .set(headers(manager))
+        .send({ ...initial.body, [setting]: false })
+        .expect(409);
+      const restored = await request(server)
+        .put(reviewUrl)
+        .set(headers(manager))
+        .send({ ...hidden.body, [setting]: false })
+        .expect(200);
+      expect(restored.body[setting]).toBe(false);
+      expect(restored.body.configVersion).toBe(hidden.body.configVersion + 1);
+    },
+  );
+
   it("requires confirmation, preserves comments and rejects stale configuration", async () => {
     for (const actor of actors.slice(0, 4))
       await request(server)
