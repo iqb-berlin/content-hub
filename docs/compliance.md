@@ -100,7 +100,7 @@ meet the requirement. Scan failures keep clearance open.
 Use a clean checkout of the final release commit. Install Python 3.12 and the
 pinned requirements in `compliance/scanoss-requirements.txt` and
 `compliance/scancode-requirements.txt` in a virtual environment; put its
-`scanoss-py` and `scancode` commands on `PATH`. Node 22/npm and Maven with Java 17
+`python3`, `scanoss-py` and `scancode` commands on `PATH`. Node 22/npm and Maven with Java 17
 or newer are also needed for the SBOM generators. Then run:
 
 ```sh
@@ -116,7 +116,10 @@ python3 scripts/release_compliance.py draft-review \
 The runner materializes every tracked file directly from Git objects, so ignored
 build products and working files do not enter the scan. It stops at the first
 failed tool and preserves logs and exit codes; a failed run does not produce a
-release-usable bundle. ScanCode includes hashes for every tracked file. SCANOSS
+release-usable bundle. ScanCode includes hashes for every tracked file. Its
+small version-bound entry point clears ScanCode's built-in VCS-config exclusion
+on this materialized snapshot, so tracked `.gitignore` files are included too.
+No Git metadata is copied into that snapshot. SCANOSS
 fingerprints must match those source bytes and every fingerprint must have an
 API response. Its default exclusions are recorded in `excluded-files.txt` and
 must be inspected during human scope review. This is full repository input, not

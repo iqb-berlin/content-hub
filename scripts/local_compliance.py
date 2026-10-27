@@ -255,7 +255,8 @@ def scan(output, root):
         runpy.run_path(str(ROOT / "scripts/summarize-scanoss.py"))["summarize"](report)
         require(set(report) == set(fingerprints), "SCANOSS responses are incomplete")
         (oss / "status.txt").write_text("Scan completed successfully.\n")
-        run_logged(["scancode", "--license", "--copyright", "--package", "--info",
+        run_logged([sys.executable, str(source / "scripts/scancode_all_tracked.py"),
+                    "--license", "--copyright", "--package", "--info",
                     "--strip-root", "--processes", "2", "--json-pp",
                     str(code / "source-license-scan.json"), str(source)], code, source)
         sboms = output / "dependency-sboms"
