@@ -8,6 +8,8 @@ All notable changes to ContentPool are documented in this file. Releases use
 
 ### Changes
 
+- Add direct links to individual booklet task occurrences, with reload and
+  browser history support in the review workspace. Refs #245.
 - Add configurable ACP comment categories with optional assignments, archival,
   category filters and CSV/XLSX export columns. Refs #239.
 

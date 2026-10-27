@@ -8,6 +8,7 @@ const crossBrowserSpecs = [
   '**/item-comment-refresh.spec.ts',
   '**/item-explorer-interaction-regression.spec.ts',
   '**/review-navigation-metadata.spec.ts',
+  '**/review-task-links.spec.ts',
   '**/critical-journeys-cross-browser.spec.ts',
   '**/item-explorer-reduced-view.spec.ts',
 ];

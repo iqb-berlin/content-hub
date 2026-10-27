@@ -58,6 +58,26 @@ Der Booklet-Download verwendet das Manifest und exportiert mehrfach referenziert
 Units nur einmal. Bei einer unbekannten Booklet-ID erfolgt kein Rückfall auf ein
 zufällig gleichnamiges Modul.
 
+### Direktlinks zu Aufgaben (#245)
+
+In der Testheftansicht bietet „Direktlink zur Aufgabe“ einen Link zur aktuellen
+Aufgabe. Die Aufgabenliste enthält für jedes Vorkommen einen eigenen Link.
+Die Links lassen sich über das Browsermenü kopieren oder in einem neuen Tab
+öffnen. Zurück, Weiter und die Aufgabenliste aktualisieren ebenfalls die URL;
+Neuladen sowie Zurück/Vorwärts im Browser stellen die Auswahl wieder her.
+
+`/view/:acpId/sequence/:bookletId?kind=booklet&occurrence=:occurrenceId`
+adressiert ein bestimmtes Vorkommen, auch wenn dieselbe Aufgabe mehrmals im
+Testheft enthalten ist. Die Vorkommens-ID wird als Queryparameter URL-kodiert.
+Für ältere Daten ohne Vorkommens-ID gibt es `position` als einsbasierte Position
+in der Aufgabenliste. Links ohne Auswahl öffnen weiterhin die erste Aufgabe.
+Beim Testheftwechsel wird die Auswahl zurückgesetzt.
+
+Bei unbekannten, mehrdeutigen oder ungültigen Zielen erscheint ein Hinweis;
+die Ansicht zeigt die erste Aufgabe an. Der nächste Navigationsschritt erzeugt
+wieder einen gültigen Link. Strukturänderungen können Vorkommens-IDs und
+Positionen verändern. Die Links verwenden weiterhin die reguläre ACP-Zugriffsprüfung.
+
 ## Laufzeitmodell und Fehler
 
 Ein gemeinsames Manifest enthält Booklets, verschachtelte Blöcke, geordnete
