@@ -1013,10 +1013,34 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private retiringResponseSource: { window: Window; sessionId: string } | null = null;
   private responseChangedAt: number | null = null;
   private playerInputDocument: Document | null = null;
+  private playerDragStart: { x: number; y: number; pointerId: number } | null = null;
   private solutionRequestTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly playerInputHandler = () => {
     if (this.reviewMode && !this.solutionVisible && this.printMode === 'off')
       this.responseChangedAt = Date.now();
+  };
+  private readonly playerDragStartHandler = (event: PointerEvent) => {
+    if (
+      !(event.target as Element | null)?.closest?.(
+        '[data-aspect-draggable="true"], .cdk-drag, [draggable="true"]',
+      )
+    )
+      return;
+    this.playerDragStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+  };
+  private readonly playerDragEndHandler = (event: PointerEvent) => {
+    const start = this.playerDragStart;
+    this.playerDragStart = null;
+    if (
+      start &&
+      start.pointerId === event.pointerId &&
+      Math.hypot(event.clientX - start.x, event.clientY - start.y) >= 5
+    ) {
+      this.playerInputHandler();
+    }
+  };
+  private readonly playerDragCancelHandler = () => {
+    this.playerDragStart = null;
   };
   private readonly playerControlHandler = (event: Event) => {
     const key = (event as KeyboardEvent).key;
@@ -1479,12 +1503,25 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     doc.addEventListener('input', this.playerInputHandler, true);
     doc.addEventListener('click', this.playerControlHandler, true);
     doc.addEventListener('keydown', this.playerControlHandler, true);
+    doc.addEventListener('pointerdown', this.playerDragStartHandler, true);
+    doc.addEventListener('pointerup', this.playerDragEndHandler, true);
+    doc.addEventListener('pointercancel', this.playerDragCancelHandler, true);
+    doc.addEventListener('drop', this.playerInputHandler, true);
   }
 
   private stopObservingPlayerInputs() {
     this.playerInputDocument?.removeEventListener('input', this.playerInputHandler, true);
     this.playerInputDocument?.removeEventListener('click', this.playerControlHandler, true);
     this.playerInputDocument?.removeEventListener('keydown', this.playerControlHandler, true);
+    this.playerInputDocument?.removeEventListener('pointerdown', this.playerDragStartHandler, true);
+    this.playerInputDocument?.removeEventListener('pointerup', this.playerDragEndHandler, true);
+    this.playerInputDocument?.removeEventListener(
+      'pointercancel',
+      this.playerDragCancelHandler,
+      true,
+    );
+    this.playerInputDocument?.removeEventListener('drop', this.playerInputHandler, true);
+    this.playerDragStart = null;
     this.playerInputDocument = null;
   }
 
@@ -1862,7 +1899,11 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       unitState: {
         dataParts:
           this.solutionVisible && this.reviewSolution.prefill.status === 'available'
-            ? mergePlayerSolutionIntoDataParts({}, this.reviewSolution.prefill.responses)
+            ? mergePlayerSolutionIntoDataParts(
+                {},
+                this.reviewSolution.prefill.responses,
+                this.reviewSolution.prefill.dropLists,
+              )
             : { ...this.responseData },
       },
       playerConfig: {

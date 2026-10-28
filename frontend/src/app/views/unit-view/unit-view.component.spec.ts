@@ -169,6 +169,77 @@ describe('UnitViewComponent', () => {
     expect(component.visibleCodingSchemeAsText).toHaveLength(1);
   });
 
+  it('starts a drag solution with a reconciled palette and restores the prior personal state', async () => {
+    const scheme = structuredClone(solutionScheme);
+    scheme.variableCodings[0].alias = 'A';
+    scheme.variableCodings[0].codes[0].ruleSets![0].rules[0].parameters = ['X'];
+    const definition = JSON.stringify({
+      pages: [
+        {
+          elements: [
+            {
+              type: 'drop-list',
+              id: 'pool',
+              alias: 'POOL',
+              onlyOneItem: false,
+              isSortList: false,
+              copyOnDrop: false,
+              connectedTo: ['target'],
+              value: [
+                { alias: 'X', text: 'First object' },
+                { alias: 'Y', text: 'Second object' },
+              ],
+            },
+            {
+              type: 'drop-list',
+              id: 'target',
+              alias: 'A',
+              onlyOneItem: true,
+              isSortList: false,
+              copyOnDrop: false,
+              connectedTo: ['pool'],
+              value: [],
+            },
+          ],
+        },
+      ],
+    });
+    const { fixture, component, message } = await playerFixture(definition, scheme);
+    const send = vi.spyOn(component as any, 'sendToPlayer');
+    await message({ type: 'vopReadyNotification' });
+    const ownParts = {
+      elementCodes: JSON.stringify([
+        { id: 'POOL', value: ['X'], status: 'VALUE_CHANGED' },
+        { id: 'A', value: ['Y'], status: 'VALUE_CHANGED' },
+      ]),
+    };
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: component.playerSessionId,
+      timeStamp: Date.now(),
+      unitState: { dataParts: ownParts },
+    });
+    const ready = async () => {
+      fixture.detectChanges();
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(fixture.nativeElement.querySelector('iframe')).not.toBeNull();
+      });
+      const frame = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+      await message({ type: 'vopReadyNotification' }, frame.contentWindow!);
+    };
+    component.toggleSolution();
+    await ready();
+    const solutionStart = send.mock.calls.at(-1)![0];
+    expect(JSON.parse(solutionStart.unitState.dataParts.elementCodes)).toEqual([
+      { id: 'POOL', value: ['Y'], status: 'VALUE_CHANGED' },
+      { id: 'A', value: ['X'], status: 'VALUE_CHANGED' },
+    ]);
+    component.toggleSolution();
+    await ready();
+    expect(send.mock.calls.at(-1)![0].unitState.dataParts).toEqual(ownParts);
+  });
+
   it('restores personal data parts and the page after hiding the solution, ignoring stale and synthetic states', async () => {
     const definition = JSON.stringify({
       pages: [{}, { elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
@@ -313,6 +384,62 @@ describe('UnitViewComponent', () => {
       'Keine eindeutige Musterlösung',
     );
   });
+
+  it('waits for a fresh state after an Aspect drag without relying on unload reports', async () => {
+    const { component, frame, message } = await playerFixture(
+      JSON.stringify({ pages: [{ elements: [{ alias: 'ANSWER', type: 'text-field' }] }] }),
+      solutionScheme,
+    );
+    await message({ type: 'vopReadyNotification' });
+    const doc = frame.contentDocument!;
+    const object = doc.createElement('div');
+    object.setAttribute('data-aspect-draggable', 'true');
+    doc.body.append(object);
+    object.dispatchEvent(
+      new MouseEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10 }),
+    );
+    doc.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientX: 100, clientY: 100 }));
+    component.toggleSolution();
+    expect(component.solutionRequestPending).toBe(true);
+    expect(component.solutionVisible).toBe(false);
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: component.playerSessionId,
+      timeStamp: Date.now() + 1,
+      unitState: { dataParts: { elementCodes: '[]' } },
+    });
+    expect(component.solutionRequestPending).toBe(false);
+    expect(component.solutionVisible).toBe(true);
+  });
+
+  it.each(['click', 'cancel'])(
+    'does not wait for an answer report after a drag object %s without a drop',
+    async (mode) => {
+      const { component, frame, message } = await playerFixture(
+        JSON.stringify({ pages: [{ elements: [{ alias: 'ANSWER', type: 'text-field' }] }] }),
+        solutionScheme,
+      );
+      await message({ type: 'vopReadyNotification' });
+      const doc = frame.contentDocument!;
+      const object = doc.createElement('div');
+      object.setAttribute('data-aspect-draggable', 'true');
+      doc.body.append(object);
+      object.dispatchEvent(
+        new MouseEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10 }),
+      );
+      if (mode === 'cancel') doc.dispatchEvent(new MouseEvent('pointercancel', { bubbles: true }));
+      doc.dispatchEvent(
+        new MouseEvent('pointerup', {
+          bubbles: true,
+          clientX: mode === 'cancel' ? 100 : 10,
+          clientY: 10,
+        }),
+      );
+      component.toggleSolution();
+      expect(component.solutionRequestPending).toBe(false);
+      expect(component.solutionVisible).toBe(true);
+    },
+  );
 
   it.each(['iso', 'milliseconds'])(
     'waits for a fresh player response with %s timestamps after an input before showing the solution',
