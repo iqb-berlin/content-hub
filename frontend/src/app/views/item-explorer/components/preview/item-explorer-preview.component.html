@@ -50,6 +50,15 @@
             <span class="player-target-badge unmapped">Kein Player-Ziel</span>
           }
         </div>
+        @if (vm.syntheticPreviewState) {
+          <p class="preview-state-note">
+            Vorbereiteter Vorschauzustand: Die Sichtbarkeitsregeln bleiben aktiv. Dieser Zustand
+            kann nicht als Antwort gespeichert werden.
+          </p>
+        }
+        @if (vm.presentationMessage) {
+          <p class="preview-state-note" role="status">{{ vm.presentationMessage }}</p>
+        }
         <details #previewSettings class="preview-settings">
           <summary
             class="btn btn-outline btn-sm"
@@ -58,6 +67,24 @@
             Vorschau einstellen ▾
           </summary>
           <div class="preview-settings-body">
+            @if (vm.itemExplorerConditionalVisibilityEnabled) {
+              <div class="preview-target-selector">
+                <label for="preview-context-mode">Ansicht</label>
+                <select
+                  id="preview-context-mode"
+                  [ngModel]="vm.previewMode"
+                  (ngModelChange)="vm.setPreviewMode($event)"
+                >
+                  <option value="reference">Referenzansicht des Items</option>
+                  <option value="answers">Bearbeitungsstand</option>
+                  <option value="flow">Regulärer Aufgabenablauf</option>
+                </select>
+                <small
+                  >Die Referenzansicht verwendet den Itemkontext. Gespeicherte Antworten werden nur
+                  im Bearbeitungsstand geladen.</small
+                >
+              </div>
+            }
             <div class="preview-target-selector">
               <label for="preview-paging-mode">Seitendarstellung</label>
               <select
@@ -77,6 +104,69 @@
                 <option value="print-ids">Alle Seiten mit IDs (Druckansicht)</option>
               </select>
             </div>
+            @if (vm.canEditExplorer && vm.itemExplorerConditionalVisibilityEnabled) {
+              <div class="preview-target-controls">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="vm.capturePreviewContext()"
+                  [disabled]="
+                    vm.preparingPresentation ||
+                    !vm.hasCurrentResponseState ||
+                    vm.isCorrectSolutionActive ||
+                    !vm.canPreviewSelectedItem
+                  "
+                >
+                  Diese Itemansicht als Kontext übernehmen
+                </button>
+                @if (vm.hasPreviewContext) {
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    (click)="vm.clearPreviewContext()"
+                  >
+                    Übernommenen Kontext zurücksetzen
+                  </button>
+                }
+              </div>
+              @if (vm.showPreviewStartPageSelector) {
+                <div class="preview-target-selector">
+                  <label for="preview-start-page">Aufgabenkontext</label>
+                  <select
+                    class="preview-target-select"
+                    id="preview-start-page"
+                    [ngModel]="vm.previewStartPage"
+                    (ngModelChange)="vm.setPreviewStartPage($event)"
+                  >
+                    <option value="">Keine feste Aufgabenseite (Standard)</option>
+                    @for (page of vm.previewStartPages; track page) {
+                      <option [value]="page">Aufgabenseite {{ page + 1 }}</option>
+                    }
+                  </select>
+                  <small>
+                    Legt fest, bei welcher Aufgabenseite der dauerhaft sichtbare Stimulus geprüft
+                    wird. Eine Auswahl ist nur nötig, wenn der Zustand nicht eindeutig ableitbar
+                    ist.
+                  </small>
+                </div>
+              }
+              @for (variable of vm.previewStateVariables; track variable.id) {
+                <div class="preview-target-selector">
+                  <label [for]="'preview-state-' + variable.id">{{ variable.label }}</label>
+                  <input
+                    class="preview-target-input"
+                    [id]="'preview-state-' + variable.id"
+                    [ngModel]="variable.value"
+                    (change)="vm.setPreviewStateValue(variable.id, $any($event.target).value)"
+                    placeholder="Automatisch"
+                  />
+                </div>
+              }
+              <small
+                >Leere Werte folgen der Aufgabenkonfiguration. Ein übernommener Kontext gehört zur
+                Referenzansicht und wird getrennt von Antworten gespeichert.</small
+              >
+            }
             @if (vm.canEditExplorer) {
               <div class="preview-target-controls">
                 @if (vm.showPreviewTargetSelector) {
@@ -306,6 +396,13 @@
             <div style="font-size: 2.5rem; margin-bottom: 12px">🧭</div>
             <h3>Keine zielgenaue Player-Vorschau</h3>
             <p>{{ vm.previewUnavailableMessage }}</p>
+            @if (vm.canOpenFullUnit) {
+              <a
+                class="btn btn-outline"
+                [routerLink]="['/view', vm.acpId, 'unit', vm.selectedItem.unitId]"
+                >Gesamte Aufgabe öffnen</a
+              >
+            }
           </div>
         } @else if (vm.isPreviewLoading) {
           <div class="empty-state">
@@ -313,6 +410,12 @@
             <p>Aufgabe wird geladen...</p>
           </div>
         } @else if (vm.shouldRenderPlayerFrame) {
+          @if (vm.preparingPresentation) {
+            <div class="preview-update-status" role="status" aria-live="polite">
+              <div class="spinner"></div>
+              <span>Itemansicht wird vorbereitet …</span>
+            </div>
+          }
           @if (vm.previewUpdateInProgress) {
             <div class="preview-update-status" role="status" aria-live="polite">
               <div class="spinner"></div>
@@ -447,7 +550,9 @@
               [title]="
                 vm.isCorrectSolutionActive
                   ? 'Musterlösungen werden nicht als Player-Eingaben gespeichert'
-                  : 'Die aktuellen Player-Eingaben für dieses Item nach Bestätigung speichern'
+                  : vm.syntheticPreviewState
+                    ? 'Vorbereitete Vorschauzustände werden nicht als Player-Eingaben gespeichert'
+                    : 'Die aktuellen Player-Eingaben für dieses Item nach Bestätigung speichern'
               "
             >
               <svg

@@ -592,10 +592,19 @@ test('applies coding configuration defaults and the alternative combinations in 
     .getByRole('heading', { name: /Kodierung – Lieblingsbücher_2/ })
     .locator('xpath=ancestor::div[contains(@class, "overlay-dialog")]');
   await expect(codingDialog.getByTestId('coding-variable-focus')).toContainText('01');
+  await expect(codingDialog.getByTestId('coding-information')).toContainText('Richtige Antwort');
+  await expect(codingDialog.getByTestId('coding-information')).toContainText(
+    'Bilderbücher ausgewählt',
+  );
+  await expect(codingDialog.getByTestId('coding-information')).toContainText('ausgewählt');
+  await expect(codingDialog.getByTestId('coding-information')).toContainText(
+    'Bilderbuchsegment markiert',
+  );
+  await expect(codingDialog.getByTestId('coding-information')).toContainText('nicht ausgewählt');
   await expect(codingDialog).not.toContainText('Abgeleitete/aggregierte Kodierung');
-  await expect(codingDialog.locator('.coding-item')).toHaveCount(1);
+  await expect(codingDialog.locator('.coding-item')).toHaveCount(3);
   await expect(codingDialog).not.toContainText('Nur Segment Bilderbücher markieren.');
-  await expect(codingDialog.locator('.rule-list li')).toHaveCount(1);
+  await expect(codingDialog.locator('.rule-list li')).toHaveCount(3);
   for (const technicalId of ['_button01', '_intro01', '_outro01', '_source01']) {
     await expect(codingDialog).not.toContainText(technicalId);
   }
@@ -603,6 +612,9 @@ test('applies coding configuration defaults and the alternative combinations in 
 
   await page.locator('tbody tr').nth(1).click();
   await page.getByRole('button', { name: 'Kodierung', exact: true }).click();
+  await expect(page.getByTestId('coding-information')).toContainText(
+    'Keine eindeutige Kodiervariable',
+  );
   await expect(page.getByText('Allgemeiner Testhinweis zur Kodierung.')).toHaveCount(0);
   await page.getByRole('button', { name: /Schließen/ }).click();
 
@@ -628,7 +640,7 @@ test('applies coding configuration defaults and the alternative combinations in 
     .getByRole('heading', { name: /Kodierung – Lieblingsbücher_2/ })
     .locator('xpath=ancestor::div[contains(@class, "overlay-dialog")]');
   await expect(alternativeDialog).toContainText('Nur Segment Bilderbücher markieren.');
-  await expect(alternativeDialog.locator('.rule-list li')).toHaveCount(1);
+  await expect(alternativeDialog.locator('.rule-list li')).toHaveCount(3);
   await alternativeDialog.getByRole('button', { name: /Schließen/ }).click();
 
   await page.locator('tbody tr').nth(1).click();
@@ -640,8 +652,15 @@ test('applies coding configuration defaults and the alternative combinations in 
   await login(await viewerContext.newPage(), VIEWER_ID, VIEWER_USERNAME);
   const viewerPage = viewerContext.pages()[0];
   await openExplorer(viewerPage);
+  await viewerPage.locator('tbody tr').first().click();
+  await viewerPage.getByRole('button', { name: 'Kodierung', exact: true }).click();
+  await expect(viewerPage.getByTestId('coding-information')).toContainText('Richtige Antwort');
+  await viewerPage.getByRole('button', { name: /Schließen/ }).click();
   await viewerPage.locator('tbody tr').nth(1).click();
   await viewerPage.getByRole('button', { name: 'Kodierung', exact: true }).click();
+  await expect(viewerPage.getByTestId('coding-information')).toContainText(
+    'Keine eindeutige Kodiervariable',
+  );
   await expect(viewerPage.getByText('Allgemeiner Testhinweis zur Kodierung.')).toBeVisible();
   await viewerContext.close();
 });

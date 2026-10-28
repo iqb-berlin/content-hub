@@ -122,6 +122,14 @@ export class ReviewController {
     const explorerAvailable = isExplorerAvailable(req, config?.featureConfig);
     return {
       capabilities: grants,
+      canViewUnit:
+        req?.acpAccessLevel === "ADMIN" ||
+        req?.acpAccessLevel === "MANAGER" ||
+        config?.featureConfig?.enableUnitView !== false ||
+        (config?.featureConfig?.enableReview === true &&
+          Boolean(req?.user?.sub) &&
+          (grants.includes("review:participate") ||
+            grants.includes("review:manage"))),
       canViewExplorer:
         explorerAvailable &&
         (hasCapability(grants, "item-explorer:view") ||

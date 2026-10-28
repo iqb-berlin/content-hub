@@ -146,6 +146,22 @@ describe('ItemExplorer presentational components', () => {
     expect(codingTemplate).not.toContain("? 'Manuelle Kodieranweisung:'");
   });
 
+  it('distinguishes exact answers, codebook rules and unavailable coding information', () => {
+    expect(codingTemplate).toContain('data-testid="coding-information"');
+    expect(codingTemplate).toContain('{{ vm.codingInformation.title }}');
+    expect(codingTemplate).toContain("vm.codingInformation.status === 'exact'");
+    expect(codingTemplate).toContain('{{ answer.valueLabel }}');
+    expect(codingTemplate).toContain('<strong>Automatische Kodiervorschrift:</strong>');
+    expect(codingTemplate).toContain("? 'alle Regelgruppen (UND)'");
+    expect(codingTemplate).toContain(": 'eine Regelgruppe (ODER)'");
+  });
+
+  it('renders the selected variable and its relevant source rule groups', () => {
+    expect(codingTemplate).toContain('vm.codingInformation.ruleGroups');
+    expect(codingTemplate).toContain('<strong>Quelle:</strong>');
+    expect(codingTemplate).toContain('<strong>Verarbeitung:</strong>');
+  });
+
   it('uses the coding variable id as the unambiguous card heading', () => {
     expect(codingTemplate).toContain('<h4>Kodiervariable {{ coding.id }}</h4>');
     expect(codingTemplate).not.toContain('<h4>{{ coding.label || coding.id }}</h4>');
