@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "fs/promises";
 import { join } from "path";
 import { DataSource } from "typeorm";
 import * as bcrypt from "bcryptjs";
+import { responseStatePlayerHtml } from "./response-state-player";
 import {
   journeyFiles,
   journeyUnitId,
@@ -532,8 +533,7 @@ async function seed(): Promise<void> {
       {
         name: "iqb-player-aspect-2.11.6.html",
         type: "PLAYER",
-        content:
-          "<!doctype html><html><body>Regression E2E Player</body></html>",
+        content: responseStatePlayerHtml,
       },
     ];
     for (const file of regressionFiles) {
@@ -729,7 +729,18 @@ async function seed(): Promise<void> {
             {
               elements: [
                 { id: "_intro01" },
-                { id: "01", alias: "_01" },
+                {
+                  id: "01",
+                  alias: "_01",
+                  type: "checkbox",
+                  label: "Bilderbücher ausgewählt",
+                },
+                {
+                  id: "01_ggb_bilderbuecherAngeklickt",
+                  alias: "_01_ggb_bilderbuecherAngeklickt",
+                  type: "checkbox",
+                  label: "Bilderbuchsegment markiert",
+                },
                 { id: "_button01" },
                 { id: "_outro01" },
                 { id: "_source01" },
@@ -755,6 +766,7 @@ async function seed(): Promise<void> {
               codes: [
                 {
                   id: 1,
+                  type: "FULL_CREDIT",
                   score: 1,
                   label: "richtig",
                   ruleSets: [
@@ -765,6 +777,38 @@ async function seed(): Promise<void> {
                   ],
                   manualInstruction: "",
                 },
+                {
+                  id: 0,
+                  type: "RESIDUAL",
+                  score: 0,
+                  label: "falsch",
+                  ruleSets: [],
+                },
+              ],
+            },
+            {
+              id: "01_ggb_bilderbuecherAngeklickt",
+              alias: "_01_ggb_bilderbuecherAngeklickt",
+              label: "Bilderbuchsegment markiert",
+              sourceType: "BASE",
+              deriveSources: [],
+              manualInstruction: "",
+              codeModel: "RULES_ONLY",
+              codes: [
+                {
+                  id: 1,
+                  type: "FULL_CREDIT",
+                  score: 1,
+                  label: "richtig",
+                  ruleSets: [{ rules: [{ method: "IS_FALSE" }] }],
+                },
+                {
+                  id: 0,
+                  type: "RESIDUAL",
+                  score: 0,
+                  label: "falsch",
+                  ruleSets: [],
+                },
               ],
             },
             {
@@ -774,7 +818,25 @@ async function seed(): Promise<void> {
               sourceType: "SUM_SCORE",
               deriveSources: ["01", "01_ggb_bilderbuecherAngeklickt"],
               manualInstruction: "",
-              codes: [],
+              codeModel: "RULES_ONLY",
+              codes: [
+                {
+                  id: 1,
+                  type: "FULL_CREDIT",
+                  score: 1,
+                  label: "vollständig richtig",
+                  ruleSets: [
+                    { rules: [{ method: "NUMERIC_MATCH", parameters: ["2"] }] },
+                  ],
+                },
+                {
+                  id: 0,
+                  type: "RESIDUAL",
+                  score: 0,
+                  label: "nicht vollständig richtig",
+                  ruleSets: [],
+                },
+              ],
             },
             {
               id: "GEN",

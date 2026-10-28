@@ -22,4 +22,8 @@ export interface ItemExplorerPlayerDomPort {
   setPrintLabelOverrides(overrides: Readonly<Record<string, string>>): void;
   startAutoResize(onHeightChange: (height: number) => void): void;
   stopAutoResize(): void;
+  isTargetVisible?(selectors: string[]): boolean;
+  /** Epoch time of the latest input, action or media change inside the frame. */
+  getLastInteractionTime?(): number;
+  preparePage?(triggerIds: string[], signal: AbortSignal): Promise<void>;
 }

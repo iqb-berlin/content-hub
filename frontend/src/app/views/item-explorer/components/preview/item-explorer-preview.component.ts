@@ -1,16 +1,24 @@
 import { Component, ElementRef, HostListener, Inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ItemExplorerFacade } from '../../item-explorer.facade';
 import { ItemExplorerPreviewViewModel } from '../../item-explorer.view-models';
 import { ItemExplorerPlayerDomPort } from '../../item-explorer.dom-ports';
+import { presentPlayerPreviewTriggers } from '../../../../core/utils/player-preview-triggers';
 import { ItemCommentThreadComponent } from '../../../comment-thread/item-comment-thread.component';
 import { StudioItemCommentsComponent } from '../studio-comments/studio-item-comments.component';
 
 @Component({
   selector: 'app-item-explorer-preview',
   standalone: true,
-  imports: [CommonModule, FormsModule, ItemCommentThreadComponent, StudioItemCommentsComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ItemCommentThreadComponent,
+    StudioItemCommentsComponent,
+  ],
   templateUrl: './item-explorer-preview.component.html',
   styleUrl: './item-explorer-preview.component.css',
 })
@@ -21,6 +29,8 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
   private autoResizeInterval: ReturnType<typeof setInterval> | null = null;
   private printLabelObserver: MutationObserver | null = null;
   private printLabelOverrides = new Map<string, string>();
+  private lastInteractionTime = 0;
+  private stopObservingInteractions?: () => void;
   isPlayerFullscreen = false;
   isPlayerFullscreenFallback = false;
   readonly vm: ItemExplorerPreviewViewModel;
@@ -32,6 +42,7 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
 
   @ViewChild('playerFrame')
   set playerFrame(value: ElementRef<HTMLIFrameElement> | undefined) {
+    this.stopObservingInteractions?.();
     this.disconnectPrintLabelObserver();
     this.frame = value;
     this.feature.playerFrameChanged(Boolean(value));
@@ -56,6 +67,7 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
   }
 
   ngOnDestroy(): void {
+    this.stopObservingInteractions?.();
     window.removeEventListener('message', this.messageHandler);
     this.stopAutoResize();
     this.disconnectPrintLabelObserver();
@@ -115,7 +127,56 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
   }
 
   postMessage(message: unknown): void {
+    if ((message as { type?: string })?.type === 'vopStartCommand') this.observeInteractions();
     this.frame?.nativeElement.contentWindow?.postMessage(message, '*');
+  }
+
+  getLastInteractionTime(): number {
+    return this.lastInteractionTime;
+  }
+
+  private observeInteractions(): void {
+    this.stopObservingInteractions?.();
+    this.lastInteractionTime = 0;
+    const doc = this.getPlayerDocument();
+    if (!doc) return;
+    const changed = (event: Event) => {
+      const target = event.target as Element | null;
+      // Clicking ordinary text or focusing a control does not change player state.
+      if (event.type === 'click' && !target?.closest?.('button, [role="button"]')) return;
+      // Media UI inputs include volume. Playback/seek events below report progression.
+      if (
+        (event.type === 'input' || event.type === 'click') &&
+        target?.closest?.('[data-element-id]')?.querySelector('audio, video')
+      )
+        return;
+      this.lastInteractionTime = Date.now();
+    };
+    // Text controls also emit `change` on blur, after their input was already reported.
+    const events = ['input', 'click', 'play', 'pause', 'timeupdate', 'seeked', 'ended'];
+    for (const type of events) doc.addEventListener(type, changed, true);
+    this.stopObservingInteractions = () => {
+      for (const type of events) doc.removeEventListener(type, changed, true);
+    };
+  }
+
+  isTargetVisible(selectors: string[]): boolean {
+    const doc = this.getPlayerDocument();
+    return (
+      !!doc &&
+      selectors.some((selector) => {
+        const element = doc.querySelector<HTMLElement>(selector);
+        return (
+          !!element?.getClientRects().length &&
+          doc.defaultView?.getComputedStyle(element).visibility !== 'hidden'
+        );
+      })
+    );
+  }
+
+  async preparePage(ids: string[], signal: AbortSignal): Promise<void> {
+    const doc = this.getPlayerDocument();
+    if (doc) await presentPlayerPreviewTriggers(doc, ids, signal);
   }
 
   focus(
@@ -126,9 +187,11 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
     const doc = this.getPlayerDocument();
     if (!doc?.body) return false;
 
-    const selectorTarget = selectors
+    const matchedTargets = selectors
       .map((selector) => doc.querySelector<HTMLElement>(selector))
-      .find((target): target is HTMLElement => Boolean(target));
+      .filter((target): target is HTMLElement => !!target);
+    const selectorTarget = matchedTargets.find((target) => !!target.getClientRects().length);
+    if (matchedTargets.length && !selectorTarget) return false;
     const target = selectorTarget || this.findElementByText(doc, textCandidates);
     if (!target) return false;
 

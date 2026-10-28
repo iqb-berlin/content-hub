@@ -53,6 +53,8 @@ function createFacade(options?: {
         elementType: string;
         identifiers: string[];
         optionCount?: number;
+        label?: string;
+        options?: Array<{ position: number; label: string }>;
       }
     | undefined;
   stripConditionalVisibility?: (definition: string) => string;
@@ -62,7 +64,7 @@ function createFacade(options?: {
   previewLoader?: Record<string, unknown>;
   diagnostics?: Record<string, unknown>;
 }) {
-  const api = options?.api || {};
+  const api = { getCapabilities: () => of({ canViewUnit: false }), ...options?.api };
   const sanitizer = { bypassSecurityTrustHtml: (html: string) => html };
   const getStartPage = options?.getStartPage || (() => 0);
   const voudService = {
@@ -167,7 +169,7 @@ function registerPlayerDom(component: ItemExplorerFacade, postMessage = vi.fn())
 
 function setPreviewStatus(
   component: ItemExplorerFacade,
-  kind: 'idle' | 'loading-unit' | 'loading-response' | 'ready',
+  kind: 'idle' | 'loading-unit' | 'loading-response' | 'ready' | 'unavailable',
 ) {
   const item =
     component.selectedItem ||
@@ -183,12 +185,44 @@ function setPreviewStatus(
     } as any);
   if (kind === 'idle') {
     (component as any).previewCoordinator.status = { kind: 'idle' };
+  } else if (kind === 'unavailable') {
+    (component as any).previewCoordinator.markUnavailable('missing mapping');
   } else if (kind === 'loading-response') {
     (component as any).previewCoordinator.status = { kind, item, reuseUnit: true };
   } else {
     (component as any).previewCoordinator.status = { kind, item };
   }
 }
+
+describe('unit view fallback access', () => {
+  it('hides the fallback while access loads, after errors, and after access is revoked', () => {
+    const first = new Subject<any>();
+    const second = new Subject<any>();
+    const third = new Subject<any>();
+    const access = vi
+      .fn()
+      .mockReturnValueOnce(first)
+      .mockReturnValueOnce(second)
+      .mockReturnValueOnce(third);
+    const component = createFacade({ api: { getCapabilities: access } });
+    component.checkUserRole();
+    expect(component.canOpenFullUnit).toBe(false);
+    first.next({ canViewUnit: true });
+    expect(component.canOpenFullUnit).toBe(true);
+    component.checkUserRole();
+    expect(component.canOpenFullUnit).toBe(false);
+    first.next({ canViewUnit: true });
+    expect(component.canOpenFullUnit).toBe(false);
+    second.error(new Error('offline'));
+    expect(component.canOpenFullUnit).toBe(false);
+    component.checkUserRole();
+    third.next({ canViewUnit: false });
+    expect(component.canOpenFullUnit).toBe(false);
+    destroyFacade(component);
+    third.next({ canViewUnit: true });
+    expect(component.canOpenFullUnit).toBe(false);
+  });
+});
 
 describe('ItemExplorerFacade role initialization', () => {
   it('does not lock an OIDC manager into read-only while the profile is still loading', () => {
@@ -3326,7 +3360,7 @@ describe('ItemExplorerFacade', () => {
     component.player.playerSrcDoc = '<html>cached player</html>';
     component.player.definitionContent = '{"pages":[]}';
     setPreviewStatus(component, 'ready');
-    component.player.activePlayerSessionId = 'old-session';
+    (component.player as any).beginResponseSession('old-session', 'answers');
     component.selectedItem = {
       itemId: 'ITEM_1',
       uuid: 'uuid-1',
@@ -3369,14 +3403,17 @@ describe('ItemExplorerFacade', () => {
       isFallback: false,
     });
     responseState$.complete();
-    await vi.waitFor(() => expect(component.currentResponseData).toEqual({ current: true }));
+    await vi.waitFor(() =>
+      expect((component.player as any).savedResponseData).toEqual({ current: true }),
+    );
+    expect(component.currentResponseData).toBeNull();
     destroyFacade(component);
   });
 
   it('accepts player state only from the active Verona session', () => {
     const component = createFacade();
     setPreviewStatus(component, 'ready');
-    component.player.activePlayerSessionId = 'active-session';
+    (component.player as any).beginResponseSession('active-session', 'answers');
 
     component.handlePlayerMessage({
       type: 'vopStateChangedNotification',
@@ -3474,7 +3511,8 @@ describe('ItemExplorerFacade', () => {
 
     await vi.waitFor(() => expect(component.unit?.id).toBe('UNIT_2'));
     expect(component.selectedItem?.itemId).toBe('ITEM_2');
-    expect(component.currentResponseData).toEqual({ current: true });
+    expect((component.player as any).savedResponseData).toEqual({ current: true });
+    expect(component.currentResponseData).toBeNull();
     destroyFacade(component);
   });
 
@@ -4687,6 +4725,474 @@ describe('ItemExplorerFacade', () => {
     expect(component.shouldShowAutomaticCodingRules(code)).toBe(true);
   });
 
+  it('uses the same validated solution for the coding information and player prefill', () => {
+    const component = createFacade({
+      resolvePlayerResponseTarget: (_definition, variableId) => ({
+        responseId: variableId,
+        elementType: 'radio',
+        identifiers: [variableId],
+        optionCount: 3,
+        label: 'Lieblingsfarbe',
+        options: [
+          { position: 1, label: 'Rot' },
+          { position: 2, label: 'Blau' },
+          { position: 3, label: 'Grün' },
+        ],
+      }),
+    });
+    const variables = [
+      {
+        id: 'internal-a',
+        alias: 'A1',
+        label: 'Farbe',
+        sourceType: 'BASE',
+        manualInstruction: '<p>Allgemeiner Hinweis.</p>',
+        codes: [
+          {
+            id: 1,
+            type: 'FULL_CREDIT',
+            score: 1,
+            ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['2'] }] }],
+          },
+          { id: 0, type: 'RESIDUAL', score: 0, ruleSets: [] },
+        ],
+      },
+    ];
+    component.selectedItem = {
+      itemId: 'ITEM_1',
+      uuid: 'uuid-1',
+      unitId: 'UNIT_1',
+      unitLabel: 'Unit 1',
+      variableReadOnlyId: 'internal-a',
+      variableId: 'A1',
+      metadata: {},
+    } as any;
+    component.coding.currentCodingScheme = { variableCodings: variables };
+    component.coding.currentCodingSchemeAsText =
+      component.coding.createCodingSchemeAsText(variables);
+    component.coding.showGeneralCodingInstructions = true;
+    component.player.definitionContent = '{}';
+
+    component.coding.refreshCorrectSolutionPrefill(
+      component.selectedItem,
+      component.definitionContent,
+    );
+
+    expect(component.correctSolutionPrefill).toMatchObject({
+      status: 'available',
+      responses: [{ id: 'A1', value: 2 }],
+    });
+    expect(component.codingInformation).toMatchObject({
+      status: 'exact',
+      title: 'Richtige Antwort',
+      answers: [{ responseId: 'A1', label: 'Lieblingsfarbe', valueLabel: 'Blau' }],
+    });
+  });
+
+  describe('coding information regression coverage', () => {
+    const residual = { id: 0, type: 'RESIDUAL', score: 0, ruleSets: [] };
+    const itemFor = (variableId: string) =>
+      ({
+        itemId: 'ITEM_1',
+        uuid: 'uuid-1',
+        rowKey: 'row-1',
+        unitId: 'UNIT_1',
+        unitLabel: 'Unit 1',
+        variableId,
+        metadata: {},
+      }) as any;
+
+    const configureCoding = (component: ItemExplorerFacade, variables: any[]) => {
+      component.selectedItem = itemFor(variables[0].id);
+      component.coding.currentCodingScheme = { variableCodings: variables };
+      component.coding.currentCodingSchemeAsText =
+        component.coding.createCodingSchemeAsText(variables);
+    };
+
+    it('loads the preview and manual instruction when optional ruleSets are absent', () => {
+      const previewLoader = {
+        load: vi.fn(() => of({ unit: null, playerHtml: null, definition: null })),
+        clear: vi.fn(),
+      };
+      const component = createFacade({
+        previewLoader,
+        api: { getResponseStateWithFallback: () => of(null) },
+      });
+      const variables = [
+        {
+          id: 'A1',
+          sourceType: 'BASE',
+          codeModel: 'MANUAL_ONLY',
+          codes: [
+            { id: 1, type: 'FULL_CREDIT', manualInstruction: '<p>Antwort fachlich prüfen.</p>' },
+          ],
+        },
+      ];
+      (component as any).codingSchemeCache = { UNIT_1: { variableCodings: variables } };
+      const item = itemFor('A1');
+      component.table.filteredItems = [item];
+
+      try {
+        expect(() => component.selectItem(item, 0)).not.toThrow();
+        expect(previewLoader.load).toHaveBeenCalledOnce();
+        expect(component.codingInformation.title).toBe('Manuelle Kodieranweisung');
+        const code = component.codingInformation.ruleGroups[0].codes[0];
+        expect(code).toMatchObject({
+          ruleSetDescriptions: [],
+          manualInstructionText: '<p>Antwort fachlich prüfen.</p>',
+        });
+        expect(component.shouldShowAutomaticCodingRules(code)).toBe(false);
+      } finally {
+        destroyFacade(component);
+      }
+    });
+
+    it.each([
+      { elementType: 'radio', method: 'NUMERIC_MATCH', parameter: '5' },
+      { elementType: 'dropdown', method: 'MATCH', parameter: '5' },
+      { elementType: 'radio-group-images', method: 'NUMERIC_MATCH', parameter: '0' },
+      { elementType: 'toggle-button', method: 'NUMERIC_MATCH', parameter: '1.5' },
+      { elementType: 'checkbox', method: 'NUMERIC_MATCH', parameter: '2' },
+      { elementType: 'checkbox', method: 'MATCH', parameter: 'unbekannt' },
+      { elementType: 'checkbox', method: 'MATCH', parameter: '1' },
+    ])(
+      'shows rules for an unrepresentable $elementType answer $parameter',
+      ({ elementType, method, parameter }) => {
+        const voud = new VoudService();
+        const component = createFacade({
+          resolvePlayerResponseTarget: (definition, id) =>
+            voud.resolvePlayerResponseTarget(definition, id),
+        });
+        configureCoding(component, [
+          {
+            id: 'A1',
+            sourceType: 'BASE',
+            codes: [
+              {
+                id: 1,
+                type: 'FULL_CREDIT',
+                ruleSets: [{ rules: [{ method, parameters: [parameter] }] }],
+              },
+              residual,
+            ],
+          },
+        ]);
+        component.player.definitionContent = JSON.stringify({
+          pages: [{ elements: [{ id: 'A1', type: elementType, options: ['Rot', 'Blau'] }] }],
+        });
+
+        component.coding.refreshCorrectSolutionPrefill(
+          component.selectedItem,
+          component.definitionContent,
+        );
+
+        expect(component.correctSolutionPrefill.status).toBe('unavailable');
+        expect(component.codingInformation).toMatchObject({
+          status: 'rules',
+          title: 'Kodierinformation aus dem Codebook',
+          answers: [],
+          ruleGroups: component.coding.currentCodingSchemeAsText,
+        });
+      },
+    );
+
+    it('retains an exact codebook answer without a player definition', () => {
+      const component = createFacade();
+      configureCoding(component, [
+        {
+          id: 'TEXT_1',
+          sourceType: 'BASE',
+          codes: [
+            {
+              id: 1,
+              type: 'FULL_CREDIT',
+              ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['Musterantwort'] }] }],
+            },
+            residual,
+          ],
+        },
+      ]);
+
+      component.coding.refreshCorrectSolutionPrefill(
+        component.selectedItem,
+        component.definitionContent,
+      );
+
+      expect(component.correctSolutionPrefill.status).toBe('unavailable');
+      expect(component.codingInformation).toMatchObject({
+        status: 'exact',
+        answers: [{ responseId: 'TEXT_1', valueLabel: 'Musterantwort' }],
+      });
+    });
+
+    it.each([
+      { id: 'AUDIO_STATUS', alias: '', label: '' },
+      { id: 'STATUS', alias: 'VIDEO_STATUS', label: '' },
+      { id: 'STATUS', alias: '', label: 'Audio wiedergegeben' },
+    ])('hides answers consistently with the rule group for $id / $alias / $label', (identity) => {
+      const component = createFacade();
+      configureCoding(component, [
+        {
+          ...identity,
+          sourceType: 'BASE',
+          codes: [
+            { id: 1, type: 'FULL_CREDIT', ruleSets: [{ rules: [{ method: 'IS_TRUE' }] }] },
+            residual,
+          ],
+        },
+      ]);
+      component.coding.showAudioVideoCodingVariables = false;
+
+      component.coding.refreshCorrectSolutionPrefill(
+        component.selectedItem,
+        component.definitionContent,
+      );
+
+      expect(component.codingInformation.ruleGroups).toEqual([]);
+      expect(component.codingInformation.answers).toEqual([]);
+      expect(component.codingInformation.status).not.toBe('exact');
+
+      component.coding.showAudioVideoCodingVariables = true;
+      component.coding.refreshCorrectSolutionPrefill(
+        component.selectedItem,
+        component.definitionContent,
+      );
+
+      expect(component.codingInformation.status).toBe('exact');
+      expect(component.codingInformation.answers).toHaveLength(1);
+      expect(component.codingInformation.ruleGroups).toHaveLength(1);
+    });
+  });
+
+  it('keeps multiple FULL_CREDIT answers as rules instead of choosing one', () => {
+    const component = createFacade();
+    const variables = [
+      {
+        id: 'A1',
+        sourceType: 'BASE',
+        codes: [
+          {
+            id: 1,
+            type: 'FULL_CREDIT',
+            ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['1'] }] }],
+          },
+          {
+            id: 2,
+            type: 'FULL_CREDIT',
+            ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['2'] }] }],
+          },
+        ],
+      },
+    ];
+    component.selectedItem = {
+      itemId: 'ITEM_1',
+      uuid: 'uuid-1',
+      unitId: 'UNIT_1',
+      unitLabel: 'Unit 1',
+      variableId: 'A1',
+      metadata: {},
+    } as any;
+    component.coding.currentCodingScheme = { variableCodings: variables };
+    component.coding.currentCodingSchemeAsText =
+      component.coding.createCodingSchemeAsText(variables);
+
+    component.coding.refreshCorrectSolutionPrefill(
+      component.selectedItem,
+      component.definitionContent,
+    );
+
+    expect(component.codingInformation).toMatchObject({
+      status: 'multiple',
+      title: 'Mehrere gültige Antworten',
+      answers: [],
+    });
+    expect(component.codingInformation.ruleGroups[0].codes).toHaveLength(2);
+  });
+
+  it('prefers a manual instruction on the contributing FULL_CREDIT code', () => {
+    const component = createFacade();
+    const variables = [
+      {
+        id: 'A1',
+        sourceType: 'BASE',
+        codes: [
+          {
+            id: 1,
+            type: 'FULL_CREDIT',
+            manualInstruction: '<p>Antwort fachlich prüfen.</p>',
+            ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['2'] }] }],
+          },
+        ],
+      },
+    ];
+    component.selectedItem = {
+      itemId: 'ITEM_1',
+      uuid: 'uuid-1',
+      unitId: 'UNIT_1',
+      unitLabel: 'Unit 1',
+      variableId: 'A1',
+      metadata: {},
+    } as any;
+    component.coding.currentCodingScheme = { variableCodings: variables };
+    component.coding.currentCodingSchemeAsText =
+      component.coding.createCodingSchemeAsText(variables);
+    component.coding.preferManualCodingInstructions = true;
+
+    component.coding.refreshCorrectSolutionPrefill(
+      component.selectedItem,
+      component.definitionContent,
+    );
+
+    expect(component.codingInformation).toMatchObject({
+      status: 'rules',
+      title: 'Manuelle Kodieranweisung',
+      answers: [],
+    });
+  });
+
+  it('shows an explicit unavailable state for an empty resolved coding variable', () => {
+    const component = createFacade();
+    const variables = [{ id: 'A1', sourceType: 'BASE', codes: [] }];
+    component.selectedItem = {
+      itemId: 'ITEM_1',
+      uuid: 'uuid-1',
+      unitId: 'UNIT_1',
+      unitLabel: 'Unit 1',
+      variableId: 'A1',
+      metadata: {},
+    } as any;
+    component.coding.currentCodingScheme = { variableCodings: variables };
+    component.coding.currentCodingSchemeAsText =
+      component.coding.createCodingSchemeAsText(variables);
+
+    component.coding.refreshCorrectSolutionPrefill(
+      component.selectedItem,
+      component.definitionContent,
+    );
+
+    expect(component.codingInformation).toEqual({
+      status: 'unavailable',
+      title: 'Keine eindeutige richtige Antwort',
+      message:
+        'Aus der vorhandenen Kodierung kann keine eindeutige richtige Antwort ermittelt werden.',
+      answers: [],
+      ruleGroups: component.coding.currentCodingSchemeAsText,
+    });
+  });
+
+  it('filters audio and video rule groups for an unambiguous item when configured', () => {
+    const component = createFacade();
+    const variables = [
+      {
+        id: 'RESULT',
+        sourceType: 'COPY_VALUE',
+        deriveSources: ['AUDIO_SOURCE', 'TEXT_SOURCE'],
+        codes: [],
+      },
+      { id: 'AUDIO_SOURCE', sourceType: 'BASE', codes: [] },
+      { id: 'TEXT_SOURCE', sourceType: 'BASE', codes: [] },
+    ];
+    component.selectedItem = {
+      itemId: 'ITEM_1',
+      uuid: 'uuid-1',
+      unitId: 'UNIT_1',
+      unitLabel: 'Unit 1',
+      variableId: 'RESULT',
+      metadata: {},
+    } as any;
+    component.coding.currentCodingScheme = { variableCodings: variables };
+    component.coding.currentCodingSchemeAsText =
+      component.coding.createCodingSchemeAsText(variables);
+    component.coding.showAudioVideoCodingVariables = false;
+
+    component.coding.refreshCorrectSolutionPrefill(
+      component.selectedItem,
+      component.definitionContent,
+    );
+
+    expect(component.codingInformation.ruleGroups.map((coding) => coding.id)).toEqual([
+      'RESULT',
+      'TEXT_SOURCE',
+    ]);
+  });
+
+  it('does not let a hidden audio source manual instruction suppress an exact answer', () => {
+    const component = createFacade();
+    const residual = { id: 0, type: 'RESIDUAL', score: 0, ruleSets: [] };
+    const variables = [
+      {
+        id: 'AUDIO_OPTION',
+        sourceType: 'BASE',
+        codes: [
+          {
+            id: 1,
+            type: 'FULL_CREDIT',
+            score: 1,
+            manualInstruction: '<p>Audioantwort fachlich prüfen.</p>',
+            ruleSets: [{ rules: [{ method: 'IS_TRUE' }] }],
+          },
+          residual,
+        ],
+      },
+      {
+        id: 'TEXT_OPTION',
+        sourceType: 'BASE',
+        codes: [
+          {
+            id: 1,
+            type: 'FULL_CREDIT',
+            score: 1,
+            ruleSets: [{ rules: [{ method: 'IS_FALSE' }] }],
+          },
+          residual,
+        ],
+      },
+      {
+        id: 'RESULT',
+        sourceType: 'SUM_SCORE',
+        deriveSources: ['AUDIO_OPTION', 'TEXT_OPTION'],
+        codes: [
+          {
+            id: 1,
+            type: 'FULL_CREDIT',
+            score: 1,
+            ruleSets: [{ rules: [{ method: 'NUMERIC_MATCH', parameters: ['2'] }] }],
+          },
+          residual,
+        ],
+      },
+    ];
+    component.selectedItem = {
+      itemId: 'ITEM_1',
+      uuid: 'uuid-1',
+      unitId: 'UNIT_1',
+      unitLabel: 'Unit 1',
+      variableId: 'RESULT',
+      metadata: {},
+    } as any;
+    component.coding.currentCodingScheme = { variableCodings: variables };
+    component.coding.currentCodingSchemeAsText =
+      component.coding.createCodingSchemeAsText(variables);
+    component.coding.showAudioVideoCodingVariables = false;
+    component.coding.preferManualCodingInstructions = true;
+
+    component.coding.refreshCorrectSolutionPrefill(
+      component.selectedItem,
+      component.definitionContent,
+    );
+
+    expect(component.codingInformation.status).toBe('exact');
+    expect(component.codingInformation.title).toBe('Richtige Antwort');
+    expect(component.codingInformation.ruleGroups.map((coding) => coding.id)).toEqual([
+      'RESULT',
+      'TEXT_OPTION',
+    ]);
+    expect(component.codingInformation.answers).toMatchObject([
+      { responseId: 'TEXT_OPTION', valueLabel: 'nicht ausgewählt' },
+    ]);
+    expect(component.codingInformation.message).toContain('ausgeblendet');
+  });
+
   it('focuses a valid alias-shadowing aggregate when its internal id is targeted', () => {
     const component = createFacade();
     component.selectedItem = {
@@ -4956,7 +5462,7 @@ describe('ItemExplorerFacade', () => {
           },
         ],
       };
-      component.player.currentResponseData = persistedDataParts;
+      component.player.applyResponseState(persistedDataParts);
       component.player.hasResponseState = true;
       component.player.unit = { id: 'UNIT_1', dependencies: [] };
       component.player.definitionContent = JSON.stringify({ pages: [] });
@@ -4981,7 +5487,8 @@ describe('ItemExplorerFacade', () => {
         sessionId: solutionStart.sessionId,
         unitState: { dataParts: { elementCodes: 'synthetic-state' } },
       });
-      expect(component.currentResponseData).toBe(persistedDataParts);
+      expect(component.currentResponseData).toBeNull();
+      expect((component.player as any).savedResponseData).toBe(persistedDataParts);
 
       component.saveCurrentResponseState();
       expect(component.showSaveConfirmDialog).toBe(true);
@@ -5294,7 +5801,9 @@ describe('ItemExplorerFacade', () => {
       } as any;
       registerPlayerDom(component, postMessage);
       component.player.unit = { id: 'UNIT_1', dependencies: [] };
-      component.player.definitionContent = 'original-definition';
+      component.player.definitionContent = JSON.stringify({
+        pages: [{ sections: [{ elements: [{ id: 'VAR_1' }] }] }],
+      });
       component.player.playerFrameReady = true;
       setPreviewStatus(component, 'ready');
 
@@ -5303,7 +5812,9 @@ describe('ItemExplorerFacade', () => {
       expect(stripConditionalVisibility).not.toHaveBeenCalled();
       expect(postMessage.mock.calls[0][0]).toMatchObject({
         type: 'vopStartCommand',
-        unitDefinition: 'original-definition',
+        unitDefinition: JSON.stringify({
+          pages: [{ sections: [{ elements: [{ id: 'VAR_1' }] }] }],
+        }),
       });
 
       vi.runAllTimers();
@@ -7990,5 +8501,619 @@ describe('ItemExplorer draft coordination', () => {
     await pending;
     expect(component.discardDraftDialogError).toBe(errorAfterDestroy);
     expect(component.explorerVersion).toBe(1);
+  });
+});
+
+describe('prepared preview response isolation', () => {
+  it('never saves a synthetic state through the response API', () => {
+    const saveResponseState = vi.fn();
+    const component = createFacade({ api: { saveResponseState } });
+    (component.player as any).beginResponseSession('prepared', 'visibility');
+    component.confirmSaveResponseState();
+    expect(saveResponseState).not.toHaveBeenCalled();
+    expect(component.confirmDialogError).toContain('Vorschauzustand');
+  });
+});
+
+describe('visibility start protocol', () => {
+  it('keeps the item reference independent from saved answers and loads them only on request', () => {
+    vi.useFakeTimers();
+    const component = createFacade();
+    const postMessage = vi.fn();
+    try {
+      component.player.itemExplorerConditionalVisibilityEnabled = true;
+      component.selectedItem = {
+        itemId: 'ITEM',
+        unitId: 'UNIT',
+        variableId: 'target',
+        metadata: {},
+      } as any;
+      registerPlayerDom(component, postMessage);
+      component.player.unit = { id: 'UNIT', dependencies: [] };
+      component.player.definitionContent = JSON.stringify({
+        stateVariables: [{ id: 'v', alias: 'State', value: '0' }],
+        pages: [
+          {
+            sections: [
+              {
+                visibilityRules: [{ id: 'v', operator: '=', value: '2' }],
+                elements: [{ alias: 'target' }],
+              },
+            ],
+          },
+        ],
+      });
+      component.player.playerFrameReady = true;
+      setPreviewStatus(component, 'ready');
+      (component as any).startPlayerIfReady();
+      const first = postMessage.mock.calls[0][0];
+      expect(JSON.parse(first.unitState.dataParts.stateVariableCodes)).toEqual([
+        { id: 'State', status: 'VALUE_CHANGED', value: '2' },
+      ]);
+      expect(component.syntheticPreviewState).toBe(true);
+      expect((component as any).currentResponseData).toBeNull();
+      component.player.hasResponseState = true;
+      const saved = { responses: 'saved answers', stateVariableCodes: 'saved state' };
+      (component as any).applyResponseStateResult({ state: { responseData: saved } });
+      (component as any).startPlayerIfReady();
+      expect(postMessage.mock.calls[1][0].unitState.dataParts).toEqual(first.unitState.dataParts);
+      expect(component.currentResponseData).toBeNull();
+      expect(component.syntheticPreviewState).toBe(true);
+      component.setPreviewMode('answers');
+      expect(postMessage.mock.calls[2][0].unitState.dataParts).toEqual(saved);
+      expect(component.syntheticPreviewState).toBe(false);
+      // A second start before a player reply still uses the loaded saved state.
+      (component as any).startPlayerIfReady();
+      expect(postMessage.mock.calls[3][0].unitState.dataParts).toEqual(saved);
+      expect(component.currentResponseData).toBeNull();
+      vi.runAllTimers();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('shared preview start changes', () => {
+  it('shares an explicitly captured item context, resets it, and preserves edit permissions', () => {
+    const component = createFacade();
+    vi.spyOn(component as any, 'reloadPreviewAfterTargetChange').mockImplementation(() => {});
+    const context = {
+      definitionKey: '10-abc-def',
+      target: 'v',
+      page: 0,
+      dataParts: { elementCodes: '[]' },
+    };
+    const capture = vi.spyOn(component.player, 'capturePreviewContext').mockReturnValue(null);
+    const patch = vi.spyOn(component as any, 'queueItemPropertyPatch').mockImplementation(() => {});
+    const item = {
+      itemId: 'i',
+      unitId: 'u',
+      uuid: 'row',
+      rowKey: 'row',
+      variableId: 'v',
+      metadata: {},
+    } as any;
+    component.capturePreviewContext();
+    component.clearPreviewContext();
+    expect(capture).not.toHaveBeenCalled();
+    component.selectedItem = item;
+    component.capturePreviewContext();
+    expect(capture).not.toHaveBeenCalled();
+    (component as any).explorerEditingAllowed = true;
+    component.capturePreviewContext();
+    expect(component.presentationMessage).toContain('sichtbar öffnen');
+    capture.mockReturnValue(context);
+    component.player.changePreviewMode('flow');
+    component.capturePreviewContext();
+    expect(component.previewMode).toBe('reference');
+    expect(component.hasPreviewContext).toBe(true);
+    expect(item.previewStart).toEqual({ values: {}, context });
+    expect(patch).toHaveBeenCalledWith(
+      item,
+      'PREVIEW_START_CHANGED',
+      { previewStart: { values: {}, context } },
+      true,
+    );
+    component.clearPreviewContext();
+    expect(component.hasPreviewContext).toBe(false);
+    expect(item.previewStart).toEqual({ values: {} });
+    item.previewStart = { values: { state: '2' }, page: 1, context };
+    component.clearPreviewContext();
+    expect(item.previewStart).toEqual({ values: { state: '2' }, page: 1 });
+    destroyFacade(component);
+  });
+
+  it('switches an unavailable loaded preview into regular flow without losing its assets', () => {
+    const component = createFacade();
+    component.player.itemExplorerConditionalVisibilityEnabled = true;
+    const item = {
+      itemId: 'i',
+      unitId: 'u',
+      uuid: 'row',
+      rowKey: 'row',
+      variableId: '',
+      metadata: {},
+    } as any;
+    component.selectedItem = item;
+    component.player.applyAssets({ unit: { id: 'u' }, srcDoc: '<html></html>', definition: '{}' });
+    setPreviewStatus(component, 'unavailable');
+    const start = vi.spyOn(component as any, 'startPlayerIfReady').mockImplementation(() => {});
+    component.setPreviewMode('unsupported');
+    expect(start).not.toHaveBeenCalled();
+    component.setPreviewMode('flow');
+    expect(component.previewMode).toBe('flow');
+    expect(component.canPreviewItem(item)).toBe(true);
+    expect((component as any).previewCoordinator.status.kind).toBe('ready');
+    expect(component.preparingPresentation).toBe(false);
+    component.setPreviewMode('reference');
+    expect(component.canPreviewItem(item)).toBe(false);
+    destroyFacade(component);
+  });
+
+  it('loads target choices for an unmapped item when conditional preview is enabled', () => {
+    const load = vi.fn(() =>
+      of({ unit: { id: 'u' }, playerHtml: '<html></html>', definition: '{"pages":[]}' }),
+    );
+    const component = createFacade({
+      previewLoader: { load, clear: vi.fn() },
+      api: { getResponseStateWithFallback: () => of(null) },
+    });
+    component.player.itemExplorerConditionalVisibilityEnabled = true;
+    component.selectItem(
+      { itemId: 'i', unitId: 'u', uuid: 'row', rowKey: 'row', variableId: '', metadata: {} } as any,
+      0,
+    );
+    expect(load).toHaveBeenCalledOnce();
+    expect(component.player.definitionContent).toBe('{"pages":[]}');
+    destroyFacade(component);
+  });
+
+  it.each([
+    [{ page: 0, values: { state: '2' } }, { page: 0, values: { state: '1' } }, true],
+    [{ page: 0, values: {} }, { page: 1, values: {} }, true],
+    [{ page: 0, values: { state: '2' } }, undefined, true],
+    [{ values: { a: '1', b: '2' } }, { values: { b: '2', a: '1' } }, false],
+    [undefined, { values: {} }, false],
+  ])(
+    'refreshes changed page/values but ignores equivalent settings (%j -> %j)',
+    (before, after, changed) => {
+      const component = createFacade();
+      const item = {
+        itemId: '01',
+        uuid: 'row',
+        rowKey: 'row',
+        unitId: 'UNIT',
+        variableId: '01',
+        metadata: {},
+        previewStart: before,
+      } as any;
+      component.items = [item];
+      component.table.filteredItems = [item];
+      component.selectedItem = item;
+      const envelope = createExplorerEnvelope({ draftFilterText: '', publishedFilterText: '' });
+      envelope.draftState.itemProperties = { row: { previewStart: after } };
+      envelope.activeState = envelope.draftState;
+      component.player.playerFrameReady = true;
+      component.player.definitionContent = 'loaded';
+      component.player.unit = { id: 'UNIT' };
+      setPreviewStatus(component, 'ready');
+      const restart = vi.spyOn(component as any, 'startPlayerIfReady').mockImplementation(() => {});
+      (component as any).applySharedExplorerEnvelope(envelope);
+      expect(component.selectedItem?.previewStart).toEqual(after);
+      expect(restart).toHaveBeenCalledTimes(changed ? 1 : 0);
+    },
+  );
+});
+
+describe('preview context page control', () => {
+  const item = {
+    itemId: '01',
+    unitId: 'UNIT',
+    variableId: 'target',
+    metadata: {},
+  } as any;
+
+  it.each([
+    [false, false],
+    [true, true],
+  ])(
+    'shows the control only for an always-visible target (%s)',
+    (isAlwaysVisiblePage, expected) => {
+      const component = createFacade({
+        resolvePlayerTargetLocation: () => ({
+          absolutePageIndex: 0,
+          scrollPageIndex: isAlwaysVisiblePage ? undefined : 0,
+          isAlwaysVisiblePage,
+        }),
+      });
+      component.selectedItem = item;
+      component.player.definitionContent = JSON.stringify({ pages: [] });
+
+      expect(component.showPreviewStartPageSelector).toBe(expected);
+    },
+  );
+});
+
+describe('shared preview recovery', () => {
+  it('reloads a previously unavailable preview when the shared start state is corrected', () => {
+    const component = createFacade();
+    const item = {
+      itemId: '01',
+      uuid: 'row',
+      rowKey: 'row',
+      unitId: 'UNIT',
+      variableId: '01',
+      metadata: {},
+      previewStart: { values: { state: 'invalid' } },
+    } as any;
+    component.items = [item];
+    component.table.filteredItems = [item];
+    component.selectedItem = item;
+    const envelope = createExplorerEnvelope({ draftFilterText: '', publishedFilterText: '' });
+    envelope.draftState.itemProperties = { row: { previewStart: { values: { state: '1' } } } };
+    envelope.activeState = envelope.draftState;
+    component.player.playerFrameReady = false;
+    component.player.definitionContent = 'loaded';
+    component.player.unit = { id: 'UNIT' };
+    setPreviewStatus(component, 'unavailable');
+    const reload = vi
+      .spyOn(component as any, 'reloadPreviewAfterTargetChange')
+      .mockImplementation(() => {});
+    (component as any).applySharedExplorerEnvelope(envelope);
+    expect(reload).toHaveBeenCalledWith(item);
+  });
+});
+
+describe('preview response session isolation', () => {
+  it('never saves the previous synthetic response after switching to an unseeded target', () => {
+    vi.useFakeTimers();
+    const saveResponseState = vi.fn(() => of({}));
+    const component = createFacade({ api: { saveResponseState } });
+    const postMessage = vi.fn();
+    try {
+      component.player.itemExplorerConditionalVisibilityEnabled = true;
+      component.selectedItem = {
+        itemId: 'ITEM',
+        uuid: 'row',
+        rowKey: 'row',
+        unitId: 'UNIT',
+        variableId: 'targetA',
+        metadata: {},
+      } as any;
+      registerPlayerDom(component, postMessage);
+      component.player.unit = { id: 'UNIT', dependencies: [] };
+      component.player.definitionContent = JSON.stringify({
+        stateVariables: [{ id: 'v', alias: 'State', value: '0' }],
+        pages: [
+          {
+            sections: [
+              {
+                visibilityRules: [{ id: 'v', operator: '=', value: '2' }],
+                elements: [{ alias: 'targetA' }],
+              },
+            ],
+          },
+          { sections: [{ elements: [{ alias: 'targetB' }] }] },
+        ],
+      });
+      component.player.playerFrameReady = true;
+      setPreviewStatus(component, 'ready');
+      (component as any).startPlayerIfReady();
+      const first = postMessage.mock.calls[0][0];
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: first.sessionId,
+        unitState: { dataParts: first.unitState.dataParts },
+      });
+      expect(component.syntheticPreviewState).toBe(true);
+      component.selectedItem!.previewTargetId = 'targetB';
+      (component as any).startPlayerIfReady();
+      expect(postMessage.mock.calls[1][0].unitState.dataParts).toEqual({});
+      expect(component.syntheticPreviewState).toBe(true);
+      component.confirmSaveResponseState();
+      expect(saveResponseState).not.toHaveBeenCalled();
+      // A delayed notification from the old session must not restore that payload.
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: first.sessionId,
+        unitState: { dataParts: first.unitState.dataParts },
+      });
+      expect(component.currentResponseData).toBeNull();
+      const second = postMessage.mock.calls[1][0];
+      const answers = { elementCodes: 'fresh answers' };
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: second.sessionId,
+        unitState: { dataParts: answers },
+      });
+      component.confirmSaveResponseState();
+      expect(saveResponseState).not.toHaveBeenCalled();
+      component.setPreviewMode('answers');
+      const answerSession = component.player.activePlayerSessionId;
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: answerSession,
+        unitState: { dataParts: answers },
+      });
+      component.confirmSaveResponseState();
+      expect(saveResponseState).toHaveBeenCalledExactlyOnceWith('', 'ITEM', 'UNIT', answers, 'row');
+    } finally {
+      vi.runAllTimers();
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('response save completion isolation', () => {
+  it('does not attach a delayed save result to a different selected item', () => {
+    const saved$ = new Subject<any>();
+    const component = createFacade({ api: { saveResponseState: () => saved$ } });
+    component.selectedItem = { itemId: 'A', unitId: 'UNIT', metadata: {} } as any;
+    (component.player as any).beginResponseSession('answer-a', 'answers');
+    (component.player as any).responseSession.dataParts = { elementCodes: 'answers A' };
+    setPreviewStatus(component, 'ready');
+    component.confirmSaveResponseState();
+    component.selectedItem = { itemId: 'B', unitId: 'UNIT', metadata: {} } as any;
+    saved$.next({});
+    saved$.complete();
+    expect((component.player as any).savedResponseData).toBeNull();
+    expect(component.hasResponseState).toBe(false);
+  });
+});
+
+describe('PR186 independent review reproduction', () => {
+  it('keeps a new synthetic session isolated from a pending save on the same item', () => {
+    vi.useFakeTimers();
+    const pending = new Subject<any>();
+    const save = vi.fn(() => pending);
+    const component = createFacade({ api: { saveResponseState: save } });
+    const postMessage = vi.fn();
+    try {
+      component.player.itemExplorerConditionalVisibilityEnabled = true;
+      component.selectedItem = {
+        itemId: 'ITEM',
+        uuid: 'row',
+        rowKey: 'row',
+        unitId: 'UNIT',
+        variableId: 'A',
+        metadata: {},
+      } as any;
+      registerPlayerDom(component, postMessage);
+      component.player.unit = { id: 'UNIT', dependencies: [] };
+      component.player.definitionContent = JSON.stringify({
+        stateVariables: [{ id: 'v', alias: 'State', value: '0' }],
+        pages: [
+          { sections: [{ elements: [{ alias: 'A' }] }] },
+          {
+            sections: [
+              {
+                visibilityRules: [{ id: 'v', operator: '=', value: '2' }],
+                elements: [{ alias: 'B' }],
+              },
+            ],
+          },
+        ],
+      });
+      component.player.playerFrameReady = true;
+      setPreviewStatus(component, 'ready');
+      component.player.changePreviewMode('answers');
+      (component as any).startPlayerIfReady();
+      const initial = postMessage.mock.calls.at(-1)![0];
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: initial.sessionId,
+        unitState: { dataParts: { elementCodes: 'real answers A' } },
+      });
+      component.confirmSaveResponseState();
+      component.selectedItem!.previewTargetId = 'B';
+      component.player.changePreviewMode('reference');
+      (component as any).startPlayerIfReady();
+      const seeded = postMessage.mock.calls.at(-1)![0];
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: seeded.sessionId,
+        unitState: { dataParts: seeded.unitState.dataParts },
+      });
+      expect(component.syntheticPreviewState).toBe(true);
+      pending.next({});
+      pending.complete();
+      (component as any).startPlayerIfReady();
+      const restarted = postMessage.mock.calls.at(-1)![0];
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: restarted.sessionId,
+        unitState: { dataParts: restarted.unitState.dataParts },
+      });
+      component.confirmSaveResponseState();
+      expect(save).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.runAllTimers();
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('response mutation completion belongs to its player session', () => {
+  it.each(['save', 'delete'] as const)(
+    'ignores stale %s success and errors on the same item',
+    (operation) => {
+      for (const outcome of ['success', 'error']) {
+        const pending = new Subject<any>();
+        const component = createFacade({
+          api: {
+            saveResponseState: () => pending,
+            deleteResponseState: () => pending,
+          },
+        });
+        component.selectedItem = { itemId: 'A', unitId: 'UNIT', metadata: {} } as any;
+        setPreviewStatus(component, 'ready');
+        (component.player as any).beginResponseSession('old', 'answers');
+        (component.player as any).responseSession.dataParts = { answers: 'old' };
+        if (operation === 'save') component.confirmSaveResponseState();
+        else component.confirmDeleteResponseState();
+        (component.player as any).beginResponseSession('new', 'answers');
+        (component as any).applyResponseStateResult({
+          state: { responseData: { answers: 'new saved' } },
+        });
+        (component.player as any).responseSession.dataParts = { answers: 'new received' };
+        component.confirmDialogError = 'new dialog';
+        if (outcome === 'success') pending.next({});
+        else pending.error(new Error('stale error'));
+        expect(component.hasResponseState).toBe(true);
+        expect((component.player as any).savedResponseData).toEqual({ answers: 'new saved' });
+        expect(component.currentResponseData).toEqual({ answers: 'new received' });
+        expect(component.confirmDialogError).toBe('new dialog');
+        pending.complete();
+      }
+    },
+  );
+
+  it('clears saved and transient answers only after a current-session delete', () => {
+    const component = createFacade({ api: { deleteResponseState: () => of({}) } });
+    component.selectedItem = { itemId: 'A', unitId: 'UNIT', metadata: {} } as any;
+    (component.player as any).beginResponseSession('current', 'answers', { answers: 'initial' });
+    (component as any).applyResponseStateResult({ state: { responseData: { answers: 'saved' } } });
+    (component.player as any).responseSession.dataParts = { answers: 'received' };
+    component.confirmDeleteResponseState();
+    expect(component.hasResponseState).toBe(false);
+    expect(component.currentResponseData).toBeNull();
+    expect((component.player as any).getPlayerStartDataParts()).toEqual({});
+  });
+});
+
+describe('solution and visibility preview provenance', () => {
+  it.each([false, true])(
+    'restores the normal preview after solution toggles (conditional=%s)',
+    (conditional) => {
+      vi.useFakeTimers();
+      const save = vi.fn(() => of({}));
+      const component = createFacade({ api: { saveResponseState: save } });
+      const postMessage = vi.fn();
+      try {
+        component.selectedItem = {
+          itemId: 'A',
+          unitId: 'UNIT',
+          variableId: 'target',
+          metadata: {},
+        } as any;
+        component.player.itemExplorerConditionalVisibilityEnabled = conditional;
+        component.player.unit = { id: 'UNIT', dependencies: [] };
+        component.player.definitionContent = JSON.stringify({
+          stateVariables: [{ id: 'v', alias: 'State', value: '0' }],
+          pages: [
+            {
+              sections: [
+                {
+                  visibilityRules: conditional ? [{ id: 'v', operator: '=', value: '2' }] : [],
+                  elements: [{ alias: 'target' }],
+                },
+              ],
+            },
+          ],
+        });
+        component.coding.correctSolutionPrefill = {
+          status: 'available',
+          responses: [{ id: 'target', status: 'VALUE_CHANGED', value: 'solution' }],
+          message: '',
+        };
+        registerPlayerDom(component, postMessage);
+        component.player.playerFrameReady = true;
+        setPreviewStatus(component, 'ready');
+        (component as any).startPlayerIfReady();
+        const normal = postMessage.mock.calls.at(-1)![0];
+        const answers = {
+          ...normal.unitState.dataParts,
+          elementCodes: JSON.stringify([
+            { id: 'target', status: 'VALUE_CHANGED', value: 'my answer' },
+          ]),
+        };
+        component.handlePlayerMessage({
+          type: 'vopStateChangedNotification',
+          sessionId: normal.sessionId,
+          unitState: { dataParts: answers },
+        });
+        component.toggleCorrectSolution();
+        const solution = postMessage.mock.calls.at(-1)![0];
+        expect(JSON.parse(solution.unitState.dataParts.elementCodes)[0].value).toBe('solution');
+        component.handlePlayerMessage({
+          type: 'vopStateChangedNotification',
+          sessionId: solution.sessionId,
+          unitState: { dataParts: solution.unitState.dataParts },
+        });
+        component.confirmSaveResponseState();
+        expect(save).not.toHaveBeenCalled();
+        (component as any).startPlayerIfReady(); // Reload while the solution remains active.
+        component.toggleCorrectSolution();
+        const restored = postMessage.mock.calls.at(-1)![0];
+        expect(component.syntheticPreviewState).toBe(conditional);
+        if (conditional) {
+          expect(restored.unitState.dataParts.stateVariableCodes).toBe(
+            normal.unitState.dataParts.stateVariableCodes,
+          );
+        }
+        expect(restored.unitState.dataParts).toEqual(answers);
+        component.handlePlayerMessage({
+          type: 'vopStateChangedNotification',
+          sessionId: restored.sessionId,
+          unitState: { dataParts: restored.unitState.dataParts },
+        });
+        component.confirmSaveResponseState();
+        expect(save).toHaveBeenCalledTimes(conditional ? 0 : 1);
+      } finally {
+        vi.runAllTimers();
+        vi.useRealTimers();
+      }
+    },
+  );
+});
+
+describe('answer snapshot across consecutive solution toggles', () => {
+  it('retains the received unsaved answer while the restored player has not reported yet', () => {
+    vi.useFakeTimers();
+    const component = createFacade();
+    const postMessage = vi.fn();
+    try {
+      component.selectedItem = {
+        itemId: 'ITEM',
+        unitId: 'UNIT',
+        variableId: 'target',
+        metadata: {},
+      } as any;
+      component.player.unit = { id: 'UNIT', dependencies: [] };
+      component.player.definitionContent = JSON.stringify({
+        pages: [{ sections: [{ elements: [{ alias: 'target' }] }] }],
+      });
+      component.coding.correctSolutionPrefill = {
+        status: 'available',
+        responses: [{ id: 'target', status: 'VALUE_CHANGED', value: 'solution' }],
+        message: '',
+      };
+      registerPlayerDom(component, postMessage);
+      component.player.playerFrameReady = true;
+      setPreviewStatus(component, 'ready');
+      (component as any).startPlayerIfReady();
+      const answers = {
+        elementCodes: JSON.stringify([
+          { id: 'target', status: 'VALUE_CHANGED', value: 'my unsaved answer' },
+        ]),
+      };
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: postMessage.mock.calls.at(-1)![0].sessionId,
+        unitState: { dataParts: answers },
+      });
+      component.toggleCorrectSolution();
+      component.toggleCorrectSolution();
+      expect(postMessage.mock.calls.at(-1)![0].unitState.dataParts).toEqual(answers);
+      // The restored answer is already visible to the player, but its eager
+      // response is still pending. Switch the solution on and off once more.
+      component.toggleCorrectSolution();
+      component.toggleCorrectSolution();
+      expect(postMessage.mock.calls.at(-1)![0].unitState.dataParts).toEqual(answers);
+    } finally {
+      vi.runAllTimers();
+      destroyFacade(component);
+      vi.useRealTimers();
+    }
   });
 });
