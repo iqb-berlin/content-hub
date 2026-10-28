@@ -8,8 +8,10 @@ im Aufgabenplayer eingeblendet. Der Reviewbereich öffnet dabei den Reiter
 werden die zuvor vom Player gemeldeten eigenen Eingaben und die aktuelle Seite
 wiederhergestellt. Eingaben im Lösungsmodus verändern diesen vorherigen Stand
 nicht. Bei noch nicht gemeldeten Eingaben wartet die Umschaltung auf einen
-aktuellen Antwortstand des Players. Bleibt die Meldung aus, bleibt der eigene
-Player erhalten und die Oberfläche bietet einen erneuten Versuch an.
+aktuellen Antwortstand des Players. Dies gilt auch nach abgeschlossenen
+Ziehbewegungen, die kein normales Eingabeereignis auslösen. Bleibt die Meldung
+aus, bleibt der eigene Player erhalten und die Oberfläche bietet einen erneuten
+Versuch an.
 Abschließende Entlademeldungen werden nur über die genaue Fenster- und
 Sitzungskennung des bisherigen Players übernommen. ISO-Zeitstempel und
 numerische Millisekunden-Zeitstempel werden unterstützt.
@@ -26,6 +28,14 @@ und eine erfolgreiche Rückprüfung mit dem Kodierschema sind erforderlich.
 Zusätzlich wird die Kombination der Teilantworten für die ganze Aufgabe geprüft.
 Widersprüchliche Antworten werden nicht eingeblendet. Die Originaldefinition und
 ihre Sichtbarkeitsbedingungen bleiben aktiv.
+
+Bei unterstützten Drag-and-drop-Aufgaben werden die Paletten und Zielfelder
+gemeinsam vorbereitet. Ein verschobenes Objekt wird aus seiner Palette entfernt;
+ausdrücklich kopierbare Objekte bleiben dort verfügbar. Auch über mehrere
+Kodiervariablen hinweg darf ein nicht kopierbares Objekt nur einmal belegt werden.
+Einzel- und Summenvariablen mit derselben Listenantwort werden zusammengeführt.
+Widersprüchliche Belegungen verweisen auf die Kodieranweisungen. Beim Ausblenden
+der Musterlösung wird der vollständige vorherige eigene Zustand wiederhergestellt.
 
 Nicht alle Antwortformate erlauben eine sichere automatische Vorgabe. Bei einer
 teilweise ableitbaren Lösung nennt die Oberfläche die Anzahl der unterstützten
