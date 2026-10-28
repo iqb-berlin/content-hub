@@ -1,0 +1,32 @@
+{
+  "id": "ib-basic",
+  "name": "ItemBuilder: Eingabe und Auswahl",
+  "definition": {
+    "runtimeVersion": "9.9.0",
+    "item": "Synthetic",
+    "task": "FirstTask",
+    "scope": "A",
+    "package": "GeoGebra/synthetic-ib",
+    "folder": "demo"
+  },
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "ANSWER",
+        "alias": "ANSWER",
+        "label": "ItemBuilder Antwort",
+        "sourceType": "BASE",
+        "codeModel": "MANUAL_ONLY",
+        "manualInstruction": "<p>Synthetische ItemBuilder-Aufgabe. Keine automatische Vorbelegung.</p>",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Interaktion geprüft"
+          }
+        ]
+      }
+    ]
+  }
+}

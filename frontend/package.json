@@ -8,6 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest",
     "e2e": "../scripts/run-browser-e2e.sh",
+    "e2e:synthetic": "../scripts/run-browser-e2e.sh 'synthetic-(aspect|players)(-media)?\\.spec\\.ts$'",
+    "e2e:synthetic:check": "tsc -p tsconfig.e2e.json && eslint e2e/synthetic-*.ts && prettier --check e2e/synthetic-*.ts tsconfig.e2e.json",
     "e2e:playwright": "playwright test",
     "benchmark:item-explorer": "../scripts/run-item-explorer-browser-benchmark.sh",
     "lint": "ng lint --max-warnings=0",

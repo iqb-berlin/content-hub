@@ -15,6 +15,9 @@ RUN_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/content-pool-e2e.XXXXXXXX")"
 export BROWSER_E2E_FIXTURE_DIR="$RUN_DIRECTORY/fixtures"
 export FILE_STORAGE_PATH="$RUN_DIRECTORY/uploads"
 
+# Do not leave an older successful gallery behind if setup fails before Playwright.
+rm -rf "$REPOSITORY_ROOT/frontend/synthetic-review-report"
+
 export NODE_ENV=test
 export DB_HOST=127.0.0.1
 export DB_PORT="$DATABASE_PORT"

@@ -1,0 +1,46 @@
+{
+  "id": "speed-text",
+  "name": "Speed Multi: Textauswahl",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "2.1.0",
+    "layout": "column",
+    "questionType": "text",
+    "answerType": "text",
+    "instructionText": "Speed Multi: Textauswahl",
+    "questions": [
+      {
+        "text": "Wähle den See.",
+        "answers": [
+          {
+            "text": "See"
+          },
+          {
+            "text": "Bahnhof"
+          }
+        ],
+        "correctAnswer": 0
+      }
+    ]
+  },
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "ANSWER",
+        "alias": "ANSWER",
+        "label": "Speed Multi: Textauswahl",
+        "sourceType": "BASE",
+        "codeModel": "MANUAL_ONLY",
+        "manualInstruction": "<p>Synthetisches Beispiel. Die Kodierung bleibt lesbar; dieser Player verwendet ein eigenes Antwortformat.</p>",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Prüfantwort"
+          }
+        ]
+      }
+    ]
+  }
+}

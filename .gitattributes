@@ -1,0 +1,3 @@
+test-fixtures/synthetic-aspect/iqb-player-aspect-3.0.1.html linguist-vendored -text -whitespace
+
+test-fixtures/synthetic-players/players/*.html linguist-vendored -text -whitespace
