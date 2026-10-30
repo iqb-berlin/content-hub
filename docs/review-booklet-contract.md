@@ -61,9 +61,14 @@ zufällig gleichnamiges Modul.
 ### Direktlinks zu Aufgaben (#245)
 
 In der Testheftansicht bietet „Direktlink zur Aufgabe“ einen Link zur aktuellen
-Aufgabe. Die Aufgabenliste enthält für jedes Vorkommen einen eigenen Link.
-Die Links lassen sich über das Browsermenü kopieren oder in einem neuen Tab
-öffnen. Zurück, Weiter und die Aufgabenliste aktualisieren ebenfalls die URL;
+Aufgabe. Ein normaler Klick kopiert die vollständige Linkadresse und bestätigt
+dies mit „Link kopiert.“. Blockiert der Browser den Zugriff auf die Zwischenablage,
+erscheint die Adresse als markierbarer Text zum manuellen Kopieren. Die Rückmeldung
+wird beim Aufgaben- oder Testheftwechsel entfernt.
+Die Aufgabenliste enthält für jedes Vorkommen einen eigenen Link.
+Alle Links lassen sich weiterhin über das Browsermenü kopieren oder in einem neuen
+Tab öffnen; Strg-/Cmd-Klick behält ebenfalls das native Browserverhalten bei.
+Zurück, Weiter und die Aufgabenliste aktualisieren ebenfalls die URL;
 Neuladen sowie Zurück/Vorwärts im Browser stellen die Auswahl wieder her.
 
 `/view/:acpId/sequence/:bookletId?kind=booklet&occurrence=:linkId`
