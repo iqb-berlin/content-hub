@@ -25,6 +25,32 @@ mkdir -p "$temp_dir/scripts" "$temp_dir/bin"
 cp "$ROOT_DIR/.env.example" "$temp_dir/.env"
 cp "$ROOT_DIR/scripts/update.sh" "$ROOT_DIR/scripts/deploy-common.sh" "$temp_dir/scripts/"
 
+(
+  # Exercise the same bundle-to-target copy used by install.sh and update.sh.
+  . "$ROOT_DIR/scripts/deploy-common.sh"
+  runtime_source="$temp_dir/runtime-source"
+  runtime_target="$temp_dir/runtime-target"
+  runbook="docs/operations/content-hub-branding.md"
+  mkdir -p "$runtime_source"
+  "$ROOT_DIR/scripts/build-runtime-bundle.sh" "$temp_dir/branding-runtime.tar.gz" >/dev/null
+  tar -xzf "$temp_dir/branding-runtime.tar.gz" -C "$runtime_source"
+
+  cp_install_runtime_artifacts "$runtime_source" "$runtime_target" >/dev/null
+  cmp "$ROOT_DIR/$runbook" "$runtime_target/$runbook"
+
+  # Updates must replace a stale runbook while retaining unrelated local docs.
+  printf 'old branding instructions\n' >"$runtime_target/$runbook"
+  printf 'local operator notes\n' >"$runtime_target/docs/operator-notes.txt"
+  cp_install_runtime_artifacts "$runtime_source" "$runtime_target" >/dev/null
+  cmp "$ROOT_DIR/$runbook" "$runtime_target/$runbook"
+  test "$(cat "$runtime_target/docs/operator-notes.txt")" = 'local operator notes'
+
+  # Older release bundles did not contain this optional document.
+  rm "$runtime_source/$runbook"
+  cp_install_runtime_artifacts "$runtime_source" "$temp_dir/legacy-runtime-target" >/dev/null
+  test ! -e "$temp_dir/legacy-runtime-target/$runbook"
+)
+
 cat > "$temp_dir/bin/docker" <<'SH'
 #!/usr/bin/env bash
 if [[ "${1:-}" == compose && "${2:-}" == version ]]; then exit 0; fi
