@@ -258,7 +258,7 @@ set -eu
 if [[ "$1" == compose ]]; then
   case "$*" in
     *'config --services'*) printf 'content-pool-api\ncontent-pool-db\nnginx\n' ;;
-    *'ps -q content-pool-db'*) printf 'legacy-db-id\n' ;;
+    *'ps -q content-pool-db'*) [[ "${TRANSITION_MISSING_DB:-false}" == true ]] || printf 'legacy-db-id\n' ;;
     *'stop content-pool-api content-pool-db'*) printf 'stopped\n' >"$TRANSITION_STOP_LOG" ;;
     *) exit 1 ;;
   esac
@@ -296,6 +296,12 @@ chmod +x "$temp_dir/bin/docker"
     exit 1
   fi
   test ! -f "$TRANSITION_STOP_LOG"
+  # A stopped/unavailable old database must never select an empty new volume.
+  export TRANSITION_MISSING_DB=true
+  if (ch_prepare_identifier_transition "$temp_dir/runtime-source" "$transition_env") >/dev/null 2>&1; then
+    echo 'unavailable legacy database was accepted' >&2
+    exit 1
+  fi
 )
 
 echo "Deployment script checks passed"

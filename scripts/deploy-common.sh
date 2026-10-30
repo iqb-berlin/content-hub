@@ -422,14 +422,18 @@ ch_compose() {
 
 # Called after the configuration/database backup and before installing new Compose files.
 ch_prepare_identifier_transition() {
-  local runtime="$1" env_file="$2" key suffix value container old_service volume project configured
+  local runtime="$1" env_file="$2" key suffix value container old_service volume project configured service
   for suffix in HOST AUTH_HOST BACKEND_IMAGE FRONTEND_IMAGE; do
     key="CONTENT_HUB_${suffix}"
     value="$(ch_env_get "$env_file" "$key")"
     [[ -z "$value" ]] || ch_env_set "$env_file" "$key" "$value"
   done
   grep -q '^  content-hub-db:' "$runtime/docker-compose.server.yml" || return 0
-  container="$(ch_compose_container_id content-hub-db)" || return 0
+  service="$(ch_compose_service_name content-hub-db)" || return 1
+  if ! container="$(ch_compose_container_id content-hub-db)"; then
+    [[ "$service" != content-pool-db ]] || ch_die "Start the existing database before migrating its volume assignment"
+    return 0
+  fi
   old_service="$(docker inspect "$container" --format '{{index .Config.Labels "com.docker.compose.service"}}')" || return 1
   [[ "$old_service" == content-pool-db ]] || return 0
   project="$(docker inspect "$container" --format '{{index .Config.Labels "com.docker.compose.project"}}')" || return 1
