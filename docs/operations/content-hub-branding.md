@@ -81,6 +81,13 @@ Use a maintenance window and keep the previous release, configuration, image
 digests and complete database/upload backups. Do not rename or delete populated
 volumes, and do not delete/re-import a Keycloak realm.
 
+Before accepting the first release with the renamed GHCR images, set both new
+packages to public in their package settings and verify that their manifest
+digests can be pulled without registry credentials. GitHub creates newly
+published packages as private by default; a successful authenticated release
+workflow alone does not establish public installation access. See the
+[GitHub Container registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).
+
 For the first upgrade across the naming change, use the **new** update script
 and its matching `deploy-common.sh` from an extracted, verified runtime archive.
 Keep these tools outside the existing deployment directory until the update has
