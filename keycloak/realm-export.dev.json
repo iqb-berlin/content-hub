@@ -214,7 +214,7 @@
         "backchannel.logout.session.required": "true",
         "backchannel.logout.revoke.offline.tokens": "false",
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:4200/##http://localhost:4201/##http://127.0.0.1:4200/##http://127.0.0.1:4201/"
+        "post.logout.redirect.uris": "http://localhost:4200/##http://localhost:4201/##http://127.0.0.1:4200/##http://127.0.0.1:4201/##http://localhost:4201/login##http://localhost:4200/login##http://127.0.0.1:4201/login##http://127.0.0.1:4200/login"
       },
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": true,
@@ -388,7 +388,7 @@
       "linkOnly": false,
       "firstBrokerLoginFlowAlias": "first broker login",
       "config": {
-        "hideOnLoginPage": "false",
+        "hideOnLoginPage": "true",
         "issuer": "https://keycloak.kodierbox.iqb.hu-berlin.de/realms/coding-box",
         "authorizationUrl": "https://keycloak.kodierbox.iqb.hu-berlin.de/realms/coding-box/protocol/openid-connect/auth",
         "tokenUrl": "https://keycloak.kodierbox.iqb.hu-berlin.de/realms/coding-box/protocol/openid-connect/token",
