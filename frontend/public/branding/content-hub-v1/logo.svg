@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Content Hub</title>
+  <desc id="desc">Vier violette Inhaltsmodule sind mit einem zentralen Knoten verbunden. Abstraktes Hub-Symbol auf weißem Kreis.</desc>
+  <circle cx="128" cy="128" r="124" fill="#FFFFFF"/>
+  <g fill="none" stroke="#5B21B6" stroke-width="22" stroke-linecap="round">
+    <path d="M72 72L184 184M72 184L184 72"/>
+  </g>
+  <g fill="#5B21B6">
+    <rect x="52" y="52" width="40" height="40" rx="10"/>
+    <rect x="164" y="52" width="40" height="40" rx="10"/>
+    <rect x="52" y="164" width="40" height="40" rx="10"/>
+    <rect x="164" y="164" width="40" height="40" rx="10"/>
+    <circle cx="128" cy="128" r="31"/>
+  </g>
+  <circle cx="128" cy="128" r="12" fill="#FFFFFF"/>
+</svg>

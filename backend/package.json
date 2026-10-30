@@ -1,7 +1,7 @@
 {
   "name": "iqb-content-pool-backend",
   "version": "0.6.0",
-  "description": "IQB ContentPool - Backend API",
+  "description": "Content Hub - Backend API",
   "private": true,
   "scripts": {
     "build": "nest build",

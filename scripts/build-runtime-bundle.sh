@@ -20,6 +20,7 @@ files=(
   VERSION
   CHANGELOG.md
   RELEASE_CHECKLIST.md
+  docs/operations/content-hub-branding.md
   .env.example
   docker-compose.server.yml
   docker-compose.traefik.yml

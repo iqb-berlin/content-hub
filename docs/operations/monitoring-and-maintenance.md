@@ -29,7 +29,7 @@ These endpoints are also used by the Docker health checks in production.
 
 The compose files already define health checks for:
 
-- ContentPool API,
+- Content Hub API,
 - nginx or frontend container,
 - PostgreSQL containers,
 - Keycloak.
@@ -73,7 +73,7 @@ The application records server API activity in a dedicated audit table. Use that
 
 At minimum, backup:
 
-- the ContentPool PostgreSQL database,
+- the Content Hub PostgreSQL database,
 - the Keycloak PostgreSQL database,
 - the uploads volume.
 

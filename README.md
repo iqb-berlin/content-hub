@@ -1,4 +1,4 @@
-# IQB ContentPool
+# Content Hub
 
 Web application for managing **Assessment Content Packages (ACPs)** — bundles of data required to conduct and evaluate educational assessments.
 

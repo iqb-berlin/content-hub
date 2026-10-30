@@ -8,7 +8,7 @@ usage() {
   cat <<'USAGE'
 Usage: scripts/restore.sh --from-backup DIR [options]
 
-Perform an explicit downtime restore of ContentPool configuration, both
+Perform an explicit downtime restore of Content Hub configuration, both
 PostgreSQL databases, and uploads from one update backup.
 
 Options:

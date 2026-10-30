@@ -1,6 +1,6 @@
-# Keycloak Setup (ContentPool)
+# Keycloak Setup (Content Hub)
 
-ContentPool uses Keycloak via OpenID Connect with **Authorization Code Flow + PKCE**.
+Content Hub uses Keycloak via OpenID Connect with **Authorization Code Flow + PKCE**.
 
 ## Dev vs Production Realm
 
@@ -73,7 +73,7 @@ The reverse proxy must forward these Keycloak paths to the Keycloak container:
 
 Important:
 
-- Do **not** proxy `/auth/*` to Keycloak, because ContentPool needs `/auth/callback` for the frontend callback route.
+- Do **not** proxy `/auth/*` to Keycloak, because Content Hub needs `/auth/callback` for the frontend callback route.
 
 ## Realm export defaults
 
@@ -136,7 +136,7 @@ For setup details, see
 
 ## Self-registration and bot protection
 
-ContentPool allows direct Keycloak self-registration. New users must verify
+Content Hub allows direct Keycloak self-registration. New users must verify
 their email address before they can sign in. The registration form is not
 restricted to HU/IQB email domains.
 
@@ -185,7 +185,7 @@ Then open `http://localhost:8080/admin`.
 
 ## Role mapping
 
-ContentPool maps Keycloak roles automatically:
+Content Hub maps Keycloak roles automatically:
 
 - realm/client role `admin` -> `isAppAdmin=true`
 - otherwise regular user

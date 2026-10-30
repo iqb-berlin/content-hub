@@ -1,4 +1,4 @@
-# Production Docker Compose for IQB ContentPool - Pre-built Images
+# Production Docker Compose for Content Hub - Pre-built Images
 # This file pulls images from GitHub Container Registry (no build on server)
 services:
   keycloak-db:

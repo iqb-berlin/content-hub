@@ -2,7 +2,7 @@
 
 ## Purpose
 
-IQB ContentPool is a web application for working with Assessment Content Packages
+Content Hub is a web application for working with Assessment Content Packages
 (ACPs). An ACP combines structured index data, referenced media and runtime files,
 access rules, comments, snapshots, and item-level metadata into one manageable unit.
 
@@ -68,7 +68,7 @@ without forcing everything into relational tables.
 2. The browser performs an authorization-code-with-PKCE flow against Keycloak.
 3. The frontend exchanges the authorization code for tokens at the issuer token endpoint.
 4. The frontend sends the ID token to `/api/auth/oidc-callback`.
-5. The backend validates the token and issues the ContentPool JWT used by the app.
+5. The backend validates the token and issues the Content Hub JWT used by the app.
 
 ### 4. Server-to-server transfer
 

@@ -52,7 +52,7 @@ usage() {
   cat <<'USAGE'
 Usage: scripts/install.sh [options]
 
-Install a ContentPool server deployment from a verified GitHub release bundle.
+Install a Content Hub server deployment from a verified GitHub release bundle.
 
 Options:
   --dir DIR                         Target directory (default: prompt or current directory)
@@ -154,8 +154,8 @@ configure_urls() {
   if [[ "$mode" == "traefik" ]]; then
     app_host="$(cp_env_get "$env_file" CONTENT_POOL_HOST)"
     auth_host="$(cp_env_get "$env_file" CONTENT_POOL_AUTH_HOST)"
-    app_host="$(prompt_value "ContentPool app host" "${CONTENT_POOL_HOST:-${app_host:-content-pool.example.com}}")"
-    auth_host="$(prompt_value "ContentPool auth host" "${CONTENT_POOL_AUTH_HOST:-${auth_host:-auth-content-pool.example.com}}")"
+    app_host="$(prompt_value "Content Hub app host" "${CONTENT_POOL_HOST:-${app_host:-content-pool.example.com}}")"
+    auth_host="$(prompt_value "Content Hub auth host" "${CONTENT_POOL_AUTH_HOST:-${auth_host:-auth-content-pool.example.com}}")"
 
     cp_env_set "$env_file" CONTENT_POOL_HOST "$app_host"
     cp_env_set "$env_file" CONTENT_POOL_AUTH_HOST "$auth_host"
@@ -173,7 +173,7 @@ configure_urls() {
     cors_origins="${CORS_ORIGIN:-$(cp_env_get "$env_file" CORS_ORIGIN)}"
     app_url="$(first_csv_value "$cors_origins")"
     auth_url="$(cp_env_get "$env_file" OIDC_PUBLIC_ISSUER_URL)"
-    app_url="$(prompt_value "Public ContentPool app URL" "${app_url:-https://app.example.com}")"
+    app_url="$(prompt_value "Public Content Hub app URL" "${app_url:-https://app.example.com}")"
     auth_url="$(prompt_value "Public Keycloak issuer URL" "${OIDC_PUBLIC_ISSUER_URL:-${auth_url:-https://auth.example.com/realms/iqb}}")"
 
     if [[ -n "${CORS_ORIGIN-}" ]]; then
@@ -501,7 +501,7 @@ cp_info "Validating Docker Compose configuration"
 command cp -f "${RELEASE_WORK_DIR}/release-manifest.json" "${TARGET_DIR}/.release-manifest.json"
 
 if [[ "$START" -eq 1 ]]; then
-  cp_info "Starting and verifying ContentPool (${MODE})"
+  cp_info "Starting and verifying Content Hub (${MODE})"
   (
     cd "$TARGET_DIR"
     update_args=(

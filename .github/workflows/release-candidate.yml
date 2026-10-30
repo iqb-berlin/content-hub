@@ -364,4 +364,4 @@ jobs:
             --verify-tag \
             --prerelease \
             --generate-notes \
-            --title "ContentPool ${RELEASE}"
+            --title "Content Hub ${RELEASE}"

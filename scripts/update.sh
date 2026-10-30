@@ -13,7 +13,7 @@ usage() {
   cat <<'USAGE'
 Usage: scripts/update.sh [options]
 
-Deploy a verified ContentPool release with backups, digest pinning, health and
+Deploy a verified Content Hub release with backups, digest pinning, health and
 version checks, and application-only rollback.
 
 Options:

@@ -1,4 +1,4 @@
-# IQB ContentPool Next - GitLab CI/CD
+# Content Hub - GitLab CI/CD
 # Repository is hosted on GitHub and executed in GitLab CI (external PR pipelines).
 
 stages:

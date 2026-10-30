@@ -1,7 +1,7 @@
 {
   "realm": "iqb",
   "enabled": true,
-  "displayName": "IQB ContentPool",
+  "displayName": "Content Hub",
   "loginTheme": "iqb-theme",
   "accountTheme": "keycloak.v2",
   "sslRequired": "external",
@@ -22,7 +22,7 @@
   "failureFactor": 30,
   "smtpServer": {
     "from": "iqb-noreply@hu-berlin.de",
-    "fromDisplayName": "IQB ContentPool",
+    "fromDisplayName": "Content Hub",
     "host": "host.docker.internal",
     "port": "25",
     "ssl": "false",
@@ -53,7 +53,7 @@
         {
           "id": "client-admin-role-id",
           "name": "admin",
-          "description": "ContentPool administrator",
+          "description": "Content Hub administrator",
           "composite": false,
           "clientRole": true,
           "containerId": "contentpool"
@@ -61,7 +61,7 @@
         {
           "id": "client-user-role-id",
           "name": "user",
-          "description": "ContentPool user",
+          "description": "Content Hub user",
           "composite": false,
           "clientRole": true,
           "containerId": "contentpool"
@@ -177,8 +177,8 @@
     {
       "id": "contentpool-client-id",
       "clientId": "contentpool",
-      "name": "ContentPool Application",
-      "description": "IQB ContentPool OIDC Client",
+      "name": "Content Hub",
+      "description": "Content Hub OIDC Client",
       "rootUrl": "",
       "adminUrl": "",
       "baseUrl": "",

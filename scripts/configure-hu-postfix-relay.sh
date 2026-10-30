@@ -5,7 +5,7 @@ SMTP_RELAY_HOST="${SMTP_RELAY_HOST:-mailhost.cms.hu-berlin.de}"
 SMTP_RELAY_PORT="${SMTP_RELAY_PORT:-587}"
 SMTP_SASL_USER="${SMTP_SASL_USER:-iqbitnor}"
 KEYCLOAK_SMTP_FROM="${KEYCLOAK_SMTP_FROM:-iqb-noreply@hu-berlin.de}"
-KEYCLOAK_SMTP_FROM_DISPLAY_NAME="${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:-IQB ContentPool}"
+KEYCLOAK_SMTP_FROM_DISPLAY_NAME="${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:-Content Hub}"
 COMPOSE_FILES="${COMPOSE_FILES:--f docker-compose.server.yml -f docker-compose.traefik.yml}"
 
 require_command() {

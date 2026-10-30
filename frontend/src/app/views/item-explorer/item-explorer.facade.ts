@@ -1291,7 +1291,7 @@ export class ItemExplorerFacade implements OnDestroy {
       this.commentThreadInitiallyOpen = initialCommentTarget.open === true;
     }
     this.breadcrumbs = [
-      { label: 'Assessment Content Pool', route: ['/'] },
+      { label: 'Content Hub', route: ['/'] },
       { label: 'ACP', route: ['/view', this.acpId] },
       { label: 'Item-Explorer' },
     ];

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Health check script for ContentPool services
+# Health check script for Content Hub services
 
 set -e
 
@@ -11,7 +11,7 @@ EXPECTED_RELEASE="${5:-}"
 EXPECTED_COMMIT="${6:-}"
 FAILURES=0
 
-echo "=== ContentPool Health Check ==="
+echo "=== Content Hub Health Check ==="
 echo "Environment: $ENV"
 echo ""
 

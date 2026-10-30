@@ -162,4 +162,4 @@ jobs:
             --verify-tag \
             --generate-notes \
             --notes "Promoted from \`${CANDIDATE}\`. Validation mode: \`${VALIDATION_MODE}\`. Evidence: ${VALIDATION_EVIDENCE}" \
-            --title "ContentPool ${STABLE}"
+            --title "Content Hub ${STABLE}"

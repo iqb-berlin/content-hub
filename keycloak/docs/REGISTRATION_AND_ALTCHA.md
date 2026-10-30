@@ -1,6 +1,6 @@
 # Keycloak Registration and ALTCHA
 
-ContentPool allows direct Keycloak self-registration. New users must verify
+Content Hub allows direct Keycloak self-registration. New users must verify
 their email address before they can sign in.
 
 The registration form is intentionally not restricted to HU/IQB email domains.
@@ -139,9 +139,9 @@ default, and the `external` bundle does not include the worker/algorithm
 registration needed to solve them in the browser.
 
 Newly registered users should receive only minimal default roles. Access to ACPs
-and administrative features must continue to be controlled by ContentPool roles
+and administrative features must continue to be controlled by Content Hub roles
 and access configuration.
 
 The default Keycloak realm role is `user`. That role is not sufficient for
-ContentPool administration or ACP management; application access still depends on
+Content Hub administration or ACP management; application access still depends on
 local `APP_ADMIN` status and explicit ACP roles.

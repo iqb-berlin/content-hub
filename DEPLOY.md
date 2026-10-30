@@ -1,6 +1,10 @@
 # Deployment Guide (VPS + Keycloak)
 
-This guide describes a **secure** deployment of ContentPool with Keycloak on a VPS.
+This guide describes a **secure** deployment of Content Hub with Keycloak on a VPS.
+
+For this branding release, follow the [Content Hub branding runbook](docs/operations/content-hub-branding.md)
+for existing Keycloak display fields and cache refresh. Technical deployment
+identifiers and saved application themes remain unchanged.
 
 ## 1. Preconditions (must be true)
 
@@ -218,9 +222,9 @@ make server-traefik-up
 make prod-traefik-build
 ```
 
-The Traefik overlay removes ContentPool's direct public nginx port. Public HTTP
+The Traefik overlay removes Content Hub's direct public nginx port. Public HTTP
 and HTTPS traffic goes through Traefik, then to the internal `content-pool-nginx`
-container. ContentPool's own nginx config still handles `/`, `/api/`,
+container. Content Hub's own nginx config still handles `/`, `/api/`,
 `/assets/GeoGebra/`, `/realms/`, and `/resources/`.
 
 ## 7. Verify health
@@ -278,7 +282,7 @@ Login with `KEYCLOAK_ADMIN_USER` / `KEYCLOAK_ADMIN_PASSWORD`.
 
 1. In Keycloak realm `iqb`, create your real admin user.
 2. Assign realm role `admin` to that user.
-3. Login to ContentPool via OIDC.
+3. Login to Content Hub via OIDC.
 4. Verify that the user becomes `isAppAdmin=true` automatically.
 
 ## 10. Updates

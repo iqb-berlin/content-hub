@@ -49,14 +49,14 @@ Use this when:
 
 - an existing Traefik stack terminates HTTPS on the same Docker host,
 - Traefik owns ports `80` and `443`,
-- ContentPool should stay internal and be routed through Docker labels.
+- Content Hub should stay internal and be routed through Docker labels.
 
 The Traefik stack can live outside this repository. It only needs to expose the
 Docker network configured through `TRAEFIK_DOCKER_NETWORK` (`ingress-net` for
-`iqb-berlin/traefik`). Do not use Traefik's `app-net` for ContentPool routing,
+`iqb-berlin/traefik`). Do not use Traefik's `app-net` for Content Hub routing,
 because Traefik's own monitoring Keycloak also lives there.
 
-The overlay uses the Compose Spec `!reset` tag to remove ContentPool's direct
+The overlay uses the Compose Spec `!reset` tag to remove Content Hub's direct
 public nginx port binding. Validate the merged configuration before deployment.
 
 ## Development Deployment
@@ -140,7 +140,7 @@ TRAEFIK_ENTRYPOINT=websecure
 TRAEFIK_TLS_CERTRESOLVER=
 ```
 
-For ContentPool OIDC, align the public URLs with those hosts:
+For Content Hub OIDC, align the public URLs with those hosts:
 
 ```bash
 CORS_ORIGIN=https://content-pool.example.com
@@ -162,8 +162,8 @@ Or build on the server:
 make prod-traefik-build
 ```
 
-The overlay removes ContentPool's public nginx port binding. Traefik routes to
-the internal `content-pool-nginx` facade and ContentPool keeps its existing
+The overlay removes Content Hub's public nginx port binding. Traefik routes to
+the internal `content-pool-nginx` facade and Content Hub keeps its existing
 internal nginx routing for SPA, API, GeoGebra assets, and Keycloak browser
 endpoints.
 
@@ -187,7 +187,7 @@ does not install or modify the Traefik stack.
 
 ## Single-Domain Traefik Runbook
 
-This runbook documents a first-time release deployment where the ContentPool app
+This runbook documents a first-time release deployment where the Content Hub app
 and Keycloak browser endpoints share one public hostname. Traefik routes the app
 and API normally, while Keycloak uses the reserved `/realms` and `/resources`
 paths on the same host.
@@ -257,7 +257,7 @@ sha256sum --check --ignore-missing SHA256SUMS
 For long-term operations, prefer a directory owned by the Docker operator, for
 example `/srv/content-pool` or `/opt/content-pool`.
 
-### 3. Run the ContentPool installer
+### 3. Run the Content Hub installer
 
 Download and run the release installer in Traefik mode. Do not pass `--start`
 until Traefik and Docker permissions are ready.
@@ -316,7 +316,7 @@ make server-traefik-config
 ### 4. Start or provide Traefik
 
 If the full `iqb-berlin/traefik` stack is already used, start it separately and
-make sure it creates the public `ingress-net` network. ContentPool must attach to
+make sure it creates the public `ingress-net` network. Content Hub must attach to
 that network, not to Traefik's internal `app-net`.
 
 For a minimal single-app edge, create the network and run Traefik directly.
@@ -358,7 +358,7 @@ capability even with the read-only mount, and use it only for a trusted Traefik
 container on a controlled host. Prefer the managed `iqb-berlin/traefik` stack
 when it is already available.
 
-### 5. Start ContentPool
+### 5. Start Content Hub
 
 Start the stack from the deployment directory:
 
@@ -444,7 +444,7 @@ The default production layout is:
 - uploads persisted in a volume.
 
 Behind Traefik, nginx is no longer exposed directly. Traefik is the public edge,
-and nginx stays as the internal facade that knows ContentPool's path routing.
+and nginx stays as the internal facade that knows Content Hub's path routing.
 
 ## Health Verification
 

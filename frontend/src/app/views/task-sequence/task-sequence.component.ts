@@ -695,7 +695,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
         this.sequence = this.normalizeSequence(sequence);
         this.selectLinkedUnit(queryParams);
         this.breadcrumbs = [
-          { label: 'Assessment Content Pool', route: ['/'] },
+          { label: 'Content Hub', route: ['/'] },
           { label: 'ACP', route: ['/view', this.acpId] },
           {
             label: this.isBooklet ? this.bookletName : this.sequence.name || 'Aufgabenfolge',

@@ -1,4 +1,4 @@
-# Grobkonzept: ContentPool Next
+# Grobkonzept: Content Hub
 
 Stand: 2026-09-08. Dieses Dokument konsolidiert die bestehende Architektur- und
 Funktionsdokumentation. Es beschreibt den aktuellen fachlichen Zuschnitt; offene
@@ -7,7 +7,7 @@ Es ist keine vollstaendige Abnahme oder Sicherheitspruefung der Implementierung.
 
 ## Ziel und Umfang
 
-ContentPool verwaltet Assessment Content Packages (ACPs), ihre Indexdaten und
+Content Hub verwaltet Assessment Content Packages (ACPs), ihre Indexdaten und
 Dateien. Verantwortliche bereiten Inhalte auf, pruefen sie, konfigurieren den
 Zugang und stellen sie zur Ansicht oder Weiterverarbeitung bereit. Betrachtende
 koennen freigeschaltete Aufgaben, Einheiten und Items untersuchen und kommentieren.

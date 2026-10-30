@@ -1,4 +1,4 @@
-# IQB ContentPool - Makefile
+# Content Hub - Makefile
 # Usage: make [target]
 
 .PHONY: help dev prod stop logs status clean db-backup db-restore keycloak-admin keycloak-smtp keycloak-registration keycloak-registration-db keycloak-altcha-provider \
@@ -11,7 +11,7 @@
 
 # Default target
 help: ## Show this help message
-	@echo "IQB ContentPool - Available Commands"
+	@echo "Content Hub - Available Commands"
 	@echo "===================================="
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 

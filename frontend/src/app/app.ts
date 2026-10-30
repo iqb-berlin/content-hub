@@ -12,12 +12,16 @@ import { BuildVersion } from './core/models/api.models';
   imports: [RouterOutlet, RouterLink],
   template: `
     <header class="app-header">
-      <div class="header-left">
-        <a routerLink="/"
-          ><img src="assets/IQB-LogoA.png" alt="IQB Kodierbox Logo" class="app-logo"
-        /></a>
-        <a routerLink="/" class="logo">Assessment Content Pool</a>
-      </div>
+      <a routerLink="/" class="header-left logo" aria-label="Content Hub – Startseite">
+        <img
+          src="branding/content-hub-v1/logo.svg"
+          alt=""
+          class="app-logo"
+          width="40"
+          height="40"
+        />
+        <span>Content Hub</span>
+      </a>
       <nav>
         @if (auth.isLoggedIn && auth.isAdmin) {
           <a routerLink="/admin/users">Nutzer</a>
@@ -81,7 +85,8 @@ import { BuildVersion } from './core/models/api.models';
       }
       .app-logo {
         height: 40px;
-        width: auto;
+        width: 40px;
+        flex-shrink: 0;
         object-fit: contain;
       }
       .logo {
@@ -166,6 +171,7 @@ import { BuildVersion } from './core/models/api.models';
         }
         .app-logo {
           height: 32px;
+          width: 32px;
         }
         .logo {
           font-size: 1rem;

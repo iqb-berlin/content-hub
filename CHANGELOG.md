@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to ContentPool are documented in this file. Releases use
+All notable changes to Content Hub are documented in this file. Releases use
 [Semantic Versioning](https://semver.org/); release candidates add an
 `-rc.N` suffix without changing the canonical version in `VERSION`.
 
@@ -8,6 +8,10 @@ All notable changes to ContentPool are documented in this file. Releases use
 
 ### Changes
 
+- Rename the visible product to Content Hub and use the approved violet network
+  logo across the application and Keycloak login theme. Replace legacy image
+  files with SVG, PNG, multi-size ICO and mobile icons. Preserve saved themes
+  and all technical identifiers.
 - Shorten booklet task links with structure-bound occurrence IDs. Preserve
   existing links and report stale short links after booklet structure changes.
 - Add direct links to individual booklet task occurrences, with reload and
@@ -21,7 +25,9 @@ All notable changes to ContentPool are documented in this file. Releases use
 
 ### Configuration
 
-- None.
+- Existing Keycloak display names and mail sender labels need a separate, scoped
+  update; see `docs/operations/content-hub-branding.md`. Existing app themes
+  and custom content remain unchanged.
 
 ### Database migrations
 
@@ -30,6 +36,9 @@ All notable changes to ContentPool are documented in this file. Releases use
 
 ### Rollback
 
+- Restore the previous application images and runtime theme files to revert
+  branding. Restore separately edited display fields from their saved values.
+  The branding change itself adds no database migration.
 - The category migration refuses rollback while configured categories or
   assignments exist, preserving review data.
 
