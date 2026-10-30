@@ -60,6 +60,11 @@ zufällig gleichnamiges Modul.
 
 ### Direktlinks zu Aufgaben (#245)
 
+Die Testheftansicht zeigt die Booklet-ID als Überschrift und im Navigationspfad.
+Testheftwechsel, Aufgabennavigation und Darstellungswerkzeuge sind getrennt
+angeordnet. Auf schmalen Bildschirmen steht der Reviewbereich unter der Aufgabe;
+auf breiten Bildschirmen bleibt seine Breite per Ziehen und Pfeiltasten einstellbar.
+
 In der Testheftansicht bietet „Direktlink zur Aufgabe“ einen Link zur aktuellen
 Aufgabe. Ein normaler Klick kopiert die vollständige Linkadresse und bestätigt
 dies mit „Link kopiert.“. Blockiert der Browser den Zugriff auf die Zwischenablage,
