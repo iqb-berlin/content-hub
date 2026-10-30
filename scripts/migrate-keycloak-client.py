@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import re
+import tempfile
 from pathlib import Path
 import urllib.error
 import urllib.parse
@@ -83,10 +84,18 @@ def migrate(args: argparse.Namespace) -> None:
     # Preserve every unrelated configuration entry, including the public domain.
     text = env_path.read_text()
     lines = [f"OIDC_CLIENT_ID={args.to_client}" if re.match(r"^\s*OIDC_CLIENT_ID\s*=", line) else line for line in text.splitlines()]
-    tmp = env_path.with_name(env_path.name + ".content-hub.tmp")
-    with open(tmp, "x", opener=lambda path, flags: os.open(path, flags, 0o600)) as file:
-        file.write("\n".join(lines) + "\n")
-    tmp.replace(env_path)
+    tmp = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=env_path.parent,
+            prefix=env_path.name + ".content-hub.", suffix=".tmp", delete=False,
+        ) as file:
+            tmp = Path(file.name)
+            file.write("\n".join(lines) + "\n")
+        tmp.replace(env_path)
+    finally:
+        if tmp is not None:
+            tmp.unlink(missing_ok=True)
     print(f"Client renamed in place and OIDC_CLIENT_ID updated. Backup: {backup}")
 
 

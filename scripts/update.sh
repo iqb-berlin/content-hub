@@ -283,7 +283,8 @@ restore_previous_application() {
   local digest_override
   ch_warn "Restoring previous runtime files and image references; database migrations are not reverted"
   if [[ -n "$LAST_BACKUP_DIR" && -f "${LAST_BACKUP_DIR}/config.tgz" ]]; then
-    run_compose stop content-hub-api content-hub-db >/dev/null 2>&1 || true
+    run_compose stop content-hub-api content-hub-db || \
+      ch_die "Stopping the current application/database failed; rollback configuration was not replaced"
     tar -xzf "${LAST_BACKUP_DIR}/config.tgz" -C .
     ch_reconcile_provider_archive "${LAST_BACKUP_DIR}/config.tgz"
     ch_set_compose_args "$MODE" "$COMPOSE_OVERRIDE"
@@ -447,6 +448,8 @@ rollback_local_baseline() {
     export DEPLOY_CHECK_BACKUP=skipped
   fi
 
+  run_compose stop content-hub-api content-hub-db || \
+    ch_die "Stopping the current application/database failed; baseline configuration was not replaced"
   tar -xzf "${baseline_dir}/runtime.tgz" -C .
   ch_reconcile_provider_archive "${baseline_dir}/runtime.tgz"
   ch_set_compose_args "$MODE" "$COMPOSE_OVERRIDE"

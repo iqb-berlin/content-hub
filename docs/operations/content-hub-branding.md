@@ -158,6 +158,9 @@ and images. Keep the same internal client UUID. If the remote client update
 succeeds but writing `.env` fails, rerun with another backup directory: an already
 renamed client is detected and its environment entry is completed without
 creating another client.
+Environment updates use a private, uniquely named temporary file next to `.env`.
+Failed writes/replacements remove that attempt's file; a leftover file from an
+older helper cannot block a retry and is not overwritten.
 
 Keep independently maintained Keycloak themes in their own directories. The
 technical built-in login theme remains `iqb-theme`. Deploy its versioned files
@@ -178,6 +181,11 @@ Use the existing release rollback/restore procedure to restore image digests and
 runtime configuration. The updater stops the current API/database before
 restarting a prior configuration, so two database services do not share a volume
 concurrently. Restore accepts both old and new application dump filenames.
+Restore, baseline rollback and automatic rollback abort before replacing runtime
+files when stopping the current application/database fails. A direct downgrade
+using an older release manifest also checks that the mounted database volume is
+the legacy volume that release expects. If it cannot establish that mapping,
+use the saved baseline or a full restore instead of selecting an empty volume.
 Revert the Keycloak client ID if changed, and restore palettes through the data
 migration's guarded rollback. Check the old release's migration compatibility
 before choosing image-only rollback. No data volume is deleted automatically.

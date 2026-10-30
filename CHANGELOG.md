@@ -8,6 +8,9 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ### Changes
 
+- Stop the active application/database before restoring older service names and
+  retain the current runtime when stopping fails. Make Keycloak client migration
+  retryable after a failed environment write or replacement.
 - Rename the visible product to Content Hub and use the approved violet network
   logo across the application and Keycloak login theme. Replace legacy image
   files with SVG, PNG, multi-size ICO and mobile icons.

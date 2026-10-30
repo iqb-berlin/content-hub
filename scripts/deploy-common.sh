@@ -428,6 +428,19 @@ ch_prepare_identifier_transition() {
     value="$(ch_env_get "$env_file" "$key")"
     [[ -z "$value" ]] || ch_env_set "$env_file" "$key" "$value"
   done
+  if grep -q '^  content-pool-db:' "$runtime/docker-compose.server.yml"; then
+    service="$(ch_compose_service_name content-hub-db)" || return 1
+    [[ "$service" == content-hub-db ]] || return 0
+    container="$(ch_compose_container_id content-hub-db)" || \
+      ch_die "Start the current database before checking a legacy release rollback"
+    project="$(docker inspect "$container" --format '{{index .Config.Labels "com.docker.compose.project"}}')" || return 1
+    volume="$(docker inspect "$container" --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}')" || return 1
+    configured="$(ch_env_get "$env_file" COMPOSE_PROJECT_NAME)"
+    [[ -n "$project" && "$configured" == "$project" && "$volume" == "${project}_content-pool-db-data" ]] || \
+      ch_die "Legacy release cannot reuse the current database safely; use the saved baseline or a full restore"
+    ch_compose stop content-hub-api content-hub-db
+    return $?
+  fi
   grep -q '^  content-hub-db:' "$runtime/docker-compose.server.yml" || return 0
   service="$(ch_compose_service_name content-hub-db)" || return 1
   if ! container="$(ch_compose_container_id content-hub-db)"; then

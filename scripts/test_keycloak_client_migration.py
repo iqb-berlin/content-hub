@@ -6,6 +6,7 @@ import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import unittest
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 spec = importlib.util.spec_from_file_location("client_migration", Path(__file__).with_name("migrate-keycloak-client.py"))
@@ -87,6 +88,49 @@ class ClientMigrationTest(unittest.TestCase):
             migration.migrate(self.args())
         self.assertEqual(self.env.read_text(), original)
         self.assertEqual(self.puts, [])
+
+    def assert_retry_recovers(self, original):
+        self.assertEqual(self.clients[0]["clientId"], "contenthub")
+        self.assertEqual(self.env.read_text(), original)
+        self.assertEqual(list(self.directory.glob(".env.content-hub*.tmp")), [])
+        migration.migrate(self.args(backup="retry-backup"))
+        self.assertEqual(self.env.read_text(), original.replace("OIDC_CLIENT_ID=contentpool", "OIDC_CLIENT_ID=contenthub"))
+        self.assertEqual(len(self.puts), 1)
+        self.assertEqual(self.env.stat().st_mode & 0o777, 0o600)
+
+    def test_retry_after_environment_replace_failure(self):
+        original = self.env.read_text()
+        with patch.object(migration.Path, "replace", side_effect=OSError("replace failed")):
+            with self.assertRaisesRegex(OSError, "replace failed"):
+                migration.migrate(self.args())
+        self.assert_retry_recovers(original)
+
+    def test_retry_ignores_a_temporary_file_from_an_older_attempt(self):
+        stale = self.directory / ".env.content-hub.tmp"
+        stale.write_text("previous attempt")
+        migration.migrate(self.args())
+        self.assertEqual(self.clients[0]["clientId"], "contenthub")
+        self.assertIn("OIDC_CLIENT_ID=contenthub", self.env.read_text())
+        self.assertEqual(stale.read_text(), "previous attempt")
+
+    def test_retry_after_partial_environment_write_failure(self):
+        original = self.env.read_text()
+        create_temporary_file = tempfile.NamedTemporaryFile
+
+        def partial_write_failure(*args, **kwargs):
+            file = create_temporary_file(*args, **kwargs)
+
+            def write(text):
+                file.file.write(text[:10])
+                raise OSError("disk full")
+
+            file.write = write
+            return file
+
+        with patch.object(migration.tempfile, "NamedTemporaryFile", side_effect=partial_write_failure):
+            with self.assertRaisesRegex(OSError, "disk full"):
+                migration.migrate(self.args())
+        self.assert_retry_recovers(original)
 
 
 if __name__ == "__main__":

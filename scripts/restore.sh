@@ -76,8 +76,9 @@ if [[ "$YES" -eq 0 ]]; then
   [[ "$answer" =~ ^([yY]|yes|YES)$ ]] || ch_die "Restore aborted"
 fi
 
-ch_info "Stopping public and application services"
-ch_compose stop nginx content-hub-api keycloak || true
+ch_info "Stopping public, application and application database services"
+ch_compose stop nginx content-hub-api content-hub-db keycloak || \
+  ch_die "Stopping the current stack failed; runtime configuration was not replaced"
 
 ch_info "Restoring runtime configuration"
 tar -xzf "${BACKUP_DIR}/config.tgz" -C .
