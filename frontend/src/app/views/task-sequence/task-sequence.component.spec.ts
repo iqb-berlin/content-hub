@@ -184,19 +184,15 @@ describe('Booklet navigation', () => {
       fixture.detectChanges();
       expect(component.currentUnit?.occurrenceId).toBe('second');
       expect(component.currentUnit?.id).toBe('u1');
-      expect(fixture.nativeElement.querySelector('.nav-info').textContent).toContain(
-        'Mathematik / Geometrie',
-      );
+      expect(fixture.nativeElement.querySelector('.nav-info').textContent).toContain('2 von 3');
       expect(component.canGoNext).toBe(true);
       const embeddedUnit = fixture.nativeElement.querySelector('.unit-review-stub') as HTMLElement;
       expect(embeddedUnit.dataset['unitId']).toBe('u1');
       expect(embeddedUnit.dataset['bookletId']).toBe('booklet-1');
       expect(embeddedUnit.dataset['reviewMode']).toBe(String(canReview === true));
       expect(component.showUnitListBtn).toBe(true);
-      expect(fixture.nativeElement.querySelector('.nav-info strong').textContent).toBe(
-        'Aufgabe 1 erneut (u1)',
-      );
-      expect(component.breadcrumbs.at(-1)?.label).toBe('Review-Booklet');
+      expect(fixture.nativeElement.querySelector('.nav-info strong').textContent).toBe('2 von 3');
+      expect(component.breadcrumbs.at(-1)?.label).toBe('booklet-1');
       expect(fixture.nativeElement.querySelector('.seq-header')).toBeNull();
       expect(fixture.nativeElement.textContent).not.toContain('Vollansicht');
       expect(fixture.nativeElement.textContent).toContain('Vollbild');
@@ -328,8 +324,14 @@ describe('Booklet navigation', () => {
     const bookletButton = fixture.nativeElement.querySelector(
       'button[aria-controls="review-booklet-list"]',
     ) as HTMLButtonElement;
-    expect(bookletButton.textContent).toContain('Erstes Testheft');
-    expect(bookletButton.textContent).toContain('1/2');
+    expect(fixture.nativeElement.querySelector('.workspace-heading h2').textContent).toBe(
+      'booklet-1',
+    );
+    expect(fixture.nativeElement.querySelector('.workspace-heading p').textContent).toContain(
+      'Erstes Testheft',
+    );
+    expect(bookletButton.textContent).toContain('Testheft wechseln');
+    expect(bookletButton.getAttribute('aria-label')).toContain('1 von 2');
     expect(bookletButton.getAttribute('aria-label')).toContain(
       'Testheft wechseln, aktuell Erstes Testheft',
     );
@@ -373,6 +375,6 @@ describe('Booklet navigation', () => {
     expect(component.currentIndex).toBe(0);
     expect(component.currentUnit?.id).toBe('u3');
     expect(component.currentBookletPosition).toBe(2);
-    expect(component.breadcrumbs.at(-1)?.label).toBe('Zweites Testheft');
+    expect(component.breadcrumbs.at(-1)?.label).toBe('booklet-2');
   });
 });
