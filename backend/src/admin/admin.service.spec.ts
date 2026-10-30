@@ -44,7 +44,7 @@ describe("AdminService", () => {
 
   beforeEach(async () => {
     tempStoragePath = await fs.mkdtemp(
-      path.join(os.tmpdir(), "content-pool-geogebra-"),
+      path.join(os.tmpdir(), "content-hub-geogebra-"),
     );
     process.env.FILE_STORAGE_PATH = tempStoragePath;
 
@@ -206,7 +206,7 @@ describe("AdminService", () => {
           id: "token-1",
           name: "Studio",
           tokenHash: "hidden",
-          tokenPrefix: "cp_abc...",
+          tokenPrefix: "ch_abc...",
           scopes: ["acp.read"],
           active: true,
           expiresAt: null,
@@ -237,7 +237,7 @@ describe("AdminService", () => {
         expect.objectContaining({
           id: "token-1",
           name: "Studio",
-          tokenPrefix: "cp_abc...",
+          tokenPrefix: "ch_abc...",
           scopes: ["acp.read"],
           allowedAcpIds: null,
         }),
@@ -261,7 +261,7 @@ describe("AdminService", () => {
       "user-1",
     );
 
-    expect(result.token).toMatch(/^cp_/);
+    expect(result.token).toMatch(/^ch_/);
     expect(result.name).toBe("Studio");
     expect(result.scopes).toEqual(["acp.read", "files.read"]);
     expect(result).not.toHaveProperty("tokenHash");
@@ -269,7 +269,7 @@ describe("AdminService", () => {
       expect.objectContaining({
         name: "Studio",
         tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
-        tokenPrefix: expect.stringMatching(/^cp_/),
+        tokenPrefix: expect.stringMatching(/^ch_/),
         scopes: ["acp.read", "files.read"],
         allowedAcpIds: null,
         active: true,
@@ -289,7 +289,7 @@ describe("AdminService", () => {
           resourceType: "application-token",
           tokenId: "token-1",
           name: "Studio",
-          tokenPrefix: expect.stringMatching(/^cp_/),
+          tokenPrefix: expect.stringMatching(/^ch_/),
           scopes: ["acp.read", "files.read"],
           allowedAcpIds: null,
           expiresAt: "2099-01-01T00:00:00.000Z",
@@ -431,7 +431,7 @@ describe("AdminService", () => {
     applicationTokenRepository.findOne.mockResolvedValue({
       id: "token-1",
       name: "Studio",
-      tokenPrefix: "cp_abc...",
+      tokenPrefix: "ch_abc...",
       scopes: ["acp.read"],
       active: true,
       expiresAt: null,
@@ -474,7 +474,7 @@ describe("AdminService", () => {
           resourceType: "application-token",
           tokenId: "token-1",
           name: "Studio",
-          tokenPrefix: "cp_abc...",
+          tokenPrefix: "ch_abc...",
         }),
       }),
     );
@@ -485,7 +485,7 @@ describe("AdminService", () => {
     const tokenBase = {
       id: "token-1",
       name: "Studio",
-      tokenPrefix: "cp_abc...",
+      tokenPrefix: "ch_abc...",
       scopes: ["acp.read"],
       active: true,
       expiresAt: null,
@@ -537,7 +537,7 @@ describe("AdminService", () => {
     applicationTokenRepository.findOne.mockResolvedValue({
       id: "token-1",
       name: "Studio",
-      tokenPrefix: "cp_abc...",
+      tokenPrefix: "ch_abc...",
       scopes: ["acp.read"],
       active: true,
       expiresAt: null,

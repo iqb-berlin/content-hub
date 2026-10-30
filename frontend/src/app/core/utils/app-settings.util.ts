@@ -1,6 +1,6 @@
 export const DEFAULT_THEME: Record<string, string> = {
-  '--color-primary': '#1a5276',
-  '--color-primary-light': '#2980b9',
+  '--color-primary': '#5B21B6',
+  '--color-primary-light': '#6D28D9',
   '--color-accent': '#e67e22',
   '--color-success': '#27ae60',
   '--color-danger': '#e74c3c',
@@ -126,6 +126,9 @@ export function applyTheme(theme: Record<string, unknown> | null | undefined): v
   for (const [key, value] of Object.entries(normalized)) {
     root.style.setProperty(key, value);
   }
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute('content', normalized['--color-primary']);
 }
 
 export function applyLanguage(language: string | null | undefined): void {

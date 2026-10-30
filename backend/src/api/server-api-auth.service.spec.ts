@@ -9,13 +9,13 @@ describe("ServerApiAuthService", () => {
     update: jest.fn().mockResolvedValue({ affected: 1 }),
   });
 
-  it("validates active database-backed application tokens and updates lastUsedAt", async () => {
+  it("retains legacy cp_ integration tokens and updates lastUsedAt", async () => {
     const config = {
       get: jest.fn().mockImplementation((_key: string, fallback?: string) => {
         return fallback;
       }),
     } as unknown as ConfigService;
-    const tokenHash = hashServerApiToken("db-token");
+    const tokenHash = hashServerApiToken("cp_legacy-integration-token");
     const applicationTokenRepository = createApplicationTokenRepository();
     applicationTokenRepository.findOne.mockResolvedValue({
       id: "token-1",
@@ -32,7 +32,7 @@ describe("ServerApiAuthService", () => {
       config,
       applicationTokenRepository as any,
     );
-    const client = await service.validateToken("db-token");
+    const client = await service.validateToken("cp_legacy-integration-token");
 
     expect(client).toEqual({
       id: "studio-db",

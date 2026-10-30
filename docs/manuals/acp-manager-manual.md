@@ -30,7 +30,7 @@ Benutzerverwaltung.
 
 ### 1. Anmelden
 
-Die Anmeldung fuer ContentPool-Nutzerinnen und -Nutzer erfolgt ueber Keycloak / OIDC.
+Die Anmeldung fuer Content Hub-Nutzerinnen und -Nutzer erfolgt ueber Keycloak / OIDC.
 Separate ACP-Zugangsdaten werden nur fuer entsprechend geschuetzte Nur-Lese-Zugaenge
 verwendet.
 

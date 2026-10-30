@@ -9,7 +9,7 @@ import { AuthService } from '../core/services/auth.service';
     <div class="login-wrapper">
       <div class="card login-card">
         <h1>Anmelden</h1>
-        <p class="subtitle">Assessment Content Pool</p>
+        <p class="subtitle">Content Hub</p>
 
         @if (error) {
           <div class="alert alert-error">{{ error }}</div>

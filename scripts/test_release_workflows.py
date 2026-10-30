@@ -44,7 +44,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
         self.assertIn("environment: production", self.core)
 
     def test_production_exception_requires_a_completed_issue_record(self) -> None:
-        marker = "<!-- content-pool-production-release-exception -->"
+        marker = "<!-- content-hub-production-release-exception -->"
         self.assertIn("scripts/production_exception.py validate", self.core)
         self.assertIn(marker, self.exception_template)
         preconditions = self.exception_template.split(

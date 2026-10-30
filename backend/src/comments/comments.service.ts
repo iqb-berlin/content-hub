@@ -995,7 +995,7 @@ export class CommentsService {
   private async buildXlsxBuffer(data: any[]): Promise<Buffer> {
     const ExcelJS = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = "IQB ContentPool";
+    workbook.creator = "Content Hub";
     workbook.created = new Date();
     const sheet = workbook.addWorksheet("Kommentare");
     sheet.columns = [
@@ -1213,7 +1213,7 @@ export class CommentsService {
   ): Promise<Buffer> {
     const ExcelJS = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = "IQB ContentPool";
+    workbook.creator = "Content Hub";
     workbook.created = new Date();
     const sheet = workbook.addWorksheet("Kommentare", {
       views: [{ state: "frozen", ySplit: 1 }],

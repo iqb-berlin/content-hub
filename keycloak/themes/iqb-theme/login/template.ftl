@@ -6,8 +6,11 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>${msg("loginTitle",realm.displayName!realm.name!"")}</title>
-    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
+    <title>${msg("loginTitle",properties.productName!'Content Hub')}</title>
+    <meta name="theme-color" content="#5B21B6" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="${url.resourcesPath}/img/content-hub-v1/favicon.svg" />
+    <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48 256x256" href="${url.resourcesPath}/img/content-hub-v1/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="${url.resourcesPath}/img/content-hub-v1/favicon-32x32.png" />
     <#if properties.styles?has_content>
         <#list properties.styles?split(" ") as style>
             <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
@@ -19,8 +22,8 @@
 <div class="login-pf-page">
     <div id="kc-header" class="login-pf-page-header">
         <div id="kc-header-wrapper" class="">
-            <img src="${url.resourcesPath}/img/logo.png" alt="IQB ContentPool" class="kc-logo-img"/>
-            <span class="kc-logo-text">IQB ContentPool</span>
+            <img src="${url.resourcesPath}/${properties.logo}" alt="" width="56" height="56" class="kc-logo-img"/>
+            <span class="kc-logo-text">${properties.productName!'Content Hub'}</span>
         </div>
     </div>
     <div class="card-pf">

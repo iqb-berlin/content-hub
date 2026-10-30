@@ -430,7 +430,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private authSessionSubscription: Subscription | null = null;
   private readonly authStorageListener = (event: StorageEvent) => {
-    if (!event.key || event.key === 'cp_token') {
+    if (!event.key || event.key === 'ch_token') {
       this.syncItemCommentCountSession();
       this.syncPersonalItemDataSession();
       this.syncItemCollectionSession();
@@ -1291,7 +1291,7 @@ export class ItemExplorerFacade implements OnDestroy {
       this.commentThreadInitiallyOpen = initialCommentTarget.open === true;
     }
     this.breadcrumbs = [
-      { label: 'Assessment Content Pool', route: ['/'] },
+      { label: 'Content Hub', route: ['/'] },
       { label: 'ACP', route: ['/view', this.acpId] },
       { label: 'Item-Explorer' },
     ];

@@ -1,6 +1,6 @@
 import * as crypto from "crypto";
 
-const TOKEN_PREFIX = "cp";
+const TOKEN_PREFIX = "ch";
 const TOKEN_SECRET_BYTES = 32;
 const DISPLAY_PREFIX_LENGTH = 14;
 

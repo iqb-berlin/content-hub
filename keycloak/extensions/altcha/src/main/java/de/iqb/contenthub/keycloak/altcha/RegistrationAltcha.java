@@ -1,4 +1,4 @@
-package de.iqb.contentpool.keycloak.altcha;
+package de.iqb.contenthub.keycloak.altcha;
 
 import org.altcha.altcha.v2.Altcha;
 import org.jboss.logging.Logger;

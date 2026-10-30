@@ -9,8 +9,8 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("release_manifest.py")
 COMMIT = "a" * 40
-BACKEND = "ghcr.io/iqb-berlin/content-pool-backend@sha256:" + "b" * 64
-FRONTEND = "ghcr.io/iqb-berlin/content-pool-frontend@sha256:" + "c" * 64
+BACKEND = "ghcr.io/iqb-berlin/content-hub-backend@sha256:" + "b" * 64
+FRONTEND = "ghcr.io/iqb-berlin/content-hub-frontend@sha256:" + "c" * 64
 
 
 class ReleaseManifestTest(unittest.TestCase):

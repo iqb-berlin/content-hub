@@ -412,7 +412,7 @@ export class ApiService {
     fileId: string,
     options?: { disposition?: 'attachment' | 'inline' },
   ): string {
-    const token = localStorage.getItem('cp_token');
+    const token = localStorage.getItem('ch_token');
     const query: string[] = [];
     if (token) {
       query.push(`auth_token=${encodeURIComponent(token)}`);
@@ -452,12 +452,12 @@ export class ApiService {
   }
 
   getIndexExportUrl(id: string): string {
-    const token = localStorage.getItem('cp_token');
+    const token = localStorage.getItem('ch_token');
     return `${this.API}/acp/${id}/index/export${token ? '?auth_token=' + encodeURIComponent(token) : ''}`;
   }
 
   appendAuthToken(url: string): string {
-    const token = localStorage.getItem('cp_token');
+    const token = localStorage.getItem('ch_token');
     if (!token) return url;
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}auth_token=${encodeURIComponent(token)}`;
@@ -701,7 +701,7 @@ export class ApiService {
     return this.http.get(`${this.API}/view/acp/${acpId}/index`);
   }
   getViewIndexExportUrl(acpId: string): string {
-    const token = localStorage.getItem('cp_token');
+    const token = localStorage.getItem('ch_token');
     return `${this.API}/view/acp/${acpId}/index/export${token ? '?auth_token=' + encodeURIComponent(token) : ''}`;
   }
 

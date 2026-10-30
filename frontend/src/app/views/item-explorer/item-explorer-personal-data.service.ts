@@ -602,7 +602,7 @@ export class ItemExplorerPersonalDataService implements OnDestroy {
   }
 
   private personalPendingStorageKey(): string {
-    return `cp_item_explorer_pending_personal:${this.acpId}`;
+    return `ch_item_explorer_pending_personal:${this.acpId}`;
   }
 
   private resolvePersonalItemDataSessionIdentity(): string | null {

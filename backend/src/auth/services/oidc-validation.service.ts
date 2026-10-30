@@ -137,7 +137,7 @@ export class OidcValidationService {
         }
       } else {
         // Keycloak admin role can elevate rights, but must not remove
-        // app-admin rights that were granted inside ContentPool.
+        // app-admin rights that were granted inside Content Hub.
         const shouldBeAppAdmin = user.isAppAdmin || isKeycloakAdmin;
         if (user.isAppAdmin !== shouldBeAppAdmin) {
           user.isAppAdmin = shouldBeAppAdmin;

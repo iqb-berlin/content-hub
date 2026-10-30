@@ -1,7 +1,7 @@
 # GitLab Supplemental Validation
 
 The repository is hosted on GitHub. GitHub Actions is the only release
-authority and the only system allowed to publish ContentPool images to GHCR.
+authority and the only system allowed to publish Content Hub images to GHCR.
 
 The optional GitLab external-pull-request pipeline runs supplemental builds,
 tests, linting, dependency audits, and GitLab dependency scanning. It contains

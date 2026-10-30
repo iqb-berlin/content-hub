@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ContentPool data model mixes relational structure with JSONB payloads. That balance
+The Content Hub data model mixes relational structure with JSONB payloads. That balance
 fits the domain well because ACPs contain a combination of:
 
 - strongly structured access and identity data,

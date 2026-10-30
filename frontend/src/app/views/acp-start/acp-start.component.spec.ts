@@ -58,7 +58,7 @@ describe('AcpStartComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/manage', 'acp-1'], { replaceUrl: true });
     expect(component.canManageAcp).toBe(true);
     expect(component.breadcrumbs).toEqual([
-      { label: 'Assessment Content Pool', route: ['/'] },
+      { label: 'Content Hub', route: ['/'] },
       { label: 'Verwaltung', route: ['/manage', 'acp-1'] },
       { label: 'ACP 1' },
     ]);
@@ -75,7 +75,7 @@ describe('AcpStartComponent', () => {
     expect(router.navigate).not.toHaveBeenCalled();
     expect(component.canManageAcp).toBe(false);
     expect(component.breadcrumbs).toEqual([
-      { label: 'Assessment Content Pool', route: ['/'] },
+      { label: 'Content Hub', route: ['/'] },
       { label: 'ACP 1' },
     ]);
   });

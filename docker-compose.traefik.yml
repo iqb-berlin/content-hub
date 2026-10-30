@@ -6,7 +6,7 @@
 #
 # Requires an already running Traefik instance on the same Docker host. For
 # https://github.com/iqb-berlin/traefik, use its public ingress network
-# "ingress-net". Do not attach ContentPool to Traefik's "app-net", because that
+# "ingress-net". Do not attach Content Hub to Traefik's "app-net", because that
 # network also contains Traefik's own Keycloak service.
 services:
   nginx:
@@ -19,37 +19,37 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=${TRAEFIK_DOCKER_NETWORK:-ingress-net}"
 
-      # Edge security headers. ContentPool's nginx also sets app-level headers,
+      # Edge security headers. Content Hub's nginx also sets app-level headers,
       # but HSTS belongs at the HTTPS edge.
-      - "traefik.http.middlewares.content-pool-security.headers.stsSeconds=63072000"
-      - "traefik.http.middlewares.content-pool-security.headers.stsIncludeSubdomains=true"
-      - "traefik.http.middlewares.content-pool-security.headers.stsPreload=true"
-      - "traefik.http.middlewares.content-pool-security.headers.forceSTSHeader=true"
-      - "traefik.http.middlewares.content-pool-security.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.content-pool-security.headers.browserXssFilter=true"
-      - "traefik.http.middlewares.content-pool-security.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.content-hub-security.headers.stsSeconds=63072000"
+      - "traefik.http.middlewares.content-hub-security.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.content-hub-security.headers.stsPreload=true"
+      - "traefik.http.middlewares.content-hub-security.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.content-hub-security.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.content-hub-security.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.content-hub-security.headers.referrerPolicy=strict-origin-when-cross-origin"
 
       # Main application host. This routes the SPA, /api/, /assets/GeoGebra/,
-      # and /auth/callback to ContentPool's internal nginx facade.
-      - "traefik.http.routers.content-pool.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
-      - "traefik.http.routers.content-pool.rule=Host(`${CONTENT_POOL_HOST:?CONTENT_POOL_HOST must be set}`) && !PathPrefix(`/realms`) && !PathPrefix(`/resources`)"
-      - "traefik.http.routers.content-pool.middlewares=content-pool-security"
-      - "traefik.http.routers.content-pool.priority=100"
-      - "traefik.http.routers.content-pool.tls=true"
-      - "traefik.http.routers.content-pool.tls.certresolver=${TRAEFIK_TLS_CERTRESOLVER:-}"
-      - "traefik.http.routers.content-pool.service=content-pool"
+      # and /auth/callback to Content Hub's internal nginx facade.
+      - "traefik.http.routers.content-hub.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.content-hub.rule=Host(`${CONTENT_HUB_HOST:?CONTENT_HUB_HOST must be set}`) && !PathPrefix(`/realms`) && !PathPrefix(`/resources`)"
+      - "traefik.http.routers.content-hub.middlewares=content-hub-security"
+      - "traefik.http.routers.content-hub.priority=100"
+      - "traefik.http.routers.content-hub.tls=true"
+      - "traefik.http.routers.content-hub.tls.certresolver=${TRAEFIK_TLS_CERTRESOLVER:-}"
+      - "traefik.http.routers.content-hub.service=content-hub"
 
       # Public Keycloak/OIDC browser endpoints. Keep /auth/* on the app host:
-      # ContentPool uses /auth/callback as a frontend route.
-      - "traefik.http.routers.content-pool-auth.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
-      - "traefik.http.routers.content-pool-auth.rule=Host(`${CONTENT_POOL_AUTH_HOST:?CONTENT_POOL_AUTH_HOST must be set}`) && (PathPrefix(`/realms`) || PathPrefix(`/resources`))"
-      - "traefik.http.routers.content-pool-auth.middlewares=content-pool-security"
-      - "traefik.http.routers.content-pool-auth.priority=100"
-      - "traefik.http.routers.content-pool-auth.tls=true"
-      - "traefik.http.routers.content-pool-auth.tls.certresolver=${TRAEFIK_TLS_CERTRESOLVER:-}"
-      - "traefik.http.routers.content-pool-auth.service=content-pool"
+      # Content Hub uses /auth/callback as a frontend route.
+      - "traefik.http.routers.content-hub-auth.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.content-hub-auth.rule=Host(`${CONTENT_HUB_AUTH_HOST:?CONTENT_HUB_AUTH_HOST must be set}`) && (PathPrefix(`/realms`) || PathPrefix(`/resources`))"
+      - "traefik.http.routers.content-hub-auth.middlewares=content-hub-security"
+      - "traefik.http.routers.content-hub-auth.priority=100"
+      - "traefik.http.routers.content-hub-auth.tls=true"
+      - "traefik.http.routers.content-hub-auth.tls.certresolver=${TRAEFIK_TLS_CERTRESOLVER:-}"
+      - "traefik.http.routers.content-hub-auth.service=content-hub"
 
-      - "traefik.http.services.content-pool.loadbalancer.server.port=80"
+      - "traefik.http.services.content-hub.loadbalancer.server.port=80"
 
 networks:
   traefik-ingress-net:

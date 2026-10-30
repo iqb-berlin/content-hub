@@ -140,13 +140,13 @@ and a non-default health URL:
 When `--manifest` points to a local file or private URL, the runtime archive and
 `SHA256SUMS` must be available beside it. The installer verifies the manifest
 and archive against that checksum file before extracting anything. Private
-GitHub downloads can use a read-only token through `CONTENT_POOL_GITHUB_TOKEN`
+GitHub downloads can use a read-only token through `CONTENT_HUB_GITHUB_TOKEN`
 (or `GH_TOKEN`); the token is never written to a deployment record.
 
 ## Environment isolation
 
 Staging and production use separate Compose project names, databases, volumes,
 domains, `.env` files, and secrets. Staging must not contain production personal
-data. New installations set `COMPOSE_PROJECT_NAME` to `content-pool-staging` or
-`content-pool-production`; legacy adoption preserves the running stack's
+data. New installations set `COMPOSE_PROJECT_NAME` to `content-hub-staging` or
+`content-hub-production`; legacy adoption preserves the running stack's
 existing Compose project label. Release bundles contain no secrets.

@@ -49,14 +49,14 @@ Use this when:
 
 - an existing Traefik stack terminates HTTPS on the same Docker host,
 - Traefik owns ports `80` and `443`,
-- ContentPool should stay internal and be routed through Docker labels.
+- Content Hub should stay internal and be routed through Docker labels.
 
 The Traefik stack can live outside this repository. It only needs to expose the
 Docker network configured through `TRAEFIK_DOCKER_NETWORK` (`ingress-net` for
-`iqb-berlin/traefik`). Do not use Traefik's `app-net` for ContentPool routing,
+`iqb-berlin/traefik`). Do not use Traefik's `app-net` for Content Hub routing,
 because Traefik's own monitoring Keycloak also lives there.
 
-The overlay uses the Compose Spec `!reset` tag to remove ContentPool's direct
+The overlay uses the Compose Spec `!reset` tag to remove Content Hub's direct
 public nginx port binding. Validate the merged configuration before deployment.
 
 ## Development Deployment
@@ -133,20 +133,20 @@ Compose config, and patches the imported Keycloak realm client URLs when
 4. Fill in the normal production values and these Traefik values:
 
 ```bash
-CONTENT_POOL_HOST=content-pool.example.com
-CONTENT_POOL_AUTH_HOST=auth-content-pool.example.com
+CONTENT_HUB_HOST=content-hub.example.com
+CONTENT_HUB_AUTH_HOST=auth-content-hub.example.com
 TRAEFIK_DOCKER_NETWORK=ingress-net
 TRAEFIK_ENTRYPOINT=websecure
 TRAEFIK_TLS_CERTRESOLVER=
 ```
 
-For ContentPool OIDC, align the public URLs with those hosts:
+For Content Hub OIDC, align the public URLs with those hosts:
 
 ```bash
-CORS_ORIGIN=https://content-pool.example.com
-KEYCLOAK_HOSTNAME=auth-content-pool.example.com
-OIDC_PUBLIC_ISSUER_URL=https://auth-content-pool.example.com/realms/iqb
-OIDC_REDIRECT_URI=https://content-pool.example.com/auth/callback
+CORS_ORIGIN=https://content-hub.example.com
+KEYCLOAK_HOSTNAME=auth-content-hub.example.com
+OIDC_PUBLIC_ISSUER_URL=https://auth-content-hub.example.com/realms/iqb
+OIDC_REDIRECT_URI=https://content-hub.example.com/auth/callback
 OIDC_ISSUER_URL=http://keycloak:8080/realms/iqb
 ```
 
@@ -162,8 +162,8 @@ Or build on the server:
 make prod-traefik-build
 ```
 
-The overlay removes ContentPool's public nginx port binding. Traefik routes to
-the internal `content-pool-nginx` facade and ContentPool keeps its existing
+The overlay removes Content Hub's public nginx port binding. Traefik routes to
+the internal `content-hub-nginx` facade and Content Hub keeps its existing
 internal nginx routing for SPA, API, GeoGebra assets, and Keycloak browser
 endpoints.
 
@@ -177,7 +177,7 @@ For a release-style deployment directory without cloning the whole repository:
 
 ```bash
 ./scripts/install.sh --mode traefik --environment production \
-  --release vX.Y.Z --dir /opt/content-pool
+  --release vX.Y.Z --dir /opt/content-hub
 ```
 
 This installs only the runtime artifacts needed for the server deployment:
@@ -187,7 +187,7 @@ does not install or modify the Traefik stack.
 
 ## Single-Domain Traefik Runbook
 
-This runbook documents a first-time release deployment where the ContentPool app
+This runbook documents a first-time release deployment where the Content Hub app
 and Keycloak browser endpoints share one public hostname. Traefik routes the app
 and API normally, while Keycloak uses the reserved `/realms` and `/resources`
 paths on the same host.
@@ -201,14 +201,14 @@ Set the deployment values once before running the commands:
 ```bash
 export SSH_PORT="22"
 export SSH_USER="deploy"
-export APP_HOST="content-pool.example.org"
-export CONTENT_POOL_VERSION="vX.Y.Z"
-export CONTENT_POOL_DIR="/opt/content-pool"
-export TRAEFIK_ACME_DIR="/opt/traefik-contentpool/letsencrypt"
+export APP_HOST="content-hub.example.org"
+export CONTENT_HUB_VERSION="vX.Y.Z"
+export CONTENT_HUB_DIR="/opt/content-hub"
+export TRAEFIK_ACME_DIR="/opt/traefik-contenthub/letsencrypt"
 export ACME_EMAIL="ops@example.org"
 ```
 
-For example, `CONTENT_POOL_VERSION` could be `v0.1.3`,
+For example, `CONTENT_HUB_VERSION` could be `v0.1.3`,
 while the other values should match the target host and operating model.
 
 Use a separate auth subdomain instead if you do not want Keycloak paths on the
@@ -244,41 +244,41 @@ git ls-remote --tags --sort='v:refname' origin | tail -20
 For a deployment directory owned by the Docker operator, use:
 
 ```bash
-mkdir -p "${CONTENT_POOL_DIR}"
+mkdir -p "${CONTENT_HUB_DIR}"
 ```
 
 Before installing, download the release assets and verify their checksums:
 
 ```bash
-gh release download "${CONTENT_POOL_VERSION}" --pattern 'release-manifest.json' --pattern 'SHA256SUMS'
+gh release download "${CONTENT_HUB_VERSION}" --pattern 'release-manifest.json' --pattern 'SHA256SUMS'
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 
 For long-term operations, prefer a directory owned by the Docker operator, for
-example `/srv/content-pool` or `/opt/content-pool`.
+example `/srv/content-hub` or `/opt/content-hub`.
 
-### 3. Run the ContentPool installer
+### 3. Run the Content Hub installer
 
 Download and run the release installer in Traefik mode. Do not pass `--start`
 until Traefik and Docker permissions are ready.
 
 ```bash
-mkdir -p "${CONTENT_POOL_DIR}-bootstrap"
+mkdir -p "${CONTENT_HUB_DIR}-bootstrap"
 curl -fsSL \
-  "https://raw.githubusercontent.com/iqb-berlin/content-pool-next/${CONTENT_POOL_VERSION}/scripts/install.sh" \
-  -o "${CONTENT_POOL_DIR}-bootstrap/install.sh"
-chmod +x "${CONTENT_POOL_DIR}-bootstrap/install.sh"
+  "https://raw.githubusercontent.com/iqb-berlin/content-hub/${CONTENT_HUB_VERSION}/scripts/install.sh" \
+  -o "${CONTENT_HUB_DIR}-bootstrap/install.sh"
+chmod +x "${CONTENT_HUB_DIR}-bootstrap/install.sh"
 
-CONTENT_POOL_HOST="${APP_HOST}" \
-CONTENT_POOL_AUTH_HOST="${APP_HOST}" \
+CONTENT_HUB_HOST="${APP_HOST}" \
+CONTENT_HUB_AUTH_HOST="${APP_HOST}" \
 TRAEFIK_DOCKER_NETWORK=ingress-net \
 TRAEFIK_ENTRYPOINT=websecure \
 TRAEFIK_TLS_CERTRESOLVER=acme \
-"${CONTENT_POOL_DIR}-bootstrap/install.sh" \
+"${CONTENT_HUB_DIR}-bootstrap/install.sh" \
   --mode traefik \
   --environment production \
-  --release "${CONTENT_POOL_VERSION}" \
-  --dir "${CONTENT_POOL_DIR}" \
+  --release "${CONTENT_HUB_VERSION}" \
+  --dir "${CONTENT_HUB_DIR}" \
   --non-interactive
 ```
 
@@ -287,17 +287,17 @@ For the single-hostname setup, the generated `.env` should contain:
 ```bash
 RELEASE_VERSION=vX.Y.Z
 APPLICATION_VERSION=X.Y.Z
-CONTENT_POOL_BACKEND_IMAGE=ghcr.io/iqb-berlin/content-pool-backend@sha256:...
-CONTENT_POOL_FRONTEND_IMAGE=ghcr.io/iqb-berlin/content-pool-frontend@sha256:...
-CONTENT_POOL_HOST=content-pool.example.org
-CONTENT_POOL_AUTH_HOST=content-pool.example.org
+CONTENT_HUB_BACKEND_IMAGE=ghcr.io/iqb-berlin/content-hub-backend@sha256:...
+CONTENT_HUB_FRONTEND_IMAGE=ghcr.io/iqb-berlin/content-hub-frontend@sha256:...
+CONTENT_HUB_HOST=content-hub.example.org
+CONTENT_HUB_AUTH_HOST=content-hub.example.org
 TRAEFIK_DOCKER_NETWORK=ingress-net
 TRAEFIK_ENTRYPOINT=websecure
 TRAEFIK_TLS_CERTRESOLVER=acme
-CORS_ORIGIN=https://content-pool.example.org
-KEYCLOAK_HOSTNAME=content-pool.example.org
-OIDC_PUBLIC_ISSUER_URL=https://content-pool.example.org/realms/iqb
-OIDC_REDIRECT_URI=https://content-pool.example.org/auth/callback
+CORS_ORIGIN=https://content-hub.example.org
+KEYCLOAK_HOSTNAME=content-hub.example.org
+OIDC_PUBLIC_ISSUER_URL=https://content-hub.example.org/realms/iqb
+OIDC_REDIRECT_URI=https://content-hub.example.org/auth/callback
 OIDC_ISSUER_URL=http://keycloak:8080/realms/iqb
 DB_SYNCHRONIZE=false
 DB_RUN_MIGRATIONS=true
@@ -309,14 +309,14 @@ not exist yet. Do not paste those secrets into tickets, logs, or documentation.
 Validate the merged Compose configuration:
 
 ```bash
-cd "${CONTENT_POOL_DIR}"
+cd "${CONTENT_HUB_DIR}"
 make server-traefik-config
 ```
 
 ### 4. Start or provide Traefik
 
 If the full `iqb-berlin/traefik` stack is already used, start it separately and
-make sure it creates the public `ingress-net` network. ContentPool must attach to
+make sure it creates the public `ingress-net` network. Content Hub must attach to
 that network, not to Traefik's internal `app-net`.
 
 For a minimal single-app edge, create the network and run Traefik directly.
@@ -329,8 +329,8 @@ mkdir -p "${TRAEFIK_ACME_DIR}"
 touch "${TRAEFIK_ACME_DIR}/acme.json"
 chmod 600 "${TRAEFIK_ACME_DIR}/acme.json"
 
-docker rm -f content-pool-traefik 2>/dev/null || true
-docker run -d --name content-pool-traefik --restart unless-stopped \
+docker rm -f content-hub-traefik 2>/dev/null || true
+docker run -d --name content-hub-traefik --restart unless-stopped \
   --network ingress-net \
   -p 80:80 -p 443:443 \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
@@ -358,12 +358,12 @@ capability even with the read-only mount, and use it only for a trusted Traefik
 container on a controlled host. Prefer the managed `iqb-berlin/traefik` stack
 when it is already available.
 
-### 5. Start ContentPool
+### 5. Start Content Hub
 
 Start the stack from the deployment directory:
 
 ```bash
-cd "${CONTENT_POOL_DIR}"
+cd "${CONTENT_HUB_DIR}"
 docker compose -f docker-compose.server.yml -f docker-compose.traefik.yml pull
 docker compose -f docker-compose.server.yml -f docker-compose.traefik.yml up -d
 docker compose -f docker-compose.server.yml -f docker-compose.traefik.yml ps
@@ -374,16 +374,16 @@ Docker directly.
 
 All five application containers should become healthy:
 
-- `content-pool-api`,
-- `content-pool-db`,
-- `content-pool-nginx`,
+- `content-hub-api`,
+- `content-hub-db`,
+- `content-hub-nginx`,
 - `keycloak`,
 - `keycloak-db`.
 
 If the deployment directory is below a private home directory, make sure the
 user running Docker can read the Compose files, `.env`, nginx config, and
 Keycloak files. A better long-term fix is to move the deployment directory to
-the operational user's home or `/opt/content-pool`.
+the operational user's home or `/opt/content-hub`.
 
 ### 6. Verify from outside
 
@@ -404,14 +404,14 @@ openssl s_client -connect "${APP_HOST}:443" -servername "${APP_HOST}" </dev/null
 The OIDC discovery document must report this issuer for the single-domain setup:
 
 ```json
-{"issuer":"https://content-pool.example.org/realms/iqb"}
+{"issuer":"https://content-hub.example.org/realms/iqb"}
 ```
 
 Inspect logs when any check fails:
 
 ```bash
-docker compose -f docker-compose.server.yml -f docker-compose.traefik.yml logs --since 15m content-pool-api keycloak nginx
-docker logs --since 15m content-pool-traefik
+docker compose -f docker-compose.server.yml -f docker-compose.traefik.yml logs --since 15m content-hub-api keycloak nginx
+docker logs --since 15m content-hub-traefik
 ```
 
 ## Required Production Concerns
@@ -444,7 +444,7 @@ The default production layout is:
 - uploads persisted in a volume.
 
 Behind Traefik, nginx is no longer exposed directly. Traefik is the public edge,
-and nginx stays as the internal facade that knows ContentPool's path routing.
+and nginx stays as the internal facade that knows Content Hub's path routing.
 
 ## Health Verification
 
@@ -467,8 +467,8 @@ make prod-traefik-config
 Then verify via the public hosts:
 
 ```bash
-curl -fsS https://content-pool.example.com/api/health/live
-curl -fsS https://auth-content-pool.example.com/realms/iqb/.well-known/openid-configuration
+curl -fsS https://content-hub.example.com/api/health/live
+curl -fsS https://auth-content-hub.example.com/realms/iqb/.well-known/openid-configuration
 ```
 
 Or use the helper script:
@@ -491,7 +491,7 @@ Recommended values:
 Reviewed forward migration when needed:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec content-pool-api npm run migration:run:dist
+docker compose -f docker-compose.prod.yml exec content-hub-api npm run migration:run:dist
 ```
 
 Application rollback never invokes `migration:revert`. Use the complete

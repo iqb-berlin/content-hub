@@ -93,7 +93,7 @@ health-server: ## Run server health checks against localhost/public auth URL
 	@./scripts/check-health.sh server "$$(grep -E '^OIDC_PUBLIC_ISSUER_URL=' .env | cut -d= -f2-)" http://localhost/api http://localhost
 
 health-traefik: ## Run health checks against public Traefik hosts
-	@./scripts/check-health.sh server-traefik "$$(grep -E '^OIDC_PUBLIC_ISSUER_URL=' .env | cut -d= -f2-)" "https://$$(grep -E '^CONTENT_POOL_HOST=' .env | cut -d= -f2-)/api" "https://$$(grep -E '^CONTENT_POOL_HOST=' .env | cut -d= -f2-)"
+	@./scripts/check-health.sh server-traefik "$$(grep -E '^OIDC_PUBLIC_ISSUER_URL=' .env | cut -d= -f2-)" "https://$$(grep -E '^CONTENT_HUB_HOST=' .env | cut -d= -f2-)/api" "https://$$(grep -E '^CONTENT_HUB_HOST=' .env | cut -d= -f2-)"
 
 keycloak-smtp: ## Apply Keycloak SMTP settings from .env to the running realm
 	@./scripts/configure-keycloak-smtp.sh

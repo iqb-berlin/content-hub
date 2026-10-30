@@ -295,7 +295,7 @@ export class AcpStartComponent implements OnInit, OnDestroy {
       ? [{ label: 'Verwaltung', route: ['/manage', this.acpId] }]
       : [];
     this.breadcrumbs = [
-      { label: 'Assessment Content Pool', route: ['/'] },
+      { label: 'Content Hub', route: ['/'] },
       ...managerCrumb,
       { label: this.data?.name || 'ACP' },
     ];

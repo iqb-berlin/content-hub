@@ -15,7 +15,7 @@ import { renderMarkdownContent } from '../../core/utils/markdown.util';
     <div class="landing">
       <!-- Hero -->
       <section class="hero">
-        <h1>Assessment Content Pool</h1>
+        <h1>Content Hub</h1>
         <p class="hero-sub">Assessment Content Packages für Lernstandserhebungen</p>
       </section>
 

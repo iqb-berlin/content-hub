@@ -2,7 +2,7 @@
 
 ## Overview
 
-ContentPool has a layered access model. Access is not decided by one flag alone. The
+Content Hub has a layered access model. Access is not decided by one flag alone. The
 effective permissions for a request depend on:
 
 1. authentication method,

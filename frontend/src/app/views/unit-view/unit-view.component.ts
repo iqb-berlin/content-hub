@@ -1372,7 +1372,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       this.unit = u;
       this.loadCommentItems();
       this.breadcrumbs = [
-        { label: 'Assessment Content Pool', route: ['/'] },
+        { label: 'Content Hub', route: ['/'] },
         { label: 'ACP', route: ['/view', this.acpId] },
         { label: u.name },
       ];
