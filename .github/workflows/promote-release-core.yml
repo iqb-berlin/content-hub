@@ -15,8 +15,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/content-pool-backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/content-pool-frontend
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/content-hub-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/content-hub-frontend
 
 jobs:
   promote:

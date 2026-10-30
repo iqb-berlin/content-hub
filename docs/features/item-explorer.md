@@ -114,7 +114,7 @@ panel disappears. There is no local visibility override for reviewers.
 
 Missing visibility keys default to visible; `enabled` defaults to false. The visibility of each new
 header action must be considered explicitly when introducing it, following the domain decision in
-[issue #167](https://github.com/iqb-berlin/content-pool-next/issues/167).
+[issue #167](https://github.com/iqb-berlin/content-hub/issues/167).
 
 ## Keyboard Interaction
 

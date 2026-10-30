@@ -32,7 +32,7 @@ make keycloak-altcha-provider
 This creates:
 
 ```text
-keycloak/providers/content-pool-keycloak-altcha.jar
+keycloak/providers/content-hub-keycloak-altcha.jar
 ```
 
 The JAR is a build artifact and is not committed. The Compose files mount
@@ -73,8 +73,8 @@ The script:
 - enables self-registration,
 - enables email verification,
 - keeps duplicate emails disabled,
-- copies the built-in `registration` flow to `contentpool registration` if needed,
-- points the realm registration flow to `contentpool registration`,
+- copies the built-in `registration` flow to `contenthub registration` if needed,
+- points the realm registration flow to `contenthub registration`,
 - adds the `registration-altcha-action` execution to the copied form subflow,
 - marks the ALTCHA execution as `REQUIRED`.
 
@@ -98,13 +98,13 @@ If needed, configure the flow manually:
 
 1. Open `Authentication -> Flows`.
 2. Duplicate the built-in `registration` flow, for example as
-   `contentpool registration`.
+   `contenthub registration`.
 3. Open the copied flow and expand its form subflow, usually named
-   `contentpool registration registration form`.
+   `contenthub registration registration form`.
 4. Add execution `ALTCHA` to that form subflow.
 5. Set the `ALTCHA` execution requirement to `Required`.
 6. Open `Realm settings -> Login`.
-7. Set the registration flow to `contentpool registration`.
+7. Set the registration flow to `contenthub registration`.
 8. Enable `User registration`.
 9. Enable `Verify email`.
 10. Keep `Duplicate emails` disabled.

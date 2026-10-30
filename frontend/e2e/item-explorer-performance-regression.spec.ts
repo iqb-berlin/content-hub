@@ -282,7 +282,7 @@ test('renders the preview without document overflow on desktop and narrow screen
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
     .toBe(true);
   await page.screenshot({
-    path: '/tmp/content-pool-item-explorer-desktop.png',
+    path: '/tmp/content-hub-item-explorer-desktop.png',
     fullPage: true,
   });
 
@@ -296,7 +296,7 @@ test('renders the preview without document overflow on desktop and narrow screen
   expect(previewBounds!.x).toBeGreaterThanOrEqual(0);
   expect(previewBounds!.x + previewBounds!.width).toBeLessThanOrEqual(391);
   await page.screenshot({
-    path: '/tmp/content-pool-item-explorer-mobile.png',
+    path: '/tmp/content-hub-item-explorer-mobile.png',
     fullPage: true,
   });
 });

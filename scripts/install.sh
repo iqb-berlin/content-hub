@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-BOOTSTRAP_REPO="${CONTENT_POOL_REPO:-iqb-berlin/content-pool-next}"
+BOOTSTRAP_REPO="${CONTENT_HUB_REPO:-${CONTENT_POOL_REPO:-iqb-berlin/content-hub}}"
 BOOTSTRAP_REF=""
 
 for ((i = 1; i <= $#; i++)); do
@@ -31,13 +31,13 @@ if [[ ! -f "$COMMON_SH" ]]; then
     printf 'Error: standalone bootstrap requires --release vX.Y.Z[-rc.N]\n' >&2
     exit 1
   }
-  tmp_common="$(mktemp "${TMPDIR:-/tmp}/content-pool-deploy-common.XXXXXX")"
+  tmp_common="$(mktemp "${TMPDIR:-/tmp}/content-hub-deploy-common.XXXXXX")"
   command -v curl >/dev/null 2>&1 || {
     printf 'Error: scripts/deploy-common.sh is missing and curl is not available for bootstrap\n' >&2
     exit 1
   }
   bootstrap_curl_args=(-fsSL)
-  bootstrap_token="${CONTENT_POOL_GITHUB_TOKEN:-${GH_TOKEN:-}}"
+  bootstrap_token="${CONTENT_HUB_GITHUB_TOKEN:-${CONTENT_POOL_GITHUB_TOKEN:-${GH_TOKEN:-}}}"
   [[ -z "$bootstrap_token" ]] || bootstrap_curl_args+=(-H "Authorization: Bearer ${bootstrap_token}")
   curl "${bootstrap_curl_args[@]}" \
     "https://raw.githubusercontent.com/${BOOTSTRAP_REPO}/${BOOTSTRAP_REF}/scripts/deploy-common.sh" \
@@ -62,7 +62,7 @@ Options:
   --manifest FILE|URL               Alternate release-manifest.json source
   --compose-override FILE           Additional Compose file for an isolated deployment
   --base-url URL                    Public/frontend URL used by server-mode health checks
-  --repo OWNER/REPO                 GitHub repository (default: iqb-berlin/content-pool-next)
+  --repo OWNER/REPO                 GitHub repository (default: iqb-berlin/content-hub)
   --download                        Deprecated compatibility flag; release assets are always used
   --start                           Start the stack after validation
   --non-interactive                 Do not prompt; use env values, generated secrets, and defaults
@@ -70,8 +70,8 @@ Options:
   --skip-traefik-network-check      Do not fail --start when the Traefik Docker network is missing
   -h, --help                        Show this help
 
-Environment overrides such as CONTENT_POOL_HOST,
-CONTENT_POOL_AUTH_HOST, POSTGRES_PASSWORD, KEYCLOAK_DB_PASSWORD,
+Environment overrides such as CONTENT_HUB_HOST,
+CONTENT_HUB_AUTH_HOST, POSTGRES_PASSWORD, KEYCLOAK_DB_PASSWORD,
 KEYCLOAK_ADMIN_PASSWORD, and JWT_SECRET are written into .env when set.
 USAGE
 }
@@ -120,7 +120,7 @@ apply_env_overrides() {
 
   for key in \
     APP_PORT \
-    CONTENT_POOL_HOST CONTENT_POOL_AUTH_HOST TRAEFIK_DOCKER_NETWORK TRAEFIK_ENTRYPOINT TRAEFIK_TLS_CERTRESOLVER \
+    CONTENT_HUB_HOST CONTENT_HUB_AUTH_HOST TRAEFIK_DOCKER_NETWORK TRAEFIK_ENTRYPOINT TRAEFIK_TLS_CERTRESOLVER \
     POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD \
     JWT_SECRET JWT_EXPIRATION CORS_ORIGIN \
     KEYCLOAK_HOSTNAME KEYCLOAK_DB_NAME KEYCLOAK_DB_USER KEYCLOAK_DB_PASSWORD \
@@ -129,7 +129,7 @@ apply_env_overrides() {
   do
     value="${!key-}"
     if [[ -n "$value" ]]; then
-      cp_env_set "$env_file" "$key" "$value"
+      ch_env_set "$env_file" "$key" "$value"
     fi
   done
 }
@@ -140,9 +140,9 @@ ensure_secret() {
   local length="$3"
   local current
 
-  current="$(cp_env_get "$env_file" "$key")"
-  if cp_env_is_placeholder "$current"; then
-    cp_env_set "$env_file" "$key" "$(cp_random_secret "$length")"
+  current="$(ch_env_get "$env_file" "$key")"
+  if ch_env_is_placeholder "$current"; then
+    ch_env_set "$env_file" "$key" "$(ch_random_secret "$length")"
   fi
 }
 
@@ -152,45 +152,45 @@ configure_urls() {
   local app_host auth_host app_url auth_url cors_origins redirect_uri
 
   if [[ "$mode" == "traefik" ]]; then
-    app_host="$(cp_env_get "$env_file" CONTENT_POOL_HOST)"
-    auth_host="$(cp_env_get "$env_file" CONTENT_POOL_AUTH_HOST)"
-    app_host="$(prompt_value "Content Hub app host" "${CONTENT_POOL_HOST:-${app_host:-content-pool.example.com}}")"
-    auth_host="$(prompt_value "Content Hub auth host" "${CONTENT_POOL_AUTH_HOST:-${auth_host:-auth-content-pool.example.com}}")"
+    app_host="$(ch_env_get "$env_file" CONTENT_HUB_HOST)"
+    auth_host="$(ch_env_get "$env_file" CONTENT_HUB_AUTH_HOST)"
+    app_host="$(prompt_value "Content Hub app host" "${CONTENT_HUB_HOST:-${app_host:-content-hub.example.com}}")"
+    auth_host="$(prompt_value "Content Hub auth host" "${CONTENT_HUB_AUTH_HOST:-${auth_host:-auth-content-hub.example.com}}")"
 
-    cp_env_set "$env_file" CONTENT_POOL_HOST "$app_host"
-    cp_env_set "$env_file" CONTENT_POOL_AUTH_HOST "$auth_host"
-    cp_env_set_if_placeholder "$env_file" TRAEFIK_DOCKER_NETWORK "${TRAEFIK_DOCKER_NETWORK:-ingress-net}"
-    cp_env_set_if_placeholder "$env_file" TRAEFIK_ENTRYPOINT "${TRAEFIK_ENTRYPOINT:-websecure}"
+    ch_env_set "$env_file" CONTENT_HUB_HOST "$app_host"
+    ch_env_set "$env_file" CONTENT_HUB_AUTH_HOST "$auth_host"
+    ch_env_set_if_placeholder "$env_file" TRAEFIK_DOCKER_NETWORK "${TRAEFIK_DOCKER_NETWORK:-ingress-net}"
+    ch_env_set_if_placeholder "$env_file" TRAEFIK_ENTRYPOINT "${TRAEFIK_ENTRYPOINT:-websecure}"
     if [[ -n "${CORS_ORIGIN-}" ]]; then
-      cp_env_set "$env_file" CORS_ORIGIN "$CORS_ORIGIN"
+      ch_env_set "$env_file" CORS_ORIGIN "$CORS_ORIGIN"
     else
-      cp_env_set "$env_file" CORS_ORIGIN "https://${app_host}"
+      ch_env_set "$env_file" CORS_ORIGIN "https://${app_host}"
     fi
-    cp_env_set "$env_file" KEYCLOAK_HOSTNAME "$auth_host"
-    cp_env_set "$env_file" OIDC_PUBLIC_ISSUER_URL "https://${auth_host}/realms/iqb"
-    cp_env_set "$env_file" OIDC_REDIRECT_URI "${OIDC_REDIRECT_URI:-https://${app_host}/auth/callback}"
+    ch_env_set "$env_file" KEYCLOAK_HOSTNAME "$auth_host"
+    ch_env_set "$env_file" OIDC_PUBLIC_ISSUER_URL "https://${auth_host}/realms/iqb"
+    ch_env_set "$env_file" OIDC_REDIRECT_URI "${OIDC_REDIRECT_URI:-https://${app_host}/auth/callback}"
   else
-    cors_origins="${CORS_ORIGIN:-$(cp_env_get "$env_file" CORS_ORIGIN)}"
+    cors_origins="${CORS_ORIGIN:-$(ch_env_get "$env_file" CORS_ORIGIN)}"
     app_url="$(first_csv_value "$cors_origins")"
-    auth_url="$(cp_env_get "$env_file" OIDC_PUBLIC_ISSUER_URL)"
+    auth_url="$(ch_env_get "$env_file" OIDC_PUBLIC_ISSUER_URL)"
     app_url="$(prompt_value "Public Content Hub app URL" "${app_url:-https://app.example.com}")"
     auth_url="$(prompt_value "Public Keycloak issuer URL" "${OIDC_PUBLIC_ISSUER_URL:-${auth_url:-https://auth.example.com/realms/iqb}}")"
 
     if [[ -n "${CORS_ORIGIN-}" ]]; then
-      cp_env_set "$env_file" CORS_ORIGIN "$CORS_ORIGIN"
-    elif cp_env_is_placeholder "$cors_origins"; then
-      cp_env_set "$env_file" CORS_ORIGIN "$app_url"
+      ch_env_set "$env_file" CORS_ORIGIN "$CORS_ORIGIN"
+    elif ch_env_is_placeholder "$cors_origins"; then
+      ch_env_set "$env_file" CORS_ORIGIN "$app_url"
     else
-      cp_env_set "$env_file" CORS_ORIGIN "$cors_origins"
+      ch_env_set "$env_file" CORS_ORIGIN "$cors_origins"
     fi
-    cp_env_set "$env_file" OIDC_PUBLIC_ISSUER_URL "$auth_url"
-    cp_env_set "$env_file" OIDC_REDIRECT_URI "${OIDC_REDIRECT_URI:-${app_url%/}/auth/callback}"
-    cp_env_set "$env_file" KEYCLOAK_HOSTNAME "$(url_host "$auth_url")"
+    ch_env_set "$env_file" OIDC_PUBLIC_ISSUER_URL "$auth_url"
+    ch_env_set "$env_file" OIDC_REDIRECT_URI "${OIDC_REDIRECT_URI:-${app_url%/}/auth/callback}"
+    ch_env_set "$env_file" KEYCLOAK_HOSTNAME "$(url_host "$auth_url")"
   fi
 
-  redirect_uri="$(cp_env_get "$env_file" OIDC_REDIRECT_URI)"
+  redirect_uri="$(ch_env_get "$env_file" OIDC_REDIRECT_URI)"
   if [[ "$redirect_uri" == *,* ]]; then
-    cp_die "OIDC_REDIRECT_URI must be a single URL. Use CORS_ORIGIN for comma-separated additional origins."
+    ch_die "OIDC_REDIRECT_URI must be a single URL. Use CORS_ORIGIN for comma-separated additional origins."
   fi
 }
 
@@ -202,15 +202,15 @@ configure_realm_export() {
 
   [[ -f "$realm_file" ]] || return 0
   command -v python3 >/dev/null 2>&1 || {
-    cp_warn "python3 not found; keycloak/realm-export.json was not adjusted automatically"
+    ch_warn "python3 not found; keycloak/realm-export.json was not adjusted automatically"
     return 0
   }
 
-  app_origins="$(cp_env_get "$env_file" CORS_ORIGIN)"
-  redirect_uri="$(cp_env_get "$env_file" OIDC_REDIRECT_URI)"
+  app_origins="$(ch_env_get "$env_file" CORS_ORIGIN)"
+  redirect_uri="$(ch_env_get "$env_file" OIDC_REDIRECT_URI)"
 
-  if cp_env_is_placeholder "$app_origins" || cp_env_is_placeholder "$redirect_uri"; then
-    cp_warn "Public URLs still contain placeholders; keycloak/realm-export.json was left unchanged"
+  if ch_env_is_placeholder "$app_origins" || ch_env_is_placeholder "$redirect_uri"; then
+    ch_warn "Public URLs still contain placeholders; keycloak/realm-export.json was left unchanged"
     return 0
   fi
 
@@ -249,7 +249,7 @@ def unique(values):
 data = json.loads(realm_path.read_text(encoding="utf-8"))
 
 for client in data.get("clients", []):
-    if client.get("clientId") != "contentpool":
+    if client.get("clientId") != "contenthub":
         continue
 
     local_redirects = [
@@ -283,19 +283,19 @@ validate_placeholders() {
 
   keys=(POSTGRES_PASSWORD KEYCLOAK_DB_PASSWORD KEYCLOAK_ADMIN_PASSWORD JWT_SECRET CORS_ORIGIN OIDC_PUBLIC_ISSUER_URL OIDC_REDIRECT_URI)
   if [[ "$mode" == "traefik" ]]; then
-    keys+=(CONTENT_POOL_HOST CONTENT_POOL_AUTH_HOST)
+    keys+=(CONTENT_HUB_HOST CONTENT_HUB_AUTH_HOST)
   fi
 
   for key in "${keys[@]}"; do
-    value="$(cp_env_get "$env_file" "$key")"
-    if cp_env_is_placeholder "$value"; then
-      cp_warn "${key} still looks like a placeholder (${value:-empty})"
+    value="$(ch_env_get "$env_file" "$key")"
+    if ch_env_is_placeholder "$value"; then
+      ch_warn "${key} still looks like a placeholder (${value:-empty})"
       failures=$((failures + 1))
     fi
   done
 
   if [[ "$failures" -gt 0 ]]; then
-    cp_warn "Review .env before using this deployment in production"
+    ch_warn "Review .env before using this deployment in production"
   fi
 }
 
@@ -304,20 +304,20 @@ check_traefik_network() {
   local strict="$2"
   local network
 
-  network="$(cp_env_get "$env_file" TRAEFIK_DOCKER_NETWORK)"
+  network="$(ch_env_get "$env_file" TRAEFIK_DOCKER_NETWORK)"
   network="${network:-ingress-net}"
 
   if docker network inspect "$network" >/dev/null 2>&1; then
-    cp_info "Traefik Docker network exists: ${network}"
+    ch_info "Traefik Docker network exists: ${network}"
   elif [[ "$strict" -eq 1 ]]; then
-    cp_die "Traefik Docker network '${network}' does not exist. Start Traefik first or create the external network."
+    ch_die "Traefik Docker network '${network}' does not exist. Start Traefik first or create the external network."
   else
-    cp_warn "Traefik Docker network '${network}' does not exist yet"
+    ch_warn "Traefik Docker network '${network}' does not exist yet"
   fi
 }
 
-TARGET_DIR="${CONTENT_POOL_INSTALL_DIR:-}"
-MODE="${CONTENT_POOL_DEPLOY_MODE:-}"
+TARGET_DIR="${CONTENT_HUB_INSTALL_DIR:-}"
+MODE="${CONTENT_HUB_DEPLOY_MODE:-}"
 REPO="$BOOTSTRAP_REPO"
 ENVIRONMENT="${DEPLOYMENT_ENV:-}"
 RELEASE=""
@@ -419,7 +419,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      cp_die "Unknown option: $1"
+      ch_die "Unknown option: $1"
       ;;
   esac
 done
@@ -431,13 +431,13 @@ if [[ -z "$MODE" ]]; then
     MODE="$(prompt_value "Deployment mode (server or traefik)" "traefik")"
   fi
 fi
-cp_validate_mode "$MODE"
-[[ -n "$ENVIRONMENT" ]] || cp_die "--environment staging|production is required"
-cp_validate_environment "$ENVIRONMENT"
-[[ -n "$RELEASE" ]] || cp_die "--release vX.Y.Z[-rc.N] is required"
-cp_validate_release_for_environment "$RELEASE" "$ENVIRONMENT"
+ch_validate_mode "$MODE"
+[[ -n "$ENVIRONMENT" ]] || ch_die "--environment staging|production is required"
+ch_validate_environment "$ENVIRONMENT"
+[[ -n "$RELEASE" ]] || ch_die "--release vX.Y.Z[-rc.N] is required"
+ch_validate_release_for_environment "$RELEASE" "$ENVIRONMENT"
 if [[ -n "$COMPOSE_OVERRIDE" ]]; then
-  [[ -f "$COMPOSE_OVERRIDE" ]] || cp_die "Compose override not found: $COMPOSE_OVERRIDE"
+  [[ -f "$COMPOSE_OVERRIDE" ]] || ch_die "Compose override not found: $COMPOSE_OVERRIDE"
   COMPOSE_OVERRIDE="$(cd "$(dirname "$COMPOSE_OVERRIDE")" && pwd -P)/$(basename "$COMPOSE_OVERRIDE")"
 fi
 
@@ -449,32 +449,32 @@ if [[ -z "$TARGET_DIR" ]]; then
   fi
 fi
 
-cp_require_docker_compose
-cp_require_cmd openssl
+ch_require_docker_compose
+ch_require_cmd openssl
 
-RELEASE_WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/content-pool-install.XXXXXX")"
+RELEASE_WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/content-hub-install.XXXXXX")"
 trap 'rm -rf "$RELEASE_WORK_DIR"' EXIT
-MANIFEST_TOOL="$(cp_prepare_release "$REPO" "$RELEASE" "$ENVIRONMENT" "$MANIFEST_SOURCE" "$RELEASE_WORK_DIR")"
+MANIFEST_TOOL="$(ch_prepare_release "$REPO" "$RELEASE" "$ENVIRONMENT" "$MANIFEST_SOURCE" "$RELEASE_WORK_DIR")"
 SOURCE_ROOT="${RELEASE_WORK_DIR}/runtime"
 
-TARGET_DIR="$(cp_abs_path "$TARGET_DIR")"
-cp_install_runtime_artifacts "$SOURCE_ROOT" "$TARGET_DIR"
+TARGET_DIR="$(ch_abs_path "$TARGET_DIR")"
+ch_install_runtime_artifacts "$SOURCE_ROOT" "$TARGET_DIR"
 
 ENV_FILE="${TARGET_DIR}/.env"
 if [[ -f "$ENV_FILE" && "$FORCE_ENV" -eq 1 ]]; then
   backup="${ENV_FILE}.bak.$(date +%Y%m%d_%H%M%S)"
-  cp_info "Backing up existing .env to ${backup}"
+  ch_info "Backing up existing .env to ${backup}"
   command cp -f "$ENV_FILE" "$backup"
   command cp -f "${TARGET_DIR}/.env.example" "$ENV_FILE"
 elif [[ ! -f "$ENV_FILE" ]]; then
-  cp_info "Creating .env from .env.example"
+  ch_info "Creating .env from .env.example"
   command cp -f "${TARGET_DIR}/.env.example" "$ENV_FILE"
 fi
 
 apply_env_overrides "$ENV_FILE"
-cp_apply_manifest_env "$ENV_FILE" "${RELEASE_WORK_DIR}/release-manifest.json" "$ENVIRONMENT" "$MANIFEST_TOOL"
-cp_validate_required_configuration "$ENV_FILE" "${RELEASE_WORK_DIR}/release-manifest.json" || \
-  cp_die "Required release configuration is missing"
+ch_apply_manifest_env "$ENV_FILE" "${RELEASE_WORK_DIR}/release-manifest.json" "$ENVIRONMENT" "$MANIFEST_TOOL"
+ch_validate_required_configuration "$ENV_FILE" "${RELEASE_WORK_DIR}/release-manifest.json" || \
+  ch_die "Required release configuration is missing"
 ensure_secret "$ENV_FILE" POSTGRES_PASSWORD 48
 ensure_secret "$ENV_FILE" KEYCLOAK_DB_PASSWORD 48
 ensure_secret "$ENV_FILE" KEYCLOAK_ADMIN_PASSWORD 48
@@ -491,17 +491,17 @@ if [[ "$MODE" == "traefik" ]]; then
   check_traefik_network "$ENV_FILE" "$strict_network"
 fi
 
-cp_info "Validating Docker Compose configuration"
+ch_info "Validating Docker Compose configuration"
 (
   cd "$TARGET_DIR"
-  cp_set_compose_args "$MODE" "$COMPOSE_OVERRIDE"
-  docker compose "${CONTENT_POOL_COMPOSE_ARGS[@]}" config >/dev/null
+  ch_set_compose_args "$MODE" "$COMPOSE_OVERRIDE"
+  docker compose "${CONTENT_HUB_COMPOSE_ARGS[@]}" config >/dev/null
 )
 
 command cp -f "${RELEASE_WORK_DIR}/release-manifest.json" "${TARGET_DIR}/.release-manifest.json"
 
 if [[ "$START" -eq 1 ]]; then
-  cp_info "Starting and verifying Content Hub (${MODE})"
+  ch_info "Starting and verifying Content Hub (${MODE})"
   (
     cd "$TARGET_DIR"
     update_args=(
@@ -519,6 +519,6 @@ if [[ "$START" -eq 1 ]]; then
   )
 fi
 
-cp_info "Install complete: ${TARGET_DIR}"
-cp_info "Release: ${RELEASE} (${ENVIRONMENT})"
-[[ "$START" -eq 1 ]] || cp_info "Re-run the installer with --start after reviewing ${TARGET_DIR}/.env"
+ch_info "Install complete: ${TARGET_DIR}"
+ch_info "Release: ${RELEASE} (${ENVIRONMENT})"
+[[ "$START" -eq 1 ]] || ch_info "Re-run the installer with --start after reviewing ${TARGET_DIR}/.env"

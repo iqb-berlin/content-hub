@@ -20,7 +20,7 @@ ARG APP_BUILT_AT=unknown
 LABEL org.opencontainers.image.version=${APP_VERSION} \
       org.opencontainers.image.revision=${APP_COMMIT} \
       org.opencontainers.image.created=${APP_BUILT_AT} \
-      org.opencontainers.image.source="https://github.com/iqb-berlin/content-pool-next"
+      org.opencontainers.image.source="https://github.com/iqb-berlin/content-hub"
 # Require patched runtime libraries from Alpine for every target architecture.
 # These minimum versions address the OpenSSL, Expat, and util-linux findings
 # reported by the release image scanner.

@@ -104,7 +104,7 @@ localhost-bound on the server.
 ## Repository Structure
 
 ```text
-content-pool-next/
+content-hub/
 |- backend/                 NestJS API and TypeORM entities
 |- frontend/                Angular standalone SPA
 |- keycloak/                Realm export and theme assets

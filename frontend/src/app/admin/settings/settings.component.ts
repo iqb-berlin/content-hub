@@ -316,7 +316,7 @@ export class SettingsComponent implements OnInit {
         applyTheme(this.theme);
         applyLanguage(settings.language);
         window.dispatchEvent(
-          new CustomEvent('cp-settings-updated', {
+          new CustomEvent('ch-settings-updated', {
             detail: {
               logoUrl: settings.logoUrl,
               theme: this.theme,

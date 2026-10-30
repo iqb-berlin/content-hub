@@ -7,7 +7,7 @@ function createToken(overrides: Partial<ApplicationToken> = {}): ApplicationToke
   return {
     id: 'token-1',
     name: 'Studio ACP',
-    tokenPrefix: 'cp_abc...',
+    tokenPrefix: 'ch_abc...',
     scopes: ['acp.read'],
     allowedAcpIds: ['acp-1'],
     active: true,
@@ -93,7 +93,7 @@ describe('AcpApplicationTokensComponent', () => {
     api.createAcpApplicationToken.mockReturnValue(
       of({
         ...createToken({ name: 'Studio', scopes: ['acp.read', 'files.read'] }),
-        token: 'cp_secret',
+        token: 'ch_secret',
       }),
     );
 
@@ -104,7 +104,7 @@ describe('AcpApplicationTokensComponent', () => {
       scopes: ['acp.read', 'files.read'],
       expiresAt: null,
     });
-    expect(component.createdToken?.token).toBe('cp_secret');
+    expect(component.createdToken?.token).toBe('ch_secret');
     expect(component.showCreate).toBe(false);
   });
 

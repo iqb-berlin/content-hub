@@ -10,8 +10,11 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 - Rename the visible product to Content Hub and use the approved violet network
   logo across the application and Keycloak login theme. Replace legacy image
-  files with SVG, PNG, multi-size ICO and mobile icons. Preserve saved themes
-  and all technical identifiers.
+  files with SVG, PNG, multi-size ICO and mobile icons.
+- Rename the repository, package/deployment identifiers, images and browser keys
+  to Content Hub. Keep iqb-contentpool.de and neutral API/callback paths.
+- Apply the violet palette once to saved themes and retain their original values
+  for guarded rollback. Transfer legacy browser data without losing pending work.
 - Shorten booklet task links with structure-bound occurrence IDs. Preserve
   existing links and report stale short links after booklet structure changes.
 - Add direct links to individual booklet task occurrences, with reload and
@@ -26,19 +29,22 @@ All notable changes to Content Hub are documented in this file. Releases use
 ### Configuration
 
 - Existing Keycloak display names and mail sender labels need a separate, scoped
-  update; see `docs/operations/content-hub-branding.md`. Existing app themes
-  and custom content remain unchanged.
+  update; see `docs/operations/content-hub-branding.md`. Use the new updater for
+  the service-name transition. Old environment variables remain aliases;
+  existing database/volume assignments and custom content are retained.
 
 ### Database migrations
 
 - Classification: `backward-compatible`
 - `1789700000000-CommentCategories` adds categories and optional comment assignments.
+- `1793318400000-ContentHubTheme` backs up saved palettes and resets them to violet
+  once. Later edits are preserved; rollback checks for intervening changes.
 
 ### Rollback
 
 - Restore the previous application images and runtime theme files to revert
   branding. Restore separately edited display fields from their saved values.
-  The branding change itself adds no database migration.
+  Restore old palettes through the guarded Content Hub theme migration rollback.
 - The category migration refuses rollback while configured categories or
   assignments exist, preserving review data.
 

@@ -71,7 +71,7 @@ grep -Eq '^    name: release-gate$' <<<"$workflow" || {
   exit 1
 }
 
-temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/content-pool-github-settings.XXXXXX")"
+temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/content-hub-github-settings.XXXXXX")"
 trap 'rm -rf "$temp_dir"' EXIT
 if gh api "repos/${repo}/branches/${branch}/protection" >"${temp_dir}/current.json" 2>/dev/null; then
   jq --argjson required_review_count "$required_review_count" '{

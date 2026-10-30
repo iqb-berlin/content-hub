@@ -3,8 +3,8 @@
 This guide describes a **secure** deployment of Content Hub with Keycloak on a VPS.
 
 For this branding release, follow the [Content Hub branding runbook](docs/operations/content-hub-branding.md)
-for existing Keycloak display fields and cache refresh. Technical deployment
-identifiers and saved application themes remain unchanged.
+for existing Keycloak display fields and cache refresh. Follow its first-upgrade procedure for technical identifiers and the one-time
+violet palette migration. The public domain remains iqb-contentpool.de.
 
 ## 1. Preconditions (must be true)
 
@@ -44,24 +44,24 @@ Edit `.env` and set at least:
 - `KEYCLOAK_HOSTNAME` (for example `auth.example.com`)
 - `OIDC_PUBLIC_ISSUER_URL` (for example `https://auth.example.com/realms/iqb`)
 - `OIDC_REDIRECT_URI` (for example `https://app.example.com/auth/callback`)
-- `OIDC_CLIENT_ID` (default `contentpool`)
+- `OIDC_CLIENT_ID` (default `contenthub`)
 - `DB_SYNCHRONIZE=false`
 - `DB_RUN_MIGRATIONS=true`
 
 If deploying behind Traefik, also set:
 
-- `CONTENT_POOL_HOST` (for example `content-pool.example.com`)
-- `CONTENT_POOL_AUTH_HOST` (for example `auth-content-pool.example.com`)
+- `CONTENT_HUB_HOST` (for example `content-hub.example.com`)
+- `CONTENT_HUB_AUTH_HOST` (for example `auth-content-hub.example.com`)
 - `TRAEFIK_DOCKER_NETWORK` (for `iqb-berlin/traefik`: `ingress-net`)
 - `TRAEFIK_ENTRYPOINT` (for `iqb-berlin/traefik`: `websecure`)
 - `TRAEFIK_TLS_CERTRESOLVER` (`acme` for ACME, empty for manually configured certificates)
 
 Then align the public URLs:
 
-- `CORS_ORIGIN=https://content-pool.example.com`
-- `KEYCLOAK_HOSTNAME=auth-content-pool.example.com`
-- `OIDC_PUBLIC_ISSUER_URL=https://auth-content-pool.example.com/realms/iqb`
-- `OIDC_REDIRECT_URI=https://content-pool.example.com/auth/callback`
+- `CORS_ORIGIN=https://content-hub.example.com`
+- `KEYCLOAK_HOSTNAME=auth-content-hub.example.com`
+- `OIDC_PUBLIC_ISSUER_URL=https://auth-content-hub.example.com/realms/iqb`
+- `OIDC_REDIRECT_URI=https://content-hub.example.com/auth/callback`
 
 ### Scripted server install
 
@@ -83,7 +83,7 @@ To install into a separate deployment directory from a GitHub release/tag:
 
 ```bash
 ./scripts/install.sh --mode traefik --environment production \
-  --release vX.Y.Z --dir /opt/content-pool
+  --release vX.Y.Z --dir /opt/content-hub
 ```
 
 ## 3a. Migration strategy (required for production)
@@ -101,7 +101,7 @@ Use migrations as the only schema-change mechanism in production.
 Optional reviewed forward-migration command (inside API container):
 
 ```bash
-docker compose -f docker-compose.server.yml exec content-pool-api npm run migration:run:dist
+docker compose -f docker-compose.server.yml exec content-hub-api npm run migration:run:dist
 ```
 
 Do not use `migration:revert` during an application rollback. Use the complete
@@ -223,7 +223,7 @@ make prod-traefik-build
 ```
 
 The Traefik overlay removes Content Hub's direct public nginx port. Public HTTP
-and HTTPS traffic goes through Traefik, then to the internal `content-pool-nginx`
+and HTTPS traffic goes through Traefik, then to the internal `content-hub-nginx`
 container. Content Hub's own nginx config still handles `/`, `/api/`,
 `/assets/GeoGebra/`, `/realms/`, and `/resources/`.
 
@@ -236,15 +236,15 @@ docker compose -f docker-compose.server.yml ps
 
 Expected:
 
-- `content-pool-nginx`, `content-pool-api`, `content-pool-db`, `keycloak`, `keycloak-db` are `Up`
+- `content-hub-nginx`, `content-hub-api`, `content-hub-db`, `keycloak`, `keycloak-db` are `Up`
 - `GET /api/auth/oidc-config` returns `"enabled": true`
 - `GET /api/health/live` and `GET /api/health/ready` return `200`
 
 For Traefik-backed deployments, verify through the public hosts:
 
 ```bash
-curl -fsS https://content-pool.example.com/api/health/live
-curl -fsS https://auth-content-pool.example.com/realms/iqb/.well-known/openid-configuration
+curl -fsS https://content-hub.example.com/api/health/live
+curl -fsS https://auth-content-hub.example.com/realms/iqb/.well-known/openid-configuration
 ```
 
 ## 7a. Monitoring baseline
@@ -252,14 +252,14 @@ curl -fsS https://auth-content-pool.example.com/realms/iqb/.well-known/openid-co
 Monitoring for the prototype release is based on health probes and log observation:
 
 - Compose health checks:
-  - `content-pool-api` via `/api/health/live`
+  - `content-hub-api` via `/api/health/live`
   - nginx/frontend via `/health`
   - databases via `pg_isready`
   - Keycloak via local TCP probe
 - Runtime checks:
   - `./scripts/check-health.sh ...` for full stack status and exit code
 - Error observation:
-  - `docker compose ... logs --since 15m content-pool-api keycloak`
+  - `docker compose ... logs --since 15m content-hub-api keycloak`
   - alerting can be attached by scheduling `check-health.sh` and notifying on non-zero exit
 
 ## 8. Access Keycloak Admin securely

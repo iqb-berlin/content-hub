@@ -80,7 +80,7 @@ prod-logs: ## View production logs (all services)
 	docker compose -f docker-compose.prod.yml logs -f
 
 prod-logs-api: ## View API logs only
-	docker compose -f docker-compose.prod.yml logs -f content-pool-api
+	docker compose -f docker-compose.prod.yml logs -f content-hub-api
 
 prod-logs-nginx: ## View nginx logs only
 	docker compose -f docker-compose.prod.yml logs -f nginx
@@ -174,7 +174,7 @@ server-traefik-up: ## Deploy pre-built images behind an existing Traefik edge
 	docker compose -f docker-compose.server.yml -f docker-compose.traefik.yml pull
 	docker compose -f docker-compose.server.yml -f docker-compose.traefik.yml up -d
 	@echo "Traefik-backed server deployment complete!"
-	@echo "  Configure CONTENT_POOL_HOST, CONTENT_POOL_AUTH_HOST, and TRAEFIK_DOCKER_NETWORK in .env"
+	@echo "  Configure CONTENT_HUB_HOST, CONTENT_HUB_AUTH_HOST, and TRAEFIK_DOCKER_NETWORK in .env"
 
 server-traefik-update: ## Deprecated: use staging-update or production-update with RELEASE=vX.Y.Z
 	@echo "Error: choose staging-update or production-update and set RELEASE"; exit 1
@@ -238,7 +238,7 @@ db-restore: ## Restore a complete update backup: make db-restore BACKUP=backups/
 	@./scripts/restore.sh --from-backup "$(BACKUP)"
 
 db-shell: ## Open PostgreSQL shell
-	docker exec -it content-pool-db psql -U $${POSTGRES_USER:-content_pool} $${POSTGRES_DB:-content_pool}
+	docker exec -it content-hub-db psql -U $${POSTGRES_USER:-content_hub} $${POSTGRES_DB:-content_hub}
 
 db-migrate: ## Run database migrations (TypeORM)
 	@echo "Running database migrations..."
@@ -304,7 +304,7 @@ shell-backend: ## Open shell in backend container (dev)
 	docker compose exec backend sh
 
 shell-api: ## Open shell in API container (prod)
-	docker compose -f docker-compose.prod.yml exec content-pool-api sh
+	docker compose -f docker-compose.prod.yml exec content-hub-api sh
 
 clean: ## Remove all stopped containers, unused images, and volumes
 	@echo "Cleaning Docker resources..."
@@ -319,10 +319,10 @@ update: ## Deprecated mutable-tag update
 # ============================================
 
 build-backend: ## Build backend Docker image
-	docker build -t content-pool-backend ./backend
+	docker build -t content-hub-backend ./backend
 
 build-frontend: ## Build frontend Docker image
-	docker build -t content-pool-frontend ./frontend
+	docker build -t content-hub-frontend ./frontend
 
 build-prod: ## Build production images
 	docker compose -f docker-compose.prod.yml build

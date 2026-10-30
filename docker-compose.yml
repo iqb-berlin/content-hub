@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
     environment:
-      POSTGRES_USER: contentpool
-      POSTGRES_PASSWORD: contentpool_dev
-      POSTGRES_DB: contentpool
+      POSTGRES_USER: ${POSTGRES_USER:-contenthub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-contenthub_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-contenthub}
     ports:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U contentpool"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-contenthub}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,9 +24,9 @@ services:
       PORT: 3000
       DB_HOST: db
       DB_PORT: 5432
-      DB_USERNAME: contentpool
-      DB_PASSWORD: contentpool_dev
-      DB_DATABASE: contentpool
+      DB_USERNAME: ${POSTGRES_USER:-contenthub}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-contenthub_dev}
+      DB_DATABASE: ${POSTGRES_DB:-contenthub}
       JWT_SECRET: dev-secret-change-in-production
       JWT_EXPIRATION: 24h
       FILE_STORAGE_PATH: /app/uploads
@@ -36,7 +36,7 @@ services:
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-http://keycloak:8080/realms/iqb}
       # Public URL for frontend browser redirects (must be accessible from browser)
       OIDC_PUBLIC_ISSUER_URL: ${OIDC_PUBLIC_ISSUER_URL:-http://localhost:8080/realms/iqb}
-      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-contentpool}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-contenthub}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:4201/auth/callback}
       OIDC_SCOPE: ${OIDC_SCOPE:-openid profile email}
     ports:

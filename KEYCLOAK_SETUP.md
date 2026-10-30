@@ -33,7 +33,7 @@ If you already started Keycloak before, recreate the dev Keycloak data volume:
 
 ```bash
 docker compose down
-docker volume rm content-pool-next_keycloak-data
+docker volume rm content-hub_keycloak-data
 docker compose up -d
 ```
 
@@ -60,7 +60,7 @@ KEYCLOAK_PORT_EXPOSE=127.0.0.1:8080:8080
 OIDC_ISSUER_URL=http://keycloak:8080/realms/iqb
 OIDC_PUBLIC_ISSUER_URL=https://auth.example.com/realms/iqb
 OIDC_REDIRECT_URI=https://app.example.com/auth/callback
-OIDC_CLIENT_ID=contentpool
+OIDC_CLIENT_ID=contenthub
 OIDC_SCOPE="openid profile email"
 ```
 
@@ -105,7 +105,7 @@ For IP-based deployments with TLS, use `https://YOUR_SERVER_IP/...` values
 If Keycloak shows this error on login, the requested `redirect_uri` does not
 exactly match the client configuration.
 
-For client `contentpool`, verify in Keycloak Admin Console:
+For client `contenthub`, verify in Keycloak Admin Console:
 
 - **Valid redirect URIs** contains your exact callback URL
   (for example `https://187.127.71.69/auth/callback`)
@@ -160,7 +160,7 @@ For details, see
 ## Troubleshooting: `Ungültige Redirect Uri` on logout
 
 If logout fails with a redirect error, configure **Valid post logout redirect URIs**
-for client `contentpool`.
+for client `contenthub`.
 
 Example values:
 

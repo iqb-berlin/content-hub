@@ -413,7 +413,7 @@ describe('ItemExplorerPreviewComponent', () => {
     component.playerFrame = new ElementRef(iframe);
 
     expect(component.focus(['#target'], [], true)).toBe(true);
-    expect(target.classList.contains('cp-item-focus-highlight')).toBe(true);
+    expect(target.classList.contains('ch-item-focus-highlight')).toBe(true);
     expect(scrollIntoView).toHaveBeenCalled();
     expect(focus).toHaveBeenCalled();
 

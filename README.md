@@ -78,7 +78,7 @@ npx ng serve
 ```bash
 # 1. Clone repository
 git clone <your-repo-url>
-cd content-pool-next
+cd content-hub
 
 # 2. Setup environment
 cp .env.example .env
@@ -95,8 +95,8 @@ Create `.env` file with your production values:
 
 ```bash
 # Database (REQUIRED - change passwords!)
-POSTGRES_DB=content_pool
-POSTGRES_USER=content_pool
+POSTGRES_DB=content_hub
+POSTGRES_USER=content_hub
 POSTGRES_PASSWORD=your-secure-password-here
 
 # JWT (REQUIRED - generate random string)
@@ -113,7 +113,7 @@ CORS_ORIGIN=https://app.example.com
 KEYCLOAK_HOSTNAME=auth.example.com
 OIDC_ISSUER_URL=http://keycloak:8080/realms/iqb
 OIDC_PUBLIC_ISSUER_URL=https://auth.example.com/realms/iqb
-OIDC_CLIENT_ID=contentpool
+OIDC_CLIENT_ID=contenthub
 OIDC_REDIRECT_URI=https://app.example.com/auth/callback
 OIDC_SCOPE="openid profile email"
 
@@ -158,10 +158,10 @@ git pull
 docker compose -f docker-compose.prod.yml up -d --build
 
 # Run migrations manually inside running API container (optional)
-docker compose -f docker-compose.prod.yml exec content-pool-api npm run migration:run:dist
+docker compose -f docker-compose.prod.yml exec content-hub-api npm run migration:run:dist
 
 # Backup database
-docker exec content-pool-db pg_dump -U content_pool content_pool > backup.sql
+docker exec content-hub-db pg_dump -U content_hub content_hub > backup.sql
 
 # Stop services
 docker compose -f docker-compose.prod.yml down
@@ -177,18 +177,18 @@ docker compose -f docker-compose.prod.yml down -v
 docker compose -f docker-compose.prod.yml ps
 
 # Check specific service logs
-docker compose -f docker-compose.prod.yml logs content-pool-api
-docker compose -f docker-compose.prod.yml logs content-pool-db
+docker compose -f docker-compose.prod.yml logs content-hub-api
+docker compose -f docker-compose.prod.yml logs content-hub-db
 
 # Backend health (liveness/readiness)
 curl -fsS http://localhost/api/health/live
 curl -fsS http://localhost/api/health/ready
 
 # Access database directly
-docker exec -it content-pool-db psql -U content_pool -d content_pool
+docker exec -it content-hub-db psql -U content_hub -d content_hub
 
 # Test nginx configuration
-docker exec content-pool-nginx nginx -t
+docker exec content-hub-nginx nginx -t
 ```
 
 ### Release Readiness

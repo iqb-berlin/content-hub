@@ -81,7 +81,7 @@ For ACP managers who need a task-oriented user guide, see:
 - [Keycloak Email Delivery](operations/keycloak-email.md)
   Local Postfix relay and HU authenticated SMTP setup for transactional Keycloak mail.
 - [Content Hub Branding](operations/content-hub-branding.md)
-  Approved assets, preserved custom themes, existing Keycloak display fields and rollback.
+  Approved assets, technical-name transition, palette migration and rollback.
 
 ## Existing Root-Level Runbooks
 

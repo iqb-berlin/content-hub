@@ -1,5 +1,5 @@
 {
-  "name": "iqb-content-pool-backend",
+  "name": "iqb-content-hub-backend",
   "version": "0.6.0",
   "description": "Content Hub - Backend API",
   "private": true,

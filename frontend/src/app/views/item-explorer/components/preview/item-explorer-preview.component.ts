@@ -196,11 +196,11 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
     if (!target) return false;
 
     doc
-      .querySelectorAll('.cp-item-focus-highlight')
-      .forEach((element) => element.classList.remove('cp-item-focus-highlight'));
+      .querySelectorAll('.ch-item-focus-highlight')
+      .forEach((element) => element.classList.remove('ch-item-focus-highlight'));
     if (highlight) {
       this.ensureFocusStyle(doc);
-      target.classList.add('cp-item-focus-highlight');
+      target.classList.add('ch-item-focus-highlight');
     }
     target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     try {
@@ -321,11 +321,11 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
   }
 
   private ensureFocusStyle(doc: Document): void {
-    if (doc.getElementById('cp-item-focus-style')) return;
+    if (doc.getElementById('ch-item-focus-style')) return;
     const style = doc.createElement('style');
-    style.id = 'cp-item-focus-style';
+    style.id = 'ch-item-focus-style';
     style.textContent = `
-      .cp-item-focus-highlight {
+      .ch-item-focus-highlight {
         outline: 3px solid #e67e22 !important;
         outline-offset: 2px !important;
         box-shadow: 0 0 0 4px rgba(230, 126, 34, 0.25) !important;

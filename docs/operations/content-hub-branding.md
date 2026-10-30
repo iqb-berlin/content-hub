@@ -1,13 +1,28 @@
-# Content Hub branding
+# Content Hub naming and migration
 
-The product name is **Content Hub**. Its approved mark consists of four violet
-content modules connected diagonally to a central circular hub, on a white
-circle. The product color is `#5B21B6`.
+The product and repository are **Content Hub** (`iqb-berlin/content-hub`).
+The approved four-module network mark uses `#5B21B6` on a white circle.
+The existing public domain remains **iqb-contentpool.de**. `/api/...`,
+`/auth/callback`, the realm identifier `iqb` and application data IDs do not change.
 
-Repository names, directories, package and Angular project names, Docker images,
-Compose services and projects, volumes, database names, environment variable
-names, domains, API paths, OIDC client IDs, roles and browser storage keys retain
-their existing technical identifiers. This release does not migrate them.
+## Canonical technical names
+
+| Area | New name |
+| --- | --- |
+| Repository / deployment bootstrap | `iqb-berlin/content-hub` |
+| Backend npm package | `iqb-content-hub-backend` |
+| Services and containers | `content-hub-api`, `content-hub-db`, `content-hub-web`, `content-hub-nginx` |
+| Release images | `ghcr.io/iqb-berlin/content-hub-backend`, `ghcr.io/iqb-berlin/content-hub-frontend` |
+| Deployment variables | `CONTENT_HUB_*` |
+| OIDC client ID | `contenthub` |
+| New application database defaults | `content_hub` (managed), `contenthub` (development) |
+| Browser keys / channel | `ch_*`, `ch_auth` |
+| ALTCHA Java package / provider | `de.iqb.contenthub`, `content-hub-keycloak-altcha.jar` |
+
+Old environment variable names remain transition aliases. Existing database
+credentials and physical volume names are read from the deployment configuration;
+they are not guessed from the new service name. Historical migrations, backup
+archives and external specification links retain their original names.
 
 ## Source and generated files
 
@@ -45,76 +60,117 @@ consumers together, and retain assets needed by supported rollback releases.
 The nginx configurations revalidate the stable HTML, manifest and fallback ICO;
 versioned image URLs retain the existing static asset cache policy.
 
-## Existing application settings
+## Stored colors
 
-Unconfigured applications use the violet default palette. Saved values in
-`app_settings.theme`, including the old blue palette, remain authoritative and
-are not rewritten. The browser's theme-color metadata follows the effective
-primary color. `logoUrl` retains its existing API and storage behavior; the
-application header displays the fixed Content Hub product mark.
+The one-time `ContentHubTheme1793318400000` database migration replaces the saved
+color palette with the violet Content Hub defaults, including explicitly
+customized palettes. This is intentional. It saves every previous palette in
+`content_hub_theme_backup`, leaves legal/landing content and all ACP data intact,
+and does not run the reset again on subsequent starts. Later admin color changes
+remain possible. Development schema synchronization applies the same one-time
+transition after creating the schema.
 
-Saved landing, imprint, privacy and accessibility content is not changed.
-Review it for old product names and update only the intended prose through the
-existing settings interface. Keep a copy of previous values. ACP contents,
-historical documentation and published release history are not rewritten.
+Migration rollback restores the saved palettes. If an operator has edited colors
+since the migration, rollback refuses to overwrite that newer work. Review the
+saved values and restore them explicitly before retrying the migration rollback.
+Do not drop the backup table to bypass this check.
 
-## Existing Keycloak installations
+## Upgrade an existing managed deployment
 
-The technical theme name remains `iqb-theme`. Deploy the runtime bundle containing
-its new assets, template, theme properties and versioned CSS. Theme files are
-mounted from the deployment directory. Restart the affected Keycloak instance
-when needed to invalidate its template/theme cache, and verify the result in a
-fresh browser session. Apply this during the normal deployment maintenance window.
-Existing custom Keycloak theme selections are not changed. Keep independently
-maintained themes in their own directories and retain their current selection.
+Use a maintenance window and keep the previous release, configuration, image
+digests and complete database/upload backups. Do not rename or delete populated
+volumes, and do not delete/re-import a Keycloak realm.
 
-Updating `realm-export.json` or `realm-export.dev.json` does not update an
-existing imported realm. Do not delete/re-import the realm or remove its volumes
-to change branding.
+For the first upgrade across the naming change, use the **new** update script
+and its matching `deploy-common.sh` from an extracted, verified runtime archive.
+Keep these tools outside the existing deployment directory until the update has
+created its backup. Example after downloading and verifying the selected release:
 
-Before changing persistent display fields, establish whether the realm, theme
-and SMTP sender configuration serve only this application. The repository's
-Compose deployment contains its own Keycloak service. An externally shared
-Keycloak installation needs client-specific scoping: use a dedicated copy of the
-login theme selected for this client, and retain the shared realm's name and
-sender configuration for other applications.
+```bash
+mkdir migration-tools
+tar -xzf content-hub-vX.Y.Z-runtime.tar.gz -C migration-tools
+cd /path/to/existing/deployment
+/path/to/migration-tools/scripts/update.sh --release vX.Y.Z --environment production
+```
 
-For a dedicated installation, record the previous values in the Keycloak Admin
-Console and change only the following display fields:
+Replace the example version and paths with the reviewed release and deployment.
+Do not overwrite the old Compose files using the installer before the first
+backup. Old bootstrap repository URLs redirect to the renamed repository, but
+an old updater is not the tool for this service-name transition.
 
-| Location | Standard old value | New value |
-| --- | --- | --- |
-| Realm Settings → General → Display name | IQB ContentPool | Content Hub |
-| Clients → `contentpool` → Name | ContentPool Application | Content Hub |
-| Clients → `contentpool` → Description | IQB ContentPool OIDC Client | Content Hub OIDC Client |
-| Realm Settings → Email → From display name | IQB ContentPool | Content Hub |
+The new updater backs up the running deployment, resolves legacy service names
+for its backup commands, copies `CONTENT_POOL_*` values to the canonical keys,
+and retains the existing Compose project. Before replacing the Compose files it
+pins `CONTENT_HUB_DB_VOLUME` to the mounted database volume and stops the old API
+and database services. This prevents starting another PostgreSQL instance on the
+same data. The renamed services then use the same data and explicitly configured
+`POSTGRES_DB`/`POSTGRES_USER`, even when those still use legacy names. Other neutral
+volumes (`uploads`, Keycloak data) retain their existing project association.
+A conflicting volume/project or conflicting old/new variable stops the upgrade.
 
-Retain intentionally customized labels unless the operator selects new wording.
-Do not change the realm identifier `iqb`, client identifier `contentpool`, client
-UUIDs, roles, credentials, redirect URIs, web origins or SMTP addresses/secrets.
-The login page title and header already use the theme's `productName` setting,
-so they do not depend on rewriting a shared realm's display name.
+Do not change `CONTENT_HUB_HOST`, `CONTENT_HUB_AUTH_HOST`, `CORS_ORIGIN`,
+`KEYCLOAK_HOSTNAME`, OIDC issuer/redirect/logout URLs or TLS/DNS as part of this
+migration. The public deployment stays on `iqb-contentpool.de`. Keep explicit
+local-development database credentials when reusing an older development volume.
 
-If the deployment's `.env` explicitly sets `KEYCLOAK_SMTP_FROM_DISPLAY_NAME` to
-the old standard label, update that value as well so later SMTP configuration
-does not restore the old name. Keep customized sender labels. Changing defaults
-in `.env.example` or helper scripts does not edit the deployment's existing `.env`.
+Retain old GHCR images, stopped legacy containers and backup volumes until the
+new release is accepted. Their old physical names are compatibility references,
+not the canonical names for new installations. Rename/copy persistent resources
+only in a separate, verified data-maintenance step; changing a label alone must
+never select an empty database.
+
+## Rename the existing Keycloak client
+
+Fresh imports use `contenthub`. An existing realm retains its stored client ID
+until the operator changes it; the application keeps using the explicit
+`OIDC_CLIENT_ID` in that deployment's `.env` throughout this transition.
+The bundled helper updates the existing client through the Keycloak Admin API,
+retaining its internal UUID, roles, protocol configuration and redirect URLs.
+It refuses to overwrite another client already named `contenthub`.
+
+During maintenance, stop application traffic, back up Keycloak and preview:
+
+```bash
+python3 scripts/migrate-keycloak-client.py --backup-dir backups/client-name-preview
+python3 scripts/migrate-keycloak-client.py --backup-dir backups/client-name-change --apply
+```
+
+Use `--url` for a different existing Keycloak endpoint and `--realm` if needed.
+The helper reads the administrator credentials from `.env` or the environment;
+it does not print them. The preview changes no client/configuration. Applying it
+creates a private backup of the client representation and deployment environment,
+then updates the client ID and `OIDC_CLIENT_ID` together. Restart/recreate the
+backend with the updated environment, reload old browser tabs and sign in again.
+The browser startup migration transfers old `cp_*` session and pending-work keys
+to `ch_*`, preserves newer keys and does not delete originals if storage is full.
+Existing server integration tokens remain valid; newly issued tokens use `ch_`.
+
+For rollback, use a new backup directory with `--from-client contenthub
+--to-client contentpool --apply`, then restore the previous deployment environment
+and images. Keep the same internal client UUID. If the remote client update
+succeeds but writing `.env` fails, rerun with another backup directory: an already
+renamed client is detected and its environment entry is completed without
+creating another client.
+
+Keep independently maintained Keycloak themes in their own directories. The
+technical built-in login theme remains `iqb-theme`. Deploy its versioned files
+and refresh Keycloak's theme cache in the maintenance window. If the realm is
+shared, scope product display changes to this client/theme; preserve other
+applications' realm and mail sender configuration. For a dedicated installation,
+set realm/client/mail display labels to Content Hub as appropriate.
 
 ## Acceptance and rollback
 
-Verify the application header, public landing page, breadcrumbs, login redirect
-page, browser title, icons and installed shortcut. Check the Keycloak login,
-registration, reset-password, verification and error pages, and a transactional
-mail preview. Confirm logo and focus-state visibility at mobile and desktop
-widths, and check an existing custom app theme.
+Verify existing users, roles, ACPs, uploads and saved personal work after upgrade.
+Check the API, login, callback, logout, mail sender and existing integration tokens
+on the unchanged domain. Confirm the initial violet palette and a later admin
+color edit surviving a restart. Asset responses must contain real image/manifest
+bytes with appropriate content types and caching.
 
-All referenced assets must return actual image/manifest bytes with the expected
-content type, never the Angular fallback page. Check `/favicon.ico` and
-`/site.webmanifest` in both frontend-image and server deployment modes.
-
-To revert, use the existing release rollback procedure to restore the previous
-image digests and runtime files, including the Keycloak theme and nginx config.
-Restore manually changed display/content fields from the recorded values and
-refresh the Keycloak theme cache. The branding change adds no schema migration
-and requires no database or volume rename. A full database restore is not needed
-for a branding-only rollback.
+Use the existing release rollback/restore procedure to restore image digests and
+runtime configuration. The updater stops the current API/database before
+restarting a prior configuration, so two database services do not share a volume
+concurrently. Restore accepts both old and new application dump filenames.
+Revert the Keycloak client ID if changed, and restore palettes through the data
+migration's guarded rollback. Check the old release's migration compatibility
+before choosing image-only rollback. No data volume is deleted automatically.

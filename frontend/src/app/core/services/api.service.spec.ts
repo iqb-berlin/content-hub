@@ -222,8 +222,8 @@ describe('ApiService', () => {
       const response = {
         id: 'token-1',
         name: 'Studio',
-        tokenPrefix: 'cp_abc...',
-        token: 'cp_secret',
+        tokenPrefix: 'ch_abc...',
+        token: 'ch_secret',
         scopes: ['acp.read' as const],
         active: true,
         expiresAt: null,
@@ -237,7 +237,7 @@ describe('ApiService', () => {
       httpClientMock.post.mockReturnValue(of(response));
 
       service.createApplicationToken(payload).subscribe((token) => {
-        expect(token.token).toBe('cp_secret');
+        expect(token.token).toBe('ch_secret');
       });
 
       expect(httpClientMock.post).toHaveBeenCalledWith('/api/admin/application-tokens', payload);
@@ -492,7 +492,7 @@ describe('ApiService', () => {
     });
 
     it('should build file processing events URL with auth token', () => {
-      localStorage.setItem('cp_token', 'job-token');
+      localStorage.setItem('ch_token', 'job-token');
 
       const url = service.getFileProcessingJobEventsUrl('acp1', 'job-1');
 
@@ -521,19 +521,19 @@ describe('ApiService', () => {
     });
 
     it('should get file download URL with token', () => {
-      localStorage.setItem('cp_token', 'test-token');
+      localStorage.setItem('ch_token', 'test-token');
       const url = service.getFileDownloadUrl('acp1', 'file1');
       expect(url).toContain('auth_token=test-token');
     });
 
     it('should get file download URL without token', () => {
-      localStorage.removeItem('cp_token');
+      localStorage.removeItem('ch_token');
       const url = service.getFileDownloadUrl('acp1', 'file1');
       expect(url).toBe('/api/acp/acp1/files/file1/download');
     });
 
     it('should get inline file content URL', () => {
-      localStorage.setItem('cp_token', 'preview-token');
+      localStorage.setItem('ch_token', 'preview-token');
       const url = service.getFileContentUrl('acp1', 'file1', { disposition: 'inline' });
 
       expect(url).toContain('/api/acp/acp1/files/file1/download');
@@ -542,7 +542,7 @@ describe('ApiService', () => {
     });
 
     it('should get file job archive URL with auth token', () => {
-      localStorage.setItem('cp_token', 'job-token');
+      localStorage.setItem('ch_token', 'job-token');
       const url = service.getFileJobArchiveUrl('acp1', 'job-1');
 
       expect(url).toBe('/api/acp/acp1/files/jobs/job-1/archive?auth_token=job-token');
@@ -650,7 +650,7 @@ describe('ApiService', () => {
     });
 
     it('should build index export URL with auth token', () => {
-      localStorage.setItem('cp_token', 'token+1');
+      localStorage.setItem('ch_token', 'token+1');
 
       const url = service.getIndexExportUrl('acp1');
 
@@ -658,7 +658,7 @@ describe('ApiService', () => {
     });
 
     it('should build index export URL without auth token', () => {
-      localStorage.removeItem('cp_token');
+      localStorage.removeItem('ch_token');
 
       const url = service.getIndexExportUrl('acp1');
 
@@ -1140,12 +1140,12 @@ describe('ApiService', () => {
       });
       expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/acp/acp1/index');
 
-      localStorage.setItem('cp_token', 'token+view');
+      localStorage.setItem('ch_token', 'token+view');
       expect(service.getViewIndexExportUrl('acp1')).toBe(
         '/api/view/acp/acp1/index/export?auth_token=token%2Bview',
       );
 
-      localStorage.removeItem('cp_token');
+      localStorage.removeItem('ch_token');
       expect(service.getViewIndexExportUrl('acp1')).toBe('/api/view/acp/acp1/index/export');
     });
   });
@@ -1419,7 +1419,7 @@ describe('ApiService', () => {
 
   describe('Helper methods', () => {
     it('should append auth token to URL', () => {
-      localStorage.setItem('cp_token', 'test-token');
+      localStorage.setItem('ch_token', 'test-token');
       expect(service.appendAuthToken('http://example.com/api')).toBe(
         'http://example.com/api?auth_token=test-token',
       );
@@ -1429,7 +1429,7 @@ describe('ApiService', () => {
     });
 
     it('should return original URL when no token', () => {
-      localStorage.removeItem('cp_token');
+      localStorage.removeItem('ch_token');
       expect(service.appendAuthToken('http://example.com/api')).toBe('http://example.com/api');
     });
   });

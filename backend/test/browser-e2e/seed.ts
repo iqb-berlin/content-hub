@@ -170,7 +170,7 @@ async function seed(): Promise<void> {
     );
 
     const fixtureDirectory =
-      process.env.BROWSER_E2E_FIXTURE_DIR || "/tmp/content-pool-browser-e2e";
+      process.env.BROWSER_E2E_FIXTURE_DIR || "/tmp/content-hub-browser-e2e";
     await mkdir(fixtureDirectory, { recursive: true });
     const unitXml = `<?xml version="1.0" encoding="UTF-8"?>
 <Unit>

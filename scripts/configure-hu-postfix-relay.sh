@@ -20,7 +20,7 @@ require_command postconf
 require_command postmap
 require_command systemctl
 
-cd "${CONTENT_POOL_DIR:-/home/julian/content-pool}"
+cd "${CONTENT_HUB_DIR:-/home/julian/content-hub}"
 
 sudo -v
 

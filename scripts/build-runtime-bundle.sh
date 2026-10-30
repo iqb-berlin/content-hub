@@ -34,6 +34,7 @@ files=(
   scripts/configure-hu-postfix-relay.sh
   scripts/init-keycloak.sh
   scripts/deploy-common.sh
+  scripts/migrate-keycloak-client.py
   scripts/install.sh
   scripts/update.sh
   scripts/restore.sh

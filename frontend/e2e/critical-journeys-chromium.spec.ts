@@ -27,7 +27,7 @@ test('credential access cannot cross into ACP management or another private ACP'
   await page.goto(`/manage/${baseAcp}`);
   await expect(page.getByRole('heading', { name: 'Kein Zugriff' })).toBeVisible();
   await expect(page.locator('a[href^="/manage/"]')).toHaveCount(0);
-  const token = await page.evaluate(() => localStorage.getItem('cp_token'));
+  const token = await page.evaluate(() => localStorage.getItem('ch_token'));
   expect(token).toBeTruthy();
   const otherAcp = await page.request.get(`/api/view/acp/${regressionAcp}`, {
     headers: { Authorization: `Bearer ${token}` },

@@ -26,8 +26,8 @@ variables:
 
   GHCR_REGISTRY: ghcr.io
   GHCR_ORG: iqb-berlin
-  BACKEND_IMAGE_NAME: "${GHCR_REGISTRY}/${GHCR_ORG}/content-pool-backend"
-  FRONTEND_IMAGE_NAME: "${GHCR_REGISTRY}/${GHCR_ORG}/content-pool-frontend"
+  BACKEND_IMAGE_NAME: "${GHCR_REGISTRY}/${GHCR_ORG}/content-hub-backend"
+  FRONTEND_IMAGE_NAME: "${GHCR_REGISTRY}/${GHCR_ORG}/content-hub-frontend"
 
   PRERELEASE_SCRIPT_REGEX: ^v?(0|([1-9][0-9]*))\.(0|([1-9][0-9]*))\.(0|([1-9][0-9]*))(-((alpha|beta|rc)((\.)?([1-9][0-9]*))?))$
   PRERELEASE_RULES_REGEX: /^v?(0|([1-9][0-9]*))\.(0|([1-9][0-9]*))\.(0|([1-9][0-9]*))(-((alpha|beta|rc)((\.)?([1-9][0-9]*))?))$/
@@ -244,12 +244,12 @@ test-db-migrations:
     # DB_* is consumed by backend/TypeORM; POSTGRES_* initializes the postgres service.
     DB_HOST: db
     DB_PORT: "5432"
-    DB_USERNAME: contentpool
-    DB_PASSWORD: contentpool_dev
-    DB_DATABASE: contentpool
-    POSTGRES_USER: contentpool
-    POSTGRES_PASSWORD: contentpool_dev
-    POSTGRES_DB: contentpool
+    DB_USERNAME: contenthub
+    DB_PASSWORD: contenthub_dev
+    DB_DATABASE: contenthub
+    POSTGRES_USER: contenthub
+    POSTGRES_PASSWORD: contenthub_dev
+    POSTGRES_DB: contenthub
   script:
     - npm run migration:run
     - npm run migration:revert
@@ -283,12 +283,12 @@ test-backend-e2e:
     NODE_ENV: test
     DB_HOST: db
     DB_PORT: "5432"
-    DB_USERNAME: contentpool
-    DB_PASSWORD: contentpool_dev
-    DB_DATABASE: contentpool
-    POSTGRES_USER: contentpool
-    POSTGRES_PASSWORD: contentpool_dev
-    POSTGRES_DB: contentpool
+    DB_USERNAME: contenthub
+    DB_PASSWORD: contenthub_dev
+    DB_DATABASE: contenthub
+    POSTGRES_USER: contenthub
+    POSTGRES_PASSWORD: contenthub_dev
+    POSTGRES_DB: contenthub
     DB_SYNCHRONIZE: "true"
     DB_RUN_MIGRATIONS: "false"
     JWT_SECRET: ci-test-secret-at-least-32-characters

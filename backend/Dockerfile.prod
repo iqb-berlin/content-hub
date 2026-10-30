@@ -27,7 +27,7 @@ ENV APP_VERSION=${APP_VERSION} \
 LABEL org.opencontainers.image.version=${APP_VERSION} \
       org.opencontainers.image.revision=${APP_COMMIT} \
       org.opencontainers.image.created=${APP_BUILT_AT} \
-      org.opencontainers.image.source="https://github.com/iqb-berlin/content-pool-next"
+      org.opencontainers.image.source="https://github.com/iqb-berlin/content-hub"
 WORKDIR /app
 
 # The pinned Node base currently contains OpenSSL 3.5.7-r0. Require the Alpine

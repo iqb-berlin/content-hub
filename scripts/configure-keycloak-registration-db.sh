@@ -3,7 +3,7 @@ set -euo pipefail
 
 ENV_FILE="${ENV_FILE:-.env}"
 COMPOSE_FILES="${COMPOSE_FILES:--f docker-compose.server.yml -f docker-compose.traefik.yml}"
-ALTCHA_PROVIDER_JAR="${ALTCHA_PROVIDER_JAR:-keycloak/providers/content-pool-keycloak-altcha.jar}"
+ALTCHA_PROVIDER_JAR="${ALTCHA_PROVIDER_JAR:-keycloak/providers/content-hub-keycloak-altcha.jar}"
 KEYCLOAK_IMAGE="${KEYCLOAK_IMAGE:-}"
 
 # COMPOSE_FILES is intentionally a command-fragment env var, matching the

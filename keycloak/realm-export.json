@@ -49,14 +49,14 @@
       }
     ],
     "client": {
-      "contentpool": [
+      "contenthub": [
         {
           "id": "client-admin-role-id",
           "name": "admin",
           "description": "Content Hub administrator",
           "composite": false,
           "clientRole": true,
-          "containerId": "contentpool"
+          "containerId": "contenthub"
         },
         {
           "id": "client-user-role-id",
@@ -64,7 +64,7 @@
           "description": "Content Hub user",
           "composite": false,
           "clientRole": true,
-          "containerId": "contentpool"
+          "containerId": "contenthub"
         }
       ]
     }
@@ -175,8 +175,8 @@
       ]
     },
     {
-      "id": "contentpool-client-id",
-      "clientId": "contentpool",
+      "id": "contenthub-client-id",
+      "clientId": "contenthub",
       "name": "Content Hub",
       "description": "Content Hub OIDC Client",
       "rootUrl": "",

@@ -585,7 +585,7 @@ describe('ItemExplorerFacade comment counts', () => {
 
     (component as any).syncItemCommentCountSession();
     token = createJwt('user-b');
-    (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+    (component as any).authStorageListener({ key: 'ch_token' } as StorageEvent);
 
     expect(component.comments.itemCommentCounts).toEqual({});
     expect(component.comments.itemCommentCountsAvailable).toBe(false);
@@ -1095,7 +1095,7 @@ describe('ItemExplorerFacade', () => {
 
     expect(patchViewItemPreferenceRow).not.toHaveBeenCalled();
     expect((component.personalData as any).pendingPersonalRowUpdates.size).toBe(0);
-    expect(sessionStorage.getItem('cp_item_explorer_pending_personal:acp-1')).toContain(
+    expect(sessionStorage.getItem('ch_item_explorer_pending_personal:acp-1')).toContain(
       'Später speichern',
     );
   });
@@ -1479,7 +1479,7 @@ describe('ItemExplorerFacade', () => {
       component.setPersonalItemNote('row-1', 'private A');
       component.flushPersonalItemDataSave();
       token = createJwt('user-b');
-      (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+      (component as any).authStorageListener({ key: 'ch_token' } as StorageEvent);
       component.setPersonalItemNote('row-1', 'private B');
       component.flushPersonalItemDataSave();
       expect(patch).toHaveBeenCalledTimes(2);
@@ -1584,7 +1584,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.personalData.personalItemData).toEqual({ 'uuid::1': { note: 'Nur A' } });
 
     token = createJwt('user-b');
-    (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+    (component as any).authStorageListener({ key: 'ch_token' } as StorageEvent);
 
     expect(component.personalData.personalItemData).toEqual({});
     expect(component.personalData.personalDataLoadState).toBe('loading');
@@ -1617,11 +1617,11 @@ describe('ItemExplorerFacade', () => {
     component.setPersonalItemNote('uuid::1', 'Noch nicht gespeichert');
 
     token = null;
-    (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+    (component as any).authStorageListener({ key: 'ch_token' } as StorageEvent);
     expect(component.personalData.personalItemData).toEqual({});
 
     token = createJwt('user-a');
-    (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+    (component as any).authStorageListener({ key: 'ch_token' } as StorageEvent);
 
     expect(component.personalData.personalItemData).toEqual({
       'uuid::1': { note: 'Noch nicht gespeichert' },
@@ -1665,7 +1665,7 @@ describe('ItemExplorerFacade', () => {
       firstComponent.personalData.personalDataLoadState = 'loaded';
       firstComponent.setPersonalItemNote('uuid::1', 'Fallback-Notiz');
       firstToken = null;
-      (firstComponent as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+      (firstComponent as any).authStorageListener({ key: 'ch_token' } as StorageEvent);
       firstComponent.comments.ngOnDestroy();
       firstComponent.personalData.ngOnDestroy();
       firstComponent.collections.ngOnDestroy();
@@ -1732,13 +1732,13 @@ describe('ItemExplorerFacade', () => {
     component.setPersonalItemNote('uuid::1', 'Nur A');
 
     token = null;
-    (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+    (component as any).authStorageListener({ key: 'ch_token' } as StorageEvent);
     token = createJwt('user-b');
-    (component as any).authStorageListener({ key: 'cp_token' } as StorageEvent);
+    (component as any).authStorageListener({ key: 'ch_token' } as StorageEvent);
 
     expect(component.personalData.personalItemData).toEqual({ 'uuid::1': { note: 'Nur B' } });
     expect((component.personalData as any).pendingPersonalRowUpdates.size).toBe(0);
-    expect(sessionStorage.getItem('cp_item_explorer_pending_personal:acp-1')).toBeNull();
+    expect(sessionStorage.getItem('ch_item_explorer_pending_personal:acp-1')).toBeNull();
     destroyFacade(component);
   });
 

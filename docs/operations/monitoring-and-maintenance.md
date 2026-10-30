@@ -47,7 +47,7 @@ Use targeted logs instead of tailing everything when possible.
 Examples:
 
 ```bash
-docker compose -f docker-compose.prod.yml logs --since 15m content-pool-api
+docker compose -f docker-compose.prod.yml logs --since 15m content-hub-api
 docker compose -f docker-compose.prod.yml logs --since 15m keycloak
 docker compose -f docker-compose.prod.yml logs --since 15m nginx
 ```

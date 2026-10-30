@@ -72,7 +72,7 @@ describe('ItemViewComponent', () => {
 
     (component as any).applyFocus(doc, target);
 
-    expect(target.classList.contains('cp-item-focus-highlight')).toBe(true);
+    expect(target.classList.contains('ch-item-focus-highlight')).toBe(true);
     expect(component.highlightApplied).toBe(true);
   });
 
@@ -87,7 +87,7 @@ describe('ItemViewComponent', () => {
 
     (component as any).applyFocus(doc, target);
 
-    expect(target.classList.contains('cp-item-focus-highlight')).toBe(false);
+    expect(target.classList.contains('ch-item-focus-highlight')).toBe(false);
     expect(target.scrollIntoView).toHaveBeenCalled();
     expect(target.focus).toHaveBeenCalled();
     expect(component.highlightApplied).toBe(true);

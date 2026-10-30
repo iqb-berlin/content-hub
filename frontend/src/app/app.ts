@@ -227,7 +227,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    window.addEventListener('cp-settings-updated', this.settingsUpdatedListener as EventListener);
+    window.addEventListener('ch-settings-updated', this.settingsUpdatedListener as EventListener);
     window.addEventListener('focus', this.appResumeListener);
     document.addEventListener('visibilitychange', this.visibilityChangeListener);
     this.auth.initFromStorage();
@@ -259,7 +259,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     window.removeEventListener(
-      'cp-settings-updated',
+      'ch-settings-updated',
       this.settingsUpdatedListener as EventListener,
     );
     window.removeEventListener('focus', this.appResumeListener);

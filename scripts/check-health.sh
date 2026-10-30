@@ -55,8 +55,8 @@ check_url "Frontend" "${FRONTEND_URL%/}/"
 
 if [[ -n "$EXPECTED_RELEASE" || -n "$EXPECTED_COMMIT" ]]; then
     echo -n "Checking deployed release identity... "
-    BACKEND_VERSION="$(mktemp "${TMPDIR:-/tmp}/content-pool-backend-version.XXXXXX")"
-    FRONTEND_VERSION="$(mktemp "${TMPDIR:-/tmp}/content-pool-frontend-version.XXXXXX")"
+    BACKEND_VERSION="$(mktemp "${TMPDIR:-/tmp}/content-hub-backend-version.XXXXXX")"
+    FRONTEND_VERSION="$(mktemp "${TMPDIR:-/tmp}/content-hub-frontend-version.XXXXXX")"
     trap 'rm -f "$BACKEND_VERSION" "$FRONTEND_VERSION"' EXIT
     if curl -fsS "${API_URL%/}/version" -o "$BACKEND_VERSION" && \
        curl -fsS "${FRONTEND_URL%/}/version.json" -o "$FRONTEND_VERSION" && \

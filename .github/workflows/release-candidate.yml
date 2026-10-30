@@ -22,8 +22,8 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/content-pool-backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/content-pool-frontend
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/content-hub-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/content-hub-frontend
 
 jobs:
   validate:
@@ -301,7 +301,7 @@ jobs:
           MIGRATION_CLASSIFICATION: ${{ inputs.migration_classification }}
         run: |
           mkdir -p dist
-          archive="content-pool-${RELEASE}-runtime.tar.gz"
+          archive="content-hub-${RELEASE}-runtime.tar.gz"
           ./scripts/build-runtime-bundle.sh "dist/${archive}"
           archive_sha="$(sha256sum "dist/${archive}" | cut -d' ' -f1)"
           ./scripts/release_manifest.py create \
@@ -315,8 +315,8 @@ jobs:
             --runtime-sha256 "$archive_sha" \
             --migration-classification "$MIGRATION_CLASSIFICATION" \
             --required-configuration DEPLOYMENT_ENV \
-            --required-configuration CONTENT_POOL_BACKEND_IMAGE \
-            --required-configuration CONTENT_POOL_FRONTEND_IMAGE \
+            --required-configuration CONTENT_HUB_BACKEND_IMAGE \
+            --required-configuration CONTENT_HUB_FRONTEND_IMAGE \
             --output dist/release-manifest.json
           (cd dist && sha256sum "$archive" release-manifest.json > SHA256SUMS)
       - name: Publish verified image tags
