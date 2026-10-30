@@ -16,6 +16,36 @@ test.beforeEach(async ({ context }) => {
   await installOidcSession(context, '10000000-0000-4000-8000-000000000002', 'e2e-manager');
 });
 
+test('keeps the comment placeholder readable against its surface', async ({ page }) => {
+  await page.goto(baseUrl);
+  await expectPosition(page, 1);
+  const input = page.locator('.new-comment-form textarea');
+  await expect(input).toBeVisible();
+  const contrast = await input.evaluate((element) => {
+    const luminance = (cssColor: string) => {
+      // Canvas resolves browser-specific computed formats, including color(srgb ...).
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext('2d')!;
+      context.fillStyle = cssColor;
+      context.fillRect(0, 0, 1, 1);
+      const [red, green, blue, alpha] = context.getImageData(0, 0, 1, 1).data;
+      if (alpha !== 255) throw new Error('Expected opaque placeholder and surface colors');
+      const linear = [red, green, blue].map((value) => {
+        const channel = value / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+    };
+    const placeholder = getComputedStyle(element, '::placeholder');
+    if (Number(placeholder.opacity) !== 1) throw new Error('Expected opaque placeholder text');
+    const text = luminance(placeholder.color);
+    const background = luminance(getComputedStyle(element).backgroundColor);
+    return (Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05);
+  });
+  expect(contrast).toBeGreaterThanOrEqual(4.5);
+});
+
 test('keeps the review panel resizable and the workspace usable on narrow screens', async ({
   page,
 }, testInfo) => {
