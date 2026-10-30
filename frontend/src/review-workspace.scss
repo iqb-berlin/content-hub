@@ -53,7 +53,7 @@ body:has(app-task-sequence.review-workspace-view) {
 
 app-task-sequence.review-workspace-view {
   display: block;
-  --workspace-muted: color-mix(in srgb, var(--color-text-secondary) 75%, var(--color-surface));
+  --workspace-muted: var(--color-text-secondary);
 
   .breadcrumb {
     font-size: 12px;
@@ -340,6 +340,7 @@ app-task-sequence.review-workspace-view {
   }
   .new-comment-form textarea::placeholder {
     color: var(--workspace-muted);
+    opacity: 1;
   }
   .new-comment-form textarea:focus {
     outline: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
