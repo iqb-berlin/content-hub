@@ -220,7 +220,7 @@
         "backchannel.logout.session.required": "true",
         "backchannel.logout.revoke.offline.tokens": "false",
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "https://app.example.com/##https://YOUR_SERVER_IP/##http://YOUR_SERVER_IP/##http://localhost:4200/##http://localhost:4201/##http://127.0.0.1:4200/##http://127.0.0.1:4201/"
+        "post.logout.redirect.uris": "https://app.example.com/##https://YOUR_SERVER_IP/##http://YOUR_SERVER_IP/##http://localhost:4200/##http://localhost:4201/##http://127.0.0.1:4200/##http://127.0.0.1:4201/##https://app.example.com/login##https://YOUR_SERVER_IP/login##http://YOUR_SERVER_IP/login##http://localhost:4200/login##http://localhost:4201/login##http://127.0.0.1:4200/login##http://127.0.0.1:4201/login"
       },
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": true,
