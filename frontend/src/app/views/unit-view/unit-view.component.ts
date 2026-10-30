@@ -956,7 +956,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   activeTab: 'comments' | 'metadata' | 'coding' | 'richtext' = 'metadata';
   isNarrowLayout = false;
   reviewPanelCollapsed = false;
-  reviewPanelWidth = 420;
+  reviewPanelWidth = 360;
 
   // Feature config
   showMetadata = false;

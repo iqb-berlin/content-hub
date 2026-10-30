@@ -8,6 +8,9 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ### Changes
 
+- Refine the booklet review workspace with a clear booklet heading, compact task
+  navigation, a lighter application header and responsive review tools. Retain
+  pointer and keyboard resizing of the review panel.
 - Copy the current booklet task link on click, confirm success and offer a
   selectable URL when clipboard access is blocked. Refs #245.
 - Stop the active application/database before restoring older service names and
