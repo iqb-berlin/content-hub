@@ -8,6 +8,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Location } from '@angular/common';
 import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import {
   catchError,
@@ -105,10 +106,9 @@ interface ReviewBookletOption {
             @if (isBooklet && currentUnit && !sequenceLoading) {
               <a
                 class="btn btn-outline btn-sm"
-                [routerLink]="['/view', acpId, 'sequence', sequenceId]"
-                [queryParams]="unitLinkParams(currentIndex)"
-                queryParamsHandling="merge"
-                title="Link zur aktuellen Aufgabe kopieren oder in einem neuen Tab öffnen"
+                [href]="unitHref(currentIndex)"
+                (click)="copyUnitLink($event)"
+                title="Direktlink zur aktuellen Aufgabe kopieren"
               >
                 🔗 Direktlink zur Aufgabe
               </a>
@@ -162,6 +162,21 @@ interface ReviewBookletOption {
             </button>
           </div>
         </div>
+
+        @if (unitLinkMessage) {
+          <p role="status" class="help-text">{{ unitLinkMessage }}</p>
+        }
+        @if (manualUnitLink) {
+          <label class="manual-unit-link">
+            Direktlink zum manuellen Kopieren
+            <input
+              #manualLinkInput
+              readonly
+              [value]="manualUnitLink"
+              (focus)="manualLinkInput.select()"
+            />
+          </label>
+        }
 
         @if (invalidUnitLink) {
           <p role="status" class="help-text">
@@ -324,6 +339,15 @@ interface ReviewBookletOption {
       .seq-actions {
         display: flex;
         gap: 8px;
+      }
+      .manual-unit-link {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .manual-unit-link input {
+        width: 100%;
+        min-width: 0;
       }
 
       .nav-bar {
@@ -583,6 +607,8 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   sequenceLoading = false;
   currentIndex = 0;
   invalidUnitLink = false;
+  unitLinkMessage = '';
+  manualUnitLink = '';
   breadcrumbs: BreadcrumbItem[] = [];
   reviewBooklets: ReviewBookletOption[] = [];
   readonly unitLabel = unitLabel;
@@ -602,6 +628,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   isFallbackFullscreen = false;
 
   private readonly destroy$ = new Subject<void>();
+  private unitLinkCopyRequest = 0;
 
   private readonly fullscreenChangeHandler = () => {
     this.isFullscreen =
@@ -616,6 +643,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   constructor(
     @Inject(ActivatedRoute) private route: ActivatedRoute,
     @Inject(Router) private router: Router,
+    @Inject(Location) private location: Location,
     @Inject(ApiService) private api: ApiService,
     @Inject(ChangeDetectorRef) private changeDetector: ChangeDetectorRef,
   ) {}
@@ -668,6 +696,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
             previous.sequenceKind === current.sequenceKind,
         ),
         switchMap(({ sequenceId, sequenceKind }) => {
+          this.clearUnitLinkFeedback();
           this.sequenceLoading = true;
           this.unitListOpen = false;
           this.changeDetector.markForCheck();
@@ -685,6 +714,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       )
       .subscribe(({ sequence, sequenceId, sequenceKind, queryParams }) => {
+        this.clearUnitLinkFeedback();
         this.sequenceLoading = false;
         this.sequenceId = sequenceId;
         this.sequenceKind = sequenceKind;
@@ -706,6 +736,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.clearUnitLinkFeedback();
     this.destroy$.next();
     this.destroy$.complete();
     document.removeEventListener('fullscreenchange', this.fullscreenChangeHandler);
@@ -786,6 +817,41 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
     const unit = this.sequence?.units[index];
     const occurrence = unit?.linkId || unit?.occurrenceId || null;
     return { kind: 'booklet', occurrence, position: occurrence ? null : index + 1 };
+  }
+
+  unitHref(index: number): string {
+    const tree = this.router.createUrlTree(['/view', this.acpId, 'sequence', this.sequenceId], {
+      queryParams: this.unitLinkParams(index),
+      queryParamsHandling: 'merge',
+    });
+    return this.location.prepareExternalUrl(this.router.serializeUrl(tree));
+  }
+
+  async copyUnitLink(event: MouseEvent): Promise<void> {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    event.preventDefault();
+    if (this.sequenceLoading || !this.isBooklet || !this.currentUnit) return;
+    const href = (event.currentTarget as HTMLAnchorElement).href;
+    this.clearUnitLinkFeedback();
+    const request = this.unitLinkCopyRequest;
+    try {
+      await navigator.clipboard.writeText(href);
+      if (request !== this.unitLinkCopyRequest) return;
+      this.unitLinkMessage = 'Link kopiert.';
+    } catch {
+      if (request !== this.unitLinkCopyRequest) return;
+      this.unitLinkMessage = 'Der Link konnte nicht automatisch kopiert werden.';
+      this.manualUnitLink = href;
+    }
+    this.changeDetector.markForCheck();
+  }
+
+  private clearUnitLinkFeedback(): void {
+    this.unitLinkCopyRequest += 1;
+    this.unitLinkMessage = '';
+    this.manualUnitLink = '';
   }
 
   private selectLinkedUnit(params: ParamMap) {

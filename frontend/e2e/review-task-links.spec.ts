@@ -16,6 +16,67 @@ test.beforeEach(async ({ context }) => {
   await installOidcSession(context, '10000000-0000-4000-8000-000000000002', 'e2e-manager');
 });
 
+test('copies the current task link on click without navigating and confirms success', async ({
+  page,
+}) => {
+  // Stub only the permission-dependent clipboard boundary, keeping routing and API real.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        writeText: async (text: string) => {
+          document.documentElement.dataset['copiedTaskLink'] = text;
+        },
+      },
+    });
+  });
+  await page.goto(baseUrl);
+  await expectPosition(page, 1);
+  const link = page.getByRole('link', { name: '🔗 Direktlink zur Aufgabe', exact: true });
+  const href = (await link.getAttribute('href'))!;
+  const originalUrl = page.url();
+  await link.click();
+  await expect(page.getByRole('status')).toHaveText('Link kopiert.');
+  expect(await page.locator('html').getAttribute('data-copied-task-link')).toBe(
+    new URL(href, originalUrl).href,
+  );
+  await expect(page).toHaveURL(originalUrl);
+  await expectPosition(page, 1);
+  await page.getByRole('button', { name: 'Weiter →', exact: true }).click();
+  await expectPosition(page, 2);
+  await expect(page.getByText('Link kopiert.', { exact: true })).toHaveCount(0);
+});
+
+test('offers a selectable task link when clipboard permission is denied', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        writeText: async () => {
+          throw new DOMException('Clipboard access denied', 'NotAllowedError');
+        },
+      },
+    });
+  });
+  await page.goto(`${baseUrl}&position=2`);
+  await expectPosition(page, 2);
+  const link = page.getByRole('link', { name: '🔗 Direktlink zur Aufgabe', exact: true });
+  const href = (await link.getAttribute('href'))!;
+  await link.click();
+  await expect(page.getByRole('status')).toHaveText(
+    'Der Link konnte nicht automatisch kopiert werden.',
+  );
+  const input = page.getByRole('textbox', { name: 'Direktlink zum manuellen Kopieren' });
+  await expect(input).toHaveValue(new URL(href, page.url()).href);
+  await input.focus();
+  expect(
+    await input.evaluate(
+      (element: HTMLInputElement) =>
+        element.selectionStart === 0 && element.selectionEnd === element.value.length,
+    ),
+  ).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test('copies an exact repeated occurrence into a new tab and survives reload', async ({
   page,
   context,

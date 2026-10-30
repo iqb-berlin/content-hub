@@ -90,7 +90,104 @@ async function setup(url: string, pending?: Subject<TaskSequence>) {
 }
 
 describe('Booklet task links', () => {
-  afterEach(() => TestBed.resetTestingModule());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    TestBed.resetTestingModule();
+  });
+
+  function clipboard(writeText: ReturnType<typeof vi.fn>) {
+    const replacement = Object.create(navigator);
+    Object.defineProperty(replacement, 'clipboard', { value: { writeText } });
+    vi.stubGlobal('navigator', replacement);
+  }
+
+  it.each([
+    `kind=booklet&occurrence=${sequence.units[1].linkId}&keep=yes`,
+    'kind=booklet&position=3',
+  ])(
+    'copies the absolute task link with visible feedback without navigation: %s',
+    async (query) => {
+      const { component, harness, router } = await setup(`${baseUrl}?${query}`);
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      clipboard(writeText);
+      const urlBefore = router.url;
+      const indexBefore = component.currentIndex;
+      const link = harness.fixture.nativeElement.querySelector(
+        '.workspace-actions a',
+      ) as HTMLAnchorElement;
+      const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+      link.dispatchEvent(event);
+      await vi.waitFor(() => expect(component.unitLinkMessage).toBe('Link kopiert.'));
+      harness.detectChanges();
+      expect(writeText).toHaveBeenCalledExactlyOnceWith(new URL(urlBefore, document.baseURI).href);
+      expect(event.defaultPrevented).toBe(true);
+      expect(router.url).toBe(urlBefore);
+      expect(component.currentIndex).toBe(indexBefore);
+      expect(harness.fixture.nativeElement.querySelector('[role="status"]').textContent).toBe(
+        'Link kopiert.',
+      );
+      component.prev();
+      await harness.fixture.whenStable();
+      expect(component.unitLinkMessage).toBe('');
+    },
+  );
+
+  it.each(['blocked', 'unavailable'])(
+    'offers the exact link for manual copying when the clipboard is %s',
+    async (mode) => {
+      const { component, harness } = await setup(
+        `${baseUrl}?kind=booklet&occurrence=${sequence.units[1].linkId}`,
+      );
+      const writeText = vi.fn().mockRejectedValue(new Error('NotAllowedError'));
+      clipboard(writeText);
+      if (mode === 'unavailable') vi.stubGlobal('navigator', {});
+      const link = harness.fixture.nativeElement.querySelector(
+        '.workspace-actions a',
+      ) as HTMLAnchorElement;
+      link.click();
+      await vi.waitFor(() => expect(component.manualUnitLink).toBe(link.href));
+      harness.detectChanges();
+      const input = harness.fixture.nativeElement.querySelector(
+        '.manual-unit-link input',
+      ) as HTMLInputElement;
+      expect(input.value).toBe(link.href);
+      expect(input.readOnly).toBe(true);
+      expect(component.unitLinkMessage).not.toContain('Link kopiert');
+      input.focus();
+      expect(input.selectionStart).toBe(0);
+      expect(input.selectionEnd).toBe(input.value.length);
+    },
+  );
+
+  it.each([
+    { ctrlKey: true },
+    { metaKey: true },
+    { shiftKey: true },
+    { altKey: true },
+    { button: 1 },
+  ])('preserves native link actions for modified clicks: %j', async (modifiers) => {
+    const { component } = await setup(`${baseUrl}?kind=booklet`);
+    const writeText = vi.fn();
+    clipboard(writeText);
+    const event = new MouseEvent('click', { cancelable: true, ...modifiers });
+    await component.copyUnitLink(event);
+    expect(event.defaultPrevented).toBe(false);
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it('does not show stale copy feedback after navigating to another task', async () => {
+    const { component, harness } = await setup(`${baseUrl}?kind=booklet`);
+    let finish!: () => void;
+    clipboard(vi.fn(() => new Promise<void>((resolve) => (finish = resolve))));
+    (harness.fixture.nativeElement.querySelector('.workspace-actions a') as HTMLElement).click();
+    component.next();
+    await harness.fixture.whenStable();
+    finish();
+    await Promise.resolve();
+    expect(component.currentIndex).toBe(1);
+    expect(component.unitLinkMessage).toBe('');
+    expect(component.manualUnitLink).toBe('');
+  });
 
   it('opens the exact occurrence of a repeated unit, including escaped characters', async () => {
     const occurrence = sequence.units[1].occurrenceId!;

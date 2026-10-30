@@ -8,6 +8,8 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ### Changes
 
+- Copy the current booklet task link on click, confirm success and offer a
+  selectable URL when clipboard access is blocked. Refs #245.
 - Stop the active application/database before restoring older service names and
   retain the current runtime when stopping fails. Make Keycloak client migration
   retryable after a failed environment write or replacement.
