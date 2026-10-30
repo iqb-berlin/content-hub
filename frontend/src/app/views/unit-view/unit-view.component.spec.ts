@@ -955,8 +955,9 @@ describe('UnitViewComponent', () => {
     const resizeHandle = fixture.nativeElement.querySelector(
       '.panel-resize-handle',
     ) as HTMLButtonElement;
+    const widthBeforeKeyboardResize = component.reviewPanelWidth;
     resizeHandle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
-    expect(component.reviewPanelWidth).toBe(444);
+    expect(component.reviewPanelWidth).toBe(widthBeforeKeyboardResize + 24);
     component.toggleReviewPanel();
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
@@ -1036,6 +1037,7 @@ describe('Review panel interactions', () => {
     'destroy',
   ])('stops dragging on %s and ignores subsequent movement', (ending) => {
     const view = component();
+    const initialWidth = view.reviewPanelWidth;
     const handle = document.createElement('button');
     const capture = vi.fn();
     const release = vi.fn();
@@ -1047,10 +1049,10 @@ describe('Review panel interactions', () => {
       pointer(handle, 'pointerdown');
       expect(capture).toHaveBeenCalledWith(1);
       pointer(window, 'pointermove', { clientX: 750 });
-      expect(view.reviewPanelWidth).toBe(470);
+      expect(view.reviewPanelWidth).toBe(initialWidth + 50);
       pointer(window, 'pointerup', { pointerId: 2 });
       pointer(window, 'pointermove', { clientX: 730 });
-      expect(view.reviewPanelWidth).toBe(490);
+      expect(view.reviewPanelWidth).toBe(initialWidth + 70);
       if (ending === 'blur') window.dispatchEvent(new Event('blur'));
       else if (ending === 'released-button')
         pointer(window, 'pointermove', { buttons: 0, clientX: 600 });
@@ -1058,7 +1060,7 @@ describe('Review panel interactions', () => {
       else if (ending === 'destroy') view.ngOnDestroy();
       else pointer(ending === 'lostpointercapture' ? handle : window, ending, { buttons: 0 });
       pointer(window, 'pointermove', { clientX: 600 });
-      expect(view.reviewPanelWidth).toBe(490);
+      expect(view.reviewPanelWidth).toBe(initialWidth + 70);
       expect(release).toHaveBeenCalledWith(1);
     } finally {
       view.ngOnDestroy();

@@ -343,7 +343,9 @@ describe('Booklet task links', () => {
   });
 
   it('ignores task link parameters on legacy module sequences', async () => {
-    const { component, router } = await setup(`${baseUrl}?position=3`);
+    const { component, router, harness } = await setup(`${baseUrl}?position=3`);
+    expect(harness.routeNativeElement?.classList.contains('review-workspace-view')).toBe(false);
+    expect(harness.fixture.nativeElement.querySelector('.workspace-heading')).toBeNull();
     expect(component.currentIndex).toBe(0);
     component.next();
     expect(component.currentIndex).toBe(1);

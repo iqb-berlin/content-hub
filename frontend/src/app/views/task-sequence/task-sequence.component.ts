@@ -35,6 +35,7 @@ interface ReviewBookletOption {
 
 @Component({
   selector: 'app-task-sequence',
+  host: { '[class.review-workspace-view]': 'isBooklet' },
   standalone: true,
   imports: [
     FormsModule,
@@ -79,6 +80,36 @@ interface ReviewBookletOption {
         [class.fullscreen-fallback]="isFallbackFullscreen"
         [attr.aria-busy]="sequenceLoading"
       >
+        @if (isBooklet) {
+          <div class="workspace-heading">
+            <div>
+              <span class="workspace-eyebrow">Testheft-Review</span>
+              <h2>{{ sequenceId }}</h2>
+              <p>
+                {{ bookletName }} <span aria-hidden="true">·</span>
+                {{ sequence.units.length }} Aufgaben
+              </p>
+            </div>
+            @if (reviewBooklets.length > 1) {
+              <button
+                class="btn btn-outline booklet-switcher"
+                (click)="toggleBookletList()"
+                [attr.aria-expanded]="bookletListOpen"
+                [attr.aria-label]="
+                  'Testheft wechseln, aktuell ' +
+                  bookletName +
+                  ', ' +
+                  currentBookletPosition +
+                  ' von ' +
+                  reviewBooklets.length
+                "
+                aria-controls="review-booklet-list"
+              >
+                Testheft wechseln <span aria-hidden="true">⌄</span>
+              </button>
+            }
+          </div>
+        }
         <!-- Navigation bar -->
         <div class="nav-bar">
           <div class="sequence-navigation">
@@ -87,12 +118,18 @@ interface ReviewBookletOption {
             </button>
             @if (hasUnits && currentUnit) {
               <span class="nav-info">
-                Aufgabe {{ currentIndex + 1 }} / {{ sequence.units.length }}:
-                <strong>{{
-                  isBooklet ? unitLabel(currentUnit) : currentUnit.name || currentUnit.id
-                }}</strong>
-                @if (currentUnit.blockPath?.length) {
-                  <small> · {{ currentUnit.blockPath?.join(' / ') }}</small>
+                @if (isBooklet) {
+                  <span>Aufgabe</span>
+                  <strong
+                    >{{ currentIndex + 1 }}
+                    <span class="position-total">von {{ sequence.units.length }}</span></strong
+                  >
+                } @else {
+                  Aufgabe {{ currentIndex + 1 }} / {{ sequence.units.length }}:
+                  <strong>{{ currentUnit.name || currentUnit.id }}</strong>
+                  @if (currentUnit.blockPath?.length) {
+                    <small> · {{ currentUnit.blockPath?.join(' / ') }}</small>
+                  }
                 }
               </span>
             } @else {
@@ -109,33 +146,24 @@ interface ReviewBookletOption {
                 [href]="unitHref(currentIndex)"
                 (click)="copyUnitLink($event)"
                 title="Direktlink zur aktuellen Aufgabe kopieren"
+                aria-label="Direktlink zur Aufgabe kopieren"
               >
-                🔗 Direktlink zur Aufgabe
-              </a>
-            }
-            @if (isBooklet && reviewBooklets.length > 1) {
-              <button
-                class="btn btn-outline btn-sm btn-state booklet-switcher"
-                (click)="toggleBookletList()"
-                [attr.aria-expanded]="bookletListOpen"
-                [attr.aria-label]="
-                  'Testheft wechseln, aktuell ' +
-                  bookletName +
-                  ', ' +
-                  currentBookletPosition +
-                  ' von ' +
-                  reviewBooklets.length
-                "
-                aria-controls="review-booklet-list"
-                title="Testheft wechseln"
-              >
-                <span aria-hidden="true">📚</span>
-                <span class="selected-booklet-id">{{ bookletName }}</span>
-                <span class="selection-position"
-                  >· {{ currentBookletPosition || '–' }}/{{ reviewBooklets.length }}</span
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  aria-hidden="true"
                 >
-                <span aria-hidden="true">▾</span>
-              </button>
+                  <path
+                    d="m10 13 4-4M8 15l-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M14 9l2-2a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0"
+                    transform="translate(1 -1)"
+                  />
+                </svg>
+                Link kopieren
+              </a>
             }
             @if (showDownloadBtn && isBooklet) {
               <button
@@ -154,11 +182,33 @@ interface ReviewBookletOption {
                 [attr.aria-expanded]="unitListOpen"
                 aria-controls="task-sequence-unit-list"
               >
-                📋 Aufgabenliste
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  aria-hidden="true"
+                >
+                  <path d="M9 6h12M9 12h12M9 18h12M3 6h1M3 12h1M3 18h1" />
+                </svg>
+                Aufgabenliste
               </button>
             }
             <button class="btn btn-outline btn-sm" (click)="toggleFullscreen()">
-              {{ isFullscreen ? 'Vollbild beenden' : '⛶ Vollbild' }}
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                aria-hidden="true"
+              >
+                <path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5" />
+              </svg>
+              {{ isFullscreen ? 'Vollbild beenden' : 'Vollbild' }}
             </button>
           </div>
         </div>
@@ -389,18 +439,6 @@ interface ReviewBookletOption {
         border-color: var(--color-border);
         color: var(--color-text-secondary);
         box-shadow: none;
-      }
-      .selection-position {
-        color: var(--color-text-secondary);
-        font-variant-numeric: tabular-nums;
-      }
-      .selected-booklet-id {
-        min-width: 0;
-        overflow-wrap: anywhere;
-        color: inherit;
-        font-family: inherit;
-        font-size: inherit;
-        font-weight: 700;
       }
 
       .unit-embed {
@@ -728,7 +766,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
           { label: 'Content Hub', route: ['/'] },
           { label: 'ACP', route: ['/view', this.acpId] },
           {
-            label: this.isBooklet ? this.bookletName : this.sequence.name || 'Aufgabenfolge',
+            label: this.isBooklet ? this.sequenceId : this.sequence.name || 'Aufgabenfolge',
           },
         ];
         this.changeDetector.markForCheck();
