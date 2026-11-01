@@ -183,7 +183,7 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
       </section>
 
       <details class="card index-section">
-        <summary>Paketstruktur (ACP-Index)</summary>
+        <summary>Paketstruktur (AP-Index)</summary>
         <div class="toolbar index-actions">
           <a [routerLink]="['/view', acp.id, 'index']" class="btn btn-outline">Struktur ansehen</a>
           <button #indexTrigger class="btn btn-outline" (click)="openIndexDialog()">
@@ -207,12 +207,12 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
         (close)="restoreIndexFocus()"
       >
         <div class="index-dialog-header">
-          <h2 id="index-dialog-title">ACP-Index als JSON</h2>
+          <h2 id="index-dialog-title">AP-Index als JSON</h2>
           <button class="btn btn-outline btn-sm" (click)="closeIndexDialog()" autofocus>
             Schließen
           </button>
         </div>
-        <pre class="json-view" tabindex="0" aria-label="ACP-Index JSON">{{
+        <pre class="json-view" tabindex="0" aria-label="AP-Index JSON">{{
           acp.acpIndex | json
         }}</pre>
       </dialog>
@@ -220,7 +220,7 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
       <section class="card roles-card" aria-labelledby="roles-heading">
         <h2 id="roles-heading">Personen &amp; Rollen</h2>
         <p class="roles-help">
-          ACP-Manager verwalten das Paket. „Nur lesend“ erlaubt keine Paketverwaltung. Rechte für
+          AP-Manager verwalten das Paket. „Nur lesend“ erlaubt keine Paketverwaltung. Rechte für
           Review und Item Explorer gelten zusätzlich und unabhängig von der Paketrolle. Änderungen
           pro Person speichern.
         </p>
@@ -258,9 +258,7 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
                       "
                       [disabled]="roleBusy"
                     >
-                      <option value="ACP_MANAGER" [disabled]="!canAssignManager">
-                        ACP-Manager
-                      </option>
+                      <option value="ACP_MANAGER" [disabled]="!canAssignManager">AP-Manager</option>
                       <option value="READ_ONLY">Nur lesend</option>
                     </select>
                   </td>
@@ -340,7 +338,7 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
                     class="form-select"
                     [disabled]="roleBusy"
                   >
-                    <option value="ACP_MANAGER" [disabled]="!canAssignManager">ACP-Manager</option>
+                    <option value="ACP_MANAGER" [disabled]="!canAssignManager">AP-Manager</option>
                     <option value="READ_ONLY">Nur lesend</option>
                   </select>
                 </div>
@@ -368,8 +366,8 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
 
       <app-confirm-dialog
         [open]="showDeleteIndexDialog"
-        title="ACP-Index zurücksetzen"
-        message="Der aktuelle ACP-Index wird auf den Standardzustand zurückgesetzt."
+        title="AP-Index zurücksetzen"
+        message="Der aktuelle AP-Index wird auf den Standardzustand zurückgesetzt."
         [details]="[
           'Diese Aktion betrifft den gesamten Index (inkl. Struktur und Metadaten).',
           'Dateien bleiben erhalten, können aber im Index fehlen, bis erneut synchronisiert/importiert wird.',
@@ -785,10 +783,10 @@ export class DashboardComponent implements OnInit {
           next: (idx) => {
             this.acp!.acpIndex = idx;
             this.error = '';
-            this.indexSuccessMessage = 'ACP-Index wurde importiert.';
+            this.indexSuccessMessage = 'AP-Index wurde importiert.';
             this.reloadContent();
           },
-          error: () => (this.error = 'ACP-Index konnte nicht importiert werden.'),
+          error: () => (this.error = 'AP-Index konnte nicht importiert werden.'),
         });
       } catch {
         this.error = 'Ungültige JSON-Datei';
@@ -817,14 +815,14 @@ export class DashboardComponent implements OnInit {
     this.api.deleteAcpIndex(this.acp.id).subscribe({
       next: (idx) => {
         this.acp!.acpIndex = idx;
-        this.indexSuccessMessage = 'ACP-Index wurde auf den Standardzustand zurückgesetzt.';
+        this.indexSuccessMessage = 'AP-Index wurde auf den Standardzustand zurückgesetzt.';
         this.deletingIndex = false;
         this.showDeleteIndexDialog = false;
         this.reloadContent();
       },
       error: (err) => {
         this.deletingIndex = false;
-        this.deleteIndexError = err?.error?.message || 'Fehler beim Zurücksetzen des ACP-Index.';
+        this.deleteIndexError = err?.error?.message || 'Fehler beim Zurücksetzen des AP-Index.';
       },
     });
   }
@@ -955,21 +953,21 @@ export class DashboardComponent implements OnInit {
       typeof message === 'string' &&
       message.includes('At least one ACP_MANAGER must remain assigned')
     ) {
-      return 'Mindestens ein ACP-Manager muss zugewiesen bleiben. Bitte zuerst einer anderen Person die Manager-Rolle geben.';
+      return 'Mindestens ein AP-Manager muss zugewiesen bleiben. Bitte zuerst einer anderen Person die Manager-Rolle geben.';
     }
 
     if (
       typeof message === 'string' &&
       message.includes('Only Application Admins can remove ACP_MANAGER role')
     ) {
-      return 'Nur App-Admins dürfen ACP-Manager-Rollen entfernen.';
+      return 'Nur App-Admins dürfen AP-Manager-Rollen entfernen.';
     }
 
     if (
       typeof message === 'string' &&
       message.includes('Only Application Admins can assign ACP_MANAGER role')
     ) {
-      return 'Nur App-Admins dürfen ACP-Manager-Rollen zuweisen.';
+      return 'Nur App-Admins dürfen AP-Manager-Rollen zuweisen.';
     }
 
     return message || fallback;

@@ -79,7 +79,7 @@ export function buildReviewManifest(
     result.issues.push({ severity: "error", path, message });
   const add = (booklet: ReviewBooklet, path: string) => {
     if (!booklet.id || (!booklet.legacy && bookletIds.has(booklet.id))) {
-      error(path, "Booklet-ID fehlt oder ist ACP-weit doppelt.");
+      error(path, "Booklet-ID fehlt oder ist AP-weit doppelt.");
       return;
     }
     if (!booklet.legacy) bookletIds.add(booklet.id);

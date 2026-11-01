@@ -46,7 +46,7 @@ import {
 } from "../auth/capabilities/explorer-access.guard";
 import { UuidParam } from "../common/uuid-param";
 
-@ApiTags("ACP Files")
+@ApiTags("AP Files")
 @Controller("acp/:acpId/files")
 export class FilesController {
   private readonly logger = new Logger(FilesController.name);
@@ -62,7 +62,7 @@ export class FilesController {
 
   @Get()
   @UseGuards(AcpAccessGuard)
-  @ApiOperation({ summary: "List all files for an ACP" })
+  @ApiOperation({ summary: "List all files for an AP" })
   async findAll(
     @UuidParam("acpId") acpId: string,
     @Query("format") format?: string,
@@ -89,7 +89,7 @@ export class FilesController {
       }
       if (!isManager && !featureConfig.allowUnitDownload) {
         throw new ForbiddenException(
-          "Unit download is not enabled for this ACP",
+          "Unit download is not enabled for this AP",
         );
       }
 
@@ -113,7 +113,7 @@ export class FilesController {
     }
 
     if (!isManager && !featureConfig.allowFileDownload) {
-      throw new ForbiddenException("File listing is not enabled for this ACP");
+      throw new ForbiddenException("File listing is not enabled for this AP");
     }
 
     return this.filesService.findByAcp(acpId);
@@ -123,7 +123,7 @@ export class FilesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("ACP_MANAGER")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Delete all files for an ACP" })
+  @ApiOperation({ summary: "Delete all files for an AP" })
   async deleteAll(@UuidParam("acpId") acpId: string) {
     await this.filesService.deleteAll(acpId);
     const cleanupResult =
@@ -168,7 +168,7 @@ export class FilesController {
     if (!hasCapability(req.acpCapabilities || [], "item-explorer:view")) {
       const featureConfig = await this.filesService.getFeatureConfig(acpId);
       if (featureConfig.enableItemList === false) {
-        throw new ForbiddenException("Item list is not enabled for this ACP");
+        throw new ForbiddenException("Item list is not enabled for this AP");
       }
     }
     const explorerStateStartedAt = performance.now();
@@ -234,7 +234,7 @@ export class FilesController {
         featureConfig.enableUnitView === false &&
         !this.canUseReview(req, featureConfig)
       ) {
-        throw new ForbiddenException("Unit view is not enabled for this ACP");
+        throw new ForbiddenException("Unit view is not enabled for this AP");
       }
     }
     const explorerStateStartedAt = performance.now();
@@ -331,7 +331,7 @@ export class FilesController {
       const featureConfig = await this.filesService.getFeatureConfig(acpId);
       if (!featureConfig.allowFileDownload) {
         throw new ForbiddenException(
-          "File metadata access is not enabled for this ACP",
+          "File metadata access is not enabled for this AP",
         );
       }
     }
@@ -362,7 +362,7 @@ export class FilesController {
     required: false,
     description: "reject | overwrite | keep-both",
   })
-  @ApiOperation({ summary: "Upload files to ACP" })
+  @ApiOperation({ summary: "Upload files to AP" })
   async upload(
     @UuidParam("acpId") acpId: string,
     @UploadedFiles() files: Express.Multer.File[],
@@ -380,7 +380,7 @@ export class FilesController {
   @Roles("ACP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Download all or selected ACP files as ZIP archive",
+    summary: "Download all or selected AP files as ZIP archive",
   })
   async bulkDownload(
     @UuidParam("acpId") acpId: string,
@@ -402,7 +402,7 @@ export class FilesController {
   @Roles("ACP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Start ZIP creation job for all or selected ACP files",
+    summary: "Start ZIP creation job for all or selected AP files",
   })
   async startBulkDownloadJob(
     @UuidParam("acpId") acpId: string,
@@ -420,7 +420,7 @@ export class FilesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("ACP_MANAGER")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Start processing for freshly uploaded ACP files" })
+  @ApiOperation({ summary: "Start processing for freshly uploaded AP files" })
   async processUpload(
     @UuidParam("acpId") acpId: string,
     @Body() body: { fileIds?: string[]; runCleanup?: boolean },
@@ -440,7 +440,7 @@ export class FilesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("ACP_MANAGER")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Delete multiple files for an ACP" })
+  @ApiOperation({ summary: "Delete multiple files for an AP" })
   async bulkDelete(
     @UuidParam("acpId") acpId: string,
     @Body() body: { fileIds?: string[] },
@@ -468,7 +468,7 @@ export class FilesController {
   @ApiBearerAuth()
   @ApiOperation({
     summary:
-      "Synchronize ACP-Index from uploaded unit files (non-destructive merge)",
+      "Synchronize AP-Index from uploaded unit files (non-destructive merge)",
   })
   async syncIndex(@UuidParam("acpId") acpId: string) {
     return this.unitParserService.syncIndexFromFiles(acpId);
@@ -590,7 +590,7 @@ export class FilesController {
         this.canUseReview(req, featureConfig));
 
     if (!featureConfig.allowFileDownload && !canDownloadForView) {
-      throw new ForbiddenException("File download is not enabled for this ACP");
+      throw new ForbiddenException("File download is not enabled for this AP");
     }
   }
 

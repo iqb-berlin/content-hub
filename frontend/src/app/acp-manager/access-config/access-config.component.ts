@@ -41,7 +41,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
             ? 'Öffentlich ohne Anmeldung.'
             : accessModel === 'PRIVATE'
               ? 'Zugriff nur für zugewiesene Personen und App-Admins.'
-              : 'Zugang mit befristeten ACP-Zugangsdaten sowie über zugewiesene Rollen.'
+              : 'Zugang mit befristeten AP-Zugangsdaten sowie über zugewiesene Rollen.'
         }}
         Item-Explorer {{ featureConfig['enableItemList'] ? 'aktiviert' : 'deaktiviert' }}.
         Kommentare {{ featureConfig['enableCommenting'] ? 'aktiviert' : 'deaktiviert' }}.
@@ -49,7 +49,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
     }
     <!-- Access Model -->
     <div class="card">
-      <h2>Wer darf diesen ACP öffnen?</h2>
+      <h2>Wer darf diesen AP öffnen?</h2>
       <p class="help-text">
         Wählen Sie eine Zugangsart. Änderungen werden erst mit „Änderungen speichern“ übernommen.
       </p>
@@ -66,7 +66,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
           <div>
             <strong>Nur zugewiesene Personen</strong>
             <span class="radio-desc"
-              >Nur App-Admins und Personen mit zugewiesener ACP-Rolle haben Zugriff</span
+              >Nur App-Admins und Personen mit zugewiesener AP-Rolle haben Zugriff</span
             >
           </div>
         </label>
@@ -92,7 +92,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
             (ngModelChange)="onAccessModelChange()"
           />
           <div>
-            <strong>Zugang mit ACP-Zugangsdaten</strong>
+            <strong>Zugang mit AP-Zugangsdaten</strong>
             <span class="radio-desc"
               >Benutzername/Kennwort-Paare, zeitlich begrenzt (max. 3 Monate)</span
             >
@@ -101,7 +101,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
       </div>
 
       <p class="help-text">
-        App-Admins und Personen mit zugewiesener ACP-Rolle haben unabhängig von der Zugangsart
+        App-Admins und Personen mit zugewiesener AP-Rolle haben unabhängig von der Zugangsart
         Zugriff. Eine Registrierung allein reicht nicht aus.
         <a [routerLink]="['/manage', acpId]" fragment="roles-heading"
           >Personen und Rollen verwalten</a
@@ -109,7 +109,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
       </p>
       @if (accessModel === 'PRIVATE') {
         <p class="help-text">
-          Dieser ACP ist nicht öffentlich gelistet und nicht anonym erreichbar.
+          Dieser AP ist nicht öffentlich gelistet und nicht anonym erreichbar.
         </p>
       }
 
@@ -135,7 +135,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
             class="manual-add-form"
             style="margin-top: 16px; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius);"
           >
-            <h4 style="margin: 0 0 12px 0; font-size: 0.95rem;">ACP-Zugang hinzufügen</h4>
+            <h4 style="margin: 0 0 12px 0; font-size: 0.95rem;">AP-Zugang hinzufügen</h4>
             <div class="form-row">
               <div class="form-group">
                 <label for="new-credential-username">Benutzername</label>
@@ -637,7 +637,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
                 </p>
               }
               <p class="help-text">
-                „Änderungen speichern“ übernimmt die Vorgaben ACP-weit für neue Aufrufe. Eine
+                „Änderungen speichern“ übernimmt die Vorgaben AP-weit für neue Aufrufe. Eine
                 Veröffentlichung des Explorers ist dafür nicht nötig. Prüfen Sie das Ergebnis
                 anschließend im Item-Explorer über „Leseansicht“.
               </p>
@@ -918,7 +918,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
             </div>
             <span class="help-text">
               Kategorien, Markierungen und Notizen sind immer persönlich und werden nicht im
-              ACP-Entwurf veröffentlicht.
+              AP-Entwurf veröffentlicht.
             </span>
           </div>
         }
@@ -957,7 +957,7 @@ import { AcpManagerContextComponent } from '../shared/acp-manager-context.compon
         <div class="dialog-overlay" (click)="closeEditDialog()">
           <div class="dialog-content card" (click)="$event.stopPropagation()">
             <div class="dialog-header">
-              <h3>ACP-Zugang bearbeiten</h3>
+              <h3>AP-Zugang bearbeiten</h3>
               <button class="btn btn-outline btn-sm" (click)="closeEditDialog()">✕</button>
             </div>
             <div class="dialog-body">
@@ -1436,9 +1436,9 @@ export class AccessConfigComponent implements OnInit {
   editError = '';
 
   downloadFlags = [
-    { key: 'allowIndexDownload', label: 'ACP-Index herunterladen erlauben' },
+    { key: 'allowIndexDownload', label: 'AP-Index herunterladen erlauben' },
     { key: 'allowUnitDownload', label: 'Aufgaben-Download erlauben (ZIP)' },
-    { key: 'allowFileDownload', label: 'Weitere ACP-Dateien herunterladen erlauben' },
+    { key: 'allowFileDownload', label: 'Weitere AP-Dateien herunterladen erlauben' },
   ];
 
   unitViewFlags = [
@@ -1456,7 +1456,7 @@ export class AccessConfigComponent implements OnInit {
     { key: 'showItemExplorerOnStartPage', label: 'Item-Explorer' },
     { key: 'showUnitListOnStartPage', label: 'Aufgaben ansehen' },
     { key: 'showSequencesOnStartPage', label: 'Testhefte und Aufgabenfolgen' },
-    { key: 'showIndexOnStartPage', label: 'Paketstruktur (ACP-Index)' },
+    { key: 'showIndexOnStartPage', label: 'Paketstruktur (AP-Index)' },
   ];
 
   itemFlags = [
@@ -1806,7 +1806,7 @@ export class AccessConfigComponent implements OnInit {
         this.newUsername = '';
         this.newPassword = '';
         this.credentialCount = this.credentials.length;
-        this.addSuccess.set(`ACP-Zugang „${cred.username}“ wurde hinzugefügt.`);
+        this.addSuccess.set(`AP-Zugang „${cred.username}“ wurde hinzugefügt.`);
         this.addingCredential.set(false);
       },
       error: (err) => {

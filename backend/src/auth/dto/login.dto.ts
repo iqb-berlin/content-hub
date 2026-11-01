@@ -2,7 +2,7 @@ import { IsString, IsNotEmpty, IsUUID } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CredentialLoginDto {
-  @ApiProperty({ description: "ACP ID to access" })
+  @ApiProperty({ description: "AP ID to access" })
   @IsUUID("all")
   acpId!: string;
 

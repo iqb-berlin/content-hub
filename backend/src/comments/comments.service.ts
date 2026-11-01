@@ -726,7 +726,7 @@ export class CommentsService {
       throw new BadRequestException(
         candidates.length
           ? "Item target is ambiguous; unitId is required"
-          : "Item not found in this ACP",
+          : "Item not found in this AP",
       );
     }
     return this.createReviewComment(
@@ -1270,7 +1270,7 @@ export class CommentsService {
         (entry) => entry.id === bookletId && !entry.legacy,
       );
       if (!booklet) {
-        throw new NotFoundException("Canonical booklet not found in this ACP");
+        throw new NotFoundException("Canonical booklet not found in this AP");
       }
       return {
         targetType: CommentTargetType.BOOKLET,
@@ -1287,7 +1287,7 @@ export class CommentsService {
         this.transactionManager,
       );
       if (!manifest.units.some((entry) => entry.id === unitId)) {
-        throw new NotFoundException("Unit not found in this ACP");
+        throw new NotFoundException("Unit not found in this AP");
       }
       return {
         targetType: CommentTargetType.UNIT,
@@ -1316,7 +1316,7 @@ export class CommentsService {
       );
       if (!itemList.codingSchemes?.[itemTarget.unitId]) {
         throw new NotFoundException(
-          "Coding scheme not found for this item in this ACP",
+          "Coding scheme not found for this item in this AP",
         );
       }
     }
@@ -1399,7 +1399,7 @@ export class CommentsService {
             requestedItemId,
         );
     if (matches.length === 0) {
-      throw new NotFoundException("Item not found in this ACP");
+      throw new NotFoundException("Item not found in this AP");
     }
     if (matches.length > 1) {
       throw new BadRequestException("Item ID is ambiguous in this unit");

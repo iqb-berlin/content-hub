@@ -56,7 +56,7 @@ class ServerImportAcpDto {
   description?: string;
 
   @ApiProperty({
-    description: "ACP index payload",
+    description: "AP index payload",
     type: "object",
     additionalProperties: true,
   })
@@ -73,7 +73,7 @@ class ServerImportAcpDto {
 
 class UpdateIndexDto {
   @ApiProperty({
-    description: "ACP index payload",
+    description: "AP index payload",
     type: "object",
     additionalProperties: true,
   })
@@ -142,7 +142,7 @@ export class ServerApiController {
   @Get("acp")
   @ServerApiScopes("acp.read")
   @ServerApiAudit("acp.list", "acp")
-  @ApiOperation({ summary: "List all ACPs for server transfer" })
+  @ApiOperation({ summary: "List all APs for server transfer" })
   async listAcps(@Req() req?: AuthenticatedServerApiRequest) {
     return this.serverApiService.listAcps(req?.serverApiClient?.allowedAcpIds);
   }
@@ -150,7 +150,7 @@ export class ServerApiController {
   @Get("acp/:acpId")
   @ServerApiScopes("transfer.read")
   @ServerApiAudit("acp.transfer.read", "acp")
-  @ApiOperation({ summary: "Get full ACP transfer payload (index + files)" })
+  @ApiOperation({ summary: "Get full AP transfer payload (index + files)" })
   async getAcp(
     @UuidParam("acpId") acpId: string,
     @Req() req?: AuthenticatedServerApiRequest,
@@ -164,7 +164,7 @@ export class ServerApiController {
   @Get("acp/:acpId/export")
   @ServerApiScopes("transfer.read")
   @ServerApiAudit("acp.transfer.export", "acp")
-  @ApiOperation({ summary: "Export full ACP transfer payload (index + files)" })
+  @ApiOperation({ summary: "Export full AP transfer payload (index + files)" })
   async exportAcp(
     @UuidParam("acpId") acpId: string,
     @Req() req?: AuthenticatedServerApiRequest,
@@ -178,7 +178,7 @@ export class ServerApiController {
   @Get("acp/:acpId/index")
   @ServerApiScopes("index.read")
   @ServerApiAudit("acp.index.read", "acp-index")
-  @ApiOperation({ summary: "Get only ACP index payload" })
+  @ApiOperation({ summary: "Get only AP index payload" })
   async getAcpIndex(
     @UuidParam("acpId") acpId: string,
     @Req() req?: AuthenticatedServerApiRequest,
@@ -192,7 +192,7 @@ export class ServerApiController {
   @Put("acp/:acpId/index")
   @ServerApiScopes("index.write")
   @ServerApiAudit("acp.index.write", "acp-index")
-  @ApiOperation({ summary: "Update ACP index payload with conflict strategy" })
+  @ApiOperation({ summary: "Update AP index payload with conflict strategy" })
   @ApiQuery({
     name: "strategy",
     required: false,
@@ -216,7 +216,7 @@ export class ServerApiController {
   @Get("acp/:acpId/files")
   @ServerApiScopes("files.read")
   @ServerApiAudit("acp.files.list", "file")
-  @ApiOperation({ summary: "List transfer-relevant file metadata for an ACP" })
+  @ApiOperation({ summary: "List transfer-relevant file metadata for an AP" })
   async listFiles(
     @UuidParam("acpId") acpId: string,
     @Req() req?: AuthenticatedServerApiRequest,
@@ -246,7 +246,7 @@ export class ServerApiController {
   @Get("acp/:acpId/files/:fileId/download")
   @ServerApiScopes("files.read")
   @ServerApiAudit("acp.files.download", "file")
-  @ApiOperation({ summary: "Download one ACP file for transfer" })
+  @ApiOperation({ summary: "Download one AP file for transfer" })
   async downloadFile(
     @UuidParam("acpId") acpId: string,
     @UuidParam("fileId") fileId: string,
@@ -269,7 +269,7 @@ export class ServerApiController {
   @Post("acp/:acpId/files/upload")
   @ServerApiScopes("files.write")
   @ServerApiAudit("acp.files.upload", "file")
-  @ApiOperation({ summary: "Upload files to ACP for partial transfer" })
+  @ApiOperation({ summary: "Upload files to AP for partial transfer" })
   @ApiQuery({
     name: "conflictStrategy",
     required: false,
@@ -308,7 +308,7 @@ export class ServerApiController {
   @ServerApiAudit("acp.coding-schemes.replace", "file")
   @ApiOperation({
     summary:
-      "Replace existing .vocs coding schemes and create a new ACP snapshot version",
+      "Replace existing .vocs coding schemes and create a new AP snapshot version",
   })
   @ApiConsumes("multipart/form-data")
   @ApiBody({
@@ -356,7 +356,7 @@ export class ServerApiController {
   @ServerApiScopes("transfer.write")
   @ServerApiAudit("acp.transfer.import", "acp")
   @ApiOperation({
-    summary: "Import ACP payload (create or update) with conflict strategy",
+    summary: "Import AP payload (create or update) with conflict strategy",
   })
   @ApiQuery({
     name: "conflictStrategy",

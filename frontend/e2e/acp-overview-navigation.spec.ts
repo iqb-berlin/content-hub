@@ -17,14 +17,14 @@ test('manager opens content directly and returns to the same overview', async ({
   await expect(page.locator('.primary-content .tile-icon')).toHaveText('🔭');
   await page.getByRole('link', { name: /^Item-Explorer/ }).click();
   await expect(page.locator('tbody tr')).toHaveCount(2);
-  await page.getByRole('link', { name: 'ACP-Übersicht', exact: true }).click();
+  await page.getByRole('link', { name: 'AP-Übersicht', exact: true }).click();
   await expect(page).toHaveURL(overview);
   await page.getByRole('link', { name: /^Aufgaben ansehen/ }).click();
   await expect(page).toHaveURL(`/view/${acpId}/units`);
-  await page.getByRole('link', { name: 'ACP-Übersicht', exact: true }).click();
+  await page.getByRole('link', { name: 'AP-Übersicht', exact: true }).click();
   await page.locator('details.index-section summary').click();
   await page.getByRole('link', { name: 'Struktur ansehen', exact: true }).click();
-  await page.getByRole('link', { name: '← Zur ACP-Übersicht', exact: true }).click();
+  await page.getByRole('link', { name: '← Zur AP-Übersicht', exact: true }).click();
   await expect(page).toHaveURL(overview);
   for (const [label, target] of [
     ['Dateien verwalten', `${overview}/files`],
@@ -42,7 +42,7 @@ test('manager opens content directly and returns to the same overview', async ({
       await expect(page.getByText('Blockiert', { exact: true })).toBeVisible();
       await page.screenshot({ path: testInfo.outputPath('review-management.png'), fullPage: true });
     }
-    await page.getByRole('link', { name: '← Zur ACP-Übersicht', exact: true }).click();
+    await page.getByRole('link', { name: '← Zur AP-Übersicht', exact: true }).click();
     await expect(page).toHaveURL(overview);
   }
 });
@@ -78,7 +78,7 @@ for (const size of [
     await trigger.scrollIntoViewIfNeeded();
     const before = await roles.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
     await trigger.click();
-    const dialog = page.getByRole('dialog', { name: 'ACP-Index als JSON' });
+    const dialog = page.getByRole('dialog', { name: 'AP-Index als JSON' });
     await expect(dialog).toBeVisible();
     const bounds = await dialog.boundingBox();
     expect(bounds!.height).toBeLessThanOrEqual(size.height * 0.8 + 1);
@@ -132,7 +132,7 @@ test('index export, import and reset remain available without leaving the overvi
     mimeType: 'application/json',
     buffer: Buffer.from('{"assessmentParts":[]}'),
   });
-  await expect(page.getByText('ACP-Index wurde importiert.', { exact: true })).toBeVisible();
+  await expect(page.getByText('AP-Index wurde importiert.', { exact: true })).toBeVisible();
   expect(imported).toEqual({ assessmentParts: [] });
   await page.getByRole('button', { name: 'Index zurücksetzen', exact: true }).click();
   const confirmation = page.locator('app-confirm-dialog .dialog');
@@ -151,13 +151,13 @@ test('readers keep the content entry and return there without management links',
   await installOidcSession(page, viewerId, 'e2e-viewer');
   await page.goto(`/view/${acpId}`);
   await page.getByRole('link', { name: /Item-Explorer/ }).click();
-  const back = page.getByRole('link', { name: 'ACP-Übersicht', exact: true });
+  const back = page.getByRole('link', { name: 'AP-Übersicht', exact: true });
   await expect(back).toHaveAttribute('href', `/view/${acpId}`);
   await back.click();
   await expect(page.getByRole('link', { name: /Aufgaben ansehen/ })).toBeVisible();
   await expect(page.locator('a[href^="/manage/"]')).toHaveCount(0);
-  await page.getByRole('link', { name: 'Paketstruktur (ACP-Index) ansehen', exact: true }).click();
-  await page.getByRole('link', { name: '← Zur ACP-Übersicht', exact: true }).click();
+  await page.getByRole('link', { name: 'Paketstruktur (AP-Index) ansehen', exact: true }).click();
+  await page.getByRole('link', { name: '← Zur AP-Übersicht', exact: true }).click();
   await expect(page).toHaveURL(`/view/${acpId}`);
 });
 

@@ -436,7 +436,7 @@ export class ItemListParser {
         if (strictSourceReads) {
           if (error instanceof ConflictException) throw error;
           throw new ConflictException(
-            "The ACP source files changed while row numbers were being recalculated",
+            "The AP source files changed while row numbers were being recalculated",
           );
         }
         cacheable = false;

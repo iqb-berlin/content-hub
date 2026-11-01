@@ -546,7 +546,7 @@ export class AdminService {
     if (allowedAcpIdsInput === undefined || allowedAcpIdsInput === null) {
       if (normalizedConstraintIds) {
         throw new ForbiddenException(
-          "ACP managers can only create ACP-limited application tokens",
+          "AP managers can only create AP-limited application tokens",
         );
       }
       return null;
@@ -567,7 +567,7 @@ export class AdminService {
     if (!allowedAcpIds.length) {
       if (normalizedConstraintIds) {
         throw new ForbiddenException(
-          "ACP managers can only create ACP-limited application tokens",
+          "AP managers can only create AP-limited application tokens",
         );
       }
       return null;
@@ -576,7 +576,7 @@ export class AdminService {
     const invalidIds = allowedAcpIds.filter((acpId) => !isUuid(acpId));
     if (invalidIds.length) {
       throw new BadRequestException(
-        `Invalid ACP IDs for application token: ${invalidIds.join(", ")}`,
+        `Invalid AP IDs for application token: ${invalidIds.join(", ")}`,
       );
     }
 
@@ -587,7 +587,7 @@ export class AdminService {
       );
       if (forbiddenIds.length) {
         throw new ForbiddenException(
-          "Application token can only be limited to ACPs managed by the current user",
+          "Application token can only be limited to APs managed by the current user",
         );
       }
     }
@@ -600,7 +600,7 @@ export class AdminService {
     const missingIds = allowedAcpIds.filter((acpId) => !existingIds.has(acpId));
     if (missingIds.length) {
       throw new BadRequestException(
-        `Unknown ACP IDs for application token: ${missingIds.join(", ")}`,
+        `Unknown AP IDs for application token: ${missingIds.join(", ")}`,
       );
     }
 
@@ -636,7 +636,7 @@ export class AdminService {
       : null;
     if (!tokenAcpIds?.length) {
       throw new ForbiddenException(
-        "ACP managers cannot manage global application tokens",
+        "AP managers cannot manage global application tokens",
       );
     }
 
@@ -650,7 +650,7 @@ export class AdminService {
       (constraints.requireExclusiveAcp !== false && !isExclusive)
     ) {
       throw new ForbiddenException(
-        "Application token is not exclusively owned by this ACP",
+        "Application token is not exclusively owned by this AP",
       );
     }
   }

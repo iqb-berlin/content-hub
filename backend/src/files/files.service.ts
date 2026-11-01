@@ -197,7 +197,7 @@ export class FilesService {
     const file = await this.findById(id);
     if (file.acpId !== acpId) {
       throw new NotFoundException(
-        `File with ID ${id} not found for ACP ${acpId}`,
+        `File with ID ${id} not found for AP ${acpId}`,
       );
     }
     return file;
@@ -281,7 +281,7 @@ export class FilesService {
     const missingIds = normalizedIds.filter((id) => !filesById.has(id));
     if (missingIds.length) {
       throw new NotFoundException(
-        `Files not found for ACP ${acpId}: ${missingIds.join(", ")}`,
+        `Files not found for AP ${acpId}: ${missingIds.join(", ")}`,
       );
     }
 
@@ -679,10 +679,10 @@ export class FilesService {
   }
 
   private async getAcpOrFail(acpId: string): Promise<Acp> {
-    assertUuidParam(acpId, "ACP ID");
+    assertUuidParam(acpId, "AP ID");
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
     if (!acp) {
-      throw new NotFoundException(`ACP with ID ${acpId} not found`);
+      throw new NotFoundException(`AP with ID ${acpId} not found`);
     }
     return acp;
   }
@@ -1220,7 +1220,7 @@ export class FilesService {
   private async getAcpIndex(acpId: string): Promise<any> {
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
     if (!acp) {
-      throw new NotFoundException(`ACP with ID ${acpId} not found`);
+      throw new NotFoundException(`AP with ID ${acpId} not found`);
     }
     return toRuntimeAcpIndex(acp.acpIndex);
   }
@@ -1366,7 +1366,7 @@ export class FilesService {
   ): Promise<{ files: AcpFile[]; fileName: string }> {
     const allFiles = await this.findByAcp(acpId);
     if (!allFiles.length) {
-      throw new NotFoundException(`No files found for ACP "${acpId}"`);
+      throw new NotFoundException(`No files found for AP "${acpId}"`);
     }
 
     const normalizedIds = Array.from(
@@ -1388,7 +1388,7 @@ export class FilesService {
     const missingIds = normalizedIds.filter((id) => !filesById.has(id));
     if (missingIds.length) {
       throw new NotFoundException(
-        `Files not found for ACP ${acpId}: ${missingIds.join(", ")}`,
+        `Files not found for AP ${acpId}: ${missingIds.join(", ")}`,
       );
     }
 

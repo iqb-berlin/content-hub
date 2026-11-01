@@ -29,7 +29,7 @@ type AccessContext = 'admin' | 'acp' | 'view' | 'manage' | null;
 
           @if (showCredentialButton) {
             <a [routerLink]="['/credential-login', acpId]" class="btn btn-outline">
-              Mit ACP-Zugang anmelden
+              Mit AP-Zugang anmelden
             </a>
           }
 
@@ -166,7 +166,7 @@ export class AccessComponent implements OnInit, OnDestroy {
         this.title = 'Anmeldung erforderlich';
         this.subtitle = 'Bitte melden Sie sich an, um auf diese Seite zuzugreifen.';
         this.detail = this.acpId
-          ? `Für ${this.acpName ? `das Paket "${this.acpName}"` : 'dieses Paket'} kann je nach Konfiguration ein separater ACP-Zugang erforderlich sein.`
+          ? `Für ${this.acpName ? `das Paket "${this.acpName}"` : 'dieses Paket'} kann je nach Konfiguration ein separater AP-Zugang erforderlich sein.`
           : '';
         break;
       case 'session_expired':
@@ -176,8 +176,8 @@ export class AccessComponent implements OnInit, OnDestroy {
         break;
       case 'feature_disabled':
         this.title = 'Funktion nicht verfügbar';
-        this.subtitle = 'Diese Funktion ist für dieses ACP derzeit nicht freigeschaltet.';
-        this.detail = 'Bitte wenden Sie sich an die zuständige ACP-Administration.';
+        this.subtitle = 'Diese Funktion ist für dieses AP derzeit nicht freigeschaltet.';
+        this.detail = 'Bitte wenden Sie sich an die zuständige AP-Administration.';
         break;
       case 'insufficient_rights':
       default:

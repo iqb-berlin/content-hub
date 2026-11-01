@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Content Hub",
   "short_name": "Content Hub",
-  "description": "Assessment Content Packages verwalten, prüfen und teilen.",
+  "description": "Assessment Packages verwalten, prüfen und teilen.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

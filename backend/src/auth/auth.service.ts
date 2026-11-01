@@ -71,7 +71,7 @@ export class AuthService {
 
       if (!accessConfig) {
         throw new UnauthorizedException(
-          "No credential-based access configured for this ACP",
+          "No credential-based access configured for this AP",
         );
       }
 

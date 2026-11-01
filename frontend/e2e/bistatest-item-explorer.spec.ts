@@ -698,7 +698,7 @@ test('shares personal lists ACP-wide as read-only and creates independent privat
   ]);
   await page.getByText('Liste verwalten ▾', { exact: true }).click();
   await page.getByRole('button', { name: 'Freigeben …', exact: true }).click();
-  const shareToggle = page.getByLabel('Für diesen ACP freigeben');
+  const shareToggle = page.getByLabel('Für diesen AP freigeben');
   await shareToggle.check();
   await Promise.all([
     page.waitForResponse(

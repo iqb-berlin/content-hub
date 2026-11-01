@@ -247,7 +247,7 @@ export class ItemsService {
     } = {},
   ) {
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) throw new NotFoundException("ACP not found");
+    if (!acp) throw new NotFoundException("AP not found");
 
     const itemList = await this.unitParserService.getItemListFromFiles(acpId);
     const result = this.itemParameterImportPipeline.execute({
@@ -339,7 +339,7 @@ export class ItemsService {
     } = {},
   ) {
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) throw new NotFoundException("ACP not found");
+    if (!acp) throw new NotFoundException("AP not found");
 
     const props = this.cloneItemProperties(
       options.itemPropertiesOverride || acp.itemProperties || {},
@@ -363,7 +363,7 @@ export class ItemsService {
 
   async getItemTags(acpId: string): Promise<Record<string, string[]>> {
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) throw new NotFoundException("ACP not found");
+    if (!acp) throw new NotFoundException("AP not found");
     return this.extractTags(acp.itemProperties || {});
   }
 

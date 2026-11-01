@@ -17,7 +17,7 @@ export class ReviewManifestService {
     const acp = await (manager?.getRepository(Acp) || this.acps).findOne({
       where: { id: acpId },
     });
-    if (!acp) throw new NotFoundException("ACP nicht gefunden.");
+    if (!acp) throw new NotFoundException("AP nicht gefunden.");
     const files = await (manager?.getRepository(AcpFile) || this.files).find({
       where: { acpId },
     });

@@ -45,7 +45,7 @@ export class AcpCredentialsService {
     });
     if (!config || config.accessModel !== AccessModel.CREDENTIALS_LIST) {
       throw new BadRequestException(
-        "ACP must be configured for CREDENTIALS_LIST access",
+        "AP must be configured for CREDENTIALS_LIST access",
       );
     }
 
@@ -223,7 +223,7 @@ export class AcpCredentialsService {
     });
     if (!config || config.accessModel !== AccessModel.CREDENTIALS_LIST) {
       throw new BadRequestException(
-        "ACP must be configured for CREDENTIALS_LIST access",
+        "AP must be configured for CREDENTIALS_LIST access",
       );
     }
 
@@ -261,7 +261,7 @@ export class AcpCredentialsService {
     });
     if (!config || config.accessModel !== AccessModel.CREDENTIALS_LIST) {
       throw new BadRequestException(
-        "ACP must be configured for CREDENTIALS_LIST access",
+        "AP must be configured for CREDENTIALS_LIST access",
       );
     }
 

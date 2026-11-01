@@ -187,7 +187,7 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
           <span> {{ lastValidationSummary.invalidFiles }} Datei(en) enthalten Fehler.</span>
         }
         <div style="margin-top:6px">
-          ACP-Semantik:
+          AP-Semantik:
           {{ lastValidationSummary.semanticValid ? 'OK' : 'Fehler/Warnungen vorhanden' }} ({{
             lastValidationSummary.semanticIssueCount
           }}
@@ -1212,7 +1212,7 @@ export class FilesComponent implements OnInit {
       case 'selected':
         return `Sollen wirklich ${this.deleteDialogSelectedFiles.length} ausgewählte Datei(en) gelöscht werden?`;
       default:
-        return 'Sollen wirklich alle Dateien dieses ACP gelöscht werden?';
+        return 'Sollen wirklich alle Dateien dieses AP gelöscht werden?';
     }
   }
 

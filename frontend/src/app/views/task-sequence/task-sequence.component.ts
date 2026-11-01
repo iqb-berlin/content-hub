@@ -726,7 +726,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
         this.selectLinkedUnit(queryParams);
         this.breadcrumbs = [
           { label: 'Content Hub', route: ['/'] },
-          { label: 'ACP', route: ['/view', this.acpId] },
+          { label: 'AP', route: ['/view', this.acpId] },
           {
             label: this.isBooklet ? this.bookletName : this.sequence.name || 'Aufgabenfolge',
           },

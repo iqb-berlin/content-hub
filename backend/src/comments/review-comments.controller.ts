@@ -176,7 +176,7 @@ export class ReviewCommentsController {
   }
 
   @Get("counts")
-  @ApiOperation({ summary: "Get visible comment counts for all ACP items" })
+  @ApiOperation({ summary: "Get visible comment counts for all AP items" })
   async getItemCommentCounts(
     @UuidParam("acpId") acpId: string,
     @Request() req: any,

@@ -340,7 +340,7 @@ export class FileProcessingJobsService {
 
     if (existing) {
       throw new ConflictException(
-        "A file processing job is already running for this ACP",
+        "A file processing job is already running for this AP",
       );
     }
   }
@@ -425,13 +425,13 @@ export class FileProcessingJobsService {
   private getPhaseLabel(phase: FileProcessingJobPhase): string {
     switch (phase) {
       case "sync-index":
-        return "ACP-Index wird synchronisiert";
+        return "AP-Index wird synchronisiert";
       case "zip-files":
         return "ZIP wird erstellt";
       case "validate-files":
         return "Dateien werden validiert";
       case "validate-semantic":
-        return "ACP-Semantik wird geprüft";
+        return "AP-Semantik wird geprüft";
       case "cleanup-overwrite":
         return "Bereinigung nach Ersetzen läuft";
       case "completed":
@@ -459,7 +459,7 @@ export class FileProcessingJobsService {
     const job = await this.getJob(jobId);
     if (job.acpId !== acpId) {
       throw new NotFoundException(
-        `Processing job ${jobId} not found for ACP ${acpId}`,
+        `Processing job ${jobId} not found for AP ${acpId}`,
       );
     }
     return job;

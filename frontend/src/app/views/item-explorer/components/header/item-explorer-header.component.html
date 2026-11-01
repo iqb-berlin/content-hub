@@ -121,7 +121,7 @@
           <details #dataExportMenu name="item-explorer-toolbar" class="data-export-menu">
             <summary
               class="btn btn-outline btn-sm"
-              title="Item-Eingaben aller Teilnehmenden exportieren: gesamter ACP oder aktive Auswahlliste"
+              title="Item-Eingaben aller Teilnehmenden exportieren: gesamter AP oder aktive Auswahlliste"
             >
               <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5" />
@@ -131,7 +131,7 @@
             <div class="data-export-actions">
               <span class="data-export-hint">Gespeicherte Eingaben aller Teilnehmenden</span>
               <button
-                title="Gespeicherte Item-Eingaben aller Teilnehmenden für den gesamten ACP herunterladen; Suchfilter werden nicht berücksichtigt"
+                title="Gespeicherte Item-Eingaben aller Teilnehmenden für den gesamten AP herunterladen; Suchfilter werden nicht berücksichtigt"
                 class="btn btn-outline btn-sm"
                 type="button"
                 (click)="dataExportMenu.removeAttribute('open'); vm.exportAllPersonalItemDataCsv()"
@@ -458,7 +458,7 @@
   title="Empirische Itemschwierigkeiten löschen"
   message="Alle empirischen Itemschwierigkeiten im Entwurf werden entfernt."
   [details]="[
-    'Die Änderungen betreffen alle Items im aktuellen ACP.',
+    'Die Änderungen betreffen alle Items im aktuellen AP.',
     'Veröffentlicht wird erst nach anschließendem Speichern.',
   ]"
   [error]="vm.clearEmpiricalDifficultiesError"

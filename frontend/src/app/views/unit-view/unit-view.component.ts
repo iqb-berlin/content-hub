@@ -367,7 +367,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
               <div class="comment-unavailable" role="status">
                 <strong>Kommentare sind für dieses Konto nicht verfügbar.</strong>
                 <p>
-                  Die Kommentarfunktion ist deaktiviert oder es fehlt die ACP-Berechtigung „Review
+                  Die Kommentarfunktion ist deaktiviert oder es fehlt die AP-Berechtigung „Review
                   teilnehmen“.
                 </p>
               </div>
@@ -1373,7 +1373,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       this.loadCommentItems();
       this.breadcrumbs = [
         { label: 'Content Hub', route: ['/'] },
-        { label: 'ACP', route: ['/view', this.acpId] },
+        { label: 'AP', route: ['/view', this.acpId] },
         { label: u.name },
       ];
 

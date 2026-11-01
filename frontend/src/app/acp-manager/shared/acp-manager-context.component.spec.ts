@@ -58,7 +58,7 @@ describe('AcpManagerContextComponent', () => {
     component.ngOnInit();
 
     expect(component.backLink).toEqual(['/acps']);
-    expect(component.backLabel).toBe('← Zur ACP-Liste');
+    expect(component.backLabel).toBe('← Zur AP-Liste');
   });
 
   it('uses dashboard back link on nested manager routes', () => {
@@ -67,6 +67,6 @@ describe('AcpManagerContextComponent', () => {
     component.ngOnInit();
 
     expect(component.backLink).toEqual(['/manage', 'acp-1']);
-    expect(component.backLabel).toBe('← Zur ACP-Übersicht');
+    expect(component.backLabel).toBe('← Zur AP-Übersicht');
   });
 });

@@ -17,7 +17,7 @@ type ScopeOption = {
 };
 
 const SCOPE_OPTIONS: ScopeOption[] = [
-  { value: 'acp.read', label: 'ACP lesen' },
+  { value: 'acp.read', label: 'AP lesen' },
   { value: 'transfer.read', label: 'Transfer lesen' },
   { value: 'transfer.write', label: 'Transfer schreiben' },
   { value: 'index.read', label: 'Index lesen' },
@@ -72,7 +72,7 @@ const SCOPE_OPTIONS: ScopeOption[] = [
 
     @if (showCreate) {
       <div class="card">
-        <h3>Neues Token für dieses ACP</h3>
+        <h3>Neues Token für dieses AP</h3>
         <form (ngSubmit)="createToken()">
           <div class="form-grid">
             <div class="form-group">
@@ -132,7 +132,7 @@ const SCOPE_OPTIONS: ScopeOption[] = [
     <div class="card">
       <div class="table-header">
         <div>
-          <h3>Ausgestellte ACP-Tokens</h3>
+          <h3>Ausgestellte AP-Tokens</h3>
           <span class="table-meta">{{ total }} insgesamt</span>
         </div>
         <div class="pager">
@@ -157,7 +157,7 @@ const SCOPE_OPTIONS: ScopeOption[] = [
       @if (loading) {
         <div class="empty-state"><h3>Lade Token...</h3></div>
       } @else if (!tokens.length) {
-        <div class="empty-state"><h3>Keine Applikationstoken für dieses ACP vorhanden</h3></div>
+        <div class="empty-state"><h3>Keine Applikationstoken für dieses AP vorhanden</h3></div>
       } @else {
         <div class="table-scroll">
           <table class="table token-table">

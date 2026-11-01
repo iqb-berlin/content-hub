@@ -102,7 +102,7 @@ export class ReviewReadinessService {
     const warnings = new Set<string>();
     const files = await this.files.find({ where: { acpId } });
 
-    if (files.length === 0) blockers.add("Der ACP enthält keine Dateien.");
+    if (files.length === 0) blockers.add("Der AP enthält keine Dateien.");
 
     const validationRun = await this.validation.autoValidateUploadedFiles(
       acpId,
@@ -122,7 +122,7 @@ export class ReviewReadinessService {
     const manifest = await this.manifest.getManifest(acpId);
 
     if (manifest.booklets.length === 0) {
-      blockers.add("Der ACP enthält kein auflösbares Booklet.");
+      blockers.add("Der AP enthält kein auflösbares Booklet.");
     }
 
     for (const issue of manifest.issues) {

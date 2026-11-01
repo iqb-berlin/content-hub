@@ -23,9 +23,7 @@ export class ItemResponseStateService {
     rowKey?: string,
   ): Promise<ItemResponseState> {
     if (!userIsManager) {
-      throw new ForbiddenException(
-        "Only ACP managers can save response states",
-      );
+      throw new ForbiddenException("Only AP managers can save response states");
     }
 
     // Check if state already exists
@@ -150,7 +148,7 @@ export class ItemResponseStateService {
   ): Promise<{ success: boolean }> {
     if (!userIsManager) {
       throw new ForbiddenException(
-        "Only ACP managers can delete response states",
+        "Only AP managers can delete response states",
       );
     }
 
@@ -181,7 +179,7 @@ export class ItemResponseStateService {
   ): Promise<ItemResponseState[]> {
     if (!userIsManager) {
       throw new ForbiddenException(
-        "Only ACP managers can view all response states",
+        "Only AP managers can view all response states",
       );
     }
 

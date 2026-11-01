@@ -1292,7 +1292,7 @@ export class ItemExplorerFacade implements OnDestroy {
     }
     this.breadcrumbs = [
       { label: 'Content Hub', route: ['/'] },
-      { label: 'ACP', route: ['/view', this.acpId] },
+      { label: 'AP', route: ['/view', this.acpId] },
       { label: 'Item-Explorer' },
     ];
 

@@ -56,7 +56,7 @@ export class SnapshotsService {
     const snapshot = await this.findById(snapshotId);
     if (snapshot.acpId !== acpId) {
       throw new NotFoundException(
-        `Snapshot with ID ${snapshotId} not found for ACP ${acpId}`,
+        `Snapshot with ID ${snapshotId} not found for AP ${acpId}`,
       );
     }
     return snapshot;
@@ -147,7 +147,7 @@ export class SnapshotsService {
       where: { id: snapshot.acpId },
     });
     if (!acp) {
-      throw new NotFoundException("ACP not found");
+      throw new NotFoundException("AP not found");
     }
 
     // Restore ACP-Index
@@ -301,7 +301,7 @@ export class SnapshotsService {
       where: { id: snapshot.acpId },
     });
     if (!acp) {
-      throw new NotFoundException(`ACP with ID ${snapshot.acpId} not found`);
+      throw new NotFoundException(`AP with ID ${snapshot.acpId} not found`);
     }
 
     const snapshotFiles = snapshot.snapshotFiles || [];
@@ -349,10 +349,10 @@ export class SnapshotsService {
   }
 
   private async getAcpOrFail(acpId: string): Promise<Acp> {
-    assertUuidParam(acpId, "ACP ID");
+    assertUuidParam(acpId, "AP ID");
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
     if (!acp) {
-      throw new NotFoundException(`ACP with ID ${acpId} not found`);
+      throw new NotFoundException(`AP with ID ${acpId} not found`);
     }
     return acp;
   }

@@ -194,7 +194,7 @@ describe("AcpAccessGuard", () => {
     };
 
     await expect(guard.canActivate(createContext(request))).rejects.toThrow(
-      "No access to this ACP",
+      "No access to this AP",
     );
     expect(acpUserRoleRepository.findOne).not.toHaveBeenCalled();
   });
@@ -241,7 +241,7 @@ describe("AcpAccessGuard", () => {
     };
 
     await expect(guard.canActivate(createContext(request))).rejects.toThrow(
-      "ACP ID must be a valid UUID",
+      "AP ID must be a valid UUID",
     );
     expect(acpUserRoleRepository.findOne).not.toHaveBeenCalled();
     expect(accessConfigRepository.findOne).not.toHaveBeenCalled();

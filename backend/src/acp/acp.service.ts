@@ -71,7 +71,7 @@ export class AcpService {
   async findById(id: string): Promise<Acp> {
     const acp = await this.acpRepository.findOne({ where: { id } });
     if (!acp) {
-      throw new NotFoundException(`ACP with ID ${id} not found`);
+      throw new NotFoundException(`AP with ID ${id} not found`);
     }
     return acp;
   }
@@ -192,7 +192,7 @@ export class AcpService {
     const role = await this.acpUserRoleRepository.findOne({
       where: { acpId, userId },
     });
-    if (!role) throw new NotFoundException("ACP-Zuordnung nicht gefunden");
+    if (!role) throw new NotFoundException("AP-Zuordnung nicht gefunden");
     role.capabilities = normalizeGrants(capabilities);
     return this.acpUserRoleRepository.save(role);
   }
@@ -526,7 +526,7 @@ export class AcpService {
       typeof inputIndex !== "object" ||
       Array.isArray(inputIndex)
     ) {
-      throw new BadRequestException("ACP-Index muss ein JSON-Objekt sein.");
+      throw new BadRequestException("AP-Index muss ein JSON-Objekt sein.");
     }
 
     const merged = { ...defaultIndex, ...inputIndex } as Record<

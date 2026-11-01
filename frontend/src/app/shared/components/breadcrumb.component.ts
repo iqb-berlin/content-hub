@@ -56,7 +56,7 @@ export class BreadcrumbComponent {
   get resolvedItems(): BreadcrumbItem[] {
     return this.items.map((item) =>
       item.route?.length === 2 && item.route[0] === '/view'
-        ? { ...item, label: 'ACP-Übersicht', route: this.navigation.overviewRoute(item.route[1]) }
+        ? { ...item, label: 'AP-Übersicht', route: this.navigation.overviewRoute(item.route[1]) }
         : item,
     );
   }

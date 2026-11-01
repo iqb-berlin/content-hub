@@ -207,7 +207,7 @@ describe('AccessConfigComponent', () => {
       'Item-Explorer',
       'Aufgaben ansehen',
       'Testhefte und Aufgabenfolgen',
-      'Paketstruktur (ACP-Index)',
+      'Paketstruktur (AP-Index)',
     ]);
     expect(checkboxes).toHaveLength(4);
     expect(checkboxes.every((checkbox) => checkbox.checked)).toBe(true);
