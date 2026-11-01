@@ -257,7 +257,7 @@ export class UnitParserService {
   ): Promise<IndexSyncReport> {
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
     if (!acp) {
-      throw new NotFoundException(`ACP with ID ${acpId} not found`);
+      throw new NotFoundException(`AP with ID ${acpId} not found`);
     }
 
     const allFiles = await this.fileRepository.find({ where: { acpId } });
@@ -317,7 +317,7 @@ export class UnitParserService {
     await progress?.startPhase("sync-index", xmlFiles.length, {
       message:
         xmlFiles.length > 0
-          ? "Unit- und Booklet-XML-Dateien werden in den ACP-Index eingelesen."
+          ? "Unit- und Booklet-XML-Dateien werden in den AP-Index eingelesen."
           : "Keine XML-Dateien fuer die Synchronisierung gefunden.",
     });
 
@@ -506,8 +506,8 @@ export class UnitParserService {
     report.warnings = Array.from(warningSet);
     await progress?.completePhase(
       xmlFiles.length > 0
-        ? "ACP-Index-Synchronisierung abgeschlossen."
-        : "ACP-Index-Synchronisierung ohne verarbeitbare Unit-Dateien abgeschlossen.",
+        ? "AP-Index-Synchronisierung abgeschlossen."
+        : "AP-Index-Synchronisierung ohne verarbeitbare Unit-Dateien abgeschlossen.",
     );
     return report;
   }
@@ -521,7 +521,7 @@ export class UnitParserService {
   ): Promise<IndexDependencyCleanupReport> {
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
     if (!acp) {
-      throw new NotFoundException(`ACP with ID ${acpId} not found`);
+      throw new NotFoundException(`AP with ID ${acpId} not found`);
     }
 
     const allFiles = await this.fileRepository.find({ where: { acpId } });
@@ -960,7 +960,7 @@ export class UnitParserService {
 
     if (this.buildSourceFileSignature(currentFiles) !== expectedSignature) {
       throw new ConflictException(
-        "The ACP source files changed while row numbers were being recalculated",
+        "The AP source files changed while row numbers were being recalculated",
       );
     }
   }

@@ -267,7 +267,7 @@ export class ItemViewComponent implements OnInit, OnDestroy {
         this.highlightItemId = this.resolveHighlightItemId(u, this.itemId, this.item?.itemId);
         this.breadcrumbs = [
           { label: 'Content Hub', route: ['/'] },
-          { label: 'ACP', route: ['/view', this.acpId] },
+          { label: 'AP', route: ['/view', this.acpId] },
           { label: 'Item-Explorer', route: ['/view', this.acpId, 'item-explorer'] },
           { label: this.item.name || this.item.itemId || this.item.id },
         ];

@@ -39,7 +39,7 @@ export class RolesGuard implements CanActivate {
 
     const routeUuid = params.acpId || params.id;
     if (routeUuid) {
-      assertUuidParam(routeUuid, params.acpId ? "ACP ID" : "Resource ID");
+      assertUuidParam(routeUuid, params.acpId ? "AP ID" : "Resource ID");
     }
 
     // Check if user is App Admin - App Admins have access to everything

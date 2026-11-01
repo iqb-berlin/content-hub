@@ -7,7 +7,7 @@ import { Roles } from "../auth/roles.decorator";
 import { CreateSnapshotDto } from "../acp/dto/acp.dto";
 import { UuidParam } from "../common/uuid-param";
 
-@ApiTags("ACP Snapshots")
+@ApiTags("AP Snapshots")
 @Controller("acp/:acpId/snapshots")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles("ACP_MANAGER")
@@ -16,7 +16,7 @@ export class SnapshotsController {
   constructor(private readonly snapshotsService: SnapshotsService) {}
 
   @Get()
-  @ApiOperation({ summary: "List all snapshots for an ACP" })
+  @ApiOperation({ summary: "List all snapshots for an AP" })
   async findAll(@UuidParam("acpId") acpId: string) {
     return this.snapshotsService.findByAcp(acpId);
   }
@@ -40,7 +40,7 @@ export class SnapshotsController {
   }
 
   @Post(":snapshotId/restore")
-  @ApiOperation({ summary: "Restore ACP to a snapshot" })
+  @ApiOperation({ summary: "Restore AP to a snapshot" })
   async restore(
     @UuidParam("acpId") acpId: string,
     @UuidParam("snapshotId") snapshotId: string,
@@ -60,7 +60,7 @@ export class SnapshotsController {
   }
 
   @Get(":snapshotId/diff/current")
-  @ApiOperation({ summary: "Compare snapshot with current ACP state" })
+  @ApiOperation({ summary: "Compare snapshot with current AP state" })
   async diffWithCurrent(
     @UuidParam("acpId") acpId: string,
     @UuidParam("snapshotId") snapshotId: string,

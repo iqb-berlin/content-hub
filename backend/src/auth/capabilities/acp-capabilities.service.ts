@@ -76,7 +76,7 @@ export class AcpCapabilitiesService {
         where: { acpId: req.params.acpId || req.params.id },
       });
       if (!isExplorerAvailable(req, config?.featureConfig)) {
-        throw new ForbiddenException("Item list is not enabled for this ACP");
+        throw new ForbiddenException("Item list is not enabled for this AP");
       }
     }
     if (hasCapability(grants, capability)) return;

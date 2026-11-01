@@ -63,7 +63,7 @@ class CreateApplicationTokenDto {
 
   @ApiPropertyOptional({
     description:
-      "Optional ACP IDs this token is allowed to access. Omit or pass null for a global token.",
+      "Optional AP IDs this token is allowed to access. Omit or pass null for a global token.",
     type: [String],
   })
   @IsOptional()

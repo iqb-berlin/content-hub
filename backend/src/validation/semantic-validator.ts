@@ -42,7 +42,7 @@ export class SemanticValidator {
     if (!acp) {
       return {
         valid: false,
-        issues: [{ severity: "error", message: "ACP not found" }],
+        issues: [{ severity: "error", message: "AP not found" }],
       };
     }
 
@@ -50,7 +50,7 @@ export class SemanticValidator {
     if (!index) {
       return {
         valid: false,
-        issues: [{ severity: "error", message: "ACP-Index is empty" }],
+        issues: [{ severity: "error", message: "AP-Index is empty" }],
       };
     }
 

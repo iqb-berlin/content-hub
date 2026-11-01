@@ -261,7 +261,7 @@ interface ReviewConfig {
     `,
   ],
   template: `<a class="btn btn-outline btn-sm" [routerLink]="['/view', acpId]"
-      >← Zur ACP-Übersicht</a
+      >← Zur AP-Übersicht</a
     >
     <div class="page-header">
       <h1>Review</h1>
@@ -429,7 +429,7 @@ interface ReviewConfig {
         @if (manifest.booklets?.length) {
           <app-booklet-selection [acpId]="acpId" [booklets]="manifest.booklets" />
         } @else {
-          <p>Dieser ACP enthält noch keine Testhefte.</p>
+          <p>Dieser AP enthält noch keine Testhefte.</p>
         }
       }
       @if (access?.canManageReview && config) {
@@ -492,7 +492,7 @@ interface ReviewConfig {
                     />
                     <span class="member-name">{{ member.label }}</span>
                     @if (member.kind === 'credential') {
-                      <small class="member-kind">ACP-Zugang</small>
+                      <small class="member-kind">AP-Zugang</small>
                     }
                   </label>
                 }
@@ -814,7 +814,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
             this.comments = [];
           }
         },
-        error: () => (this.error = 'Kein Zugriff auf diesen ACP.'),
+        error: () => (this.error = 'Kein Zugriff auf diesen AP.'),
       }),
     );
   }

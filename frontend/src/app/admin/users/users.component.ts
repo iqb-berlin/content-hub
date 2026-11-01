@@ -181,7 +181,7 @@ export class UsersComponent implements OnInit {
   get deleteDialogDetails(): string[] {
     return [
       'Diese Aktion kann nicht rückgängig gemacht werden.',
-      'Falls die Person letzter ACP-Manager in einem ACP ist, wird das Löschen verhindert.',
+      'Falls die Person letzter AP-Manager in einem AP ist, wird das Löschen verhindert.',
     ];
   }
 
@@ -222,7 +222,7 @@ export class UsersComponent implements OnInit {
     const message = String(err?.error?.message || '');
 
     if (message.includes('would have no ACP_MANAGER')) {
-      return 'Löschen nicht möglich: Diese Person ist in mindestens einem ACP der letzte ACP-Manager.';
+      return 'Löschen nicht möglich: Diese Person ist in mindestens einem AP der letzte AP-Manager.';
     }
 
     return message || 'Fehler beim Löschen des Nutzers.';

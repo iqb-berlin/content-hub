@@ -45,9 +45,9 @@ export class AcpAccessGuard implements CanActivate {
     const acpId = request.params.acpId || request.params.id;
 
     if (!acpId) {
-      throw new NotFoundException("ACP ID not found in request");
+      throw new NotFoundException("AP ID not found in request");
     }
-    assertUuidParam(acpId, "ACP ID");
+    assertUuidParam(acpId, "AP ID");
 
     // Try to resolve user from JWT even if no JwtAuthGuard is attached.
     // This keeps ACP routes compatible with optional-auth scenarios.
@@ -117,7 +117,7 @@ export class AcpAccessGuard implements CanActivate {
       throw new ForbiddenException("Authentication required");
     }
 
-    throw new ForbiddenException("No access to this ACP");
+    throw new ForbiddenException("No access to this AP");
   }
 
   private async resolveUserFromRequestToken(

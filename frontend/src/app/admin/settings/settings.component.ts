@@ -109,9 +109,9 @@ const THEME_FIELDS: ThemeField[] = [
       </div>
 
       <div class="card">
-        <h3>Standard-Einstellungen für ACP-Index</h3>
+        <h3>Standard-Einstellungen für AP-Index</h3>
         <div class="form-group">
-          <label>Default ACP-Index (JSON-Objekt)</label>
+          <label>Default AP-Index (JSON-Objekt)</label>
           <textarea
             [(ngModel)]="defaultAcpIndexJson"
             name="defaultAcpIndexJson"
@@ -119,7 +119,7 @@ const THEME_FIELDS: ThemeField[] = [
             class="json-editor"
           ></textarea>
           <small class="help-text"
-            >Wird beim Anlegen/Import neuer ACPs als Standard verwendet.</small
+            >Wird beim Anlegen/Import neuer APs als Standard verwendet.</small
           >
         </div>
       </div>
@@ -127,7 +127,7 @@ const THEME_FIELDS: ThemeField[] = [
       <div class="card">
         <h3>GeoGebra</h3>
         <p class="help-text">
-          Einmal hochgeladen steht das GeoGebra-Bundle global für alle ACP-Player bereit.
+          Einmal hochgeladen steht das GeoGebra-Bundle global für alle AP-Player bereit.
         </p>
 
         @if (settings.geoGebraBundle) {
@@ -290,11 +290,11 @@ export class SettingsComponent implements OnInit {
     try {
       const parsed = JSON.parse(this.defaultAcpIndexJson || '{}');
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        throw new Error('Default ACP index must be a JSON object');
+        throw new Error('Default AP index must be a JSON object');
       }
       parsedDefaultAcpIndex = parsed as Record<string, unknown>;
     } catch {
-      this.error = 'Standard-ACP-Index muss ein gültiges JSON-Objekt sein.';
+      this.error = 'Standard-AP-Index muss ein gültiges JSON-Objekt sein.';
       return;
     }
 

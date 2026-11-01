@@ -246,7 +246,7 @@ export class ValidationService {
     if (!acp) {
       return {
         valid: false,
-        issues: [{ severity: "error", message: "ACP not found" }],
+        issues: [{ severity: "error", message: "AP not found" }],
         timestamp: new Date().toISOString(),
       };
     }
@@ -328,7 +328,7 @@ export class ValidationService {
     await progress?.startPhase("validate-semantic", semanticTotal, {
       message:
         semanticTotal > 0
-          ? "ACP-weite Referenzen und Skalen werden geprueft."
+          ? "AP-weite Referenzen und Skalen werden geprueft."
           : "Keine semantischen Referenzen zur Pruefung vorhanden.",
     });
 
@@ -474,7 +474,7 @@ export class ValidationService {
         {
           severity: "error",
           message:
-            "ACP-Index schema check failed: top-level JSON must be an object",
+            "AP-Index schema check failed: top-level JSON must be an object",
           scope: "schema",
           path: "$",
         },
@@ -488,7 +488,7 @@ export class ValidationService {
       issues.push({
         severity: "error",
         message:
-          'ACP-Index schema: required field "packageId" is missing or empty',
+          'AP-Index schema: required field "packageId" is missing or empty',
         scope: "schema",
         path: "packageId",
       });
@@ -498,7 +498,7 @@ export class ValidationService {
       issues.push({
         severity: "error",
         message:
-          'ACP-Index schema: required field "version" is missing or empty',
+          'AP-Index schema: required field "version" is missing or empty',
         scope: "schema",
         path: "version",
       });
@@ -510,7 +510,7 @@ export class ValidationService {
     ) {
       issues.push({
         severity: "error",
-        message: `ACP-Index schema: "status" must be one of ${ACP_INDEX_ALLOWED_STATUS_VALUES.join(", ")}`,
+        message: `AP-Index schema: "status" must be one of ${ACP_INDEX_ALLOWED_STATUS_VALUES.join(", ")}`,
         scope: "schema",
         path: "status",
       });
@@ -520,7 +520,7 @@ export class ValidationService {
       issues.push({
         severity: "error",
         message:
-          'ACP-Index schema: required field "assessmentParts" must be an array',
+          'AP-Index schema: required field "assessmentParts" must be an array',
         scope: "schema",
         path: "assessmentParts",
       });
@@ -536,7 +536,7 @@ export class ValidationService {
       if (!part || typeof part !== "object" || Array.isArray(part)) {
         issues.push({
           severity: "error",
-          message: "ACP-Index schema: assessmentPart entry must be an object",
+          message: "AP-Index schema: assessmentPart entry must be an object",
           scope: "schema",
           path: `assessmentParts[${partIndex}]`,
         });
@@ -547,7 +547,7 @@ export class ValidationService {
       if (modules !== undefined && !Array.isArray(modules)) {
         issues.push({
           severity: "error",
-          message: 'ACP-Index schema: "bookletModules" must be an array',
+          message: 'AP-Index schema: "bookletModules" must be an array',
           scope: "schema",
           path: `assessmentParts[${partIndex}].bookletModules`,
         });
@@ -561,7 +561,7 @@ export class ValidationService {
         if (!module || typeof module !== "object" || Array.isArray(module)) {
           issues.push({
             severity: "error",
-            message: "ACP-Index schema: bookletModule entry must be an object",
+            message: "AP-Index schema: bookletModule entry must be an object",
             scope: "schema",
             path: `assessmentParts[${partIndex}].bookletModules[${moduleIndex}]`,
           });
@@ -571,7 +571,7 @@ export class ValidationService {
         if (typeof module.id !== "string" || !module.id.trim()) {
           issues.push({
             severity: "error",
-            message: 'ACP-Index schema: bookletModule requires non-empty "id"',
+            message: 'AP-Index schema: bookletModule requires non-empty "id"',
             scope: "schema",
             path: `assessmentParts[${partIndex}].bookletModules[${moduleIndex}].id`,
           });
@@ -580,7 +580,7 @@ export class ValidationService {
         if (module.units !== undefined && !Array.isArray(module.units)) {
           issues.push({
             severity: "error",
-            message: 'ACP-Index schema: bookletModule "units" must be an array',
+            message: 'AP-Index schema: bookletModule "units" must be an array',
             scope: "schema",
             path: `assessmentParts[${partIndex}].bookletModules[${moduleIndex}].units`,
           });
@@ -591,7 +591,7 @@ export class ValidationService {
       if (instruments !== undefined && !Array.isArray(instruments)) {
         issues.push({
           severity: "error",
-          message: 'ACP-Index schema: "instruments" must be an array',
+          message: 'AP-Index schema: "instruments" must be an array',
           scope: "schema",
           path: `assessmentParts[${partIndex}].instruments`,
         });
@@ -611,7 +611,7 @@ export class ValidationService {
         ) {
           issues.push({
             severity: "error",
-            message: "ACP-Index schema: instrument entry must be an object",
+            message: "AP-Index schema: instrument entry must be an object",
             scope: "schema",
             path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}]`,
           });
@@ -623,7 +623,7 @@ export class ValidationService {
           issues.push({
             severity: "error",
             message:
-              'ACP-Index schema: instrument "testcenterBooklet" must be an array',
+              'AP-Index schema: instrument "testcenterBooklet" must be an array',
             scope: "schema",
             path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}].testcenterBooklet`,
           });
@@ -642,7 +642,7 @@ export class ValidationService {
           ) {
             issues.push({
               severity: "error",
-              message: "ACP-Index schema: booklet entry must be an object",
+              message: "AP-Index schema: booklet entry must be an object",
               scope: "schema",
               path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}].testcenterBooklet[${bookletIndex}]`,
             });
@@ -655,7 +655,7 @@ export class ValidationService {
           ) {
             issues.push({
               severity: "error",
-              message: 'ACP-Index schema: booklet "modules" must be an array',
+              message: 'AP-Index schema: booklet "modules" must be an array',
               scope: "schema",
               path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}].testcenterBooklet[${bookletIndex}].modules`,
             });
@@ -672,7 +672,7 @@ export class ValidationService {
               issues.push({
                 severity: "error",
                 message:
-                  "ACP-Index schema: module reference must be string, {moduleId}, or {id}",
+                  "AP-Index schema: module reference must be string, {moduleId}, or {id}",
                 scope: "schema",
                 path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}].testcenterBooklet[${bookletIndex}].modules[${moduleRefIndex}]`,
               });

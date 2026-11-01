@@ -10,7 +10,7 @@ import { AuthService } from '../core/services/auth.service';
   template: `
     <div class="login-wrapper">
       <div class="card login-card">
-        <h1>ACP-Zugang</h1>
+        <h1>AP-Zugang</h1>
         <p class="subtitle">Anmeldung mit Zugangsdaten</p>
         @if (error) {
           <div class="alert alert-error">{{ error }}</div>

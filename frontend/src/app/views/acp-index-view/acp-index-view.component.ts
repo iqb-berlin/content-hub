@@ -41,7 +41,7 @@ interface NodeAction {
     <app-breadcrumb [items]="breadcrumbs" />
 
     <div class="page-header">
-      <h1>ACP-Index</h1>
+      <h1>AP-Index</h1>
       <div class="header-actions">
         <button class="btn btn-outline btn-sm" (click)="applyExpandDepth(1)">Ebene 1</button>
         <button class="btn btn-outline btn-sm" (click)="applyExpandDepth(2)">Ebene 2</button>
@@ -49,13 +49,13 @@ interface NodeAction {
           Alles aufklappen
         </button>
         <a [routerLink]="navigation.overviewRoute(acpId)" class="btn btn-outline"
-          >← Zur ACP-Übersicht</a
+          >← Zur AP-Übersicht</a
         >
       </div>
     </div>
 
     @if (loading) {
-      <div class="empty-state"><h3>Lade ACP-Index...</h3></div>
+      <div class="empty-state"><h3>Lade AP-Index...</h3></div>
     } @else if (error) {
       <div class="alert alert-warning">{{ error }}</div>
     } @else {
@@ -308,8 +308,8 @@ export class AcpIndexViewComponent implements OnInit {
     this.acpId = this.route.snapshot.paramMap.get('acpId') || '';
     this.breadcrumbs = [
       { label: 'Content Hub', route: ['/'] },
-      { label: 'ACP', route: ['/view', this.acpId] },
-      { label: 'ACP-Index' },
+      { label: 'AP', route: ['/view', this.acpId] },
+      { label: 'AP-Index' },
     ];
 
     combineLatest({
@@ -342,7 +342,7 @@ export class AcpIndexViewComponent implements OnInit {
           this.loading = false;
         },
         error: () => {
-          this.error = 'ACP-Index konnte nicht geladen werden.';
+          this.error = 'AP-Index konnte nicht geladen werden.';
           this.loading = false;
         },
       });

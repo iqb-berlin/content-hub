@@ -65,7 +65,7 @@ export class UnitListComponent implements OnInit {
     this.acpId = this.route.snapshot.paramMap.get('acpId') || '';
     this.breadcrumbs = [
       { label: 'Content Hub', route: ['/'] },
-      { label: 'ACP', route: ['/view', this.acpId] },
+      { label: 'AP', route: ['/view', this.acpId] },
       { label: 'Aufgaben' },
     ];
     this.api.getViewUnits(this.acpId).subscribe((u) => (this.units = u));

@@ -100,7 +100,7 @@ export class ReviewPolicyService {
       !this.isTargetEnabled(targets, targetType)
     ) {
       throw new ForbiddenException(
-        `${targetType} comments are not enabled for this ACP`,
+        `${targetType} comments are not enabled for this AP`,
       );
     }
     return this.visibilityMode(featureConfig);
@@ -124,7 +124,7 @@ export class ReviewPolicyService {
     ].filter((target) => this.isTargetEnabled(configured, target));
     if (!featureConfig.enableCommenting || targetTypes.length === 0) {
       throw new ForbiddenException(
-        "Item and coding comments are not enabled for this ACP",
+        "Item and coding comments are not enabled for this AP",
       );
     }
     return {

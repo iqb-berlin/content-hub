@@ -316,7 +316,7 @@ export class ItemExplorerPersonalDataService implements OnDestroy {
         response.status === 404 && collection
           ? 'Die Auswahlliste ist nicht mehr verfügbar oder nicht mehr freigegeben. Bitte die Auswahllisten neu laden.'
           : response.status === 403
-            ? 'Für diesen Export fehlt die Berechtigung oder die benötigte ACP-Funktion ist deaktiviert.'
+            ? 'Für diesen Export fehlt die Berechtigung oder die benötigte AP-Funktion ist deaktiviert.'
             : response.status === 0
               ? 'Der Server ist nicht erreichbar. Bitte die Verbindung prüfen und den Export erneut versuchen.'
               : `Die Item-Arbeitsdaten aller Teilnehmenden konnten nicht exportiert werden${response.status ? ` (HTTP ${response.status})` : ''}.`;

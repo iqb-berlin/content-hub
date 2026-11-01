@@ -71,7 +71,7 @@ async function bootstrap() {
   if (swaggerEnabled) {
     const config = new DocumentBuilder()
       .setTitle("Content Hub API")
-      .setDescription("API for managing Assessment Content Packages")
+      .setDescription("API for managing Assessment Packages")
       .setVersion(process.env.APP_VERSION || "0.0.0-dev")
       .addBearerAuth()
       .build();

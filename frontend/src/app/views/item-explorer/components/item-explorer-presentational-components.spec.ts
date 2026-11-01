@@ -187,7 +187,7 @@ describe('ItemExplorer presentational components', () => {
   });
 
   it('exposes read-only sharing and private-copy actions for collections', () => {
-    expect(collectionsTemplate).toContain('Für diesen ACP freigeben');
+    expect(collectionsTemplate).toContain('Für diesen AP freigeben');
     expect(collectionsTemplate.replace(/\s+/g, ' ')).toContain(
       "'Geteilt von ' + vm.activeItemCollection?.ownerLabel",
     );

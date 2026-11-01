@@ -21,7 +21,7 @@ describe("SemanticValidator", () => {
 
     expect(result).toEqual({
       valid: false,
-      issues: [{ severity: "error", message: "ACP not found" }],
+      issues: [{ severity: "error", message: "AP not found" }],
     });
   });
 

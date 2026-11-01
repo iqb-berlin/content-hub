@@ -309,14 +309,14 @@ export class ViewsController {
   }
 
   @Get("acp")
-  @ApiOperation({ summary: "List publicly accessible ACPs" })
+  @ApiOperation({ summary: "List publicly accessible APs" })
   async getPublicAcps() {
     return this.viewsService.getPublicAcps();
   }
 
   @Get("acp/:acpId")
   @UseGuards(AcpAccessGuard)
-  @ApiOperation({ summary: "ACP start page data" })
+  @ApiOperation({ summary: "AP start page data" })
   async getAcpStartPage(
     @UuidParam("acpId") acpId: string,
     @Request() req: any,
@@ -337,23 +337,21 @@ export class ViewsController {
 
   @Get("acp/:acpId/index")
   @UseGuards(AcpAccessGuard)
-  @ApiOperation({ summary: "Get ACP-Index for read-only view" })
+  @ApiOperation({ summary: "Get AP-Index for read-only view" })
   async getAcpIndex(@UuidParam("acpId") acpId: string) {
     return this.viewsService.getAcpIndex(acpId);
   }
 
   @Get("acp/:acpId/index/export")
   @UseGuards(AcpAccessGuard)
-  @ApiOperation({ summary: "Export ACP-Index JSON for read-only view" })
+  @ApiOperation({ summary: "Export AP-Index JSON for read-only view" })
   async exportAcpIndex(
     @UuidParam("acpId") acpId: string,
     @Request() req: any,
     @Res() res: Response,
   ) {
     if (!(await this.canUseFeature(acpId, req, "allowIndexDownload"))) {
-      throw new ForbiddenException(
-        "Index download is not enabled for this ACP",
-      );
+      throw new ForbiddenException("Index download is not enabled for this AP");
     }
 
     const index = await this.viewsService.getAcpIndex(acpId);
@@ -367,7 +365,7 @@ export class ViewsController {
 
   @Get("acp/:acpId/units")
   @UseGuards(AcpAccessGuard)
-  @ApiOperation({ summary: "List all units in an ACP" })
+  @ApiOperation({ summary: "List all units in an AP" })
   async getUnits(@UuidParam("acpId") acpId: string) {
     const data = await this.viewsService.getAcpStartPage(acpId);
     return data?.units || [];
@@ -382,7 +380,7 @@ export class ViewsController {
     @Request() req: any,
   ) {
     if (!(await this.canUseFeature(acpId, req, "enableUnitView", true))) {
-      throw new ForbiddenException("Unit view is not enabled for this ACP");
+      throw new ForbiddenException("Unit view is not enabled for this AP");
     }
 
     return this.viewsService.getUnitViewData(acpId, unitId);
@@ -390,11 +388,11 @@ export class ViewsController {
 
   @Get("acp/:acpId/items")
   @UseGuards(ExplorerReadGuard)
-  @ApiOperation({ summary: "Get item list for an ACP" })
+  @ApiOperation({ summary: "Get item list for an AP" })
   @ApiOkResponse({ type: SimpleItemListEntryDto, isArray: true })
   async getItems(@UuidParam("acpId") acpId: string, @Request() req: any) {
     if (!(await this.canUseFeature(acpId, req, "enableItemList", true))) {
-      throw new ForbiddenException("Item list is not enabled for this ACP");
+      throw new ForbiddenException("Item list is not enabled for this AP");
     }
 
     const canEdit = hasCapability(
@@ -406,7 +404,7 @@ export class ViewsController {
 
   @Get("acp/:acpId/item-explorer/state")
   @UseGuards(ExplorerReadGuard)
-  @ApiOperation({ summary: "Get shared Item Explorer state for ACP" })
+  @ApiOperation({ summary: "Get shared Item Explorer state for AP" })
   async getItemExplorerState(
     @UuidParam("acpId") acpId: string,
     @Request() req: any,
@@ -480,7 +478,7 @@ export class ViewsController {
   ) {
     if (!(await this.isPersonalItemDataEnabled(acpId))) {
       throw new ForbiddenException(
-        "Personal item data is not enabled for this ACP",
+        "Personal item data is not enabled for this AP",
       );
     }
 
@@ -506,11 +504,11 @@ export class ViewsController {
     @Res() res: Response,
   ) {
     if (!(await this.canUseFeature(acpId, req, "enableItemList", true))) {
-      throw new ForbiddenException("Item list is not enabled for this ACP");
+      throw new ForbiddenException("Item list is not enabled for this AP");
     }
     if (!(await this.isPersonalItemDataEnabled(acpId))) {
       throw new ForbiddenException(
-        "Personal item data is not enabled for this ACP",
+        "Personal item data is not enabled for this AP",
       );
     }
 
@@ -555,12 +553,12 @@ export class ViewsController {
   ) {
     if (req?.acpAccessLevel !== "MANAGER" && req?.acpAccessLevel !== "ADMIN") {
       throw new ForbiddenException(
-        "Only ACP managers can export all participants' item data",
+        "Only AP managers can export all participants' item data",
       );
     }
     if (!(await this.isPersonalItemDataEnabled(acpId))) {
       throw new ForbiddenException(
-        "Personal item data is not enabled for this ACP",
+        "Personal item data is not enabled for this AP",
       );
     }
 
@@ -752,13 +750,13 @@ export class ViewsController {
 
   @Get("acp/:acpId/sequences")
   @UseGuards(AcpAccessGuard)
-  @ApiOperation({ summary: "List task sequences for an ACP" })
+  @ApiOperation({ summary: "List task sequences for an AP" })
   async getSequences(@UuidParam("acpId") acpId: string, @Request() req: any) {
     if (
       !(await this.canUseFeature(acpId, req, "enableSequenceNavigation", true))
     ) {
       throw new ForbiddenException(
-        "Task sequences are not enabled for this ACP",
+        "Task sequences are not enabled for this AP",
       );
     }
 
@@ -778,7 +776,7 @@ export class ViewsController {
       !(await this.canUseFeature(acpId, req, "enableSequenceNavigation", true))
     ) {
       throw new ForbiddenException(
-        "Task sequences are not enabled for this ACP",
+        "Task sequences are not enabled for this AP",
       );
     }
 
@@ -860,11 +858,11 @@ export class ViewsController {
       req?.acpAccessLevel === "MANAGER" ||
       req?.acpAccessLevel === "ADMIN";
     if (!isManager && featureConfig.enableItemList === false) {
-      throw new ForbiddenException("Item list is not enabled for this ACP");
+      throw new ForbiddenException("Item list is not enabled for this AP");
     }
     if (featureConfig.enableItemCollections !== true) {
       throw new ForbiddenException(
-        "Item collections are not enabled for this ACP",
+        "Item collections are not enabled for this AP",
       );
     }
   }

@@ -641,7 +641,7 @@ export class ItemExplorerStateService {
         lock: { mode: "pessimistic_write" },
       });
       if (!acp) {
-        throw new NotFoundException("ACP not found");
+        throw new NotFoundException("AP not found");
       }
 
       const concurrentlyCreated = await stateRepository.findOne({
@@ -736,7 +736,7 @@ export class ItemExplorerStateService {
       where: { id: acpId },
     });
     if (!acp) {
-      throw new NotFoundException("ACP not found");
+      throw new NotFoundException("AP not found");
     }
 
     acp.itemProperties = this.normalizeItemProperties(state.itemProperties);

@@ -23,7 +23,7 @@ describe("Server API UUID request lifecycle", () => {
       listFiles: jest
         .fn()
         .mockRejectedValue(
-          new NotFoundException(`ACP with ID ${version5Uuid} not found`),
+          new NotFoundException(`AP with ID ${version5Uuid} not found`),
         ),
     };
     authService = {

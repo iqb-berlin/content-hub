@@ -88,7 +88,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.c
     @if (diffPreview) {
       <div class="card">
         <h3>Diff-Vorschau zu Version v{{ diffPreviewSnapshotVersion }}</h3>
-        <p><strong>ACP-Index geändert:</strong> {{ diffPreview.indexChanged ? 'Ja' : 'Nein' }}</p>
+        <p><strong>AP-Index geändert:</strong> {{ diffPreview.indexChanged ? 'Ja' : 'Nein' }}</p>
         <p><strong>Unverändert:</strong> {{ diffPreview.unchanged }} Dateien</p>
 
         <div class="form-group">
@@ -198,7 +198,7 @@ export class SnapshotsComponent implements OnInit {
 
   get actionDialogMessage(): string {
     if (this.actionDialogKind === 'restore') {
-      return 'Der aktuelle ACP-Stand wird durch die Daten dieses Snapshots ersetzt.';
+      return 'Der aktuelle AP-Stand wird durch die Daten dieses Snapshots ersetzt.';
     }
     return 'Dieser Snapshot wird dauerhaft entfernt.';
   }
@@ -206,7 +206,7 @@ export class SnapshotsComponent implements OnInit {
   get actionDialogDetails(): string[] {
     if (this.actionDialogKind === 'restore') {
       return [
-        'ACP-Index und zugehörige Dateien werden auf diesen Versionsstand zurückgesetzt.',
+        'AP-Index und zugehörige Dateien werden auf diesen Versionsstand zurückgesetzt.',
         'Nicht gespeicherte aktuelle Änderungen gehen dabei verloren.',
       ];
     }

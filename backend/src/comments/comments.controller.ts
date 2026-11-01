@@ -49,7 +49,7 @@ export class CommentsController {
   @Get()
   @UseGuards(JwtAuthGuard, ReviewAccessGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "List all comments for an ACP (Manager only)" })
+  @ApiOperation({ summary: "List all comments for an AP (Manager only)" })
   async findAll(@UuidParam("acpId") acpId: string, @Request() req: any) {
     this.assertManagerAccess(req);
     return this.commentsService.findByAcp(acpId);
@@ -58,7 +58,7 @@ export class CommentsController {
   @Get("mine")
   @UseGuards(JwtAuthGuard, ReviewAccessGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "List my comments for an ACP" })
+  @ApiOperation({ summary: "List my comments for an AP" })
   async findMine(@UuidParam("acpId") acpId: string, @Request() req: any) {
     if (req.user.type === "credential") {
       return this.commentsService.findByCredential(
@@ -85,7 +85,7 @@ export class CommentsController {
   ) {
     this.reviewPolicy.assertCanParticipateRequest(req);
     if (dto.targetId === acpId) {
-      throw new BadRequestException("Comment target ID must not be the ACP ID");
+      throw new BadRequestException("Comment target ID must not be the AP ID");
     }
 
     return this.commentsService.createLegacyCompatibleComment(
@@ -104,7 +104,7 @@ export class CommentsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary:
-      "Delete unresolved legacy task-sequence comments for an ACP (Manager only)",
+      "Delete unresolved legacy task-sequence comments for an AP (Manager only)",
   })
   async deleteLegacyComments(
     @UuidParam("acpId") acpId: string,

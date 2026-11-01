@@ -321,7 +321,7 @@ export class ServerApiService {
       const matches = existingByLowerName.get(lookupKey) || [];
       if (!matches.length) {
         throw new NotFoundException(
-          `Coding scheme "${incomingName}" does not exist in ACP and cannot be replaced`,
+          `Coding scheme "${incomingName}" does not exist in AP and cannot be replaced`,
         );
       }
 
@@ -414,7 +414,7 @@ export class ServerApiService {
     if (this.isAcpRestricted(allowedAcpIds)) {
       if (!acp) {
         throw new ForbiddenException(
-          "ACP-limited tokens cannot create new ACPs through server import",
+          "AP-limited tokens cannot create new APs through server import",
         );
       }
       this.assertAcpAllowed(acp.id, allowedAcpIds);
@@ -435,7 +435,7 @@ export class ServerApiService {
 
     if (conflictStrategy === "reject") {
       throw new ConflictException(
-        `ACP with packageId \"${data.packageId}\" already exists. Use conflictStrategy=overwrite or conflictStrategy=merge.`,
+        `AP with packageId \"${data.packageId}\" already exists. Use conflictStrategy=overwrite or conflictStrategy=merge.`,
       );
     }
 
@@ -471,7 +471,7 @@ export class ServerApiService {
     }
     if (!(allowedAcpIds as string[]).includes(acpId)) {
       throw new ForbiddenException(
-        "Application token is not allowed to access this ACP",
+        "Application token is not allowed to access this AP",
       );
     }
   }
@@ -485,13 +485,13 @@ export class ServerApiService {
 
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
     if (!acp) {
-      throw new NotFoundException(`ACP with ID ${acpId} not found`);
+      throw new NotFoundException(`AP with ID ${acpId} not found`);
     }
     return acp;
   }
 
   private assertValidAcpId(acpId: string): void {
-    assertUuidParam(acpId, "ACP ID");
+    assertUuidParam(acpId, "AP ID");
   }
 
   private toTransferFileMeta(file: AcpFile): {
@@ -528,7 +528,7 @@ export class ServerApiService {
 
     if (acp.updatedAt.toISOString() !== parsed.toISOString()) {
       throw new ConflictException(
-        "ACP was modified since the expected version timestamp",
+        "AP was modified since the expected version timestamp",
       );
     }
   }

@@ -16,7 +16,7 @@ import { renderMarkdownContent } from '../../core/utils/markdown.util';
       <!-- Hero -->
       <section class="hero">
         <h1>Content Hub</h1>
-        <p class="hero-sub">Assessment Content Packages für Lernstandserhebungen</p>
+        <p class="hero-sub">Assessment Packages für Lernstandserhebungen</p>
       </section>
 
       <!-- Custom landing page content from admin settings -->
@@ -139,7 +139,7 @@ import { renderMarkdownContent } from '../../core/utils/markdown.util';
           <div class="empty-state">
             <div class="empty-icon">📭</div>
             <h3>Keine öffentlichen Pakete verfügbar</h3>
-            <p>Es wurden noch keine Assessment Content Packages veröffentlicht.</p>
+            <p>Es wurden noch keine Assessment Packages veröffentlicht.</p>
           </div>
         }
       </section>
