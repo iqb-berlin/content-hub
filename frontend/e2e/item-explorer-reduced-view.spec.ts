@@ -288,6 +288,9 @@ test('uses the full table area on desktop, narrow screens and fullscreen and res
   ).toBeVisible();
 
   async function verifyArea() {
+    // Switching views reloads the list; its status banner temporarily occupies table space.
+    await expect(page.locator('.item-list-loading')).toBeHidden();
+    await expect(page.locator('.explorer-table tbody tr')).toHaveCount(6);
     const bounds = await page.locator('.split-pane').evaluate((el) => {
       const table = el.querySelector('.table-scroll')!.getBoundingClientRect();
       const pane = el.getBoundingClientRect();
