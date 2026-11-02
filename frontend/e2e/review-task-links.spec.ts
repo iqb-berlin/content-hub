@@ -91,6 +91,42 @@ test('keeps the review panel resizable and the workspace usable on narrow screen
   });
 });
 
+test('keeps all workspace tools inside narrow screens when downloads are enabled', async ({
+  page,
+}) => {
+  await page.route(`**/api/view/acp/${acpId}`, async (route) => {
+    const response = await route.fetch();
+    const data = await response.json();
+    await route.fulfill({
+      json: {
+        ...data,
+        featureConfig: { ...data.featureConfig, allowUnitDownload: true },
+      },
+    });
+  });
+  await page.goto(baseUrl);
+  await expectPosition(page, 1);
+  const tools = page.locator('.workspace-actions > .btn');
+  await expect(tools).toHaveCount(4);
+  await expect(page.getByRole('button', { name: 'Download Testheft' })).toBeVisible();
+  for (const width of [440, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect
+      .poll(() =>
+        tools.evaluateAll((elements) =>
+          elements.every((element) => {
+            const bounds = element.getBoundingClientRect();
+            return bounds.left >= 0 && bounds.right <= innerWidth;
+          }),
+        ),
+      )
+      .toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+});
+
 test('copies the current task link on click without navigating and confirms success', async ({
   page,
 }) => {
