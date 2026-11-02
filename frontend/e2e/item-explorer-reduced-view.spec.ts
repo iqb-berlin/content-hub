@@ -288,7 +288,10 @@ test('uses the full table area on desktop, narrow screens and fullscreen and res
   ).toBeVisible();
 
   async function verifyArea() {
-    // Switching views reloads the list; its status banner temporarily occupies table space.
+    // The switch fetches shared state before reloading the list and showing its status banner.
+    await expect(
+      page.getByRole('button', { name: 'Bearbeitungsansicht', exact: true }),
+    ).toBeEnabled();
     await expect(page.locator('.item-list-loading')).toBeHidden();
     await expect(page.locator('.explorer-table tbody tr')).toHaveCount(6);
     const bounds = await page.locator('.split-pane').evaluate((el) => {
