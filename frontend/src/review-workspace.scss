@@ -426,6 +426,7 @@ app-task-sequence.review-workspace-view {
     .review-workspace .workspace-actions {
       margin-left: 0;
       width: 100%;
+      flex-wrap: wrap;
       justify-content: center;
       border-top: 1px solid var(--color-border);
       padding-top: 8px;
