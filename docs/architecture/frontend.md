@@ -42,31 +42,31 @@ The route tree is organized by user journey:
 - `/auth/callback`
   OIDC callback handling
 - `/credential-login/:acpId`
-  ACP credential login page
+  AP credential login page
 
 ### Manager and admin routes
 
 - `/acps`
-  list of accessible ACPs for authenticated managers/admins
+  list of accessible APs for authenticated managers/admins
 - `/admin/users`
   user administration
 - `/admin/settings`
   global settings administration
 - `/admin/acp`
-  ACP administration view
+  AP administration view
 - `/manage/:acpId`
-  ACP manager dashboard
+  AP manager dashboard
 - `/manage/:acpId/files`
   file manager
 - `/manage/:acpId/snapshots`
   snapshot manager
 - `/manage/:acpId/access`
-  ACP access configuration
+  AP access configuration
 
 ### Read-only view routes
 
 - `/view/:acpId`
-  ACP start page
+  AP start page
 - `/view/:acpId/units`
   unit list
 - `/view/:acpId/unit/:unitId`
@@ -80,7 +80,7 @@ The route tree is organized by user journey:
 - `/view/:acpId/item/:itemId`
   item detail view
 - `/view/:acpId/index`
-  ACP index browser
+  AP-Index browser
 
 ## Guards and Access UX
 
@@ -92,9 +92,9 @@ uses lightweight guards to guide the user into the correct flow:
 - `adminGuard`
   requires login and app-admin status.
 - `acpManagerGuard`
-  checks that the user can access manager APIs for the ACP.
+  checks that the user can access manager APIs for the AP.
 - `acpViewGuard`
-  lets public ACPs through and redirects restricted ACPs to the access page.
+  lets public APs through and redirects restricted APs to the access page.
 - `itemExplorerPendingChangesGuard`
   prevents accidental navigation away from unsaved explorer changes.
 
@@ -133,7 +133,7 @@ The service is a thin typed wrapper around backend endpoints.
 Major API groups in the client service:
 
 - users and admin settings,
-- ACP CRUD and access configuration,
+- AP CRUD and access configuration,
 - file upload and download helpers,
 - snapshots,
 - comments,
@@ -155,9 +155,9 @@ The frontend uses a pragmatic service-and-component state model.
 Patterns used in the codebase:
 
 - server state is fetched directly in pages and feature components,
-- route parameters decide the current ACP context,
+- route parameters decide the current AP context,
 - local component state handles filters, selected items, dialogs, and temporary UI state,
-- shared ACP explorer state is loaded from the backend and updated through versioned draft APIs.
+- shared AP explorer state is loaded from the backend and updated through versioned draft APIs.
 
 The Item Explorer uses a route-scoped feature facade because it combines several independent UI
 areas with draft state, personal working data, collections, and a player preview. The route
@@ -179,18 +179,18 @@ The admin UI covers:
 - linking OIDC identities,
 - editing theme, logo, language, and legal content.
 
-### ACP manager area
+### AP manager area
 
 The manager UI covers:
 
-- ACP overview and dashboard,
+- AP overview and dashboard,
 - file lifecycle operations,
 - snapshot creation and restore,
-- access model and credential management, including the default private state for new ACPs.
+- access model and credential management, including the default private state for new APs.
 
 ### Read-only area
 
-The read-only side adapts its UI based on ACP feature flags. Depending on ACP settings,
+The read-only side adapts its UI based on AP feature flags. Depending on AP settings,
 users may see or hide:
 
 - unit navigation,

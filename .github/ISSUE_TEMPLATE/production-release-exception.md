@@ -35,7 +35,7 @@ claim that staging validation occurred.
 
 - [ ] `/api/version` and `/version.json` report the promoted release identity
 - [ ] Keycloak login and logout succeed
-- [ ] ACP read, edit, save, and file upload succeed
+- [ ] AP read, edit, save, and file upload succeed
 - [ ] Public/read view succeeds
 - [ ] Item Explorer, coding, and collections smoke tests succeed
 - [ ] Keycloak user count did not decrease

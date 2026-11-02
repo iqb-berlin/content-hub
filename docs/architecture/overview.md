@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Content Hub is a web application for working with Assessment Content Packages
-(ACPs). An ACP combines structured index data, referenced media and runtime files,
+Content Hub is a web application for working with Assessment Packages
+(APs). An AP combines structured index data, referenced media and runtime files,
 access rules, comments, snapshots, and item-level metadata into one manageable unit.
 
 The application supports four broad use cases:
 
-1. public or restricted read-only browsing of ACPs,
+1. public or restricted read-only browsing of APs,
 2. manager workflows for importing files and maintaining package content,
 3. application administration for users and global settings,
 4. server-to-server transfer workflows for connected systems.
@@ -20,16 +20,16 @@ deployment infrastructure:
 
 | Layer | Main technology | Responsibility |
 | --- | --- | --- |
-| Frontend | Angular 21 standalone app | Browser UI, navigation, auth flow, ACP manager UI, read-only views |
+| Frontend | Angular 21 standalone app | Browser UI, navigation, auth flow, AP manager UI, read-only views |
 | Backend | NestJS 11 + TypeORM | REST API, authorization, file handling, validation, snapshots, integrations |
-| Database | PostgreSQL 16 | Users, ACP metadata, access config, comments, snapshots, explorer state, audit data |
-| File storage | Local filesystem volume | Uploaded ACP files and generated ZIP exports |
+| Database | PostgreSQL 16 | Users, AP metadata, access config, comments, snapshots, explorer state, audit data |
+| File storage | Local filesystem volume | Uploaded AP files and generated ZIP exports |
 | Identity | Keycloak / OIDC | Admin login and optional OIDC-backed user accounts |
 | Reverse proxy | nginx | Production routing for frontend, API, and Keycloak exposure |
 
-## Core Domain Object: ACP
+## Core Domain Object: AP
 
-An ACP is the center of the system. It has:
+An AP is the center of the system. It has:
 
 - a stable `packageId` and display metadata,
 - an `acpIndex` JSON payload,
@@ -50,8 +50,8 @@ without forcing everything into relational tables.
 2. The frontend fetches public settings from `/api/view/settings`.
 3. The user navigates to `/view/:acpId`.
 4. The backend `AcpAccessGuard` decides whether access is allowed based on:
-   public visibility, ACP role, app-admin rights, or credential token.
-5. Feature flags in the ACP access configuration determine which read-only features
+   public visibility, AP role, app-admin rights, or credential token.
+5. Feature flags in the AP access configuration determine which read-only features
    are available to non-managers.
 
 ### 2. Management workflow
@@ -59,7 +59,7 @@ without forcing everything into relational tables.
 1. A manager or admin authenticates.
 2. Angular route guards protect `/acps`, `/admin/*`, and `/manage/:acpId/*`.
 3. The backend exposes manager-only endpoints under `/api/acp/:id/...`.
-4. Managers upload files, sync the ACP index, configure access, edit explorer drafts,
+4. Managers upload files, sync the AP-Index, configure access, edit explorer drafts,
    create snapshots, and export comments or index data.
 
 ### 3. OIDC admin login
@@ -74,8 +74,8 @@ without forcing everything into relational tables.
 
 1. An integration client calls `/api/server/...` with `X-Server-Token` or bearer auth.
 2. The `ServerApiAuthGuard` validates the token and required scopes.
-3. The server API returns ACP metadata, files, index payloads, or audit logs.
-4. Write operations can import ACPs, update ACP indexes, upload files, or replace coding schemes.
+3. The server API returns AP metadata, files, index payloads, or audit logs.
+4. Write operations can import APs, update AP-Indexes, upload files, or replace coding schemes.
 
 ## Runtime Boundaries
 
@@ -84,7 +84,7 @@ The application separates concerns clearly:
 - Angular owns page routing, local UI state, and browser login redirects.
 - NestJS owns authorization decisions, business rules, and persistence.
 - PostgreSQL stores metadata and state, but not the file binary payloads.
-- The filesystem stores ACP files under the configured upload directory.
+- The filesystem stores AP files under the configured upload directory.
 - Keycloak is external to the application domain and only provides identity.
 
 ## Deployment Topology
@@ -120,11 +120,11 @@ content-hub/
 
 A few design choices show up repeatedly throughout the codebase:
 
-- Feature gating is per ACP rather than global.
+- Feature gating is per AP rather than global.
 - Managers and app admins can bypass many read-only feature restrictions.
-- The backend favors JSONB for ACP-specific configuration and item-level annotations.
+- The backend favors JSONB for AP-specific configuration and item-level annotations.
 - File uploads automatically trigger index synchronization and validation workflows.
-- Item Explorer state is versioned separately from the main ACP record to enable draft workflows.
+- Item Explorer state is versioned separately from the main AP record to enable draft workflows.
 - Integration APIs use a separate token model and do not depend on browser login.
 
 ## Related Documents
@@ -132,4 +132,4 @@ A few design choices show up repeatedly throughout the codebase:
 - [Backend Architecture](backend.md)
 - [Frontend Architecture](frontend.md)
 - [Data Model](data-model.md)
-- [ACP Workflows](../features/acp-workflows.md)
+- [AP Workflows](../features/acp-workflows.md)

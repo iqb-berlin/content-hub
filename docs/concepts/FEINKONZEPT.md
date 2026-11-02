@@ -12,7 +12,7 @@ Implementierung abgeglichen werden; ein Plan allein belegt keine Implementierung
 | Frontend und Navigation | [Frontend](../architecture/frontend.md) |
 | Entitaeten, Beziehungen und JSONB | [Datenmodell](../architecture/data-model.md) |
 | Authentifizierung und Autorisierung | [Zugriffskontrolle](../features/access-control.md) |
-| Import, Validierung, Snapshots und Kommentare | [ACP-Arbeitsablaeufe](../features/acp-workflows.md) |
+| Import, Validierung, Snapshots und Kommentare | [AP-Arbeitsablaeufe](../features/acp-workflows.md) |
 | Explorer-Entwurf und Veroeffentlichung | [Item Explorer](../features/item-explorer.md) |
 | Externe Schnittstellen und Transfer | [Integrationen und API](../features/integrations-and-api.md) |
 | Konfiguration | [Konfiguration](../development/configuration.md) |
@@ -20,8 +20,8 @@ Implementierung abgeglichen werden; ein Plan allein belegt keine Implementierung
 | Bereitstellung | [Deployment](../operations/deployment.md) |
 | Sicherung und Wartung | [Betrieb](../operations/monitoring-and-maintenance.md) |
 | Software-Releases und Rollback | [Release-Verfahren](../operations/releases.md) |
-| Bedienablaeufe | [ACP-Manager-Handbuch](../manuals/acp-manager-manual.md) |
+| Bedienablaeufe | [AP-Manager-Handbuch](../manuals/acp-manager-manual.md) |
 
-Software-Releases im Betriebsdokument sind von fachlichen ACP-Freigaben zu
+Software-Releases im Betriebsdokument sind von fachlichen AP-Freigaben zu
 unterscheiden. Noch offene Anforderungen des Ausgangskonzepts stehen im
 [Konzeptabgleich](KONZEPTABGLEICH.md).
