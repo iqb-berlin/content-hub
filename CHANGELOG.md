@@ -10,6 +10,8 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ### Changes
 
+- Recreate dedicated databases during full backup restoration so objects added
+  after the backup cannot survive and interfere with a subsequent upgrade.
 - Update backend body-parser, Multer and compatible brace-expansion branches,
   and require patched nginx/Alpine runtime libraries after the candidate image
   security scan blocked publication.

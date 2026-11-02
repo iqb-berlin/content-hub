@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+. "$SCRIPT_DIR/deploy-common.sh"
+
 POSTGRES_IMAGE="${POSTGRES_IMAGE:-postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777}"
 suffix="$$-${RANDOM}"
 app_container="content-hub-restore-app-${suffix}"
@@ -58,17 +61,55 @@ docker exec "$keycloak_container" pg_dump --format=custom -U postgres keycloak \
 docker exec -i "$app_container" pg_restore --list <"${temp_dir}/content-hub-db.dump" >/dev/null
 docker exec -i "$keycloak_container" pg_restore --list <"${temp_dir}/keycloak-db.dump" >/dev/null
 
-docker exec -i "$app_container" psql -v ON_ERROR_STOP=1 -U postgres -d content_hub \
-  -c 'drop table restore_probe'
-docker exec -i "$keycloak_container" psql -v ON_ERROR_STOP=1 -U postgres -d keycloak \
-  -c 'drop table user_entity; drop table realm'
+docker exec -i "$app_container" psql -v ON_ERROR_STOP=1 -U postgres -d content_hub <<'SQL'
+update restore_probe set value = 'changed after backup';
+create table added_after_backup (id integer references restore_probe(id));
+insert into added_after_backup values (1);
+create schema added_after_backup_schema;
+create table added_after_backup_schema.extra_data (id integer);
+SQL
+docker exec -i "$keycloak_container" psql -v ON_ERROR_STOP=1 -U postgres -d keycloak <<'SQL'
+insert into user_entity values ('user-after-backup', 'iqb-id');
+create table added_after_backup (id text references user_entity(id));
+insert into added_after_backup values ('user-after-backup');
+SQL
 
-docker exec -i "$app_container" pg_restore \
-  --clean --if-exists --no-owner --no-privileges --exit-on-error \
-  -U postgres -d content_hub <"${temp_dir}/content-hub-db.dump"
-docker exec -i "$keycloak_container" pg_restore \
-  --clean --if-exists --no-owner --no-privileges --exit-on-error \
-  -U postgres -d keycloak <"${temp_dir}/keycloak-db.dump"
+# An invalid archive must not remove the existing database.
+printf 'not a PostgreSQL archive\n' >"${temp_dir}/invalid.dump"
+if (ch_restore_database "$app_container" postgres content_hub "${temp_dir}/invalid.dump") >/dev/null 2>&1; then
+  echo "Invalid restore archive was accepted" >&2
+  exit 1
+fi
+[[ "$(docker exec "$app_container" psql -qAt -U postgres -d content_hub \
+  -c 'select value from restore_probe where id = 1')" == 'changed after backup' ]]
+
+# Ownership permits DROP DATABASE even without CREATEDB. Reject that role before
+# dropping anything, rather than discovering the missing privilege afterward.
+docker exec "$app_container" psql -v ON_ERROR_STOP=1 -U postgres -d postgres \
+  -c 'create role restore_without_createdb login; alter database content_hub owner to restore_without_createdb'
+if (ch_restore_database "$app_container" restore_without_createdb content_hub "${temp_dir}/content-hub-db.dump") >/dev/null 2>&1; then
+  echo "Restore accepted a user without database creation privileges" >&2
+  exit 1
+fi
+[[ "$(docker exec "$app_container" psql -qAt -U postgres -d content_hub \
+  -c 'select value from restore_probe where id = 1')" == 'changed after backup' ]]
+docker exec "$app_container" psql -v ON_ERROR_STOP=1 -U postgres -d postgres \
+  -c 'alter database content_hub owner to postgres'
+
+ch_restore_database "$app_container" postgres content_hub "${temp_dir}/content-hub-db.dump"
+ch_restore_database "$keycloak_container" postgres keycloak "${temp_dir}/keycloak-db.dump"
+
+for container in "$app_container" "$keycloak_container"; do
+  database=content_hub
+  [[ "$container" != "$keycloak_container" ]] || database=keycloak
+  [[ "$(docker exec "$container" psql -qAt -U postgres -d "$database" \
+    -c "select to_regclass('public.added_after_backup') is null")" == t ]] || {
+    echo "Restore retained a table introduced after the backup" >&2
+    exit 1
+  }
+done
+[[ "$(docker exec "$app_container" psql -qAt -U postgres -d content_hub \
+  -c "select count(*) from pg_namespace where nspname = 'added_after_backup_schema'")" == 0 ]]
 
 app_value="$(docker exec "$app_container" psql -qAt -U postgres -d content_hub \
   -c 'select value from restore_probe where id = 1')"
