@@ -10,6 +10,9 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ### Changes
 
+- Update backend body-parser, Multer and compatible brace-expansion branches,
+  and require patched nginx/Alpine runtime libraries after the candidate image
+  security scan blocked publication.
 - Align visible assessment-package labels with AP, AP-Index and Assessment Package.
 - Add configurable reduced Item Explorer views, optional Studio comments and
   item-level review comments. Refs #167, #163, #230.
