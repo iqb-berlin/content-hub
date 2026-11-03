@@ -1,0 +1,241 @@
+{
+  "id": "aspect-m3-acceptance-cloze",
+  "name": "ASPECT-Abnahme: Lückentext ausfüllen",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "version": "4.13.0",
+    "stateVariables": [],
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p0_e1",
+                "alias": "P0_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 180
+                },
+                "type": "cloze",
+                "document": {
+                  "type": "doc",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "attrs": {
+                        "textAlign": "left",
+                        "indent": null,
+                        "indentSize": 20,
+                        "hangingIndent": false,
+                        "margin": 0
+                      },
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Wir fahren mit dem "
+                        },
+                        {
+                          "type": "TextField",
+                          "attrs": {
+                            "model": {
+                              "isRelevantForPresentationComplete": true,
+                              "dimensions": {
+                                "width": 150,
+                                "height": 30,
+                                "isWidthFixed": true,
+                                "isHeightFixed": false,
+                                "minWidth": null,
+                                "maxWidth": null,
+                                "minHeight": null,
+                                "maxHeight": null
+                              },
+                              "styling": {
+                                "backgroundColor": "transparent",
+                                "fontColor": "#000000",
+                                "fontSize": 20,
+                                "bold": false,
+                                "italic": false,
+                                "underline": false,
+                                "lineHeight": 100
+                              },
+                              "id": "p0_e2",
+                              "alias": "P0_V2",
+                              "value": null,
+                              "required": false,
+                              "requiredWarnMessage": "Eingabe erforderlich",
+                              "readOnly": false,
+                              "inputAssistancePreset": null,
+                              "inputAssistanceCustomKeys": "",
+                              "inputAssistanceCustomStyle": "medium",
+                              "inputAssistancePosition": "floating",
+                              "inputAssistanceFloatingStartPosition": "startBottom",
+                              "restrictedToInputAssistanceChars": false,
+                              "hasArrowKeys": false,
+                              "hasBackspaceKey": false,
+                              "showSoftwareKeyboard": true,
+                              "addInputAssistanceToKeyboard": true,
+                              "hideNativeKeyboard": true,
+                              "keyStyle": "round",
+                              "type": "text-field-simple",
+                              "textAlign": "left",
+                              "minLength": null,
+                              "minLengthWarnMessage": "Eingabe zu kurz",
+                              "maxLength": null,
+                              "maxLengthWarnMessage": "Eingabe zu lang",
+                              "isLimitedToMaxLength": true,
+                              "pattern": null,
+                              "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe"
+                            }
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "text": " zum See."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "columnCount": 1
+              },
+              {
+                "id": "p0_e3",
+                "alias": "P0_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – cloze: Grundaufgabe</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-0"
+      }
+    ],
+    "enableSectionNumbering": false,
+    "sectionNumberingPosition": "left",
+    "showUnitNavNext": false
+  }
+}

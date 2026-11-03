@@ -1,6 +1,6 @@
 # Erzeugte Aufgabenabdeckung
 
-20 Playergenerationen, 405 Aufgaben, 3304 Einstellungen mit konkreter Werte-/Seitenzuordnung.
+20 Playergenerationen, 424 Aufgaben, 3304 Einstellungen mit konkreter Werte-/Seitenzuordnung.
 66 Aufgaben stammen aus echten Assistentenexporten; 48 weitere Aufgaben verbinden referenzabhängige Einstellungen.
 
 Diese Tabelle dokumentiert Fixtures; Browserbestätigungen stehen separat im Galerie-Manifest.

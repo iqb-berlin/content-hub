@@ -42,7 +42,7 @@ export default class SyntheticMediaReporter implements Reporter {
         '--untracked-files=normal',
         '--',
         'frontend',
-        'backend/test',
+        'backend',
         'test-fixtures',
         'scripts/run-browser-e2e.sh',
         'scripts/player-coverage',
@@ -65,7 +65,9 @@ export default class SyntheticMediaReporter implements Reporter {
   onTestEnd(test: TestCase, result: TestResult) {
     const output = this.output;
     if (
-      !/\/synthetic-(?:aspect|players|generations)(?:-media)?\.spec\.ts$/.test(test.location.file)
+      !/\/synthetic-(?:aspect|players|generations)(?:-media|-acceptance|-compatibility)?\.spec\.ts$/.test(
+        test.location.file,
+      )
     )
       return;
     const browser = test.parent.project()!.name;
@@ -171,7 +173,9 @@ export default class SyntheticMediaReporter implements Reporter {
       .map((entry) => `Incomplete review media for ${entry.browser}.`);
     for (const entry of cases.filter((item) => item.status === 'passed')) {
       if (
-        (entry.title.startsWith('covers ') || entry.title.startsWith('keeps readable coding')) &&
+        (entry.title.startsWith('covers ') ||
+          entry.title.startsWith('keeps readable coding') ||
+          entry.title.startsWith('accepts ASPECT ')) &&
         !entry.media.some((item) => item.type === 'image/png')
       ) {
         missingMedia.push(`Missing format image: ${entry.browser} / ${entry.title}.`);
@@ -204,6 +208,19 @@ export default class SyntheticMediaReporter implements Reporter {
                       (player.id === 'ib-m0' &&
                         entry.title ===
                           'serves every original generation and the ItemBuilder task through the real API')),
+                )
+                .map((entry) => entry.browser),
+            ),
+          ],
+          compatibilityVerifiedIn: [
+            ...new Set(
+              cases
+                .filter(
+                  (entry) =>
+                    entry.status === 'passed' &&
+                    ['abi-m1', 'abi-m2'].includes(player.id) &&
+                    entry.title ===
+                      `runs ABI ${player.id.slice(5)} through the real application compatibility host`,
                 )
                 .map((entry) => entry.browser),
             ),
@@ -268,6 +285,29 @@ export default class SyntheticMediaReporter implements Reporter {
             ),
           ],
         })),
+      acceptanceCoverage: generations.units
+        .filter((unit: { acceptance?: unknown }) => unit.acceptance)
+        .map((unit: { id: string; acceptance: { kind: string; controls: string[] } }) => ({
+          unit: unit.id,
+          ...unit.acceptance,
+          results: cases
+            .filter((entry) => entry.title.startsWith(`accepts ASPECT ${unit.acceptance.kind} at `))
+            .map((entry) => ({
+              browser: entry.browser,
+              viewport: Number(entry.title.match(/at (\d+)px$/)?.[1]),
+              status: entry.status,
+            })),
+        })),
+      compatibilityCoverage: cases
+        .filter((entry) =>
+          /^(runs ABI \d through|uses the real periodic|closes the real periodic|opens the real periodic|edits in the real molecule)/.test(
+            entry.title,
+          ),
+        )
+        .map(({ browser, title, status }) => ({ browser, title, status })),
+      widgetRuntimes: JSON.parse(
+        readFileSync(resolve(root, 'backend/src/assets/widgets/sources.json'), 'utf8'),
+      ),
       resources: JSON.parse(readFileSync(resolve(playerFixtureRoot, 'resources.json'), 'utf8')),
       formatCoverage: playerPool.units.map(
         (unit: { id: string; player: string; formats: string[] }) => ({
@@ -305,8 +345,13 @@ export default class SyntheticMediaReporter implements Reporter {
       .join('');
     const generationRows = report.generationCoverage
       .map(
-        (entry: { id: string; verifiedIn: string[]; diagnosedIn: string[] }) =>
-          `<tr><td>${escapeHtml(entry.id)}</td><td>${escapeHtml(entry.verifiedIn.join(', ') || 'keine bestätigte Aufgabeninteraktion')}</td><td>${escapeHtml(entry.diagnosedIn.length ? 'Einschränkung bestätigt: ' + entry.diagnosedIn.join(', ') : '')}</td></tr>`,
+        (entry: {
+          id: string;
+          verifiedIn: string[];
+          diagnosedIn: string[];
+          compatibilityVerifiedIn: string[];
+        }) =>
+          `<tr><td>${escapeHtml(entry.id)}</td><td>${escapeHtml(entry.verifiedIn.join(', ') || 'keine bestätigte Aufgabeninteraktion')}</td><td>${escapeHtml(entry.compatibilityVerifiedIn.length ? 'App-Kompatibilität: ' + entry.compatibilityVerifiedIn.join(', ') : entry.diagnosedIn.length ? 'Unverändertes Release: Einschränkung bestätigt in ' + entry.diagnosedIn.join(', ') : '')}</td></tr>`,
       )
       .join('');
     const settingRows = report.authoringCoverage
@@ -317,7 +362,7 @@ export default class SyntheticMediaReporter implements Reporter {
       .join('');
     writeFileSync(
       resolve(output, 'index.html'),
-      `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Synthetischer Formate- und Player-Testpool</title><style>body{font:16px/1.5 system-ui;margin:2rem auto;padding:0 1rem;max-width:1100px;color:#163247;background:#f4f7fa}table{border-collapse:collapse;width:100%;background:white}td,th{padding:.5rem;border:1px solid #ccd6df;text-align:left}.media{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}figure{margin:0;padding:1rem;background:white}img,video{width:100%;height:auto}h2{margin-top:2rem}code{overflow-wrap:anywhere}</style><h1>Synthetischer Formate- und Player-Testpool</h1><p>Status: <strong>${escapeHtml(report.status)}</strong> · ${cases.length} ausgeführte Tests · ${playerPool.players.length} Playerfamilien · ausschließlich synthetische Daten</p><p>Revision: <code>${escapeHtml(report.revision)}</code> · <a href="manifest.json">Ergebnisse, Abdeckungsmatrix und Prüfsummen</a></p><p>Die Aufnahmen zeigen feste, automatisch geprüfte Abläufe. Laufzeit, Browser-Rendering und Videolänge können zwischen Betriebssystemen variieren; es werden keine pixelgleichen Dateien zugesichert.</p><h2>Playergenerationen</h2><p>ABI 1 wird im Legacy-Testhost geprüft. ABI 2.0.1 startet nur seine interne Demo; die bestätigte Einschränkung ist keine erfolgreiche Aufgabeninteraktion.</p><table><thead><tr><th>Generation</th><th>Aufgabe bedient in</th><th>Diagnose</th></tr></thead><tbody>${generationRows}</tbody></table><h2>ASPECT-Einstellungen im Originaleditor</h2><p>Import, echte Änderung und Export prüfen den Erhalt der Werte. Die Laufzeitwirkung aller Kombinationen wird damit nicht behauptet.</p><table><thead><tr><th>Element</th><th>Varianten</th><th>UI-Rundlauf</th></tr></thead><tbody>${settingRows}</tbody></table><h2>Ausgeführte Prüfungen</h2><table><thead><tr><th>Browser</th><th>Prüfung</th><th>Versuch</th><th>Ergebnis</th></tr></thead><tbody>${rows}</tbody></table>${media}</html>`,
+      `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Synthetischer Formate- und Player-Testpool</title><style>body{font:16px/1.5 system-ui;margin:2rem auto;padding:0 1rem;max-width:1100px;color:#163247;background:#f4f7fa}table{border-collapse:collapse;width:100%;background:white}td,th{padding:.5rem;border:1px solid #ccd6df;text-align:left}.media{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}figure{margin:0;padding:1rem;background:white}img,video{width:100%;height:auto}h2{margin-top:2rem}code{overflow-wrap:anywhere}</style><h1>Synthetischer Formate- und Player-Testpool</h1><p>Status: <strong>${escapeHtml(report.status)}</strong> · ${cases.length} ausgeführte Tests · ${playerPool.players.length} Playerfamilien · ausschließlich synthetische Daten</p><p>Revision: <code>${escapeHtml(report.revision)}</code> · <a href="manifest.json">Ergebnisse, Abdeckungsmatrix und Prüfsummen</a></p><p>Die Aufnahmen zeigen feste, automatisch geprüfte Abläufe. Laufzeit, Browser-Rendering und Videolänge können zwischen Betriebssystemen variieren; es werden keine pixelgleichen Dateien zugesichert.</p><h2>Playergenerationen</h2><p>Die Originalmodule bleiben unverändert gespeichert. ABI 1 nutzt zusätzlich den Legacy-Adapter der App. ABI 2 wird im Rohzustand diagnostiziert und mit einer SHA-256-gebundenen Laufzeitkorrektur in der App geprüft.</p><table><thead><tr><th>Generation</th><th>Aufgabe bedient in</th><th>Diagnose</th></tr></thead><tbody>${generationRows}</tbody></table><h2>ASPECT-Einstellungen im Originaleditor</h2><p>Import, echte Änderung und Export prüfen den Erhalt der Werte. Die Laufzeitwirkung aller Kombinationen wird damit nicht behauptet.</p><table><thead><tr><th>Element</th><th>Varianten</th><th>UI-Rundlauf</th></tr></thead><tbody>${settingRows}</tbody></table><h2>Funktionale ASPECT-Abnahme</h2><p>15 Aufgaben prüfen die Wirkung wichtiger Einstellungen nach Import, Änderung, Speichern und Wiederöffnen im Editor bei 390 und 1440 Pixeln. Die Ergebnisse unten und im Manifest gelten nur für tatsächlich ausgeführte Fälle; sie sind kein Verhaltenstest aller 3.304 Variantenkombinationen. Periodensystem und Molekül-Editor nutzen die originalen Chemistry-Widgets 1.1.0 mit echten Zustandsrückgaben.</p><h2>Ausgeführte Prüfungen</h2><table><thead><tr><th>Browser</th><th>Prüfung</th><th>Versuch</th><th>Ergebnis</th></tr></thead><tbody>${rows}</tbody></table>${media}</html>`,
     );
     for (const error of missingMedia) process.stderr.write(`${error}\n`);
     return { status: report.status };

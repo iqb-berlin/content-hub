@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { connectedScenarios } from "./scenarios.mjs";
+import { acceptanceScenarios } from "./acceptance.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const directory = resolve(root, "test-fixtures/player-generations");
 const json = (file) => JSON.parse(readFileSync(file, "utf8"));
@@ -518,6 +519,17 @@ for (const player of pool.players.filter((p) => p.family !== "aspect")) {
       definition = definition
         .replace("checkboxes-start::Proviant\n", "")
         .replace("checkboxes-end\n", "");
+    if (player.major === 2)
+      definition = definition
+        .replace("checkboxes-start::Proviant", "header::Proviant")
+        .split("\n")
+        .filter(
+          (line) =>
+            !/^(checkboxes-end|drop-down::|likert(?:-start|-end)?(?:::|$))/.test(
+              line,
+            ),
+        )
+        .join("\n");
     const dynamic = json(
       resolve(root, "test-fixtures/synthetic-players/abi-dynamic.json"),
     ).definition.replace(
@@ -628,6 +640,44 @@ for (const task of uiTasks.tasks) {
         actions: task.actions,
       },
     },
+  );
+}
+for (const task of acceptanceScenarios((id) => {
+  const unit = pool.units.find((entry) => entry.id === id);
+  if (!unit) throw new Error(`Missing acceptance source ${id}`);
+  return json(resolve(directory, unit.file));
+})) {
+  const { id, name, definition, acceptance } = task;
+  addUnit(id, name, "aspect-m3", definition, { acceptance });
+}
+for (const [kind, type, fields] of [
+  [
+    "periodic",
+    "widget-periodic-table",
+    { maxNumberOfSelections: 2, closeOnSelection: false },
+  ],
+  [
+    "periodic-auto",
+    "widget-periodic-table",
+    { maxNumberOfSelections: 1, closeOnSelection: true },
+  ],
+  [
+    "periodic-view",
+    "widget-periodic-table",
+    { maxNumberOfSelections: 0, closeOnSelection: false },
+  ],
+  ["molecule", "widget-molecule-editor", {}],
+]) {
+  const source = pool.units.find((unit) => unit.id === `aspect-m3-${type}`);
+  const definition = json(resolve(directory, source.file)).definition;
+  definition.pages = [definition.pages[0]];
+  Object.assign(definition.pages[0].sections[0].elements[0], fields);
+  addUnit(
+    `aspect-m3-integrated-${kind}`,
+    `ASPECT: echtes Widget ${kind}`,
+    "aspect-m3",
+    definition,
+    { integration: { kind } },
   );
 }
 const used = new Set(pool.units.map((unit) => unit.file.split("/").at(-1)));

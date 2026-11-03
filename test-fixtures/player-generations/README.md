@@ -28,12 +28,13 @@ geführt. Der ABI-Quellordner `releases/0.3.0` enthält dieselben Playerbytes wi
 Release 1.0.0 und meldet Protokollversion 1; daraus wird keine zusätzliche
 Player-Major-Version erfunden.
 
-**ABI 2 ist eine belegte Einschränkung:** Das originale Release-HTML 2.0.1 startet
-seine interne Entwicklungsdemo, sendet keine `vopReadyNotification` und übernimmt
-keine eigene Aufgabe. Der Browsertest weist diesen Zustand nach. Er ist keine
-bestandene Aufgabeninteraktion. ABI 1 verwendet das historische `vo.*`-Protokoll;
-seine Aufgabe wird in einem kleinen kompatiblen Testhost geprüft. Content Hub
-bietet derzeit keinen solchen Legacy-Host. Alle HTML-Dateien bleiben unverändert.
+**ABI-Kompatibilität:** Das unveränderte Release-HTML 2.0.1 startet seine interne
+Entwicklungsdemo. Dieser Fehler wird weiterhin separat am Original nachgewiesen.
+Content Hub korrigiert beim Rendern ausschließlich das bekannte, SHA-256-geprüfte
+Release und startet damit die eigene Aufgabe. ABI 1 wird zusätzlich über einen
+Legacy-Protokolladapter in der echten App bedient. Gespeicherte und heruntergeladene
+Originalmodule bleiben bytegleich. Details und Quellpatches stehen in
+[der Abnahmedokumentation](../../docs/development/player-acceptance.md).
 
 ## Was die ASPECT-Aufgaben abdecken
 
@@ -113,8 +114,11 @@ Frames, ohne eine Variante auszulassen.
 
 Die Galerie `frontend/synthetic-review-report/index.html` und ihr Manifest führen
 nur tatsächlich ausgeführte Prüfungen als bestätigt auf. Bei Teil- oder Fehlläufen
-entsteht kein pauschales Vollständigkeitsurteil. Externe Widgets behalten die in
-der bestehenden Formatesuite dokumentierte Grenze `widget-request-only`.
+entsteht kein pauschales Vollständigkeitsurteil. 15 zusätzliche Abnahmeaufgaben
+prüfen Einstellungen nach Editor-Rundlauf im Player bei 390 und 1440 Pixeln.
+Vier Aufgaben nutzen die originalen Chemistry-Widgets 1.1.0: Periodensystem mit
+Auswahlgrenze, automatischem Schließen und reinem Anzeigemodus sowie Molekül-Editor.
+Der Pool enthält damit 424 Aufgaben, mit den beiden bisherigen Pools insgesamt 474.
 
 Die Originalmodule enthalten ihre eigenen Metadaten und Lizenzangaben. Die
 vorhandenen Upstream-Lizenzdateien liegen bei den Playern. ASPECT deklariert MIT in

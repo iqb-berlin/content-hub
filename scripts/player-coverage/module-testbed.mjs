@@ -2,8 +2,22 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-export async function createModuleTestbed(directory) {
-  const server = createServer((request, response) => {
+export async function createModuleTestbed(directory, assetOrigin, transform) {
+  const server = createServer(async (request, response) => {
+    if (assetOrigin && request.url?.startsWith("/api/shared-assets/")) {
+      try {
+        const result = await fetch(new URL(request.url, assetOrigin));
+        response.statusCode = result.status;
+        response.setHeader(
+          "Content-Type",
+          result.headers.get("content-type") || "application/octet-stream",
+        );
+        response.end(Buffer.from(await result.arrayBuffer()));
+      } catch {
+        response.writeHead(502).end();
+      }
+      return;
+    }
     if (request.url?.startsWith("/module/")) {
       const file = decodeURIComponent(request.url.slice("/module/".length));
       if (!/^players\/[\w.-]+\.html$/.test(file)) {
@@ -11,7 +25,8 @@ export async function createModuleTestbed(directory) {
         return;
       }
       response.setHeader("Content-Type", "text/html; charset=utf-8");
-      response.end(readFileSync(resolve(directory, file)));
+      const content = readFileSync(resolve(directory, file));
+      response.end(transform ? await transform(content.toString("utf8")) : content);
       return;
     }
     response.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -39,6 +54,7 @@ export async function loadModule(
   definition,
   editor = false,
   protocol = "vop",
+  playerConfig = {},
 ) {
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.evaluate((file) => {
@@ -59,7 +75,7 @@ export async function loadModule(
     { timeout: 20000 },
   );
   await page.evaluate(
-    ({ definition, editor, protocol }) => {
+    ({ definition, editor, protocol, playerConfig }) => {
       const frame = document.querySelector("iframe");
       const message = editor
         ? {
@@ -88,12 +104,13 @@ export async function loadModule(
                 stateReportPolicy: "eager",
                 pagingMode: "buttons",
                 unitNumber: 1,
+                ...playerConfig,
               },
               unitState: { dataParts: {} },
             };
       frame.contentWindow.postMessage(message, "*");
     },
-    { definition, editor, protocol },
+    { definition, editor, protocol, playerConfig },
   );
   return page.frameLocator("iframe");
 }

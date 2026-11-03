@@ -10,6 +10,12 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
+import { preparePlayerHtml } from '../../core/utils/player-html-compatibility';
+import {
+  normalizePlayerMessage,
+  postPlayerMessage,
+  releasePlayerFrame,
+} from '../../core/utils/player-protocol';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -18,10 +24,7 @@ import { CodingAsText, CodingSchemeTextFactory } from '@iqb/responses';
 import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { FeatureConfig, FilePreviewVomdData, UnitViewData } from '../../core/models/api.models';
-import {
-  GEOGEBRA_PLAYER_RESOURCE_BASE,
-  rewriteGeoGebraAssetUrls,
-} from '../../core/utils/geogebra-player-html.util';
+import { GEOGEBRA_PLAYER_RESOURCE_BASE } from '../../core/utils/geogebra-player-html.util';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/breadcrumb.component';
 import { unitLabel } from '../../shared/unit-label';
 import { ItemCommentThreadComponent } from '../comment-thread/item-comment-thread.component';
@@ -1332,6 +1335,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private loadUnit() {
+    releasePlayerFrame(this.playerFrame?.nativeElement?.contentWindow);
     this.stopReviewPanelResize();
     if (!this.acpId || !this.unitId) return;
     const requestToken = ++this.unitLoadToken;
@@ -1396,6 +1400,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy() {
+    releasePlayerFrame(this.playerFrame?.nativeElement?.contentWindow);
     this.authSubscription?.unsubscribe();
     this.commentDrafts.clear();
     this.selectedCommentItems.clear();
@@ -1526,7 +1531,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private onPlayerMessage(event: MessageEvent) {
-    const msg = event.data;
+    let msg = event.data;
     if (!msg || typeof msg !== 'object') return;
     const retiringSource = this.retiringResponseSource;
     if (
@@ -1534,11 +1539,13 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       event.source === retiringSource.window &&
       msg.sessionId === retiringSource.sessionId
     ) {
+      msg = normalizePlayerMessage(retiringSource.window, msg);
       if (msg.type === 'vopStateChangedNotification') this.captureResponseData(msg);
       return;
     }
     const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
     if (!frameWindow || event.source !== frameWindow) return;
+    msg = normalizePlayerMessage(frameWindow, msg);
 
     if (msg.sessionId !== undefined && msg.sessionId !== this.playerSessionId) return;
 
@@ -1630,7 +1637,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private sendToPlayer(msg: any) {
-    this.playerFrame?.nativeElement?.contentWindow?.postMessage(msg, '*');
+    postPlayerMessage(this.playerFrame?.nativeElement?.contentWindow, msg);
   }
 
   navigateToPage(page: number) {
@@ -1708,9 +1715,10 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
     fetch(playerDep.downloadUrl, { signal })
       .then((res) => res.text())
-      .then((html) => {
+      .then(async (html) => {
+        const prepared = await preparePlayerHtml(html);
         if (token !== this.unitLoadToken) return;
-        this.playerSrcDoc = this.sanitizer.bypassSecurityTrustHtml(rewriteGeoGebraAssetUrls(html));
+        this.playerSrcDoc = this.sanitizer.bypassSecurityTrustHtml(prepared);
         this.changeDetector.markForCheck();
       })
       .catch(() => {

@@ -540,7 +540,7 @@
           "ANSWER"
         ]
       },
-      "coverage": "widget-request-only",
+      "coverage": "widget-runtime-open",
       "limitation": "Content Pool has no host widget provider."
     },
     {
@@ -559,7 +559,7 @@
           "ANSWER"
         ]
       },
-      "coverage": "widget-request-only",
+      "coverage": "widget-runtime-open",
       "limitation": "Content Pool has no host widget provider."
     },
     {

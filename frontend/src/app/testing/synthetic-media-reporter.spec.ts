@@ -48,6 +48,14 @@ describe('Synthetic media reporter', () => {
         (entry: { verifiedIn: string[] }) => entry.verifiedIn.length === 0,
       ),
     ).toBe(true);
+    expect(manifest.acceptanceCoverage).toHaveLength(15);
+    expect(
+      manifest.acceptanceCoverage.every(
+        (entry: { results: unknown[] }) => entry.results.length === 0,
+      ),
+    ).toBe(true);
+    expect(manifest.compatibilityCoverage).toEqual([]);
+    expect(manifest.widgetRuntimes.version).toBe('1.1.0');
     expect(manifest.formatCoverage).toHaveLength(44);
     expect(
       manifest.formatCoverage.every(
@@ -57,7 +65,7 @@ describe('Synthetic media reporter', () => {
     expect(
       manifest.formatCoverage.find((unit: { id: string }) => unit.id === 'aspect-periodic')
         .coverage,
-    ).toBe('widget-request-only');
+    ).toBe('widget-runtime-open');
   });
 
   it('keeps a diagnosed development build separate from successful task coverage', async () => {
@@ -74,6 +82,31 @@ describe('Synthetic media reporter', () => {
     const abi = manifest.generationCoverage.find((entry: { id: string }) => entry.id === 'abi-m2');
     expect(abi.verifiedIn).toEqual([]);
     expect(abi.diagnosedIn).toEqual(['chromium']);
+  });
+
+  it('records executed acceptance and repaired ABI coverage without changing raw release evidence', async () => {
+    const { reporter, outputDir } = setup();
+    reporter.onTestEnd(
+      testCase('accepts ASPECT read-only at 390px', '/e2e/synthetic-aspect-acceptance.spec.ts'),
+      testResult([{ name: 'acceptance', contentType: 'image/png', body: Buffer.from('image') }]),
+    );
+    reporter.onTestEnd(
+      testCase(
+        'runs ABI 2 through the real application compatibility host',
+        '/e2e/synthetic-generations-compatibility.spec.ts',
+      ),
+      testResult([]),
+    );
+    await reporter.onEnd(fullResult('passed'));
+    const manifest = JSON.parse(readFileSync(join(outputDir, 'manifest.json'), 'utf8'));
+    expect(
+      manifest.acceptanceCoverage.find((entry: { kind: string }) => entry.kind === 'read-only')
+        .results,
+    ).toEqual([{ browser: 'chromium', viewport: 390, status: 'passed' }]);
+    const abi = manifest.generationCoverage.find((entry: { id: string }) => entry.id === 'abi-m2');
+    expect(abi.verifiedIn).toEqual([]);
+    expect(abi.diagnosedIn).toEqual([]);
+    expect(abi.compatibilityVerifiedIn).toEqual(['chromium']);
   });
 
   it('copies screenshots attached as buffers in generation tests', async () => {

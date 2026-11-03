@@ -56,15 +56,16 @@ und sämtliche Speedtest-Multi-Stimulus- und Antwortarten.
 
 Die zusätzlichen Browserfälle kontrollieren echte Eingaben, Auswahlen,
 Drag-and-drop, Sortierung, Textmarkierung, Medienwiedergabe, Formeln und GeoGebra.
-Periodensystem und Molekül-Editor werden als Verona-Widget-Anfrage geprüft;
-Content Pool besitzt dafür noch keinen Host-Widgetanbieter. Dieser begrenzte
-Prüfumfang ist in der Matrix ausdrücklich als `widget-request-only` markiert.
+Periodensystem und Molekül-Editor laufen mit den originalen Chemistry-Widgets 1.1.0.
+Die Formatprüfungen öffnen die echte Runtime und schließen sie wieder. Zusätzliche
+Integrationsfälle prüfen Eingaben, Zustandsrückgabe, Wiederöffnen, Abbrechen,
+Auswahlgrenzen, automatisches Schließen und reinen Anzeigemodus.
 
 
 ## Major-Versionen und vollständige ASPECT-Einstellungsaufgaben
 
 Der zusätzliche [Generationenpool](../../test-fixtures/player-generations/README.md)
-enthält 405 weitere Aufgaben mit 20 Playergenerationen aus sechs Familien. Die
+enthält 424 weitere Aufgaben mit 20 Playergenerationen aus sechs Familien. Die
 [Matrix](../../test-fixtures/player-generations/GENERATED-COVERAGE.md) umfasst
 alle 31 aktuellen ASPECT-Elementtypen sowie 11/22/27 Typen der älteren Majors,
 3.304 Einstellungen mit konkreten Werten und Seiten und 66 echte Exporte aus
@@ -76,18 +77,24 @@ sämtlicher Einstellungen wird nicht behauptet.
 109 zusätzliche Prüfungen pro Browser kontrollieren die Generationen,
 Import/Änderung/Export der aktuellen ASPECT-Einstellungsaufgaben, verbundene
 Laufzeitregeln, tet.folio und alle UI-Assistentenaufgaben durch die App. Zusammen
-mit den bisherigen 69 Fällen sind das 534 Prüfungen in Chromium, Firefox und
-WebKit. Die UI-Rundläufe prüfen die gespeicherten Einstellungswerte; sie ersetzen
+mit den bisherigen 69 Fällen, 30 funktionalen ASPECT-Abnahmen und sechs
+ABI-/Widget-Integrationsfällen pro Browser sind das 642 Prüfungen in Chromium,
+Firefox und WebKit. Die UI-Rundläufe prüfen die gespeicherten Einstellungswerte; sie ersetzen
 keinen Verhaltenstest jeder einzelnen Kombination. Historische Majors erhalten
 generationsgerechte Aufgaben und einen echten Interaktionstest je Player.
 
-ABI 2.0.1 ist im Original ein Entwicklungsbuild, der seine interne Demo startet
-und keine eigene Aufgabe übernimmt. Der Test bestätigt diese Einschränkung,
-keine erfolgreiche Aufgabeninteraktion. ABI 1 läuft im kompatiblen Legacy-Testhost;
-Content Hub selbst bietet dafür keinen `vo.*`-Host. Nicht veröffentlichte Majors
+ABI 2.0.1 startet im Original seine interne Demo. Die App korrigiert den
+belegten Initialisierungsfehler beim Rendern des exakt bekannten Release-HTMLs.
+ABI 1 nutzt den Legacy-Adapter für das historische `vo.*`-Protokoll. Beide werden
+mit eigenen Eingaben über die reale App geprüft; die Diagnose am unveränderten
+ABI-2-Original bleibt als eigener Test erhalten. Nicht veröffentlichte Majors
 werden nicht ergänzt; insbesondere existiert kein Simple-3-Release/Tag.
 
-Das Galerie-Manifest führt `generationCoverage` und `authoringCoverage` separat
+Die [funktionale Abnahme](player-acceptance.md) beschreibt die 15 zusätzlichen
+ASPECT-Aufgaben, die gefundenen Fehler und ihre eng begrenzten Laufzeitkorrekturen.
+
+Das Galerie-Manifest führt `generationCoverage`, `authoringCoverage`, `acceptanceCoverage` und
+`compatibilityCoverage` separat
 und bestätigt nur tatsächlich erfolgreiche Prüfungen. Die Originalmodule sind
 unverändert und anhand ihrer SHA-256 geprüft. Vollständige Quellen, Grenzen,
 Rezepte und Wiederholungsbefehle stehen im Generationenpool.

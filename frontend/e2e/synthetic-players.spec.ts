@@ -182,8 +182,7 @@ async function probe(
     case 'widget-periodic-table':
     case 'widget-molecule-editor':
       await frame.locator('.widget-container button').click();
-      // These two tools belong to the Verona host. Content Pool currently has
-      // no widget provider; verify the real request without supplying a fake tool.
+      // The application hosts the immutable official Chemistry widget releases.
       await expect
         .poll(() =>
           page.evaluate(() =>
@@ -193,6 +192,10 @@ async function probe(
           ),
         )
         .toEqual([unit.probe === 'widget-periodic-table' ? 'PERIODIC_TABLE' : 'MOLECULE_EDITOR']);
+      await expect(page.locator('app-verona-widget-host dialog')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Übernehmen', exact: true })).toBeEnabled();
+      await page.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+      await expect(page.locator('app-verona-widget-host dialog')).toHaveCount(0);
       break;
     case 'geometry': {
       const geometry = frame.locator('aspect-geometry');

@@ -76,10 +76,10 @@ Testkonfiguration; ACP-eigene ItemBuilder-Paketverwaltung wird damit nicht ergä
 
 Siehe [E2E-, CI- und Medienanleitung](../../docs/development/synthetic-aspect-pool.md).
 Jede Formatprüfung bedient den echten Player und kontrolliert einen sichtbaren
-Wert oder Effekt. Bei `widget-periodic-table` und `widget-molecule-editor` wird
-die echte `vopWidgetCall`-Anfrage geprüft (`coverage: widget-request-only`).
-Content Pool stellt diese beiden Host-Werkzeuge noch nicht bereit; die Tests
-öffnen und simulieren keine Ersatzoberfläche. Jede Familie erhält außerdem einen Review-Rundgang mit lesbarer
+Wert oder Effekt. Bei `widget-periodic-table` und `widget-molecule-editor` werden
+die echte `vopWidgetCall`-Anfrage und das Öffnen/Schließen der originalen
+Chemistry-Widget-Runtime geprüft (`coverage: widget-runtime-open`). Weitere
+Integrationstests prüfen Eingaben und Zustandsrückgaben. Jede Familie erhält außerdem einen Review-Rundgang mit lesbarer
 Kodierung und einem Aufgabenwechsel. Für Formate ohne nachgewiesene automatische
 Vorbelegung bleiben die Kodieranweisungen sichtbar; die Tests behaupten keine
 automatische Musterlösung. Die ursprünglichen sechs Szenarien prüfen weiterhin

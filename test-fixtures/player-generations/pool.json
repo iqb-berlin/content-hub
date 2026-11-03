@@ -49569,6 +49569,273 @@
           }
         ]
       }
+    },
+    {
+      "id": "aspect-m3-acceptance-input-limits",
+      "name": "ASPECT-Abnahme: Pflichtfeld, Länge und zulässige Zeichen",
+      "file": "units/aspect-m3-acceptance-input-limits.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "input-limits",
+        "source": "aspect-m3-text-field",
+        "controls": [
+          "required",
+          "minLength",
+          "maxLength",
+          "isLimitedToMaxLength",
+          "pattern"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-read-only",
+      "name": "ASPECT-Abnahme: Vorgegebene Antworten sind schreibgeschützt",
+      "file": "units/aspect-m3-acceptance-read-only.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "read-only",
+        "source": "aspect-m3-text-field",
+        "controls": [
+          "readOnly",
+          "clearable"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-input-assistance",
+      "name": "ASPECT-Abnahme: Zahleneingabe mit Bildschirmtastatur",
+      "file": "units/aspect-m3-acceptance-input-assistance.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "input-assistance",
+        "source": "aspect-m3-text-field",
+        "controls": [
+          "inputAssistancePreset",
+          "restrictedToInputAssistanceChars",
+          "showSoftwareKeyboard"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-textarea",
+      "name": "ASPECT-Abnahme: Begründung mit Wortzähler",
+      "file": "units/aspect-m3-acceptance-textarea.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "textarea",
+        "source": "aspect-m3-text-area",
+        "controls": [
+          "rowCount",
+          "hasDynamicRowCount",
+          "showWordCount",
+          "resizeEnabled"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-selection",
+      "name": "ASPECT-Abnahme: Auswahl markieren und wieder aufheben",
+      "file": "units/aspect-m3-acceptance-selection.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "selection",
+        "source": "aspect-m3-radio",
+        "controls": [
+          "alignment",
+          "strikeOtherOptions",
+          "required",
+          "allowUnset"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-likert",
+      "name": "ASPECT-Abnahme: Skala mit vorgegebener und freier Antwort",
+      "file": "units/aspect-m3-acceptance-likert.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "likert",
+        "source": "aspect-m3-likert",
+        "controls": [
+          "stickyHeader",
+          "styling.lineColoring",
+          "rows[].readOnly"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-table",
+      "name": "ASPECT-Abnahme: Tabelle mit feststehender Kopfzeile",
+      "file": "units/aspect-m3-acceptance-table.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "table",
+        "source": "aspect-m3-table",
+        "controls": [
+          "headerEnabled",
+          "headerRows",
+          "stickyHeader",
+          "tableEdgesEnabled"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-cloze",
+      "name": "ASPECT-Abnahme: Lückentext ausfüllen",
+      "file": "units/aspect-m3-acceptance-cloze.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "cloze",
+        "source": "aspect-m3-cloze",
+        "controls": [
+          "document",
+          "columnCount",
+          "embedded inputs"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-drag-drop",
+      "name": "ASPECT-Abnahme: Begriffe zuordnen",
+      "file": "units/aspect-m3-acceptance-drag-drop.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "drag-drop",
+        "source": "aspect-m3-ui-drag-0-0",
+        "controls": [
+          "idList",
+          "connectedTo",
+          "allowReplacement",
+          "allowCopies"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-math",
+      "name": "ASPECT-Abnahme: Formel über die Mathematiktastatur eingeben",
+      "file": "units/aspect-m3-acceptance-math.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "math",
+        "source": "aspect-m3-math-field",
+        "controls": [
+          "mathKeyboardPresets",
+          "enableModeSwitch"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-media",
+      "name": "ASPECT-Abnahme: Audio mit begrenzter Wiedergabe",
+      "file": "units/aspect-m3-acceptance-media.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "media",
+        "source": "aspect-m3-audio",
+        "controls": [
+          "player.maxRuns",
+          "player.defaultVolume",
+          "player.minVolume",
+          "player.pauseControl",
+          "player.showRestRuns"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-geometry",
+      "name": "ASPECT-Abnahme: Punkt bewegen und zurücksetzen",
+      "file": "units/aspect-m3-acceptance-geometry.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "geometry",
+        "source": "aspect-m3-geometry",
+        "controls": [
+          "appDefinition",
+          "trackedVariables",
+          "showResetIcon",
+          "enableUndoRedo"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-tetfolio",
+      "name": "ASPECT-Abnahme: Interaktives Flaschenexperiment",
+      "file": "units/aspect-m3-acceptance-tetfolio.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "tetfolio",
+        "source": "aspect-m3-tetfolio",
+        "controls": [
+          "htmlContent",
+          "state bridge"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-hotspot",
+      "name": "ASPECT-Abnahme: Gedrehtes Dreieck auswählen",
+      "file": "units/aspect-m3-acceptance-hotspot.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "hotspot",
+        "source": "aspect-m3-linked-hotspot-triangle-45",
+        "controls": [
+          "shape",
+          "rotation",
+          "value"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-acceptance-visibility",
+      "name": "ASPECT-Abnahme: Zwei Bedingungen steuern die Sichtbarkeit",
+      "file": "units/aspect-m3-acceptance-visibility.json",
+      "player": "aspect-m3",
+      "acceptance": {
+        "kind": "visibility",
+        "source": "aspect-m3-linked-two-rules-conjunction",
+        "controls": [
+          "visibilityRules",
+          "logicalConnectiveOfRules",
+          "enableReHide"
+        ]
+      }
+    },
+    {
+      "id": "aspect-m3-integrated-periodic",
+      "name": "ASPECT: echtes Widget periodic",
+      "file": "units/aspect-m3-integrated-periodic.json",
+      "player": "aspect-m3",
+      "integration": {
+        "kind": "periodic"
+      }
+    },
+    {
+      "id": "aspect-m3-integrated-periodic-auto",
+      "name": "ASPECT: echtes Widget periodic-auto",
+      "file": "units/aspect-m3-integrated-periodic-auto.json",
+      "player": "aspect-m3",
+      "integration": {
+        "kind": "periodic-auto"
+      }
+    },
+    {
+      "id": "aspect-m3-integrated-periodic-view",
+      "name": "ASPECT: echtes Widget periodic-view",
+      "file": "units/aspect-m3-integrated-periodic-view.json",
+      "player": "aspect-m3",
+      "integration": {
+        "kind": "periodic-view"
+      }
+    },
+    {
+      "id": "aspect-m3-integrated-molecule",
+      "name": "ASPECT: echtes Widget molecule",
+      "file": "units/aspect-m3-integrated-molecule.json",
+      "player": "aspect-m3",
+      "integration": {
+        "kind": "molecule"
+      }
     }
   ]
 }

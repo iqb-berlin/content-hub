@@ -16,6 +16,8 @@ const crossBrowserSpecs = [
   '**/synthetic-players.spec.ts',
   '**/synthetic-players-media.spec.ts',
   '**/synthetic-generations.spec.ts',
+  '**/synthetic-aspect-acceptance.spec.ts',
+  '**/synthetic-generations-compatibility.spec.ts',
 ];
 
 if (process.env['NODE_ENV'] !== 'test' || !databaseName.toLowerCase().includes('e2e')) {
