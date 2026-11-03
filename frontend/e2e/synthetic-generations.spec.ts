@@ -123,43 +123,51 @@ for (const unit of pool.units.filter((unit) => unit.player === 'aspect-m3' && un
   }) => {
     test.setTimeout(120_000);
     const original = definition(unit);
-    const frame = await loadModule(
-      page,
-      host.url,
-      'players/aspect-editor-3.1.0.html',
-      original,
-      true,
-    );
-    // A real edit makes the original editor publish the definition it actually accepted.
-    const alias = frame
-      .locator('aspect-element-properties')
-      .getByRole('textbox', { name: 'ID', exact: true });
-    await alias.fill('UI_AUDIT');
-    await alias.press('Tab');
-    await page.waitForFunction(() =>
-      (window as unknown as { moduleMessages: { type: string }[] }).moduleMessages.some(
-        (message) => message.type === 'voeDefinitionChangedNotification',
-      ),
-    );
-    const accepted = await page.evaluate(() => {
-      const messages = (
-        window as unknown as { moduleMessages: { type: string; unitDefinition: string }[] }
-      ).moduleMessages;
-      return JSON.parse(
-        messages.filter((message) => message.type === 'voeDefinitionChangedNotification').at(-1)!
-          .unitDefinition,
+    // tet.folio starts a separate runtime iframe per page, including offscreen pages.
+    // Bound concurrent runtimes while still importing and exporting every original variant.
+    const batchSize = unit.element === 'tetfolio' ? 8 : original.pages.length;
+    for (let offset = 0; offset < original.pages.length; offset += batchSize) {
+      const content = { ...original, pages: original.pages.slice(offset, offset + batchSize) };
+      const frame = await loadModule(
+        page,
+        host.url,
+        'players/aspect-editor-3.1.0.html',
+        content,
+        true,
       );
-    });
-    expect(accepted.pages).toHaveLength(original.pages.length);
-    for (const [index, scenario] of unit.authoringCases!.entries()) {
-      const first = accepted.pages[index].sections[0].elements[0];
-      const element = unit.element === 'likert-row' ? first.rows[0] : first;
-      for (const [path, expected] of Object.entries(scenario.changes)) {
-        const actual = path.split('.').reduce((value, key) => value?.[key], element);
-        expect(actual, `${unit.id} / ${scenario.id} / ${path}`).toEqual(expected);
+      // A real edit makes the original editor publish the definition it actually accepted.
+      const alias = frame
+        .locator('aspect-element-properties')
+        .getByRole('textbox', { name: 'ID', exact: true });
+      await alias.fill('UI_AUDIT');
+      await alias.press('Tab');
+      await page.waitForFunction(() =>
+        (window as unknown as { moduleMessages: { type: string }[] }).moduleMessages.some(
+          (message) => message.type === 'voeDefinitionChangedNotification',
+        ),
+      );
+      const accepted = await page.evaluate(() => {
+        const messages = (
+          window as unknown as { moduleMessages: { type: string; unitDefinition: string }[] }
+        ).moduleMessages;
+        return JSON.parse(
+          messages.filter((message) => message.type === 'voeDefinitionChangedNotification').at(-1)!
+            .unitDefinition,
+        );
+      });
+      expect(accepted.pages).toHaveLength(content.pages.length);
+      for (const [index, scenario] of unit
+        .authoringCases!.slice(offset, offset + batchSize)
+        .entries()) {
+        const first = accepted.pages[index].sections[0].elements[0];
+        const element = unit.element === 'likert-row' ? first.rows[0] : first;
+        for (const [path, expected] of Object.entries(scenario.changes)) {
+          const actual = path.split('.').reduce((value, key) => value?.[key], element);
+          expect(actual, `${unit.id} / ${scenario.id} / ${path}`).toEqual(expected);
+        }
       }
+      await expect(frame.getByText('Unerwarteter Fehler', { exact: true })).toHaveCount(0);
     }
-    await expect(frame.getByText('Unerwarteter Fehler', { exact: true })).toHaveCount(0);
   });
 }
 

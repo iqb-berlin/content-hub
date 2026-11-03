@@ -106,6 +106,10 @@ reale App/API. Ein erfolgreicher Import belegt allein noch nicht die Laufzeitwir
 jeder einzelnen Einstellung. Historische ASPECT-Generationen erhalten Modell- und
 Aufgabenabdeckung sowie einen echten Interaktionstest pro Major; der UI-Rundlauf
 aller Einstellungen wird mit Editor 3.1 geprüft.
+Die tet.folio-Einstellungsvarianten werden dabei in Gruppen von acht Seiten
+importiert, geändert und exportiert. Der Editor startet auch für unsichtbare
+Seiten je eine eigene Runtime; die Aufteilung begrenzt gleichzeitig laufende
+Frames, ohne eine Variante auszulassen.
 
 Die Galerie `frontend/synthetic-review-report/index.html` und ihr Manifest führen
 nur tatsächlich ausgeführte Prüfungen als bestätigt auf. Bei Teil- oder Fehlläufen
