@@ -5039,7 +5039,7 @@
                   "gridRow": 2,
                   "gridRowRange": 1,
                   "marginLeft": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginRight": {
@@ -5152,7 +5152,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: position.marginLeft = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginLeft.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5325,7 +5325,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: position.marginRight = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginLeft.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5385,7 +5385,7 @@
                   "gridRow": 2,
                   "gridRowRange": 1,
                   "marginLeft": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginRight": {
@@ -5498,7 +5498,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: position.marginTop = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginLeft.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5671,7 +5671,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: position.marginBottom = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginLeft.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5732,7 +5732,7 @@
                   "gridRowRange": 1,
                   "marginLeft": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginRight": {
                     "value": 0,
@@ -5844,7 +5844,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: position.zIndex = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginLeft.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5908,7 +5908,7 @@
                     "unit": "px"
                   },
                   "marginRight": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginTop": {
@@ -5919,7 +5919,7 @@
                     "value": 0,
                     "unit": "px"
                   },
-                  "zIndex": 2
+                  "zIndex": 0
                 },
                 "dimensions": {
                   "width": 230,
@@ -6017,7 +6017,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: position.zIndex = 2</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginRight.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6106,7 +6106,7 @@
                 },
                 "styling": {
                   "backgroundColor": "transparent",
-                  "fontColor": "#166b8c",
+                  "fontColor": "#000000",
                   "font": "NunitoSans",
                   "fontSize": 20,
                   "bold": false,
@@ -6190,7 +6190,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.fontColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginRight.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6254,7 +6254,7 @@
                     "unit": "px"
                   },
                   "marginRight": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginTop": {
@@ -6279,7 +6279,7 @@
                 },
                 "styling": {
                   "backgroundColor": "transparent",
-                  "fontColor": "#fff4d6",
+                  "fontColor": "#000000",
                   "font": "NunitoSans",
                   "fontSize": 20,
                   "bold": false,
@@ -6363,7 +6363,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.fontColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginRight.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6453,7 +6453,7 @@
                 "styling": {
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
-                  "font": "Arial",
+                  "font": "NunitoSans",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
@@ -6536,7 +6536,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.font = \"Arial\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginRight.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6601,7 +6601,7 @@
                   },
                   "marginRight": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginTop": {
                     "value": 0,
@@ -6626,7 +6626,7 @@
                 "styling": {
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
-                  "font": "Roboto",
+                  "font": "NunitoSans",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
@@ -6709,7 +6709,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.font = \"Roboto\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginRight.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6777,7 +6777,7 @@
                     "unit": "px"
                   },
                   "marginTop": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginBottom": {
@@ -6800,7 +6800,7 @@
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
                   "font": "NunitoSans",
-                  "fontSize": 16,
+                  "fontSize": 20,
                   "bold": false,
                   "italic": false,
                   "underline": false,
@@ -6882,7 +6882,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.fontSize = 16</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginTop.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6973,7 +6973,7 @@
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
                   "font": "NunitoSans",
-                  "fontSize": 24,
+                  "fontSize": 20,
                   "bold": false,
                   "italic": false,
                   "underline": false,
@@ -7055,7 +7055,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.fontSize = 24</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginTop.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7123,7 +7123,7 @@
                     "unit": "px"
                   },
                   "marginTop": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginBottom": {
@@ -7228,7 +7228,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.bold = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginTop.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7320,7 +7320,7 @@
                   "fontColor": "#000000",
                   "font": "NunitoSans",
                   "fontSize": 20,
-                  "bold": true,
+                  "bold": false,
                   "italic": false,
                   "underline": false,
                   "lineHeight": 135
@@ -7401,7 +7401,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.bold = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginTop.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7470,7 +7470,7 @@
                   },
                   "marginTop": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginBottom": {
                     "value": 0,
@@ -7574,7 +7574,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.italic = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginTop.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7646,7 +7646,7 @@
                     "unit": "px"
                   },
                   "marginBottom": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "zIndex": 0
@@ -7667,7 +7667,7 @@
                   "font": "NunitoSans",
                   "fontSize": 20,
                   "bold": false,
-                  "italic": true,
+                  "italic": false,
                   "underline": false,
                   "lineHeight": 135
                 },
@@ -7747,7 +7747,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.italic = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginBottom.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7920,7 +7920,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.underline = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginBottom.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7992,7 +7992,7 @@
                     "unit": "px"
                   },
                   "marginBottom": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "zIndex": 0
@@ -8014,7 +8014,7 @@
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
-                  "underline": true,
+                  "underline": false,
                   "lineHeight": 135
                 },
                 "label": "Deine Antwort",
@@ -8093,7 +8093,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.underline = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginBottom.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8181,7 +8181,7 @@
                   "maxHeight": null
                 },
                 "styling": {
-                  "backgroundColor": "#166b8c",
+                  "backgroundColor": "transparent",
                   "fontColor": "#000000",
                   "font": "NunitoSans",
                   "fontSize": 20,
@@ -8266,7 +8266,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.backgroundColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginBottom.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8339,7 +8339,7 @@
                   },
                   "marginBottom": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "zIndex": 0
                 },
@@ -8354,7 +8354,7 @@
                   "maxHeight": null
                 },
                 "styling": {
-                  "backgroundColor": "#fff4d6",
+                  "backgroundColor": "transparent",
                   "fontColor": "#000000",
                   "font": "NunitoSans",
                   "fontSize": 20,
@@ -8439,7 +8439,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.backgroundColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.marginBottom.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8534,7 +8534,7 @@
                   "bold": false,
                   "italic": false,
                   "underline": false,
-                  "lineHeight": 100
+                  "lineHeight": 135
                 },
                 "label": "Deine Antwort",
                 "value": null,
@@ -8612,7 +8612,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.lineHeight = 100</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.zIndex = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8687,7 +8687,7 @@
                     "value": 0,
                     "unit": "px"
                   },
-                  "zIndex": 0
+                  "zIndex": 2
                 },
                 "dimensions": {
                   "width": 230,
@@ -8707,7 +8707,7 @@
                   "bold": false,
                   "italic": false,
                   "underline": false,
-                  "lineHeight": 150
+                  "lineHeight": 135
                 },
                 "label": "Deine Antwort",
                 "value": null,
@@ -8785,7 +8785,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: styling.lineHeight = 150</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: position.zIndex = 2</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8874,7 +8874,7 @@
                 },
                 "styling": {
                   "backgroundColor": "transparent",
-                  "fontColor": "#000000",
+                  "fontColor": "#166b8c",
                   "font": "NunitoSans",
                   "fontSize": 20,
                   "bold": false,
@@ -8887,7 +8887,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "french",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -8958,7 +8958,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"french\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.fontColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9047,7 +9047,7 @@
                 },
                 "styling": {
                   "backgroundColor": "transparent",
-                  "fontColor": "#000000",
+                  "fontColor": "#fff4d6",
                   "font": "NunitoSans",
                   "fontSize": 20,
                   "bold": false,
@@ -9060,7 +9060,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "numbers",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -9131,7 +9131,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"numbers\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.fontColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9221,7 +9221,7 @@
                 "styling": {
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
-                  "font": "NunitoSans",
+                  "font": "Arial",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
@@ -9233,7 +9233,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "numbersAndOperators",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -9304,7 +9304,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"numbersAndOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.font = \"Arial\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9394,7 +9394,7 @@
                 "styling": {
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
-                  "font": "NunitoSans",
+                  "font": "Roboto",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
@@ -9406,7 +9406,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "numbersAndBasicOperators",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -9477,7 +9477,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"numbersAndBasicOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.font = \"Roboto\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9568,7 +9568,7 @@
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
                   "font": "NunitoSans",
-                  "fontSize": 20,
+                  "fontSize": 16,
                   "bold": false,
                   "italic": false,
                   "underline": false,
@@ -9579,7 +9579,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "comparisonOperators",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -9650,7 +9650,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"comparisonOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.fontSize = 16</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9741,7 +9741,7 @@
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
                   "font": "NunitoSans",
-                  "fontSize": 20,
+                  "fontSize": 24,
                   "bold": false,
                   "italic": false,
                   "underline": false,
@@ -9752,7 +9752,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "chemicalEquation",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -9823,7 +9823,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"chemicalEquation\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.fontSize = 24</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9925,7 +9925,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "squareDashDot",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -9996,7 +9996,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"squareDashDot\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.bold = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10088,7 +10088,7 @@
                   "fontColor": "#000000",
                   "font": "NunitoSans",
                   "fontSize": 20,
-                  "bold": false,
+                  "bold": true,
                   "italic": false,
                   "underline": false,
                   "lineHeight": 135
@@ -10098,7 +10098,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "placeValue",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -10169,7 +10169,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"placeValue\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.bold = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10271,7 +10271,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "space",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -10342,7 +10342,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"space\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.italic = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10435,7 +10435,7 @@
                   "font": "NunitoSans",
                   "fontSize": 20,
                   "bold": false,
-                  "italic": false,
+                  "italic": true,
                   "underline": false,
                   "lineHeight": 135
                 },
@@ -10444,7 +10444,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "comma",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -10515,7 +10515,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"comma\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.italic = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10617,7 +10617,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": "custom",
+                "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -10688,7 +10688,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"custom\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.underline = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10782,7 +10782,7 @@
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
-                  "underline": false,
+                  "underline": true,
                   "lineHeight": 135
                 },
                 "label": "Deine Antwort",
@@ -10861,7 +10861,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomKeys = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.underline = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10949,7 +10949,7 @@
                   "maxHeight": null
                 },
                 "styling": {
-                  "backgroundColor": "transparent",
+                  "backgroundColor": "#166b8c",
                   "fontColor": "#000000",
                   "font": "NunitoSans",
                   "fontSize": 20,
@@ -10964,7 +10964,7 @@
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
                 "inputAssistancePreset": null,
-                "inputAssistanceCustomKeys": "ä ö ü ß + −",
+                "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
@@ -11034,7 +11034,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomKeys = \"ä ö ü ß + −\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.backgroundColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11122,7 +11122,7 @@
                   "maxHeight": null
                 },
                 "styling": {
-                  "backgroundColor": "transparent",
+                  "backgroundColor": "#fff4d6",
                   "fontColor": "#000000",
                   "font": "NunitoSans",
                   "fontSize": 20,
@@ -11138,7 +11138,7 @@
                 "readOnly": false,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
-                "inputAssistanceCustomStyle": "small",
+                "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
@@ -11207,7 +11207,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomStyle = \"small\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.backgroundColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11302,7 +11302,7 @@
                   "bold": false,
                   "italic": false,
                   "underline": false,
-                  "lineHeight": 135
+                  "lineHeight": 100
                 },
                 "label": "Deine Antwort",
                 "value": null,
@@ -11380,7 +11380,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomStyle = \"medium\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.lineHeight = 100</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11475,7 +11475,7 @@
                   "bold": false,
                   "italic": false,
                   "underline": false,
-                  "lineHeight": 135
+                  "lineHeight": 150
                 },
                 "label": "Deine Antwort",
                 "value": null,
@@ -11484,7 +11484,7 @@
                 "readOnly": false,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
-                "inputAssistanceCustomStyle": "large",
+                "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
@@ -11553,7 +11553,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomStyle = \"large\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: styling.lineHeight = 150</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11655,10 +11655,10 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "french",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
-                "inputAssistancePosition": "right",
+                "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
                 "hasArrowKeys": false,
@@ -11726,7 +11726,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePosition = \"right\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"french\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11828,7 +11828,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "numbers",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -11899,7 +11899,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePosition = \"floating\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"numbers\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12001,7 +12001,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "numbersAndOperators",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -12072,7 +12072,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceFloatingStartPosition = \"startBottom\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"numbersAndOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12174,11 +12174,11 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "numbersAndBasicOperators",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
-                "inputAssistanceFloatingStartPosition": "endCenter",
+                "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
                 "hasArrowKeys": false,
                 "hasBackspaceKey": false,
@@ -12245,7 +12245,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceFloatingStartPosition = \"endCenter\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"numbersAndBasicOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12347,7 +12347,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "comparisonOperators",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -12418,7 +12418,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: restrictedToInputAssistanceChars = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"comparisonOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12520,12 +12520,12 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "chemicalEquation",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
-                "restrictedToInputAssistanceChars": true,
+                "restrictedToInputAssistanceChars": false,
                 "hasArrowKeys": false,
                 "hasBackspaceKey": false,
                 "showSoftwareKeyboard": true,
@@ -12591,7 +12591,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: restrictedToInputAssistanceChars = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"chemicalEquation\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12693,7 +12693,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "squareDashDot",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -12764,7 +12764,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: hasArrowKeys = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"squareDashDot\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12866,13 +12866,13 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "placeValue",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
-                "hasArrowKeys": true,
+                "hasArrowKeys": false,
                 "hasBackspaceKey": false,
                 "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": true,
@@ -12937,7 +12937,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: hasArrowKeys = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"placeValue\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13039,7 +13039,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "space",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -13110,7 +13110,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: hasBackspaceKey = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"space\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13212,14 +13212,14 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "comma",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
                 "hasArrowKeys": false,
-                "hasBackspaceKey": true,
+                "hasBackspaceKey": false,
                 "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": true,
                 "hideNativeKeyboard": true,
@@ -13283,7 +13283,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: hasBackspaceKey = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"comma\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13385,7 +13385,7 @@
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "custom",
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
@@ -13393,7 +13393,7 @@
                 "restrictedToInputAssistanceChars": false,
                 "hasArrowKeys": false,
                 "hasBackspaceKey": false,
-                "showSoftwareKeyboard": false,
+                "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": true,
                 "hideNativeKeyboard": true,
                 "keyStyle": "round",
@@ -13456,7 +13456,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: showSoftwareKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePreset = \"custom\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13629,7 +13629,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: showSoftwareKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomKeys = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13732,7 +13732,7 @@
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
                 "inputAssistancePreset": null,
-                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomKeys": "ä ö ü ß + −",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
@@ -13740,7 +13740,7 @@
                 "hasArrowKeys": false,
                 "hasBackspaceKey": false,
                 "showSoftwareKeyboard": true,
-                "addInputAssistanceToKeyboard": false,
+                "addInputAssistanceToKeyboard": true,
                 "hideNativeKeyboard": true,
                 "keyStyle": "round",
                 "type": "text-area",
@@ -13802,7 +13802,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: addInputAssistanceToKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomKeys = \"ä ö ü ß + −\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13906,7 +13906,7 @@
                 "readOnly": false,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
-                "inputAssistanceCustomStyle": "medium",
+                "inputAssistanceCustomStyle": "small",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
@@ -13975,7 +13975,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: addInputAssistanceToKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomStyle = \"small\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14087,7 +14087,7 @@
                 "hasBackspaceKey": false,
                 "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": true,
-                "hideNativeKeyboard": false,
+                "hideNativeKeyboard": true,
                 "keyStyle": "round",
                 "type": "text-area",
                 "appearance": "outline",
@@ -14148,7 +14148,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: hideNativeKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomStyle = \"medium\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14252,7 +14252,7 @@
                 "readOnly": false,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
-                "inputAssistanceCustomStyle": "medium",
+                "inputAssistanceCustomStyle": "large",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
@@ -14321,7 +14321,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: hideNativeKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceCustomStyle = \"large\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14426,7 +14426,7 @@
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
-                "inputAssistancePosition": "floating",
+                "inputAssistancePosition": "right",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
                 "hasArrowKeys": false,
@@ -14494,7 +14494,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: keyStyle = \"round\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePosition = \"right\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14607,7 +14607,7 @@
                 "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": true,
                 "hideNativeKeyboard": true,
-                "keyStyle": "square",
+                "keyStyle": "round",
                 "type": "text-area",
                 "appearance": "outline",
                 "resizeEnabled": false,
@@ -14667,7 +14667,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: keyStyle = \"square\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistancePosition = \"floating\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14764,7 +14764,7 @@
                   "underline": false,
                   "lineHeight": 135
                 },
-                "label": "",
+                "label": "Deine Antwort",
                 "value": null,
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
@@ -14840,7 +14840,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: label = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceFloatingStartPosition = \"startBottom\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14937,7 +14937,7 @@
                   "underline": false,
                   "lineHeight": 135
                 },
-                "label": "Synthetisch: Wasser, Brot und Äpfel",
+                "label": "Deine Antwort",
                 "value": null,
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
@@ -14946,7 +14946,7 @@
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
-                "inputAssistanceFloatingStartPosition": "startBottom",
+                "inputAssistanceFloatingStartPosition": "endCenter",
                 "restrictedToInputAssistanceChars": false,
                 "hasArrowKeys": false,
                 "hasBackspaceKey": false,
@@ -15013,7 +15013,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: label = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: inputAssistanceFloatingStartPosition = \"endCenter\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15186,7 +15186,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: value = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: restrictedToInputAssistanceChars = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15293,7 +15293,7 @@
                 "inputAssistanceCustomStyle": "medium",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
-                "restrictedToInputAssistanceChars": false,
+                "restrictedToInputAssistanceChars": true,
                 "hasArrowKeys": false,
                 "hasBackspaceKey": false,
                 "showSoftwareKeyboard": true,
@@ -15359,7 +15359,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: required = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: restrictedToInputAssistanceChars = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15458,7 +15458,7 @@
                 },
                 "label": "Deine Antwort",
                 "value": null,
-                "required": true,
+                "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
                 "inputAssistancePreset": null,
@@ -15532,7 +15532,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: required = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: hasArrowKeys = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15632,7 +15632,7 @@
                 "label": "Deine Antwort",
                 "value": null,
                 "required": false,
-                "requiredWarnMessage": "",
+                "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
@@ -15640,7 +15640,7 @@
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
-                "hasArrowKeys": false,
+                "hasArrowKeys": true,
                 "hasBackspaceKey": false,
                 "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": true,
@@ -15705,7 +15705,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: requiredWarnMessage = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: hasArrowKeys = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15805,7 +15805,7 @@
                 "label": "Deine Antwort",
                 "value": null,
                 "required": false,
-                "requiredWarnMessage": "Synthetisch: Wasser, Brot und Äpfel",
+                "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
@@ -15878,7 +15878,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: requiredWarnMessage = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: hasBackspaceKey = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15987,7 +15987,7 @@
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "restrictedToInputAssistanceChars": false,
                 "hasArrowKeys": false,
-                "hasBackspaceKey": false,
+                "hasBackspaceKey": true,
                 "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": true,
                 "hideNativeKeyboard": true,
@@ -16051,7 +16051,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: readOnly = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: hasBackspaceKey = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16152,7 +16152,7 @@
                 "value": null,
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
-                "readOnly": true,
+                "readOnly": false,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
@@ -16161,7 +16161,7 @@
                 "restrictedToInputAssistanceChars": false,
                 "hasArrowKeys": false,
                 "hasBackspaceKey": false,
-                "showSoftwareKeyboard": true,
+                "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": true,
                 "hideNativeKeyboard": true,
                 "keyStyle": "round",
@@ -16224,7 +16224,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: readOnly = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: showSoftwareKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16275,7 +16275,7 @@
               {
                 "id": "p94_e1",
                 "alias": "P94_V1",
-                "isRelevantForPresentationComplete": false,
+                "isRelevantForPresentationComplete": true,
                 "position": {
                   "xPosition": 0,
                   "yPosition": 0,
@@ -16397,7 +16397,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: isRelevantForPresentationComplete = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: showSoftwareKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16508,7 +16508,7 @@
                 "hasArrowKeys": false,
                 "hasBackspaceKey": false,
                 "showSoftwareKeyboard": true,
-                "addInputAssistanceToKeyboard": true,
+                "addInputAssistanceToKeyboard": false,
                 "hideNativeKeyboard": true,
                 "keyStyle": "round",
                 "type": "text-area",
@@ -16570,7 +16570,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: isRelevantForPresentationComplete = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: addInputAssistanceToKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16648,7 +16648,7 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 180,
+                  "width": 230,
                   "height": 132,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -16743,7 +16743,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.width = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: addInputAssistanceToKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16821,7 +16821,7 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 320,
+                  "width": 230,
                   "height": 132,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -16855,7 +16855,7 @@
                 "hasBackspaceKey": false,
                 "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": true,
-                "hideNativeKeyboard": true,
+                "hideNativeKeyboard": false,
                 "keyStyle": "round",
                 "type": "text-area",
                 "appearance": "outline",
@@ -16916,7 +16916,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.width = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: hideNativeKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16995,7 +16995,7 @@
                 },
                 "dimensions": {
                   "width": 230,
-                  "height": 60,
+                  "height": 132,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
@@ -17089,7 +17089,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.height = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: hideNativeKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -17168,7 +17168,7 @@
                 },
                 "dimensions": {
                   "width": 230,
-                  "height": 140,
+                  "height": 132,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
@@ -17262,7 +17262,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.height = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: keyStyle = \"round\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -17375,7 +17375,7 @@
                 "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": true,
                 "hideNativeKeyboard": true,
-                "keyStyle": "round",
+                "keyStyle": "square",
                 "type": "text-area",
                 "appearance": "outline",
                 "resizeEnabled": false,
@@ -17435,7 +17435,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.isWidthFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: keyStyle = \"square\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -17515,7 +17515,7 @@
                 "dimensions": {
                   "width": 230,
                   "height": 132,
-                  "isWidthFixed": true,
+                  "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
@@ -17532,7 +17532,7 @@
                   "underline": false,
                   "lineHeight": 135
                 },
-                "label": "Deine Antwort",
+                "label": "",
                 "value": null,
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
@@ -17608,7 +17608,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.isWidthFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: label = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -17705,7 +17705,7 @@
                   "underline": false,
                   "lineHeight": 135
                 },
-                "label": "Deine Antwort",
+                "label": "Synthetisch: Wasser, Brot und Äpfel",
                 "value": null,
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
@@ -17781,7 +17781,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.isHeightFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: label = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -17862,7 +17862,7 @@
                   "width": 230,
                   "height": 132,
                   "isWidthFixed": false,
-                  "isHeightFixed": true,
+                  "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
@@ -17954,7 +17954,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.isHeightFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: value = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -18127,7 +18127,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: required = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -18209,7 +18209,7 @@
                   "height": 132,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": 180,
+                  "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -18226,7 +18226,7 @@
                 },
                 "label": "Deine Antwort",
                 "value": null,
-                "required": false,
+                "required": true,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
                 "inputAssistancePreset": null,
@@ -18300,7 +18300,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: required = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -18382,7 +18382,7 @@
                   "height": 132,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": 320,
+                  "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -18400,7 +18400,7 @@
                 "label": "Deine Antwort",
                 "value": null,
                 "required": false,
-                "requiredWarnMessage": "Eingabe erforderlich",
+                "requiredWarnMessage": "",
                 "readOnly": false,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
@@ -18473,7 +18473,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: requiredWarnMessage = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -18573,7 +18573,7 @@
                 "label": "Deine Antwort",
                 "value": null,
                 "required": false,
-                "requiredWarnMessage": "Eingabe erforderlich",
+                "requiredWarnMessage": "Synthetisch: Wasser, Brot und Äpfel",
                 "readOnly": false,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
@@ -18646,7 +18646,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.maxWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: requiredWarnMessage = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -18729,7 +18729,7 @@
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
-                  "maxWidth": 180,
+                  "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
                 },
@@ -18819,7 +18819,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.maxWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: readOnly = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -18902,7 +18902,7 @@
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
-                  "maxWidth": 320,
+                  "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
                 },
@@ -18920,7 +18920,7 @@
                 "value": null,
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
-                "readOnly": false,
+                "readOnly": true,
                 "inputAssistancePreset": null,
                 "inputAssistanceCustomKeys": "",
                 "inputAssistanceCustomStyle": "medium",
@@ -18992,7 +18992,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.maxWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: readOnly = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -19043,7 +19043,7 @@
               {
                 "id": "p110_e1",
                 "alias": "P110_V1",
-                "isRelevantForPresentationComplete": true,
+                "isRelevantForPresentationComplete": false,
                 "position": {
                   "xPosition": 0,
                   "yPosition": 0,
@@ -19165,7 +19165,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: isRelevantForPresentationComplete = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -19249,7 +19249,7 @@
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
-                  "minHeight": 60,
+                  "minHeight": null,
                   "maxHeight": null
                 },
                 "styling": {
@@ -19338,7 +19338,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: isRelevantForPresentationComplete = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -19416,13 +19416,13 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 230,
+                  "width": 180,
                   "height": 132,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
-                  "minHeight": 140,
+                  "minHeight": null,
                   "maxHeight": null
                 },
                 "styling": {
@@ -19511,7 +19511,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.width = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -19589,7 +19589,7 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 230,
+                  "width": 320,
                   "height": 132,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -19684,7 +19684,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – text-area: dimensions.maxHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.width = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -19763,6 +19763,2774 @@
                 },
                 "dimensions": {
                   "width": 230,
+                  "height": 60,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p114_e2",
+                "alias": "P114_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.height = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-114"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p115_e1",
+                "alias": "P115_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 140,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p115_e2",
+                "alias": "P115_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.height = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-115"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p116_e1",
+                "alias": "P116_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p116_e2",
+                "alias": "P116_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.isWidthFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-116"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p117_e1",
+                "alias": "P117_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": true,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p117_e2",
+                "alias": "P117_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.isWidthFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-117"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p118_e1",
+                "alias": "P118_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p118_e2",
+                "alias": "P118_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.isHeightFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-118"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p119_e1",
+                "alias": "P119_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": true,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p119_e2",
+                "alias": "P119_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.isHeightFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-119"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p120_e1",
+                "alias": "P120_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p120_e2",
+                "alias": "P120_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-120"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p121_e1",
+                "alias": "P121_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": 180,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p121_e2",
+                "alias": "P121_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-121"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p122_e1",
+                "alias": "P122_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": 320,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p122_e2",
+                "alias": "P122_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-122"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p123_e1",
+                "alias": "P123_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p123_e2",
+                "alias": "P123_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.maxWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-123"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p124_e1",
+                "alias": "P124_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": 180,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p124_e2",
+                "alias": "P124_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.maxWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-124"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p125_e1",
+                "alias": "P125_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": 320,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p125_e2",
+                "alias": "P125_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.maxWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-125"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p126_e1",
+                "alias": "P126_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p126_e2",
+                "alias": "P126_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-126"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p127_e1",
+                "alias": "P127_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": 60,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p127_e2",
+                "alias": "P127_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-127"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p128_e1",
+                "alias": "P128_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": 140,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p128_e2",
+                "alias": "P128_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.minHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-128"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p129_e1",
+                "alias": "P129_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 3,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false
+              },
+              {
+                "id": "p129_e2",
+                "alias": "P129_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "font": "NunitoSans",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – text-area: dimensions.maxHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-129"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p130_e1",
+                "alias": "P130_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
                   "height": 132,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -19808,8 +22576,8 @@
                 "hasReturnKey": false
               },
               {
-                "id": "p114_e2",
-                "alias": "P114_V2",
+                "id": "p130_e2",
+                "alias": "P130_V2",
                 "isRelevantForPresentationComplete": true,
                 "position": {
                   "xPosition": 0,
@@ -19899,15 +22667,15 @@
         "alwaysVisible": false,
         "alwaysVisiblePagePosition": "left",
         "alwaysVisibleAspectRatio": 50,
-        "id": "variant-114"
+        "id": "variant-130"
       },
       {
         "sections": [
           {
             "elements": [
               {
-                "id": "p115_e1",
-                "alias": "P115_V1",
+                "id": "p131_e1",
+                "alias": "P131_V1",
                 "isRelevantForPresentationComplete": true,
                 "position": {
                   "xPosition": 0,
@@ -19981,8 +22749,8 @@
                 "hasReturnKey": false
               },
               {
-                "id": "p115_e2",
-                "alias": "P115_V2",
+                "id": "p131_e2",
+                "alias": "P131_V2",
                 "isRelevantForPresentationComplete": true,
                 "position": {
                   "xPosition": 0,
@@ -20072,7 +22840,7 @@
         "alwaysVisible": false,
         "alwaysVisiblePagePosition": "left",
         "alwaysVisibleAspectRatio": 50,
-        "id": "variant-115"
+        "id": "variant-131"
       }
     ],
     "enableSectionNumbering": false,

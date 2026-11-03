@@ -1804,7 +1804,7 @@
                 "enableShiftDragZoom": true,
                 "showZoomButtons": true,
                 "showFullscreenButton": true,
-                "customToolBar": "Synthetisch: Wasser, Brot und Äpfel"
+                "customToolBar": "0 1 2 | 3 4 5"
               },
               {
                 "id": "p19_e2",
@@ -1837,7 +1837,7 @@
                   "italic": false,
                   "underline": false
                 },
-                "text": "<p><strong>Ausflug an den See – geometry: customToolBar = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – geometry: customToolBar = \"0 1 2 | 3 4 5\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "highlightableOrange": false,
                 "highlightableTurquoise": false,
                 "highlightableYellow": false,

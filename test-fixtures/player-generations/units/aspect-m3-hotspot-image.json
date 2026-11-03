@@ -2632,7 +2632,7 @@
                   "gridRow": 2,
                   "gridRowRange": 1,
                   "marginLeft": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginRight": {
@@ -2717,7 +2717,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginLeft = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginLeft.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -2862,7 +2862,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginRight = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginLeft.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -2922,7 +2922,7 @@
                   "gridRow": 2,
                   "gridRowRange": 1,
                   "marginLeft": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginRight": {
@@ -3007,7 +3007,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginTop = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginLeft.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -3152,7 +3152,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginBottom = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginLeft.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -3213,7 +3213,7 @@
                   "gridRowRange": 1,
                   "marginLeft": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginRight": {
                     "value": 0,
@@ -3297,7 +3297,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: position.zIndex = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginLeft.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -3361,7 +3361,7 @@
                     "unit": "px"
                   },
                   "marginRight": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginTop": {
@@ -3372,7 +3372,7 @@
                     "value": 0,
                     "unit": "px"
                   },
-                  "zIndex": 2
+                  "zIndex": 0
                 },
                 "dimensions": {
                   "width": 250,
@@ -3442,7 +3442,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: position.zIndex = 2</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginRight.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -3520,7 +3520,7 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 180,
+                  "width": 250,
                   "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -3587,7 +3587,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.width = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginRight.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -3651,7 +3651,7 @@
                     "unit": "px"
                   },
                   "marginRight": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginTop": {
@@ -3665,7 +3665,7 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 320,
+                  "width": 250,
                   "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -3732,7 +3732,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.width = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginRight.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -3811,7 +3811,7 @@
                 },
                 "dimensions": {
                   "width": 250,
-                  "height": 60,
+                  "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
@@ -3877,7 +3877,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.height = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginRight.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -3942,7 +3942,7 @@
                   },
                   "marginRight": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginTop": {
                     "value": 0,
@@ -3956,7 +3956,7 @@
                 },
                 "dimensions": {
                   "width": 250,
-                  "height": 140,
+                  "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
@@ -4022,7 +4022,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.height = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginRight.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -4090,7 +4090,7 @@
                     "unit": "px"
                   },
                   "marginTop": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginBottom": {
@@ -4167,7 +4167,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.isWidthFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginTop.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -4247,7 +4247,7 @@
                 "dimensions": {
                   "width": 250,
                   "height": 100,
-                  "isWidthFixed": true,
+                  "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
@@ -4312,7 +4312,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.isWidthFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginTop.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -4380,7 +4380,7 @@
                     "unit": "px"
                   },
                   "marginTop": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginBottom": {
@@ -4457,7 +4457,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.isHeightFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginTop.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -4538,7 +4538,7 @@
                   "width": 250,
                   "height": 100,
                   "isWidthFixed": false,
-                  "isHeightFixed": true,
+                  "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
@@ -4602,7 +4602,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.isHeightFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginTop.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -4671,7 +4671,7 @@
                   },
                   "marginTop": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginBottom": {
                     "value": 0,
@@ -4747,7 +4747,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginTop.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -4819,7 +4819,7 @@
                     "unit": "px"
                   },
                   "marginBottom": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "zIndex": 0
@@ -4829,7 +4829,7 @@
                   "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": 180,
+                  "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -4892,7 +4892,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginBottom.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -4974,7 +4974,7 @@
                   "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": 320,
+                  "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -5037,7 +5037,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginBottom.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5109,7 +5109,7 @@
                     "unit": "px"
                   },
                   "marginBottom": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "zIndex": 0
@@ -5182,7 +5182,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginBottom.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5265,7 +5265,7 @@
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
-                  "maxWidth": 180,
+                  "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
                 },
@@ -5327,7 +5327,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginBottom.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5400,7 +5400,7 @@
                   },
                   "marginBottom": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "zIndex": 0
                 },
@@ -5410,7 +5410,7 @@
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
-                  "maxWidth": 320,
+                  "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
                 },
@@ -5472,7 +5472,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.marginBottom.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5617,7 +5617,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.zIndex = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5692,7 +5692,7 @@
                     "value": 0,
                     "unit": "px"
                   },
-                  "zIndex": 0
+                  "zIndex": 2
                 },
                 "dimensions": {
                   "width": 250,
@@ -5701,7 +5701,7 @@
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
-                  "minHeight": 60,
+                  "minHeight": null,
                   "maxHeight": null
                 },
                 "styling": {},
@@ -5762,7 +5762,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: position.zIndex = 2</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5840,13 +5840,13 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 250,
+                  "width": 180,
                   "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
-                  "minHeight": 140,
+                  "minHeight": null,
                   "maxHeight": null
                 },
                 "styling": {},
@@ -5907,7 +5907,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.width = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -5985,7 +5985,7 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 250,
+                  "width": 320,
                   "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -6052,7 +6052,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.width = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6131,13 +6131,13 @@
                 },
                 "dimensions": {
                   "width": 250,
-                  "height": 100,
+                  "height": 60,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
-                  "maxHeight": 60
+                  "maxHeight": null
                 },
                 "styling": {},
                 "value": [],
@@ -6197,7 +6197,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.height = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6276,13 +6276,13 @@
                 },
                 "dimensions": {
                   "width": 250,
-                  "height": 100,
+                  "height": 140,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
-                  "maxHeight": 140
+                  "maxHeight": null
                 },
                 "styling": {},
                 "value": [],
@@ -6342,7 +6342,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.height = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6487,7 +6487,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: styling = {}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.isWidthFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6567,7 +6567,7 @@
                 "dimensions": {
                   "width": 250,
                   "height": 100,
-                  "isWidthFixed": false,
+                  "isWidthFixed": true,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
@@ -6632,7 +6632,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: required = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.isWidthFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6721,7 +6721,7 @@
                 },
                 "styling": {},
                 "value": [],
-                "required": true,
+                "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
                 "type": "hotspot-image",
@@ -6777,7 +6777,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: required = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.isHeightFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6858,7 +6858,7 @@
                   "width": 250,
                   "height": 100,
                   "isWidthFixed": false,
-                  "isHeightFixed": false,
+                  "isHeightFixed": true,
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
@@ -6867,7 +6867,7 @@
                 "styling": {},
                 "value": [],
                 "required": false,
-                "requiredWarnMessage": "",
+                "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
                 "type": "hotspot-image",
                 "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
@@ -6922,7 +6922,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: requiredWarnMessage = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.isHeightFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7012,7 +7012,7 @@
                 "styling": {},
                 "value": [],
                 "required": false,
-                "requiredWarnMessage": "Synthetisch: Wasser, Brot und Äpfel",
+                "requiredWarnMessage": "Eingabe erforderlich",
                 "readOnly": false,
                 "type": "hotspot-image",
                 "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
@@ -7067,7 +7067,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: requiredWarnMessage = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7149,7 +7149,7 @@
                   "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": null,
+                  "minWidth": 180,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -7212,7 +7212,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: readOnly = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7294,7 +7294,7 @@
                   "height": 100,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": null,
+                  "minWidth": 320,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -7303,7 +7303,7 @@
                 "value": [],
                 "required": false,
                 "requiredWarnMessage": "Eingabe erforderlich",
-                "readOnly": true,
+                "readOnly": false,
                 "type": "hotspot-image",
                 "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
                 "fileName": ""
@@ -7357,7 +7357,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: readOnly = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7408,7 +7408,7 @@
               {
                 "id": "p51_e1",
                 "alias": "P51_V1",
-                "isRelevantForPresentationComplete": false,
+                "isRelevantForPresentationComplete": true,
                 "position": {
                   "xPosition": 0,
                   "yPosition": 0,
@@ -7502,7 +7502,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – hotspot-image: isRelevantForPresentationComplete = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7585,7 +7585,7 @@
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
-                  "maxWidth": null,
+                  "maxWidth": 180,
                   "minHeight": null,
                   "maxHeight": null
                 },
@@ -7601,6 +7601,2326 @@
               {
                 "id": "p52_e2",
                 "alias": "P52_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-52"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p53_e1",
+                "alias": "P53_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": 320,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p53_e2",
+                "alias": "P53_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-53"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p54_e1",
+                "alias": "P54_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p54_e2",
+                "alias": "P54_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-54"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p55_e1",
+                "alias": "P55_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": 60,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p55_e2",
+                "alias": "P55_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-55"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p56_e1",
+                "alias": "P56_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": 140,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p56_e2",
+                "alias": "P56_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.minHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-56"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p57_e1",
+                "alias": "P57_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p57_e2",
+                "alias": "P57_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-57"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p58_e1",
+                "alias": "P58_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": 60
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p58_e2",
+                "alias": "P58_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-58"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p59_e1",
+                "alias": "P59_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": 140
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p59_e2",
+                "alias": "P59_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: dimensions.maxHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-59"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p60_e1",
+                "alias": "P60_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p60_e2",
+                "alias": "P60_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: styling = {}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-60"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p61_e1",
+                "alias": "P61_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p61_e2",
+                "alias": "P61_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: required = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-61"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p62_e1",
+                "alias": "P62_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": true,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p62_e2",
+                "alias": "P62_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: required = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-62"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p63_e1",
+                "alias": "P63_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p63_e2",
+                "alias": "P63_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: requiredWarnMessage = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-63"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p64_e1",
+                "alias": "P64_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Synthetisch: Wasser, Brot und Äpfel",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p64_e2",
+                "alias": "P64_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: requiredWarnMessage = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-64"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p65_e1",
+                "alias": "P65_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p65_e2",
+                "alias": "P65_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: readOnly = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-65"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p66_e1",
+                "alias": "P66_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": true,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p66_e2",
+                "alias": "P66_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: readOnly = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-66"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p67_e1",
+                "alias": "P67_V1",
+                "isRelevantForPresentationComplete": false,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p67_e2",
+                "alias": "P67_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – hotspot-image: isRelevantForPresentationComplete = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-67"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p68_e1",
+                "alias": "P68_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              },
+              {
+                "id": "p68_e2",
+                "alias": "P68_V2",
                 "isRelevantForPresentationComplete": true,
                 "position": {
                   "xPosition": 0,
@@ -7689,7 +10009,7 @@
         "alwaysVisible": false,
         "alwaysVisiblePagePosition": "left",
         "alwaysVisibleAspectRatio": 50,
-        "id": "variant-52"
+        "id": "variant-68"
       }
     ],
     "enableSectionNumbering": false,

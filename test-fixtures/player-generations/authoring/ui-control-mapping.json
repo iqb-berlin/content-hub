@@ -1,5 +1,5 @@
 {
-  "policy": "Property names in ui-controls.json map to coverage.json by their final path component; nested group controls map to the group's children. The remaining controls below are UI state, getters or actions rather than additional stored task properties.",
+  "policy": "Property names in ui-controls.json map to coverage.json by a path component; nested group controls map to the group's children, including margin measurements. The remaining controls below are UI state, getters or actions rather than additional stored task properties.",
   "groups": {
     "dimensions": "dimensions.*",
     "position": "position.*",
@@ -12,7 +12,7 @@
     "runs": "player.minRuns, maxRuns, showRestRuns",
     "minRunsHint": "player.minRuns",
     "maxRunsHint": "player.maxRuns",
-    "document": "cloze.value; compound content is in content-presets.json",
+    "document": "cloze.document; compound content is in content-presets.json",
     "idList": "connected drop lists; UI-generated drag tasks contain real linked identifiers",
     "top": "hotspot-image.value[].top; connected hotspot scenarios",
     "alias": "Unique variable alias; edited through the real UI in the round-trip tests",

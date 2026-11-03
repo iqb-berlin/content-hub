@@ -43,8 +43,21 @@ for (const major of [0, 1, 2, 3]) {
       )
       .map((t) => t.value);
     if (values.length) result.values = values;
+    if (checker.isArrayType(clean)) {
+      const item = checker.getTypeArguments(clean)[0];
+      const choices = (item?.isUnion() ? item.types : [item])
+        .filter(
+          (t) =>
+            t &&
+            (t.flags &
+              (ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral)) !==
+              0,
+        )
+        .map((t) => t.value);
+      if (choices.length) result.itemValues = choices;
+    }
     if (
-      depth < 2 &&
+      depth < 3 &&
       clean.flags & (ts.TypeFlags.Object | ts.TypeFlags.Intersection) &&
       !checker.isArrayType(clean) &&
       !clean.getCallSignatures().length

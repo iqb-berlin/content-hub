@@ -5937,7 +5937,7 @@
                   "gridRow": 2,
                   "gridRowRange": 1,
                   "marginLeft": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginRight": {
@@ -6046,7 +6046,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: position.marginLeft = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginLeft.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6215,7 +6215,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: position.marginRight = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginLeft.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6275,7 +6275,7 @@
                   "gridRow": 2,
                   "gridRowRange": 1,
                   "marginLeft": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginRight": {
@@ -6384,7 +6384,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: position.marginTop = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginLeft.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6553,7 +6553,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: position.marginBottom = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginLeft.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6614,7 +6614,7 @@
                   "gridRowRange": 1,
                   "marginLeft": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginRight": {
                     "value": 0,
@@ -6722,7 +6722,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: position.zIndex = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginLeft.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6786,7 +6786,7 @@
                     "unit": "px"
                   },
                   "marginRight": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginTop": {
@@ -6797,7 +6797,7 @@
                     "value": 0,
                     "unit": "px"
                   },
-                  "zIndex": 2
+                  "zIndex": 0
                 },
                 "dimensions": {
                   "width": 230,
@@ -6891,7 +6891,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: position.zIndex = 2</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginRight.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6988,7 +6988,7 @@
                   "helperRowColor": "transparent"
                 },
                 "type": "math-table",
-                "operation": "variable",
+                "operation": "addition",
                 "terms": [
                   "123",
                   "456"
@@ -7060,7 +7060,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: operation = \"variable\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginRight.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7124,7 +7124,7 @@
                     "unit": "px"
                   },
                   "marginRight": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginTop": {
@@ -7229,7 +7229,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: operation = \"addition\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginRight.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7326,7 +7326,7 @@
                   "helperRowColor": "transparent"
                 },
                 "type": "math-table",
-                "operation": "subtraction",
+                "operation": "addition",
                 "terms": [
                   "123",
                   "456"
@@ -7398,7 +7398,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: operation = \"subtraction\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginRight.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7463,7 +7463,7 @@
                   },
                   "marginRight": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginTop": {
                     "value": 0,
@@ -7495,7 +7495,7 @@
                   "helperRowColor": "transparent"
                 },
                 "type": "math-table",
-                "operation": "multiplication",
+                "operation": "addition",
                 "terms": [
                   "123",
                   "456"
@@ -7567,7 +7567,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: operation = \"multiplication\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginRight.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7635,7 +7635,7 @@
                     "unit": "px"
                   },
                   "marginTop": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginBottom": {
@@ -7736,7 +7736,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: terms = [\"123\",\"456\"]</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginTop.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7905,7 +7905,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: result = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginTop.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7973,7 +7973,7 @@
                     "unit": "px"
                   },
                   "marginTop": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginBottom": {
@@ -8007,7 +8007,7 @@
                   "123",
                   "456"
                 ],
-                "result": "Synthetisch: Wasser, Brot und Äpfel",
+                "result": "",
                 "resultHelperRow": "",
                 "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
@@ -8074,7 +8074,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: result = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginTop.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8243,7 +8243,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: resultHelperRow = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginTop.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8312,7 +8312,7 @@
                   },
                   "marginTop": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginBottom": {
                     "value": 0,
@@ -8346,7 +8346,7 @@
                   "456"
                 ],
                 "result": "",
-                "resultHelperRow": "Synthetisch: Wasser, Brot und Äpfel",
+                "resultHelperRow": "",
                 "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
@@ -8412,7 +8412,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: resultHelperRow = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginTop.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8484,7 +8484,7 @@
                     "unit": "px"
                   },
                   "marginBottom": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "zIndex": 0
@@ -8516,7 +8516,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "french",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -8581,7 +8581,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"french\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginBottom.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8685,7 +8685,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "numbers",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -8750,7 +8750,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"numbers\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginBottom.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8822,7 +8822,7 @@
                     "unit": "px"
                   },
                   "marginBottom": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "zIndex": 0
@@ -8854,7 +8854,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "decimals",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -8919,7 +8919,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"decimals\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginBottom.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9023,7 +9023,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "numbersAndOperators",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -9088,7 +9088,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"numbersAndOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginBottom.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9161,7 +9161,7 @@
                   },
                   "marginBottom": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "zIndex": 0
                 },
@@ -9192,7 +9192,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "numbersAndBasicOperators",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -9257,7 +9257,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"numbersAndBasicOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.marginBottom.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9361,7 +9361,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "comparisonOperators",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -9426,7 +9426,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"comparisonOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.zIndex = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9501,7 +9501,7 @@
                     "value": 0,
                     "unit": "px"
                   },
-                  "zIndex": 0
+                  "zIndex": 2
                 },
                 "dimensions": {
                   "width": 230,
@@ -9530,7 +9530,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "chemicalEquation",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -9595,7 +9595,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"chemicalEquation\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: position.zIndex = 2</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9692,14 +9692,14 @@
                   "helperRowColor": "transparent"
                 },
                 "type": "math-table",
-                "operation": "addition",
+                "operation": "variable",
                 "terms": [
                   "123",
                   "456"
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "squareDashDot",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -9764,7 +9764,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"squareDashDot\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: operation = \"variable\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9868,7 +9868,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "placeValue",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -9933,7 +9933,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"placeValue\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: operation = \"addition\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10030,14 +10030,14 @@
                   "helperRowColor": "transparent"
                 },
                 "type": "math-table",
-                "operation": "addition",
+                "operation": "subtraction",
                 "terms": [
                   "123",
                   "456"
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "space",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -10102,7 +10102,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"space\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: operation = \"subtraction\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10199,14 +10199,14 @@
                   "helperRowColor": "transparent"
                 },
                 "type": "math-table",
-                "operation": "addition",
+                "operation": "multiplication",
                 "terms": [
                   "123",
                   "456"
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "comma",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -10271,7 +10271,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"comma\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: operation = \"multiplication\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10375,7 +10375,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": "custom",
+                "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -10440,7 +10440,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"custom\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: terms = [\"123\",\"456\"]</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10545,7 +10545,7 @@
                 "result": "",
                 "resultHelperRow": "",
                 "inputAssistancePreset": null,
-                "inputAssistancePosition": "right",
+                "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
@@ -10609,7 +10609,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePosition = \"right\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: result = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10711,7 +10711,7 @@
                   "123",
                   "456"
                 ],
-                "result": "",
+                "result": "579",
                 "resultHelperRow": "",
                 "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
@@ -10778,7 +10778,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePosition = \"floating\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: result = \"579\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10947,7 +10947,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistanceFloatingStartPosition = \"startBottom\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: resultHelperRow = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11050,10 +11050,10 @@
                   "456"
                 ],
                 "result": "",
-                "resultHelperRow": "",
+                "resultHelperRow": "1",
                 "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
-                "inputAssistanceFloatingStartPosition": "endCenter",
+                "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
                 "keyStyle": "round",
@@ -11116,7 +11116,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: inputAssistanceFloatingStartPosition = \"endCenter\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: resultHelperRow = \"1\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11220,7 +11220,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "french",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -11285,7 +11285,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: showSoftwareKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"french\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11389,10 +11389,10 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "numbers",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
-                "showSoftwareKeyboard": true,
+                "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
                 "keyStyle": "round",
                 "hideNativeKeyboard": false,
@@ -11454,7 +11454,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: showSoftwareKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"numbers\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11558,7 +11558,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "decimals",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -11623,7 +11623,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: addInputAssistanceToKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"decimals\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11727,11 +11727,11 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "numbersAndOperators",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
-                "addInputAssistanceToKeyboard": true,
+                "addInputAssistanceToKeyboard": false,
                 "keyStyle": "round",
                 "hideNativeKeyboard": false,
                 "hasArrowKeys": false,
@@ -11792,7 +11792,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: addInputAssistanceToKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"numbersAndOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11896,7 +11896,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "numbersAndBasicOperators",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -11961,7 +11961,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: keyStyle = \"round\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"numbersAndBasicOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12065,12 +12065,12 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "comparisonOperators",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
-                "keyStyle": "square",
+                "keyStyle": "round",
                 "hideNativeKeyboard": false,
                 "hasArrowKeys": false,
                 "variableLayoutOptions": {
@@ -12130,7 +12130,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: keyStyle = \"square\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"comparisonOperators\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12234,7 +12234,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "chemicalEquation",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -12299,7 +12299,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: hideNativeKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"chemicalEquation\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12403,13 +12403,13 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "squareDashDot",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
                 "keyStyle": "round",
-                "hideNativeKeyboard": true,
+                "hideNativeKeyboard": false,
                 "hasArrowKeys": false,
                 "variableLayoutOptions": {
                   "allowArithmeticChars": false,
@@ -12468,7 +12468,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: hideNativeKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"squareDashDot\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12572,7 +12572,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "placeValue",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -12637,7 +12637,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: hasArrowKeys = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"placeValue\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12741,14 +12741,14 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "space",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
                 "keyStyle": "round",
                 "hideNativeKeyboard": false,
-                "hasArrowKeys": true,
+                "hasArrowKeys": false,
                 "variableLayoutOptions": {
                   "allowArithmeticChars": false,
                   "isFirstLineUnderlined": true,
@@ -12806,7 +12806,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: hasArrowKeys = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"space\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12910,7 +12910,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "comma",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -12975,7 +12975,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.allowArithmeticChars = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"comma\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13079,7 +13079,7 @@
                 ],
                 "result": "",
                 "resultHelperRow": "",
-                "inputAssistancePreset": null,
+                "inputAssistancePreset": "custom",
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
@@ -13088,7 +13088,7 @@
                 "hideNativeKeyboard": false,
                 "hasArrowKeys": false,
                 "variableLayoutOptions": {
-                  "allowArithmeticChars": true,
+                  "allowArithmeticChars": false,
                   "isFirstLineUnderlined": true,
                   "showResultRow": false,
                   "showTopHelperRows": false,
@@ -13144,7 +13144,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.allowArithmeticChars = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePreset = \"custom\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13249,7 +13249,7 @@
                 "result": "",
                 "resultHelperRow": "",
                 "inputAssistancePreset": null,
-                "inputAssistancePosition": "floating",
+                "inputAssistancePosition": "right",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
@@ -13258,7 +13258,7 @@
                 "hasArrowKeys": false,
                 "variableLayoutOptions": {
                   "allowArithmeticChars": false,
-                  "isFirstLineUnderlined": false,
+                  "isFirstLineUnderlined": true,
                   "showResultRow": false,
                   "showTopHelperRows": false,
                   "allowFirstLineCrossOut": false
@@ -13313,7 +13313,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.isFirstLineUnderlined = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePosition = \"right\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13482,7 +13482,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.isFirstLineUnderlined = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistancePosition = \"floating\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13651,7 +13651,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.showResultRow = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistanceFloatingStartPosition = \"startBottom\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13757,7 +13757,7 @@
                 "resultHelperRow": "",
                 "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
-                "inputAssistanceFloatingStartPosition": "startBottom",
+                "inputAssistanceFloatingStartPosition": "endCenter",
                 "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
                 "keyStyle": "round",
@@ -13766,7 +13766,7 @@
                 "variableLayoutOptions": {
                   "allowArithmeticChars": false,
                   "isFirstLineUnderlined": true,
-                  "showResultRow": true,
+                  "showResultRow": false,
                   "showTopHelperRows": false,
                   "allowFirstLineCrossOut": false
                 }
@@ -13820,7 +13820,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.showResultRow = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: inputAssistanceFloatingStartPosition = \"endCenter\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13989,7 +13989,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.showTopHelperRows = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: showSoftwareKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14096,7 +14096,7 @@
                 "inputAssistancePreset": null,
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
-                "showSoftwareKeyboard": false,
+                "showSoftwareKeyboard": true,
                 "addInputAssistanceToKeyboard": false,
                 "keyStyle": "round",
                 "hideNativeKeyboard": false,
@@ -14105,7 +14105,7 @@
                   "allowArithmeticChars": false,
                   "isFirstLineUnderlined": true,
                   "showResultRow": false,
-                  "showTopHelperRows": true,
+                  "showTopHelperRows": false,
                   "allowFirstLineCrossOut": false
                 }
               },
@@ -14158,7 +14158,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.showTopHelperRows = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: showSoftwareKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14327,7 +14327,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.allowFirstLineCrossOut = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: addInputAssistanceToKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14435,7 +14435,7 @@
                 "inputAssistancePosition": "floating",
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
-                "addInputAssistanceToKeyboard": false,
+                "addInputAssistanceToKeyboard": true,
                 "keyStyle": "round",
                 "hideNativeKeyboard": false,
                 "hasArrowKeys": false,
@@ -14444,7 +14444,7 @@
                   "isFirstLineUnderlined": true,
                   "showResultRow": false,
                   "showTopHelperRows": false,
-                  "allowFirstLineCrossOut": true
+                  "allowFirstLineCrossOut": false
                 }
               },
               {
@@ -14496,7 +14496,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.allowFirstLineCrossOut = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: addInputAssistanceToKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14585,7 +14585,7 @@
                 },
                 "styling": {
                   "backgroundColor": "transparent",
-                  "fontColor": "#166b8c",
+                  "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
@@ -14665,7 +14665,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.fontColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: keyStyle = \"round\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14754,7 +14754,7 @@
                 },
                 "styling": {
                   "backgroundColor": "transparent",
-                  "fontColor": "#fff4d6",
+                  "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
@@ -14774,7 +14774,7 @@
                 "inputAssistanceFloatingStartPosition": "startBottom",
                 "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
-                "keyStyle": "round",
+                "keyStyle": "square",
                 "hideNativeKeyboard": false,
                 "hasArrowKeys": false,
                 "variableLayoutOptions": {
@@ -14834,7 +14834,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.fontColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: keyStyle = \"square\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14924,7 +14924,7 @@
                 "styling": {
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
-                  "fontSize": 16,
+                  "fontSize": 20,
                   "bold": false,
                   "italic": false,
                   "underline": false,
@@ -15003,7 +15003,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.fontSize = 16</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: hideNativeKeyboard = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15093,7 +15093,7 @@
                 "styling": {
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
-                  "fontSize": 24,
+                  "fontSize": 20,
                   "bold": false,
                   "italic": false,
                   "underline": false,
@@ -15113,7 +15113,7 @@
                 "showSoftwareKeyboard": false,
                 "addInputAssistanceToKeyboard": false,
                 "keyStyle": "round",
-                "hideNativeKeyboard": false,
+                "hideNativeKeyboard": true,
                 "hasArrowKeys": false,
                 "variableLayoutOptions": {
                   "allowArithmeticChars": false,
@@ -15172,7 +15172,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.fontSize = 24</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: hideNativeKeyboard = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15341,7 +15341,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.bold = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: hasArrowKeys = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15432,7 +15432,7 @@
                   "backgroundColor": "transparent",
                   "fontColor": "#000000",
                   "fontSize": 20,
-                  "bold": true,
+                  "bold": false,
                   "italic": false,
                   "underline": false,
                   "helperRowColor": "transparent"
@@ -15452,7 +15452,7 @@
                 "addInputAssistanceToKeyboard": false,
                 "keyStyle": "round",
                 "hideNativeKeyboard": false,
-                "hasArrowKeys": false,
+                "hasArrowKeys": true,
                 "variableLayoutOptions": {
                   "allowArithmeticChars": false,
                   "isFirstLineUnderlined": true,
@@ -15510,7 +15510,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.bold = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: hasArrowKeys = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15679,7 +15679,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.italic = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.allowArithmeticChars = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15771,7 +15771,7 @@
                   "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
-                  "italic": true,
+                  "italic": false,
                   "underline": false,
                   "helperRowColor": "transparent"
                 },
@@ -15792,7 +15792,7 @@
                 "hideNativeKeyboard": false,
                 "hasArrowKeys": false,
                 "variableLayoutOptions": {
-                  "allowArithmeticChars": false,
+                  "allowArithmeticChars": true,
                   "isFirstLineUnderlined": true,
                   "showResultRow": false,
                   "showTopHelperRows": false,
@@ -15848,7 +15848,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.italic = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.allowArithmeticChars = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15962,7 +15962,7 @@
                 "hasArrowKeys": false,
                 "variableLayoutOptions": {
                   "allowArithmeticChars": false,
-                  "isFirstLineUnderlined": true,
+                  "isFirstLineUnderlined": false,
                   "showResultRow": false,
                   "showTopHelperRows": false,
                   "allowFirstLineCrossOut": false
@@ -16017,7 +16017,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.underline = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.isFirstLineUnderlined = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16110,7 +16110,7 @@
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
-                  "underline": true,
+                  "underline": false,
                   "helperRowColor": "transparent"
                 },
                 "type": "math-table",
@@ -16186,7 +16186,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.underline = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.isFirstLineUnderlined = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16274,7 +16274,7 @@
                   "maxHeight": null
                 },
                 "styling": {
-                  "backgroundColor": "#166b8c",
+                  "backgroundColor": "transparent",
                   "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
@@ -16355,7 +16355,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.backgroundColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.showResultRow = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16443,7 +16443,7 @@
                   "maxHeight": null
                 },
                 "styling": {
-                  "backgroundColor": "#fff4d6",
+                  "backgroundColor": "transparent",
                   "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
@@ -16470,7 +16470,7 @@
                 "variableLayoutOptions": {
                   "allowArithmeticChars": false,
                   "isFirstLineUnderlined": true,
-                  "showResultRow": false,
+                  "showResultRow": true,
                   "showTopHelperRows": false,
                   "allowFirstLineCrossOut": false
                 }
@@ -16524,7 +16524,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.backgroundColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.showResultRow = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16618,7 +16618,7 @@
                   "bold": false,
                   "italic": false,
                   "underline": false,
-                  "helperRowColor": "#166b8c"
+                  "helperRowColor": "transparent"
                 },
                 "type": "math-table",
                 "operation": "addition",
@@ -16693,7 +16693,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.helperRowColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.showTopHelperRows = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16787,7 +16787,7 @@
                   "bold": false,
                   "italic": false,
                   "underline": false,
-                  "helperRowColor": "#fff4d6"
+                  "helperRowColor": "transparent"
                 },
                 "type": "math-table",
                 "operation": "addition",
@@ -16809,7 +16809,7 @@
                   "allowArithmeticChars": false,
                   "isFirstLineUnderlined": true,
                   "showResultRow": false,
-                  "showTopHelperRows": false,
+                  "showTopHelperRows": true,
                   "allowFirstLineCrossOut": false
                 }
               },
@@ -16862,7 +16862,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: styling.helperRowColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.showTopHelperRows = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16913,7 +16913,7 @@
               {
                 "id": "p100_e1",
                 "alias": "P100_V1",
-                "isRelevantForPresentationComplete": false,
+                "isRelevantForPresentationComplete": true,
                 "position": {
                   "xPosition": 0,
                   "yPosition": 0,
@@ -17031,7 +17031,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – math-table: isRelevantForPresentationComplete = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.allowFirstLineCrossOut = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -17148,12 +17148,2716 @@
                   "isFirstLineUnderlined": true,
                   "showResultRow": false,
                   "showTopHelperRows": false,
-                  "allowFirstLineCrossOut": false
+                  "allowFirstLineCrossOut": true
                 }
               },
               {
                 "id": "p101_e2",
                 "alias": "P101_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: variableLayoutOptions.allowFirstLineCrossOut = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-101"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p102_e1",
+                "alias": "P102_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#166b8c",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p102_e2",
+                "alias": "P102_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.fontColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-102"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p103_e1",
+                "alias": "P103_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#fff4d6",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p103_e2",
+                "alias": "P103_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.fontColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-103"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p104_e1",
+                "alias": "P104_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 16,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p104_e2",
+                "alias": "P104_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.fontSize = 16</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-104"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p105_e1",
+                "alias": "P105_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 24,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p105_e2",
+                "alias": "P105_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.fontSize = 24</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-105"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p106_e1",
+                "alias": "P106_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p106_e2",
+                "alias": "P106_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.bold = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-106"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p107_e1",
+                "alias": "P107_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": true,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p107_e2",
+                "alias": "P107_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.bold = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-107"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p108_e1",
+                "alias": "P108_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p108_e2",
+                "alias": "P108_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.italic = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-108"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p109_e1",
+                "alias": "P109_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": true,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p109_e2",
+                "alias": "P109_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.italic = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-109"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p110_e1",
+                "alias": "P110_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p110_e2",
+                "alias": "P110_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.underline = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-110"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p111_e1",
+                "alias": "P111_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": true,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p111_e2",
+                "alias": "P111_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.underline = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-111"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p112_e1",
+                "alias": "P112_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "#166b8c",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p112_e2",
+                "alias": "P112_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.backgroundColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-112"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p113_e1",
+                "alias": "P113_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "#fff4d6",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p113_e2",
+                "alias": "P113_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.backgroundColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-113"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p114_e1",
+                "alias": "P114_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "#166b8c"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p114_e2",
+                "alias": "P114_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.helperRowColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-114"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p115_e1",
+                "alias": "P115_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "#fff4d6"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p115_e2",
+                "alias": "P115_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: styling.helperRowColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-115"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p116_e1",
+                "alias": "P116_V1",
+                "isRelevantForPresentationComplete": false,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p116_e2",
+                "alias": "P116_V2",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – math-table: isRelevantForPresentationComplete = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-116"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p117_e1",
+                "alias": "P117_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 192,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "helperRowColor": "transparent"
+                },
+                "type": "math-table",
+                "operation": "addition",
+                "terms": [
+                  "123",
+                  "456"
+                ],
+                "result": "",
+                "resultHelperRow": "",
+                "inputAssistancePreset": null,
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "showSoftwareKeyboard": false,
+                "addInputAssistanceToKeyboard": false,
+                "keyStyle": "round",
+                "hideNativeKeyboard": false,
+                "hasArrowKeys": false,
+                "variableLayoutOptions": {
+                  "allowArithmeticChars": false,
+                  "isFirstLineUnderlined": true,
+                  "showResultRow": false,
+                  "showTopHelperRows": false,
+                  "allowFirstLineCrossOut": false
+                }
+              },
+              {
+                "id": "p117_e2",
+                "alias": "P117_V2",
                 "isRelevantForPresentationComplete": true,
                 "position": {
                   "xPosition": 0,
@@ -17242,7 +19946,7 @@
         "alwaysVisible": false,
         "alwaysVisiblePagePosition": "left",
         "alwaysVisibleAspectRatio": 50,
-        "id": "variant-101"
+        "id": "variant-117"
       }
     ],
     "enableSectionNumbering": false,

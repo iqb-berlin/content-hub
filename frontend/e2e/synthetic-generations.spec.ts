@@ -375,3 +375,21 @@ test('uses the historical ASPECT string-grid settings in the original players', 
         await expect(input).toHaveValue('Wasser');
       }
 });
+
+test('renders populated ASPECT table headers and the sticky-header setting', async ({ page }) => {
+  const unit = pool.units.find((unit) => unit.id === 'aspect-m3-table')!;
+  for (const id of ['headerRows-1', 'headerEnabled-1', 'stickyHeader-1']) {
+    const content = definition(unit);
+    const index = unit.authoringCases!.findIndex((scenario) => scenario.id === id);
+    expect(index).toBeGreaterThan(-1);
+    content.pages = [content.pages[index]];
+    const frame = await loadModule(page, host.url, 'players/aspect-major-3.html', content);
+    await expect(frame.locator('aspect-table .header-text')).toHaveText(['Gegenstand', 'Anzahl']);
+    await expect(frame.locator('aspect-table .sticky-header')).toHaveCount(
+      id === 'stickyHeader-1' ? 2 : 0,
+    );
+    const input = frame.locator('aspect-table input').first();
+    await input.fill('Wasser');
+    await expect(input).toHaveValue('Wasser');
+  }
+});

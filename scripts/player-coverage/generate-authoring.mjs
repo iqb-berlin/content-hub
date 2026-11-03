@@ -75,6 +75,18 @@ function flatten(schema, defaults, prefix = "") {
 function samples(property) {
   const { path, type, default: initial } = property;
   const name = path.split(".").at(-1);
+  // Structured editor fields need their own grammar; runtime state is not prose.
+  if (["customToolbar", "customToolBar"].includes(name))
+    return ["", "0 1 2 | 3 4 5"];
+  if (name === "result") return ["", "579"];
+  if (name === "resultHelperRow") return ["", "1"];
+  if (name === "state") return [initial ?? null];
+  if (/^position\.margin(?:Left|Right|Top|Bottom)\.unit$/.test(path))
+    return ["px", "%"];
+  if (/^position\.margin(?:Left|Right|Top|Bottom)\.value$/.test(path))
+    return [-10, 0, 20];
+  if (name === "headerRows")
+    return [[], [[{ text: "Gegenstand" }, { text: "Anzahl" }]]];
   if (/[Ii][Dd]$|[Ii]ds$/.test(name)) return [initial ?? null];
   if (
     ["gridColumnSizes", "gridRowSizes"].includes(name) &&
@@ -85,6 +97,12 @@ function samples(property) {
     return [null, fixture("image").src];
   if (property.values?.length)
     return [...(type.includes("null") ? [null] : []), ...property.values];
+  if (property.itemValues?.length)
+    return [
+      [],
+      ...property.itemValues.map((value) => [value]),
+      property.itemValues,
+    ];
   if (
     /^(boolean|null|undefined|[|\s])+$/.test(type) ||
     typeof initial === "boolean"
@@ -94,27 +112,31 @@ function samples(property) {
     /^(number|null|undefined|[|\s])+$/.test(type) ||
     typeof initial === "number"
   ) {
-    const values = /gridColumn$|gridRow$/.test(name)
-      ? [1, 2]
-      : /fontSize/.test(name)
-        ? [16, 24]
-        : /lineHeight/.test(name)
-          ? [100, 150]
-          : /Volume/.test(name)
-            ? [0, 1]
-            : /width/i.test(name)
-              ? [180, 320]
-              : /height/i.test(name)
-                ? [60, 140]
-                : /[Dd]elay|Time$/.test(name)
-                  ? [0, 200]
-                  : /max|Max/.test(name)
-                    ? [10, 12]
-                    : /min|Min/.test(name)
-                      ? [0, 1]
-                      : /Count|Range|Runs|Columns|Rows/.test(name)
-                        ? [1, 2]
-                        : [0, 2];
+    const bounds = numericBounds[name];
+    const values =
+      bounds?.min !== undefined && bounds?.max !== undefined
+        ? [bounds.min, bounds.max]
+        : /gridColumn$|gridRow$/.test(name)
+          ? [1, 2]
+          : /fontSize/.test(name)
+            ? [16, 24]
+            : /lineHeight/.test(name)
+              ? [100, 150]
+              : /Volume/.test(name)
+                ? [0, 1]
+                : /width/i.test(name)
+                  ? [180, 320]
+                  : /height/i.test(name)
+                    ? [60, 140]
+                    : /[Dd]elay|Time$/.test(name)
+                      ? [0, 200]
+                      : /max|Max/.test(name)
+                        ? [10, 12]
+                        : /min|Min/.test(name)
+                          ? [0, 1]
+                          : /Count|Range|Runs|Columns|Rows/.test(name)
+                            ? [1, 2]
+                            : [0, 2];
     return [
       ...(type.includes("null") ? [null] : []),
       ...values.map((value) =>
@@ -297,6 +319,16 @@ for (const major of [0, 1, 2, 3]) {
         if (value === undefined) return;
         const element = clone(baseline);
         set(element, property.path, value);
+        if (
+          type === "table" &&
+          (property.path === "headerRows" ||
+            (property.path === "headerEnabled" && value === true) ||
+            (property.path === "stickyHeader" && value === true))
+        ) {
+          element.headerEnabled = true;
+          if (property.path !== "headerRows")
+            element.headerRows = [[{ text: "Gegenstand" }, { text: "Anzahl" }]];
+        }
         const caseId = `${property.path.replaceAll(".", "-")}-${index}`;
         const definition = wrap(
           snapshot,

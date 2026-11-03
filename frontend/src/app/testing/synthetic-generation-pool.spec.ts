@@ -22,6 +22,7 @@ interface Unit {
 interface Property {
   type: string;
   values?: unknown[];
+  itemValues?: unknown[];
   properties?: Record<string, Property>;
 }
 interface Setting {
@@ -115,6 +116,9 @@ describe('pinned player generations and authoring coverage', () => {
           expect(setting, `${major}/${type}/${path}`).toBeTruthy();
           if (property.values)
             for (const option of property.values) expect(setting.values).toContainEqual(option);
+          if (property.itemValues)
+            for (const option of property.itemValues)
+              expect(setting.values.flat()).toContainEqual(option);
           if (property.type.includes('boolean')) {
             expect(setting.values).toContain(false);
             expect(setting.values).toContain(true);
@@ -145,6 +149,48 @@ describe('pinned player generations and authoring coverage', () => {
     }
   });
 
+  it('keeps toolbars, arithmetic results and widget state in their editor formats', () => {
+    for (const setting of coverage as Setting[]) {
+      if (['customToolbar', 'customToolBar'].includes(setting.path))
+        for (const value of setting.values) expect(value).toMatch(/^(?:[0-9 |]*)$/);
+      if (['result', 'resultHelperRow'].includes(setting.path))
+        for (const value of setting.values) expect(value).toMatch(/^[0-9]*$/);
+      if (setting.path === 'state') expect(setting.values).toHaveLength(1);
+      if (setting.path === 'maxNumberOfSelections') expect(setting.values).toEqual([0, 118]);
+    }
+  });
+
+  it('covers the margin units, keyboard presets and populated table headers exposed by the UI', () => {
+    for (const setting of coverage as Setting[]) {
+      if (/^position\.margin(?:Left|Right|Top|Bottom)\.unit$/.test(setting.path))
+        expect(setting.values).toEqual(['px', '%']);
+      if (/^position\.margin(?:Left|Right|Top|Bottom)\.value$/.test(setting.path))
+        expect(setting.values).toEqual([-10, 0, 20]);
+    }
+    for (const element of ['math-field', 'text-area-math'])
+      expect(
+        coverage
+          .find(
+            (entry: Setting) =>
+              entry.major === 3 &&
+              entry.element === element &&
+              entry.path === 'mathKeyboardPresets',
+          )
+          .values.flat(),
+      ).toEqual(expect.arrayContaining(['math', 'symbols', 'physics', 'latin', 'greek']));
+    const table = units.find((unit) => unit.id === 'aspect-m3-table')!;
+    const content = read(table.file).definition;
+    for (const id of ['headerRows-1', 'headerEnabled-1', 'stickyHeader-1']) {
+      const index = table.authoringCases!.findIndex((scenario) => scenario.id === id);
+      const element = content.pages[index].sections[0].elements[0];
+      expect(element.headerEnabled).toBe(true);
+      expect(element.headerRows[0].map((cell: { text: string }) => cell.text)).toEqual([
+        'Gegenstand',
+        'Anzahl',
+      ]);
+    }
+  });
+
   it('maps every discovered UI property to stored settings or a documented editor control', () => {
     const ui = read('authoring/ui-controls.json'),
       mapping = read('authoring/ui-control-mapping.json');
@@ -152,7 +198,7 @@ describe('pinned player generations and authoring coverage', () => {
     const covered = new Set(
       coverage
         .filter((entry: Setting) => entry.major === 3)
-        .map((entry: Setting) => entry.path.split('.').at(-1)),
+        .flatMap((entry: Setting) => entry.path.split('.')),
     );
     for (const name of Object.keys(ui.controls))
       expect(covered.has(name) || name in mapping.groups || name in mapping.editorOnly, name).toBe(

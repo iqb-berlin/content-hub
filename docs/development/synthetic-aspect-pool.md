@@ -67,16 +67,16 @@ Der zusätzliche [Generationenpool](../../test-fixtures/player-generations/READM
 enthält 405 weitere Aufgaben mit 20 Playergenerationen aus sechs Familien. Die
 [Matrix](../../test-fixtures/player-generations/GENERATED-COVERAGE.md) umfasst
 alle 31 aktuellen ASPECT-Elementtypen sowie 11/22/27 Typen der älteren Majors,
-3.072 Einstellungen mit konkreten Werten und Seiten und 66 echte Exporte aus
+3.304 Einstellungen mit konkreten Werten und Seiten und 66 echte Exporte aus
 allen zehn Assistenten des Originaleditors 3.1. Endliche Auswahllisten und
 boolesche Schalter sind vollständig aufgezählt; offene Zahlen-/Text-/Dateifelder
 werden mit Beispielen und Randwerten geprüft. Eine vollständige Kombination
 sämtlicher Einstellungen wird nicht behauptet.
 
-108 zusätzliche Prüfungen pro Browser kontrollieren die Generationen,
+109 zusätzliche Prüfungen pro Browser kontrollieren die Generationen,
 Import/Änderung/Export der aktuellen ASPECT-Einstellungsaufgaben, verbundene
 Laufzeitregeln, tet.folio und alle UI-Assistentenaufgaben durch die App. Zusammen
-mit den bisherigen 69 Fällen sind das 531 Prüfungen in Chromium, Firefox und
+mit den bisherigen 69 Fällen sind das 534 Prüfungen in Chromium, Firefox und
 WebKit. Die UI-Rundläufe prüfen die gespeicherten Einstellungswerte; sie ersetzen
 keinen Verhaltenstest jeder einzelnen Kombination. Historische Majors erhalten
 generationsgerechte Aufgaben und einen echten Interaktionstest je Player.

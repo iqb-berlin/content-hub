@@ -5647,7 +5647,7 @@
                   "gridRow": 2,
                   "gridRowRange": 1,
                   "marginLeft": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginRight": {
@@ -5812,7 +5812,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: position.marginLeft = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginLeft.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6037,7 +6037,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: position.marginRight = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginLeft.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6097,7 +6097,7 @@
                   "gridRow": 2,
                   "gridRowRange": 1,
                   "marginLeft": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginRight": {
@@ -6262,7 +6262,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: position.marginTop = {\"value\":0,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginLeft.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6487,7 +6487,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: position.marginBottom = {\"value\":35,\"unit\":\"px\"}</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginLeft.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6548,7 +6548,7 @@
                   "gridRowRange": 1,
                   "marginLeft": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginRight": {
                     "value": 0,
@@ -6712,7 +6712,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: position.zIndex = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginLeft.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -6776,7 +6776,7 @@
                     "unit": "px"
                   },
                   "marginRight": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginTop": {
@@ -6787,7 +6787,7 @@
                     "value": 35,
                     "unit": "px"
                   },
-                  "zIndex": 2
+                  "zIndex": 0
                 },
                 "dimensions": {
                   "width": 250,
@@ -6937,7 +6937,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: position.zIndex = 2</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginRight.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7015,7 +7015,7 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 180,
+                  "width": 250,
                   "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -7162,7 +7162,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.width = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginRight.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7226,7 +7226,7 @@
                     "unit": "px"
                   },
                   "marginRight": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginTop": {
@@ -7240,7 +7240,7 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 320,
+                  "width": 250,
                   "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -7387,7 +7387,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.width = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginRight.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7466,7 +7466,7 @@
                 },
                 "dimensions": {
                   "width": 250,
-                  "height": 60,
+                  "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
@@ -7612,7 +7612,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.height = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginRight.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7677,7 +7677,7 @@
                   },
                   "marginRight": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginTop": {
                     "value": 0,
@@ -7691,7 +7691,7 @@
                 },
                 "dimensions": {
                   "width": 250,
-                  "height": 140,
+                  "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
@@ -7837,7 +7837,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.height = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginRight.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -7905,7 +7905,7 @@
                     "unit": "px"
                   },
                   "marginTop": {
-                    "value": 0,
+                    "value": -10,
                     "unit": "px"
                   },
                   "marginBottom": {
@@ -8062,7 +8062,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.isWidthFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginTop.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8142,7 +8142,7 @@
                 "dimensions": {
                   "width": 250,
                   "height": 200,
-                  "isWidthFixed": true,
+                  "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
@@ -8287,7 +8287,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.isWidthFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginTop.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8355,7 +8355,7 @@
                     "unit": "px"
                   },
                   "marginTop": {
-                    "value": 0,
+                    "value": 20,
                     "unit": "px"
                   },
                   "marginBottom": {
@@ -8512,7 +8512,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.isHeightFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginTop.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8593,7 +8593,7 @@
                   "width": 250,
                   "height": 200,
                   "isWidthFixed": false,
-                  "isHeightFixed": true,
+                  "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
@@ -8737,7 +8737,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.isHeightFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginTop.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -8806,7 +8806,7 @@
                   },
                   "marginTop": {
                     "value": 0,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "marginBottom": {
                     "value": 35,
@@ -8962,7 +8962,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.minWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginTop.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9034,7 +9034,7 @@
                     "unit": "px"
                   },
                   "marginBottom": {
-                    "value": 35,
+                    "value": -10,
                     "unit": "px"
                   },
                   "zIndex": 0
@@ -9044,7 +9044,7 @@
                   "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": 180,
+                  "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -9187,7 +9187,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.minWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginBottom.value = -10</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9259,7 +9259,7 @@
                     "unit": "px"
                   },
                   "marginBottom": {
-                    "value": 35,
+                    "value": 0,
                     "unit": "px"
                   },
                   "zIndex": 0
@@ -9269,7 +9269,7 @@
                   "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": 320,
+                  "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -9412,7 +9412,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.minWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginBottom.value = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9484,7 +9484,7 @@
                     "unit": "px"
                   },
                   "marginBottom": {
-                    "value": 35,
+                    "value": 20,
                     "unit": "px"
                   },
                   "zIndex": 0
@@ -9637,7 +9637,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginBottom.value = 20</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9720,7 +9720,7 @@
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
-                  "maxWidth": 180,
+                  "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
                 },
@@ -9862,7 +9862,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginBottom.unit = \"px\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -9935,7 +9935,7 @@
                   },
                   "marginBottom": {
                     "value": 35,
-                    "unit": "px"
+                    "unit": "%"
                   },
                   "zIndex": 0
                 },
@@ -9945,7 +9945,7 @@
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
-                  "maxWidth": 320,
+                  "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
                 },
@@ -10087,7 +10087,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.marginBottom.unit = \"%\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10312,7 +10312,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.minHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.zIndex = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10387,7 +10387,7 @@
                     "value": 35,
                     "unit": "px"
                   },
-                  "zIndex": 0
+                  "zIndex": 2
                 },
                 "dimensions": {
                   "width": 250,
@@ -10396,7 +10396,7 @@
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
-                  "minHeight": 60,
+                  "minHeight": null,
                   "maxHeight": null
                 },
                 "styling": {
@@ -10537,7 +10537,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.minHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: position.zIndex = 2</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10615,13 +10615,13 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 250,
+                  "width": 180,
                   "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
-                  "minHeight": 140,
+                  "minHeight": null,
                   "maxHeight": null
                 },
                 "styling": {
@@ -10762,7 +10762,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.minHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.width = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -10840,7 +10840,7 @@
                   "zIndex": 0
                 },
                 "dimensions": {
-                  "width": 250,
+                  "width": 320,
                   "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
@@ -10987,7 +10987,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.width = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11066,13 +11066,13 @@
                 },
                 "dimensions": {
                   "width": 250,
-                  "height": 200,
+                  "height": 60,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
-                  "maxHeight": 60
+                  "maxHeight": null
                 },
                 "styling": {
                   "backgroundColor": "white",
@@ -11212,7 +11212,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.height = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11291,13 +11291,13 @@
                 },
                 "dimensions": {
                   "width": 250,
-                  "height": 200,
+                  "height": 140,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
-                  "maxHeight": 140
+                  "maxHeight": null
                 },
                 "styling": {
                   "backgroundColor": "white",
@@ -11437,7 +11437,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.height = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11526,7 +11526,7 @@
                 },
                 "styling": {
                   "backgroundColor": "white",
-                  "fontColor": "#166b8c",
+                  "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
@@ -11662,7 +11662,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.fontColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.isWidthFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11742,7 +11742,7 @@
                 "dimensions": {
                   "width": 250,
                   "height": 200,
-                  "isWidthFixed": false,
+                  "isWidthFixed": true,
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
@@ -11751,7 +11751,7 @@
                 },
                 "styling": {
                   "backgroundColor": "white",
-                  "fontColor": "#fff4d6",
+                  "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
@@ -11887,7 +11887,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.fontColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.isWidthFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -11977,7 +11977,7 @@
                 "styling": {
                   "backgroundColor": "white",
                   "fontColor": "#000000",
-                  "fontSize": 16,
+                  "fontSize": 20,
                   "bold": false,
                   "italic": false,
                   "underline": false,
@@ -12112,7 +12112,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.fontSize = 16</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.isHeightFixed = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12193,7 +12193,7 @@
                   "width": 250,
                   "height": 200,
                   "isWidthFixed": false,
-                  "isHeightFixed": false,
+                  "isHeightFixed": true,
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
@@ -12202,7 +12202,7 @@
                 "styling": {
                   "backgroundColor": "white",
                   "fontColor": "#000000",
-                  "fontSize": 24,
+                  "fontSize": 20,
                   "bold": false,
                   "italic": false,
                   "underline": false,
@@ -12337,7 +12337,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.fontSize = 24</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.isHeightFixed = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12562,7 +12562,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.bold = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.minWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12644,7 +12644,7 @@
                   "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": null,
+                  "minWidth": 180,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -12653,7 +12653,7 @@
                   "backgroundColor": "white",
                   "fontColor": "#000000",
                   "fontSize": 20,
-                  "bold": true,
+                  "bold": false,
                   "italic": false,
                   "underline": false,
                   "lineHeight": 135,
@@ -12787,7 +12787,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.bold = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.minWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -12869,7 +12869,7 @@
                   "height": 200,
                   "isWidthFixed": false,
                   "isHeightFixed": false,
-                  "minWidth": null,
+                  "minWidth": 320,
                   "maxWidth": null,
                   "minHeight": null,
                   "maxHeight": null
@@ -13012,7 +13012,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.italic = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.minWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13104,7 +13104,7 @@
                   "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
-                  "italic": true,
+                  "italic": false,
                   "underline": false,
                   "lineHeight": 135,
                   "lineColoring": true,
@@ -13237,7 +13237,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.italic = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxWidth = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13320,7 +13320,7 @@
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
-                  "maxWidth": null,
+                  "maxWidth": 180,
                   "minHeight": null,
                   "maxHeight": null
                 },
@@ -13462,7 +13462,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.underline = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxWidth = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13545,7 +13545,7 @@
                   "isWidthFixed": false,
                   "isHeightFixed": false,
                   "minWidth": null,
-                  "maxWidth": null,
+                  "maxWidth": 320,
                   "minHeight": null,
                   "maxHeight": null
                 },
@@ -13555,7 +13555,7 @@
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
-                  "underline": true,
+                  "underline": false,
                   "lineHeight": 135,
                   "lineColoring": true,
                   "lineColoringColor": "#c9e0e0",
@@ -13687,7 +13687,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.underline = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxWidth = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13775,7 +13775,7 @@
                   "maxHeight": null
                 },
                 "styling": {
-                  "backgroundColor": "#166b8c",
+                  "backgroundColor": "white",
                   "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
@@ -13912,7 +13912,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.backgroundColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.minHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -13996,11 +13996,11 @@
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
-                  "minHeight": null,
+                  "minHeight": 60,
                   "maxHeight": null
                 },
                 "styling": {
-                  "backgroundColor": "#fff4d6",
+                  "backgroundColor": "white",
                   "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
@@ -14137,7 +14137,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.backgroundColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.minHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14221,7 +14221,7 @@
                   "isHeightFixed": false,
                   "minWidth": null,
                   "maxWidth": null,
-                  "minHeight": null,
+                  "minHeight": 140,
                   "maxHeight": null
                 },
                 "styling": {
@@ -14231,7 +14231,7 @@
                   "bold": false,
                   "italic": false,
                   "underline": false,
-                  "lineHeight": 100,
+                  "lineHeight": 135,
                   "lineColoring": true,
                   "lineColoringColor": "#c9e0e0",
                   "firstLineColoring": false,
@@ -14362,7 +14362,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.lineHeight = 100</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.minHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14456,7 +14456,7 @@
                   "bold": false,
                   "italic": false,
                   "underline": false,
-                  "lineHeight": 150,
+                  "lineHeight": 135,
                   "lineColoring": true,
                   "lineColoringColor": "#c9e0e0",
                   "firstLineColoring": false,
@@ -14587,7 +14587,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.lineHeight = 150</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxHeight = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14672,7 +14672,7 @@
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
-                  "maxHeight": null
+                  "maxHeight": 60
                 },
                 "styling": {
                   "backgroundColor": "white",
@@ -14682,7 +14682,7 @@
                   "italic": false,
                   "underline": false,
                   "lineHeight": 135,
-                  "lineColoring": false,
+                  "lineColoring": true,
                   "lineColoringColor": "#c9e0e0",
                   "firstLineColoring": false,
                   "firstLineColoringColor": "#c7f3d0"
@@ -14812,7 +14812,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.lineColoring = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxHeight = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -14897,7 +14897,7 @@
                   "minWidth": null,
                   "maxWidth": null,
                   "minHeight": null,
-                  "maxHeight": null
+                  "maxHeight": 140
                 },
                 "styling": {
                   "backgroundColor": "white",
@@ -15037,7 +15037,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.lineColoring = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: dimensions.maxHeight = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15126,14 +15126,14 @@
                 },
                 "styling": {
                   "backgroundColor": "white",
-                  "fontColor": "#000000",
+                  "fontColor": "#166b8c",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
                   "underline": false,
                   "lineHeight": 135,
                   "lineColoring": true,
-                  "lineColoringColor": "#166b8c",
+                  "lineColoringColor": "#c9e0e0",
                   "firstLineColoring": false,
                   "firstLineColoringColor": "#c7f3d0"
                 },
@@ -15262,7 +15262,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.lineColoringColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: styling.fontColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15351,14 +15351,14 @@
                 },
                 "styling": {
                   "backgroundColor": "white",
-                  "fontColor": "#000000",
+                  "fontColor": "#fff4d6",
                   "fontSize": 20,
                   "bold": false,
                   "italic": false,
                   "underline": false,
                   "lineHeight": 135,
                   "lineColoring": true,
-                  "lineColoringColor": "#fff4d6",
+                  "lineColoringColor": "#c9e0e0",
                   "firstLineColoring": false,
                   "firstLineColoringColor": "#c7f3d0"
                 },
@@ -15487,7 +15487,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.lineColoringColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: styling.fontColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15577,7 +15577,7 @@
                 "styling": {
                   "backgroundColor": "white",
                   "fontColor": "#000000",
-                  "fontSize": 20,
+                  "fontSize": 16,
                   "bold": false,
                   "italic": false,
                   "underline": false,
@@ -15712,7 +15712,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.firstLineColoring = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: styling.fontSize = 16</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -15802,14 +15802,14 @@
                 "styling": {
                   "backgroundColor": "white",
                   "fontColor": "#000000",
-                  "fontSize": 20,
+                  "fontSize": 24,
                   "bold": false,
                   "italic": false,
                   "underline": false,
                   "lineHeight": 135,
                   "lineColoring": true,
                   "lineColoringColor": "#c9e0e0",
-                  "firstLineColoring": true,
+                  "firstLineColoring": false,
                   "firstLineColoringColor": "#c7f3d0"
                 },
                 "type": "likert",
@@ -15937,7 +15937,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.firstLineColoring = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: styling.fontSize = 24</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16035,7 +16035,7 @@
                   "lineColoring": true,
                   "lineColoringColor": "#c9e0e0",
                   "firstLineColoring": false,
-                  "firstLineColoringColor": "#166b8c"
+                  "firstLineColoringColor": "#c7f3d0"
                 },
                 "type": "likert",
                 "rows": [
@@ -16162,7 +16162,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.firstLineColoringColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: styling.bold = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16253,14 +16253,14 @@
                   "backgroundColor": "white",
                   "fontColor": "#000000",
                   "fontSize": 20,
-                  "bold": false,
+                  "bold": true,
                   "italic": false,
                   "underline": false,
                   "lineHeight": 135,
                   "lineColoring": true,
                   "lineColoringColor": "#c9e0e0",
                   "firstLineColoring": false,
-                  "firstLineColoringColor": "#fff4d6"
+                  "firstLineColoringColor": "#c7f3d0"
                 },
                 "type": "likert",
                 "rows": [
@@ -16387,7 +16387,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: styling.firstLineColoringColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: styling.bold = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16438,7 +16438,7 @@
               {
                 "id": "p73_e1",
                 "alias": "P73_V1",
-                "isRelevantForPresentationComplete": false,
+                "isRelevantForPresentationComplete": true,
                 "position": {
                   "xPosition": 0,
                   "yPosition": 0,
@@ -16612,7 +16612,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: isRelevantForPresentationComplete = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: styling.italic = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16704,7 +16704,7 @@
                   "fontColor": "#000000",
                   "fontSize": 20,
                   "bold": false,
-                  "italic": false,
+                  "italic": true,
                   "underline": false,
                   "lineHeight": 135,
                   "lineColoring": true,
@@ -16837,7 +16837,7 @@
                   "lineHeight": 135
                 },
                 "type": "text",
-                "text": "<p><strong>Ausflug an den See – likert: isRelevantForPresentationComplete = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "text": "<p><strong>Ausflug an den See – likert: styling.italic = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
                 "markingMode": "selection",
                 "markingPanels": [],
                 "highlightableOrange": false,
@@ -16880,6 +16880,3606 @@
         "alwaysVisiblePagePosition": "left",
         "alwaysVisibleAspectRatio": 50,
         "id": "variant-74"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p75_e1",
+                "alias": "P75_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p75_e2",
+                    "alias": "P75_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p75_e3",
+                "alias": "P75_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.underline = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-75"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p76_e1",
+                "alias": "P76_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": true,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p76_e2",
+                    "alias": "P76_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p76_e3",
+                "alias": "P76_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.underline = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-76"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p77_e1",
+                "alias": "P77_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "#166b8c",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p77_e2",
+                    "alias": "P77_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p77_e3",
+                "alias": "P77_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.backgroundColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-77"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p78_e1",
+                "alias": "P78_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "#fff4d6",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p78_e2",
+                    "alias": "P78_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p78_e3",
+                "alias": "P78_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.backgroundColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-78"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p79_e1",
+                "alias": "P79_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 100,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p79_e2",
+                    "alias": "P79_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p79_e3",
+                "alias": "P79_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.lineHeight = 100</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-79"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p80_e1",
+                "alias": "P80_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 150,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p80_e2",
+                    "alias": "P80_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p80_e3",
+                "alias": "P80_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.lineHeight = 150</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-80"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p81_e1",
+                "alias": "P81_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": false,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p81_e2",
+                    "alias": "P81_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p81_e3",
+                "alias": "P81_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.lineColoring = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-81"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p82_e1",
+                "alias": "P82_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p82_e2",
+                    "alias": "P82_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p82_e3",
+                "alias": "P82_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.lineColoring = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-82"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p83_e1",
+                "alias": "P83_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#166b8c",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p83_e2",
+                    "alias": "P83_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p83_e3",
+                "alias": "P83_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.lineColoringColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-83"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p84_e1",
+                "alias": "P84_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#fff4d6",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p84_e2",
+                    "alias": "P84_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p84_e3",
+                "alias": "P84_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.lineColoringColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-84"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p85_e1",
+                "alias": "P85_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p85_e2",
+                    "alias": "P85_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p85_e3",
+                "alias": "P85_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.firstLineColoring = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-85"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p86_e1",
+                "alias": "P86_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": true,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p86_e2",
+                    "alias": "P86_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p86_e3",
+                "alias": "P86_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.firstLineColoring = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-86"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p87_e1",
+                "alias": "P87_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#166b8c"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p87_e2",
+                    "alias": "P87_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p87_e3",
+                "alias": "P87_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.firstLineColoringColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-87"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p88_e1",
+                "alias": "P88_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#fff4d6"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p88_e2",
+                    "alias": "P88_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p88_e3",
+                "alias": "P88_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: styling.firstLineColoringColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-88"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p89_e1",
+                "alias": "P89_V1",
+                "isRelevantForPresentationComplete": false,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p89_e2",
+                    "alias": "P89_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p89_e3",
+                "alias": "P89_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: isRelevantForPresentationComplete = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-89"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p90_e1",
+                "alias": "P90_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 35,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "white",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135,
+                  "lineColoring": true,
+                  "lineColoringColor": "#c9e0e0",
+                  "firstLineColoring": false,
+                  "firstLineColoringColor": "#c7f3d0"
+                },
+                "type": "likert",
+                "rows": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": null,
+                      "gridColumnRange": 1,
+                      "gridRow": null,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 50,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {},
+                    "id": "p90_e2",
+                    "alias": "P90_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "type": "likert-row",
+                    "rowLabel": {
+                      "text": "Wasser ist sinnvoll",
+                      "imgSrc": null,
+                      "imgFileName": "",
+                      "imgPosition": "above"
+                    },
+                    "columnCount": 2,
+                    "verticalButtonAlignment": "center"
+                  }
+                ],
+                "options": [
+                  {
+                    "text": "Nein",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  },
+                  {
+                    "text": "Ja",
+                    "imgSrc": null,
+                    "imgFileName": "",
+                    "imgPosition": "above"
+                  }
+                ],
+                "firstColumnSizeRatio": 5,
+                "label": "Wie gut passt das?",
+                "label2": "Beschriftung Erste Spalte",
+                "stickyHeader": false
+              },
+              {
+                "id": "p90_e3",
+                "alias": "P90_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – likert: isRelevantForPresentationComplete = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-90"
       }
     ],
     "enableSectionNumbering": false,

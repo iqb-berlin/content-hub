@@ -351,21 +351,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -742,21 +790,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -1345,21 +1441,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -1688,21 +1832,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -2196,21 +2388,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -2935,21 +3175,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -3319,21 +3607,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -3915,21 +4251,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -4252,21 +4636,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -4687,21 +5119,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -5134,21 +5614,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -5611,21 +6139,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -5994,21 +6570,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -6382,21 +7006,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -6806,21 +7478,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -7372,21 +8092,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -7737,21 +8505,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -8155,21 +8971,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -8579,21 +9443,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -9093,21 +10005,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -9646,21 +10606,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -9970,21 +10978,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -10400,21 +11456,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -10852,6 +11956,13 @@
         },
         "mathKeyboardPresets": {
           "type": "(\"math\" | \"symbols\" | \"physics\" | \"latin\" | \"greek\")[]",
+          "itemValues": [
+            "math",
+            "symbols",
+            "physics",
+            "latin",
+            "greek"
+          ],
           "source": "projects/common/models/elements/input-elements/math-field.ts",
           "line": 20
         },
@@ -10890,21 +12001,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -11505,21 +12664,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -11833,6 +13040,13 @@
         },
         "mathKeyboardPresets": {
           "type": "(\"math\" | \"symbols\" | \"physics\" | \"latin\" | \"greek\")[]",
+          "itemValues": [
+            "math",
+            "symbols",
+            "physics",
+            "latin",
+            "greek"
+          ],
           "source": "projects/common/models/elements/input-elements/text-area-math.ts",
           "line": 25
         },
@@ -11871,21 +13085,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
@@ -12403,21 +13665,69 @@
             },
             "marginLeft": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 12
             },
             "marginRight": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 13
             },
             "marginTop": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 14
             },
             "marginBottom": {
               "type": "Measurement",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 73
+                },
+                "unit": {
+                  "type": "string",
+                  "source": "projects/common/interfaces.ts",
+                  "line": 74
+                }
+              },
               "source": "projects/common/models/elements/property-group-interfaces.ts",
               "line": 15
             },
