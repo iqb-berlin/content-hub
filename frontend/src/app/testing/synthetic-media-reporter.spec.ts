@@ -42,6 +42,12 @@ describe('Synthetic media reporter', () => {
     await reporter.onEnd(fullResult('passed'));
     const manifest = JSON.parse(readFileSync(join(outputDir, 'manifest.json'), 'utf8'));
     expect(manifest.players).toHaveLength(6);
+    expect(manifest.generationCoverage).toHaveLength(20);
+    expect(
+      manifest.generationCoverage.every(
+        (entry: { verifiedIn: string[] }) => entry.verifiedIn.length === 0,
+      ),
+    ).toBe(true);
     expect(manifest.formatCoverage).toHaveLength(44);
     expect(
       manifest.formatCoverage.every(
@@ -52,6 +58,35 @@ describe('Synthetic media reporter', () => {
       manifest.formatCoverage.find((unit: { id: string }) => unit.id === 'aspect-periodic')
         .coverage,
     ).toBe('widget-request-only');
+  });
+
+  it('keeps a diagnosed development build separate from successful task coverage', async () => {
+    const { reporter, outputDir } = setup();
+    reporter.onTestEnd(
+      testCase(
+        'records the upstream ABI 2 development-build limitation',
+        '/e2e/synthetic-generations.spec.ts',
+      ),
+      testResult([]),
+    );
+    await reporter.onEnd(fullResult('passed'));
+    const manifest = JSON.parse(readFileSync(join(outputDir, 'manifest.json'), 'utf8'));
+    const abi = manifest.generationCoverage.find((entry: { id: string }) => entry.id === 'abi-m2');
+    expect(abi.verifiedIn).toEqual([]);
+    expect(abi.diagnosedIn).toEqual(['chromium']);
+  });
+
+  it('copies screenshots attached as buffers in generation tests', async () => {
+    const { reporter, outputDir } = setup();
+    const body = Buffer.from('synthetic screenshot');
+    reporter.onTestEnd(
+      testCase('runs an authored task in aspect-m3', '/e2e/synthetic-generations.spec.ts'),
+      testResult([{ name: 'generation', contentType: 'image/png', body }]),
+    );
+    await reporter.onEnd(fullResult('passed'));
+    const manifest = JSON.parse(readFileSync(join(outputDir, 'manifest.json'), 'utf8'));
+    expect(manifest.cases).toHaveLength(1);
+    expect(readFileSync(join(outputDir, manifest.cases[0].media[0].file))).toEqual(body);
   });
 
   it('rejects a passing player-family review without its video', async () => {

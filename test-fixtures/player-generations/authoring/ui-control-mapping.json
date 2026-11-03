@@ -1,0 +1,28 @@
+{
+  "policy": "Property names in ui-controls.json map to coverage.json by their final path component; nested group controls map to the group's children. The remaining controls below are UI state, getters or actions rather than additional stored task properties.",
+  "groups": {
+    "dimensions": "dimensions.*",
+    "position": "position.*",
+    "player": "player.*",
+    "variableLayoutOptions": "variableLayoutOptions.*",
+    "startImage": "player.imgSrc and player.imgFileName",
+    "controlBar": "player.startControl through player.interactiveMuteControl",
+    "behaviour": "player.loop, minRuns, maxRuns, activeAfterID",
+    "displayHint": "player.showHint, hintLabel, hintDelay",
+    "runs": "player.minRuns, maxRuns, showRestRuns",
+    "minRunsHint": "player.minRuns",
+    "maxRunsHint": "player.maxRuns",
+    "document": "cloze.value; compound content is in content-presets.json",
+    "idList": "connected drop lists; UI-generated drag tasks contain real linked identifiers",
+    "top": "hotspot-image.value[].top; connected hotspot scenarios",
+    "alias": "Unique variable alias; edited through the real UI in the round-trip tests",
+    "type": "Input-assistance control type; stored as inputAssistancePreset"
+  },
+  "editorOnly": {
+    "css": "Editor stylesheet loading and rich-text editor CSS configuration",
+    "indexOf": "Rich-text list implementation method",
+    "length": "Rich-text list implementation array length",
+    "previousValue": "UI change-event bookkeeping",
+    "currentValue": "UI change-event bookkeeping"
+  }
+}

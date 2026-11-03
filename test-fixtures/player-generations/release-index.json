@@ -1,0 +1,2103 @@
+{
+  "speed-multi": [
+    {
+      "tag": "3.5.0-beta2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.5.0-beta2",
+      "assets": [
+        "iqb-editor-speedtest-3.5.0-beta2.html",
+        "iqb-player-speedtest-3.5.0-beta2.html"
+      ]
+    },
+    {
+      "tag": "3.5.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.5.0-beta",
+      "assets": [
+        "iqb-editor-speedtest-3.5.0-beta.html",
+        "iqb-player-speedtest-3.5.0-beta.html"
+      ]
+    },
+    {
+      "tag": "3.4.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.4.0-beta",
+      "assets": [
+        "iqb-player-speedtest-3.4.0-beta.html"
+      ]
+    },
+    {
+      "tag": "3.3.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.3.0",
+      "assets": [
+        "iqb-player-speedtest-3.3.0.html"
+      ]
+    },
+    {
+      "tag": "3.2.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.2.0",
+      "assets": [
+        "iqb-editor-speedtest-3.2.0.html",
+        "iqb-player-speedtest-3.2.0.html"
+      ]
+    },
+    {
+      "tag": "3.2.0-beta3",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.2.0-beta3",
+      "assets": []
+    },
+    {
+      "tag": "3.2.0-beta2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.2.0-beta2",
+      "assets": [
+        "iqb-player-speedtest-3.2.0-beta2.html"
+      ]
+    },
+    {
+      "tag": "3.2.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.2.0-beta",
+      "assets": [
+        "iqb-editor-speedtest-3.2.0-beta.html",
+        "iqb-player-speedtest-3.2.0-beta.html"
+      ]
+    },
+    {
+      "tag": "3.1.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.1.1",
+      "assets": [
+        "iqb-editor-speedtest-3.1.1.html",
+        "iqb-player-speedtest-3.1.1.html"
+      ]
+    },
+    {
+      "tag": "3.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.1.0",
+      "assets": [
+        "iqb-editor-speedtest-3.1.0.html",
+        "iqb-player-speedtest-3.1.0.html"
+      ]
+    },
+    {
+      "tag": "2.1.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/2.1.2",
+      "assets": [
+        "iqb-player-speedtest-2.1.2.html"
+      ]
+    },
+    {
+      "tag": "3.0.6",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/3.0.6",
+      "assets": [
+        "iqb-editor-speedtest-3.0.5.html",
+        "iqb-player-speedtest-3.0.6.html"
+      ]
+    },
+    {
+      "tag": "2.1.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/2.1.1",
+      "assets": [
+        "iqb-editor-speedtest-2.1.1.html",
+        "iqb-player-speedtest-2.1.1.html"
+      ]
+    },
+    {
+      "tag": "2.0.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/2.0.2",
+      "assets": [
+        "iqb-editor-speedtest-2.0.2.html",
+        "iqb-player-speedtest-2.0.2.html"
+      ]
+    },
+    {
+      "tag": "2.0.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/2.0.1",
+      "assets": [
+        "iqb-editor-speedtest-2.0.1.html",
+        "iqb-player-speedtest-2.0.1.html"
+      ]
+    },
+    {
+      "tag": "2.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/2.0.0",
+      "assets": [
+        "iqb-editor-speedtest-2.0.0.html",
+        "iqb-player-speedtest-2.0.0.html"
+      ]
+    },
+    {
+      "tag": "1.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/1.0.0",
+      "assets": [
+        "iqb-editor-speedtest-1.0.0.html",
+        "iqb-player-speedtest-1.0.0.html"
+      ]
+    },
+    {
+      "tag": "1.0.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/1.0.0-beta",
+      "assets": [
+        "iqb-editor-speedtest-1.0.0-beta.html",
+        "iqb-player-speedtest-1.0.0-beta.html"
+      ]
+    },
+    {
+      "tag": "0.6.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/0.6.0-beta",
+      "assets": [
+        "iqb-editor-speedtest-0.6.0-beta.html",
+        "iqb-player-speedtest-0.6.0-beta.html"
+      ]
+    },
+    {
+      "tag": "0.5.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/0.5.0-beta",
+      "assets": [
+        "iqb-editor-speedtest-0.5.0-beta.html",
+        "iqb-player-speedtest-0.5.0-beta.html"
+      ]
+    },
+    {
+      "tag": "0.4.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/0.4.0-beta",
+      "assets": [
+        "iqb-editor-speedtest-0.4.0-beta.html",
+        "iqb-player-speedtest-0.4.0-beta.html"
+      ]
+    },
+    {
+      "tag": "0.3.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/0.3.0-beta",
+      "assets": [
+        "iqb-editor-speedtest-0.3.0-beta.html",
+        "iqb-player-speedtest-0.3.0-beta.html"
+      ]
+    },
+    {
+      "tag": "0.1.0-alpha",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-speedtest/releases/tag/0.1.0-alpha",
+      "assets": [
+        "iqb-editor-speedtest-0.1.0-alpha.html",
+        "iqb-player-speedtest-0.1.0-alpha.html"
+      ]
+    }
+  ],
+  "speed-mono": [
+    {
+      "tag": "1.2.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-speedtest/releases/tag/1.2.0",
+      "assets": [
+        "verona-player-speedtest-1.2.0.html"
+      ]
+    },
+    {
+      "tag": "1.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-speedtest/releases/tag/1.1.0",
+      "assets": [
+        "verona-player-speedtest-1.1.0.html"
+      ]
+    },
+    {
+      "tag": "1.0.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-speedtest/releases/tag/1.0.3",
+      "assets": [
+        "verona-player-speedtest-1.0.3.html"
+      ]
+    },
+    {
+      "tag": "1.0.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-speedtest/releases/tag/1.0.2",
+      "assets": [
+        "verona-player-speedtest-1.0.2.html"
+      ]
+    }
+  ],
+  "simple": [
+    {
+      "tag": "6.0.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/6.0.4",
+      "assets": [
+        "verona-player-simple-6.0.html"
+      ]
+    },
+    {
+      "tag": "6.0.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/6.0.2",
+      "assets": [
+        "verona-player-simple-6.0.html"
+      ]
+    },
+    {
+      "tag": "6.0.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/6.0.1",
+      "assets": [
+        "verona-player-simple-6.0.html"
+      ]
+    },
+    {
+      "tag": "6.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/6.0",
+      "assets": [
+        "verona-player-simple-6.0.html"
+      ]
+    },
+    {
+      "tag": "5.2.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/5.2.0",
+      "assets": [
+        "verona-player-simple-5.2.html"
+      ]
+    },
+    {
+      "tag": "5.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/5.1.0",
+      "assets": [
+        "verona-player-simple-5.1.html"
+      ]
+    },
+    {
+      "tag": "4.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/4.0.0",
+      "assets": [
+        "verona-player-simple-4.0.0.html"
+      ]
+    },
+    {
+      "tag": "2.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/2.0.0",
+      "assets": []
+    },
+    {
+      "tag": "1.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/1.1.0",
+      "assets": []
+    },
+    {
+      "tag": "1.0.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/1.0.1",
+      "assets": []
+    },
+    {
+      "tag": "1.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-simple/releases/tag/1.0.0",
+      "assets": []
+    }
+  ],
+  "aspect": [
+    {
+      "tag": "editor/3.1.0+player/3.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/3.1.0%2Bplayer/3.1.0",
+      "assets": [
+        "iqb-editor-aspect-3.1.0.html",
+        "iqb-player-aspect-3.1.0.html"
+      ]
+    },
+    {
+      "tag": "editor/3.1.0-beta.3+player/3.1.0-beta.3",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/3.1.0-beta.3%2Bplayer/3.1.0-beta.3",
+      "assets": [
+        "iqb-editor-aspect-3.1.0-beta.3.html",
+        "iqb-player-aspect-3.1.0-beta.3.html"
+      ]
+    },
+    {
+      "tag": "editor/3.1.0-beta.2+player/3.1.0-beta.2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/3.1.0-beta.2%2Bplayer/3.1.0-beta.2",
+      "assets": [
+        "iqb-editor-aspect-3.1.0-beta.2.html",
+        "iqb-player-aspect-3.1.0-beta.2.html"
+      ]
+    },
+    {
+      "tag": "editor/3.1.0-beta+player/3.1.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/3.1.0-beta%2Bplayer/3.1.0-beta",
+      "assets": [
+        "iqb-editor-aspect-3.1.0-beta.html",
+        "iqb-player-aspect-3.1.0-beta.html"
+      ]
+    },
+    {
+      "tag": "editor/3.0.1+player/3.0.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/3.0.1%2Bplayer/3.0.1",
+      "assets": [
+        "iqb-editor-aspect-3.0.1.html",
+        "iqb-player-aspect-3.0.1.html"
+      ]
+    },
+    {
+      "tag": "editor/3.0.0+player/3.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/3.0.0%2Bplayer/3.0.0",
+      "assets": [
+        "iqb-editor-aspect-3.0.0.html",
+        "iqb-player-aspect-3.0.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.12.6+player/2.12.6",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.12.6%2Bplayer/2.12.6",
+      "assets": [
+        "iqb-editor-aspect-2.12.6.html",
+        "iqb-player-aspect-2.12.6.html"
+      ]
+    },
+    {
+      "tag": "editor/3.0.0-beta.2+player/3.0.0-beta.2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/3.0.0-beta.2%2Bplayer/3.0.0-beta.2",
+      "assets": [
+        "iqb-editor-aspect-3.0.0-beta.2.html",
+        "iqb-player-aspect-3.0.0-beta.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.12.5+player/2.12.5",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.12.5%2Bplayer/2.12.5",
+      "assets": [
+        "iqb-editor-aspect-2.12.5.html",
+        "iqb-player-aspect-2.12.5.html"
+      ]
+    },
+    {
+      "tag": "editor/3.0.0-beta+player/3.0.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/3.0.0-beta%2Bplayer/3.0.0-beta",
+      "assets": [
+        "iqb-editor-aspect-2.12.4.html",
+        "iqb-player-aspect-2.12.4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.12.4+player/2.12.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.12.4%2Bplayer/2.12.4",
+      "assets": [
+        "iqb-editor-aspect-2.12.4.html",
+        "iqb-player-aspect-2.12.4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.12.3+player/2.12.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.12.3%2Bplayer/2.12.3",
+      "assets": [
+        "iqb-editor-aspect-2.12.3.html",
+        "iqb-player-aspect-2.12.3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.11.6+player/2.11.6",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.11.6%2Bplayer/2.11.6",
+      "assets": [
+        "iqb-editor-aspect-2.11.6.html",
+        "iqb-player-aspect-2.11.6.html"
+      ]
+    },
+    {
+      "tag": "editor/2.12.2+player/2.12.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.12.2%2Bplayer/2.12.2",
+      "assets": [
+        "iqb-editor-aspect-2.12.2.html",
+        "iqb-player-aspect-2.12.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.11.5+player/2.11.5",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.11.5%2Bplayer/2.11.5",
+      "assets": [
+        "iqb-editor-aspect-2.11.5.html",
+        "iqb-player-aspect-2.11.5.html"
+      ]
+    },
+    {
+      "tag": "player/2.11.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.11.4",
+      "assets": [
+        "iqb-player-aspect-2.11.4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.12.1+player/2.12.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.12.1%2Bplayer/2.12.1",
+      "assets": [
+        "iqb-editor-aspect-2.12.1.html",
+        "iqb-player-aspect-2.12.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.11.3+player/2.11.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.11.3%2Bplayer/2.11.3",
+      "assets": [
+        "iqb-editor-aspect-2.11.3.html",
+        "iqb-player-aspect-2.11.3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.12.0+player/2.12.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.12.0%2Bplayer/2.12.0",
+      "assets": [
+        "iqb-editor-aspect-2.12.0.html",
+        "iqb-player-aspect-2.12.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.12.0-beta.2+player/2.12.0-beta.2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.12.0-beta.2%2Bplayer/2.12.0-beta.2",
+      "assets": [
+        "iqb-editor-aspect-2.12.0-beta.2.html",
+        "iqb-player-aspect-2.12.0-beta.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.11.2+player/2.11.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.11.2%2Bplayer/2.11.2",
+      "assets": [
+        "iqb-editor-aspect-2.11.2.html",
+        "iqb-player-aspect-2.11.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.11.1+player/2.11.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.11.1%2Bplayer/2.11.1",
+      "assets": [
+        "iqb-editor-aspect-2.11.1.html",
+        "iqb-player-aspect-2.11.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.11.0+player/2.11.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.11.0%2Bplayer/2.11.0",
+      "assets": [
+        "iqb-editor-aspect-2.11.0.html",
+        "iqb-player-aspect-2.11.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.10.1+player/2.10.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.10.1%2Bplayer/2.10.1",
+      "assets": [
+        "iqb-editor-aspect-2.10.1.html",
+        "iqb-player-aspect-2.10.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.10.0+player/2.10.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.10.0%2Bplayer/2.10.0",
+      "assets": [
+        "iqb-editor-aspect-2.10.0.html",
+        "iqb-player-aspect-2.10.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.9.4+player/2.9.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.9.4%2Bplayer/2.9.4",
+      "assets": [
+        "iqb-editor-aspect-2.9.4.html",
+        "iqb-player-aspect-2.9.4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.9.3+player/2.9.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.9.3%2Bplayer/2.9.3",
+      "assets": [
+        "iqb-editor-aspect-2.9.3.html",
+        "iqb-player-aspect-2.9.3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.9.2+player/2.9.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.9.2%2Bplayer/2.9.2",
+      "assets": [
+        "iqb-editor-aspect-2.9.2.html",
+        "iqb-player-aspect-2.9.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.9.1+player/2.9.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.9.1%2Bplayer/2.9.1",
+      "assets": [
+        "iqb-editor-aspect-2.9.1.html",
+        "iqb-player-aspect-2.9.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.9.0+player/2.9.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.9.0%2Bplayer/2.9.0",
+      "assets": [
+        "iqb-editor-aspect-2.9.0.html",
+        "iqb-player-aspect-2.9.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.9.0-beta2+player/2.9.0-beta2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.9.0-beta2%2Bplayer/2.9.0-beta2",
+      "assets": [
+        "iqb-editor-aspect-2.9.0-beta2.html",
+        "iqb-player-aspect-2.9.0-beta2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.9.0-beta+player/2.9.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.9.0-beta%2Bplayer/2.9.0-beta",
+      "assets": [
+        "iqb-editor-aspect-2.9.0-beta.html",
+        "iqb-player-aspect-2.9.0-beta.html"
+      ]
+    },
+    {
+      "tag": "editor/2.8.0+player/2.8.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.8.0%2Bplayer/2.8.0",
+      "assets": [
+        "iqb-editor-aspect-2.8.0.html",
+        "iqb-player-aspect-2.8.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.8.0-beta2+player/2.8.0-beta2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.8.0-beta2%2Bplayer/2.8.0-beta2",
+      "assets": [
+        "iqb-player-aspect-2.8.0-beta.html",
+        "iqb-player-aspect-2.8.0-beta2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.7.4+player/2.7.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.7.4%2Bplayer/2.7.4",
+      "assets": [
+        "iqb-editor-aspect-2.7.4.html",
+        "iqb-player-aspect-2.7.4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.8.0-beta+player/2.8.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.8.0-beta%2Bplayer/2.8.0-beta",
+      "assets": [
+        "iqb-editor-aspect-2.8.0-beta.html",
+        "iqb-player-aspect-2.8.0-beta.html"
+      ]
+    },
+    {
+      "tag": "editor/2.7.3+player/2.7.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.7.3%2Bplayer/2.7.3",
+      "assets": [
+        "iqb-editor-aspect-2.7.3.html",
+        "iqb-player-aspect-2.7.3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.7.2+player/2.7.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.7.2%2Bplayer/2.7.2",
+      "assets": [
+        "iqb-editor-aspect-2.7.2.html",
+        "iqb-player-aspect-2.7.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.7.1+player/2.7.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.7.1%2Bplayer/2.7.1",
+      "assets": [
+        "iqb-editor-aspect-2.7.1.html",
+        "iqb-player-aspect-2.7.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.7.0+player/2.7.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.7.0%2Bplayer/2.7.0",
+      "assets": [
+        "iqb-editor-aspect-2.7.0.html",
+        "iqb-player-aspect-2.7.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.4+player/2.6.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.4%2Bplayer/2.6.4",
+      "assets": [
+        "iqb-editor-aspect-2.6.4.html",
+        "iqb-player-aspect-2.6.4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.3+player/2.6.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.3%2Bplayer/2.6.3",
+      "assets": [
+        "iqb-editor-aspect-2.6.3.html",
+        "iqb-player-aspect-2.6.3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.2+player/2.6.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.2%2Bplayer/2.6.2",
+      "assets": [
+        "iqb-editor-aspect-2.6.2.html",
+        "iqb-player-aspect-2.6.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.1+player/2.6.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.1%2Bplayer/2.6.1",
+      "assets": [
+        "iqb-editor-aspect-2.6.1.html",
+        "iqb-player-aspect-2.6.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0+player/2.6.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0%2Bplayer/2.6.0",
+      "assets": [
+        "iqb-editor-aspect-2.6.0.html",
+        "iqb-player-aspect-2.6.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta11+player/2.6.0-beta11",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta11%2Bplayer/2.6.0-beta11",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta11.html",
+        "iqb-player-aspect-2.6.0-beta11.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta10+player/2.6.0-beta10",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta10%2Bplayer/2.6.0-beta10",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta10.html",
+        "iqb-player-aspect-2.6.0-beta10.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta9+player/2.6.0-beta9",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta9%2Bplayer/2.6.0-beta9",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta9.html",
+        "iqb-player-aspect-2.6.0-beta9.html"
+      ]
+    },
+    {
+      "tag": "editor/2.7.0-beta+player/2.7.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.7.0-beta%2Bplayer/2.7.0-beta",
+      "assets": [
+        "iqb-editor-aspect-2.7.0-beta.html",
+        "iqb-player-aspect-2.7.0-beta.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta8+player/2.6.0-beta8",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta8%2Bplayer/2.6.0-beta8",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta8.html",
+        "iqb-player-aspect-2.6.0-beta8.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta7+player/2.6.0-beta7",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta7%2Bplayer/2.6.0-beta7",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta7.html",
+        "iqb-player-aspect-2.6.0-beta7.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta6+player/2.6.0-beta6",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta6%2Bplayer/2.6.0-beta6",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta6.html",
+        "iqb-player-aspect-2.6.0-beta6.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta5+player/2.6.0-beta5",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta5%2Bplayer/2.6.0-beta5",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta5.html",
+        "iqb-player-aspect-2.6.0-beta5.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta4+player/2.6.0-beta4",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta4%2Bplayer/2.6.0-beta4",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta4.html",
+        "iqb-player-aspect-2.6.0-beta4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta3+player/2.6.0-beta3",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta3%2Bplayer/2.6.0-beta3",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta3.html",
+        "iqb-player-aspect-2.6.0-beta3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta2+player/2.6.0-beta2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta2%2Bplayer/2.6.0-beta2",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta2.html",
+        "iqb-player-aspect-2.6.0-beta2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta.1+player/2.6.0-beta.1",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta.1%2Bplayer/2.6.0-beta.1",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta.1.html",
+        "iqb-player-aspect-2.6.0-beta.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.6.0-beta+player/2.6.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.6.0-beta%2Bplayer/2.6.0-beta",
+      "assets": [
+        "iqb-editor-aspect-2.6.0-beta.html",
+        "iqb-player-aspect-2.6.0-beta.html"
+      ]
+    },
+    {
+      "tag": "player/2.4.12",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.4.12",
+      "assets": [
+        "iqb-player-aspect-2.4.12.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0+player/2.5.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0%2Bplayer/2.5.0",
+      "assets": [
+        "iqb-editor-aspect-2.5.0.html",
+        "iqb-player-aspect-2.5.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.10+player/2.4.13",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.10%2Bplayer/2.4.13",
+      "assets": [
+        "iqb-editor-aspect-2.4.10.html",
+        "iqb-player-aspect-2.4.13.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-rc3+player/2.5.0-rc3",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-rc3%2Bplayer/2.5.0-rc3",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-rc3.html",
+        "iqb-player-aspect-2.5.0-rc3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-rc2+player/2.5.0-rc2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-rc2%2Bplayer/2.5.0-rc2",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-rc2.html",
+        "iqb-player-aspect-2.5.0-rc2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-rc+player/2.5.0-rc",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-rc%2Bplayer/2.5.0-rc",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-rc.html",
+        "iqb-player-aspect-2.5.0-rc.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-beta7+player/2.5.0-beta7",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-beta7%2Bplayer/2.5.0-beta7",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-beta7.html",
+        "iqb-player-aspect-2.5.0-beta7.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-beta6+player/2.5.0-beta6",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-beta6%2Bplayer/2.5.0-beta6",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-beta6.html",
+        "iqb-player-aspect-2.5.0-beta6.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-beta5+player/2.5.0-beta5",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-beta5%2Bplayer/2.5.0-beta5",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-beta5.html",
+        "iqb-player-aspect-2.5.0-beta5.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-beta4+player/2.5.0-beta4",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-beta4%2Bplayer/2.5.0-beta4",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-beta4.html",
+        "iqb-player-aspect-2.5.0-beta4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-beta3+player/2.5.0-beta3",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-beta3%2Bplayer/2.5.0-beta3",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-beta3.html",
+        "iqb-player-aspect-2.5.0-beta3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-beta2+player/2.5.0-beta2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-beta2%2Bplayer/2.5.0-beta2",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-beta2.html",
+        "iqb-player-aspect-2.5.0-beta2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.5.0-beta+player/2.5.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.5.0-beta%2Bplayer/2.5.0-beta",
+      "assets": [
+        "iqb-editor-aspect-2.5.0-beta.html",
+        "iqb-player-aspect-2.5.0-beta.html"
+      ]
+    },
+    {
+      "tag": "player/2.4.11",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.4.11",
+      "assets": [
+        "iqb-editor-aspect-2.4.9.html",
+        "iqb-player-aspect-2.4.11.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.9+player/2.4.10",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.9%2Bplayer/2.4.10",
+      "assets": [
+        "iqb-editor-aspect-2.4.9.html",
+        "iqb-player-aspect-2.4.10.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.8+player/2.4.9",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.8%2Bplayer/2.4.9",
+      "assets": [
+        "iqb-editor-aspect-2.4.8.html",
+        "iqb-player-aspect-2.4.9.html"
+      ]
+    },
+    {
+      "tag": "player/2.4.7",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.4.7",
+      "assets": [
+        "iqb-editor-aspect-2.4.6.html",
+        "iqb-player-aspect-2.4.7.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.7+player/2.4.8",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.7%2Bplayer/2.4.8",
+      "assets": [
+        "iqb-editor-aspect-2.4.7.html",
+        "iqb-player-aspect-2.4.8.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.6+player/2.4.6",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.6%2Bplayer/2.4.6",
+      "assets": [
+        "iqb-editor-aspect-2.4.6.html",
+        "iqb-player-aspect-2.4.6.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.5+player/2.4.5",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.5%2Bplayer/2.4.5",
+      "assets": [
+        "iqb-editor-aspect-2.4.5.html",
+        "iqb-player-aspect-2.4.5.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.4+player/2.4.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.4%2Bplayer/2.4.4",
+      "assets": [
+        "iqb-editor-aspect-2.4.4.html",
+        "iqb-player-aspect-2.4.4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.3+player/2.4.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.3%2Bplayer/2.4.3",
+      "assets": [
+        "iqb-editor-aspect-2.4.3.html",
+        "iqb-player-aspect-2.4.3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.2+player/2.4.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.2%2Bplayer/2.4.2",
+      "assets": [
+        "iqb-editor-aspect-2.4.2.html",
+        "iqb-player-aspect-2.4.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.1+player/2.4.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.1%2Bplayer/2.4.1",
+      "assets": [
+        "iqb-editor-aspect-2.4.1.html",
+        "iqb-player-aspect-2.4.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.0+player/2.4.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.0%2Bplayer/2.4.0",
+      "assets": [
+        "iqb-editor-aspect-2.4.0.html",
+        "iqb-player-aspect-2.4.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.4.0-beta.1+player/2.4.0-beta.1",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.4.0-beta.1%2Bplayer/2.4.0-beta.1",
+      "assets": [
+        "iqb-editor-aspect-2.4.0-beta.1.html",
+        "iqb-player-aspect-2.4.0-beta.1.html"
+      ]
+    },
+    {
+      "tag": "player/2.2.5",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.2.5",
+      "assets": [
+        "iqb-editor-aspect-2.2.1.html",
+        "iqb-player-aspect-2.2.5.html"
+      ]
+    },
+    {
+      "tag": "player/2.2.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.2.4",
+      "assets": [
+        "iqb-editor-aspect-2.2.1.html",
+        "iqb-player-aspect-2.2.4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.3.0+player/2.3.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.3.0%2Bplayer/2.3.0",
+      "assets": [
+        "iqb-editor-aspect-2.3.0.html",
+        "iqb-player-aspect-2.3.0.html"
+      ]
+    },
+    {
+      "tag": "player/2.2.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.2.3",
+      "assets": [
+        "iqb-editor-aspect-2.2.1.html",
+        "iqb-player-aspect-2.2.3.html"
+      ]
+    },
+    {
+      "tag": "player/2.2.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.2.2",
+      "assets": [
+        "iqb-editor-aspect-2.2.1.html",
+        "iqb-player-aspect-2.2.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.2.1+player/2.2.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.2.1%2Bplayer/2.2.1",
+      "assets": [
+        "iqb-editor-aspect-2.2.1.html",
+        "iqb-player-aspect-2.2.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.2.0+player/2.2.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.2.0%2Bplayer/2.2.0",
+      "assets": [
+        "iqb-editor-aspect-2.2.0.html",
+        "iqb-player-aspect-2.2.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.1.2+player/2.1.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.1.2%2Bplayer/2.1.2",
+      "assets": [
+        "iqb-editor-aspect-2.1.2.html",
+        "iqb-player-aspect-2.1.2.html"
+      ]
+    },
+    {
+      "tag": "2.2.0-beta2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/2.2.0-beta2",
+      "assets": [
+        "iqb-editor-aspect-2.2.0-beta2.html",
+        "iqb-player-aspect-2.2.0-beta2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.1.0+player/2.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.1.0%2Bplayer/2.1.0",
+      "assets": [
+        "iqb-editor-aspect-2.1.0.html",
+        "iqb-player-aspect-2.1.0.html"
+      ]
+    },
+    {
+      "tag": "2.1.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/2.1.0-beta",
+      "assets": [
+        "iqb-editor-aspect-2.1.0-beta.html",
+        "iqb-player-aspect-2.1.0-beta.html"
+      ]
+    },
+    {
+      "tag": "player/2.0.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.0.3",
+      "assets": [
+        "iqb-editor-aspect-2.0.2.html",
+        "iqb-player-aspect-2.0.3.html"
+      ]
+    },
+    {
+      "tag": "player/2.0.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/2.0.2",
+      "assets": [
+        "iqb-editor-aspect-2.0.2.html",
+        "iqb-player-aspect-2.0.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.2+player/2.0.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.2%2Bplayer/2.0.1",
+      "assets": [
+        "iqb-editor-aspect-2.0.2.html",
+        "iqb-player-aspect-2.0.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.1",
+      "assets": [
+        "iqb-editor-aspect-2.0.1.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.1-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.1-beta",
+      "assets": [
+        "iqb-editor-aspect-2.0.1-beta.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.0+player/2.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.0%2Bplayer/2.0.0",
+      "assets": [
+        "iqb-editor-aspect-2.0.0.html",
+        "iqb-player-aspect-2.0.0.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.0-beta6+player/2.0.0-beta6",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.0-beta6%2Bplayer/2.0.0-beta6",
+      "assets": [
+        "iqb-editor-aspect-2.0.0-beta6.html",
+        "iqb-player-aspect-2.0.0-beta6.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.0-beta5+player/2.0.0-beta5",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.0-beta5%2Bplayer/2.0.0-beta5",
+      "assets": [
+        "iqb-editor-aspect-2.0.0-beta5.html",
+        "iqb-player-aspect-2.0.0-beta5.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.0-beta4+player/2.0.0-beta4",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.0-beta4%2Bplayer/2.0.0-beta4",
+      "assets": [
+        "iqb-editor-aspect-2.0.0-beta.4.html",
+        "iqb-player-aspect-2.0.0-beta.4.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.0-beta.3+player/2.0.0-beta.3",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.0-beta.3%2Bplayer/2.0.0-beta.3",
+      "assets": [
+        "iqb-editor-aspect-2.0.0-beta.3.html",
+        "iqb-player-aspect-2.0.0-beta.3.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.0-beta.2+player/2.0.0-beta.2",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.0-beta.2%2Bplayer/2.0.0-beta.2",
+      "assets": [
+        "iqb-editor-aspect-2.0.0-beta.2.html",
+        "iqb-player-aspect-2.0.0-beta.2.html"
+      ]
+    },
+    {
+      "tag": "editor/2.0.0-beta+player/2.0.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/2.0.0-beta%2Bplayer/2.0.0-beta",
+      "assets": [
+        "iqb-editor-aspect-2.0.0-beta.html",
+        "iqb-player-aspect-2.0.0-beta.html"
+      ]
+    },
+    {
+      "tag": "editor/1.39.0+player/1.32.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.39.0%2Bplayer/1.32.0",
+      "assets": [
+        "iqb-editor-aspect-1.39.0.html",
+        "iqb-player-aspect-1.32.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.39.0-beta+player/1.32.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.39.0-beta%2Bplayer/1.32.0-beta",
+      "assets": [
+        "iqb-editor-aspect-1.39.0-beta.html",
+        "iqb-player-aspect-1.32.0-beta.html"
+      ]
+    },
+    {
+      "tag": "editor/1.38.0+player/1.31.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.38.0%2Bplayer/1.31.0",
+      "assets": [
+        "verona-editor-aspect-1.38.html",
+        "verona-player-aspect-1.31.html"
+      ]
+    },
+    {
+      "tag": "editor/1.37.5+player/1.30.5",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.37.5%2Bplayer/1.30.5",
+      "assets": [
+        "verona-editor-aspect-1.37.5.html",
+        "verona-player-aspect-1.30.5.html"
+      ]
+    },
+    {
+      "tag": "editor/1.37.4+player/1.30.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.37.4%2Bplayer/1.30.4",
+      "assets": [
+        "verona-editor-aspect-1.37.4.html",
+        "verona-player-aspect-1.30.4.html"
+      ]
+    },
+    {
+      "tag": "editor/1.37.3+player/1.30.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.37.3%2Bplayer/1.30.3",
+      "assets": [
+        "verona-editor-aspect-1.37.3.html",
+        "verona-player-aspect-1.30.3.html"
+      ]
+    },
+    {
+      "tag": "editor/1.37.2+player/1.30.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.37.2%2Bplayer/1.30.2",
+      "assets": [
+        "verona-editor-aspect-1.37.2.html",
+        "verona-player-aspect-1.30.2.html"
+      ]
+    },
+    {
+      "tag": "editor/1.37.1+player/1.30.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.37.1%2Bplayer/1.30.1",
+      "assets": [
+        "verona-editor-aspect-1.37.1.html",
+        "verona-player-aspect-1.30.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.37.0-beta+player/1.30.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.37.0-beta%2Bplayer/1.30.0-beta",
+      "assets": [
+        "verona-editor-aspect-1.37.0-beta.html",
+        "verona-player-aspect-1.30.0-beta.html"
+      ]
+    },
+    {
+      "tag": "player/1.29.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/1.29.3",
+      "assets": [
+        "verona-player-aspect-1.29.2.html",
+        "verona-player-aspect-1.29.3.html"
+      ]
+    },
+    {
+      "tag": "editor/1.37.0+player/1.30.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.37.0%2Bplayer/1.30.0",
+      "assets": [
+        "verona-editor-aspect-1.37.0.html",
+        "verona-player-aspect-1.30.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.36.2+player/1.29.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.36.2%2Bplayer/1.29.2",
+      "assets": [
+        "verona-editor-aspect-1.36.2.html",
+        "verona-player-aspect-1.29.2.html"
+      ]
+    },
+    {
+      "tag": "editor/1.36.1+player/1.29.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.36.1%2Bplayer/1.29.1",
+      "assets": [
+        "verona-editor-aspect-1.36.1.html",
+        "verona-player-aspect-1.29.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.36.0+player/1.29.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.36.0%2Bplayer/1.29.0",
+      "assets": [
+        "verona-editor-aspect-1.36.0.html",
+        "verona-player-aspect-1.29.0.html"
+      ]
+    },
+    {
+      "tag": "player/1.28.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/1.28.4",
+      "assets": [
+        "verona-editor-aspect-1.35.3.html",
+        "verona-player-aspect-1.28.4.html"
+      ]
+    },
+    {
+      "tag": "editor/1.35.3+player/1.28.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.35.3%2Bplayer/1.28.3",
+      "assets": [
+        "verona-editor-aspect-1.35.3.html",
+        "verona-player-aspect-1.28.3.html"
+      ]
+    },
+    {
+      "tag": "editor/1.35.2+player/1.28.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.35.2%2Bplayer/1.28.2",
+      "assets": [
+        "verona-editor-aspect-1.35.2.html",
+        "verona-player-aspect-1.28.2.html"
+      ]
+    },
+    {
+      "tag": "editor/1.35.1+player/1.28.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.35.1%2Bplayer/1.28.1",
+      "assets": [
+        "verona-editor-aspect-1.35.1.html",
+        "verona-player-aspect-1.28.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.35.0+player/1.28.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.35.0%2Bplayer/1.28.0",
+      "assets": [
+        "verona-editor-aspect-1.35.0.html",
+        "verona-player-aspect-1.28.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.34.0+player/1.27.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.34.0%2Bplayer/1.27.0",
+      "assets": [
+        "verona-editor-aspect-1.34.0.html",
+        "verona-player-aspect-1.27.0.html"
+      ]
+    },
+    {
+      "tag": "player/1.26.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/1.26.3",
+      "assets": [
+        "verona-player-aspect-1.26.3.html"
+      ]
+    },
+    {
+      "tag": "editor/1.33.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.33.3",
+      "assets": []
+    },
+    {
+      "tag": "editor/1.33.2+player/1.26.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.33.2%2Bplayer/1.26.2",
+      "assets": [
+        "verona-editor-aspect-1.33.2.html",
+        "verona-player-aspect-1.26.2.html"
+      ]
+    },
+    {
+      "tag": "editor/1.33.1+player/1.26.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.33.1%2Bplayer/1.26.1",
+      "assets": [
+        "verona-editor-aspect-1.33.1.html",
+        "verona-player-aspect-1.26.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.33.0+player/1.26.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.33.0%2Bplayer/1.26.0",
+      "assets": [
+        "verona-editor-aspect-1.33.0.html",
+        "verona-player-aspect-1.26.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.32.0+player/1.25.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.32.0%2Bplayer/1.25.2",
+      "assets": [
+        "verona-editor-aspect-1.32.0.html",
+        "verona-player-aspect-1.25.2.html"
+      ]
+    },
+    {
+      "tag": "editor/1.31.1+player/1.25.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.31.1%2Bplayer/1.25.1",
+      "assets": [
+        "verona-editor-aspect-1.31.1.html",
+        "verona-player-aspect-1.25.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.31.0+player/1.24.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.31.0%2Bplayer/1.24.0",
+      "assets": [
+        "verona-editor-aspect-1.31.0.html",
+        "verona-player-aspect-1.25.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.30.1+player/1.24.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.30.1%2Bplayer/1.24.1",
+      "assets": [
+        "verona-editor-aspect-1.30.1.html",
+        "verona-player-aspect-1.24.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.30.0+player/1.24.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.30.0%2Bplayer/1.24.0",
+      "assets": [
+        "verona-editor-aspect-1.30.0.html",
+        "verona-player-aspect-1.24.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.28.0+player/1.22.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.28.0%2Bplayer/1.22.0",
+      "assets": [
+        "verona-editor-aspect-1.28.1.html",
+        "verona-player-aspect-1.22.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.29.0+player/1.23.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.29.0%2Bplayer/1.23.0",
+      "assets": [
+        "verona-editor-aspect-1.29.0.html",
+        "verona-player-aspect-1.23.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.27.0+player/1.21.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.27.0%2Bplayer/1.21.0",
+      "assets": [
+        "verona-editor-aspect-1.27.0.html",
+        "verona-player-aspect-1.21.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.26.1+player/1.20.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.26.1%2Bplayer/1.20.1",
+      "assets": [
+        "verona-editor-aspect-1.26.1.html",
+        "verona-player-aspect-1.20.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.26.0+player/1.20.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.26.0%2Bplayer/1.20.0",
+      "assets": [
+        "verona-editor-aspect-1.26.0.html",
+        "verona-player-aspect-1.20.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.25.0+player/1.19.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.25.0%2Bplayer/1.19.0",
+      "assets": [
+        "verona-editor-aspect-1.25.0.html",
+        "verona-player-aspect-1.19.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.24.0+player/1.18.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.24.0%2Bplayer/1.18.0",
+      "assets": [
+        "verona-editor-aspect-1.24.0.html",
+        "verona-player-aspect-1.18.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.23.0+player/1.16.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.23.0%2Bplayer/1.16.0",
+      "assets": [
+        "verona-editor-aspect-1.23.0.html",
+        "verona-player-aspect-1.17.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.22.0+player/1.16.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.22.0%2Bplayer/1.16.0",
+      "assets": [
+        "verona-editor-aspect-1.22.0.html",
+        "verona-player-aspect-1.16.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.21.0+player/1.15.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.21.0%2Bplayer/1.15.0",
+      "assets": [
+        "verona-editor-aspect-1.21.0.html",
+        "verona-player-aspect-1.15.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.20.0+player/1.14.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.20.0%2Bplayer/1.14.0",
+      "assets": [
+        "verona-editor-aspect-1.20.0.html",
+        "verona-player-aspect-1.14.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.19.0+player/1.13.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.19.0%2Bplayer/1.13.0",
+      "assets": [
+        "verona-editor-aspect-1.19.0.html",
+        "verona-player-aspect-1.13.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.18.0+player/1.12.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.18.0%2Bplayer/1.12.0",
+      "assets": [
+        "verona-editor-aspect-1.18.0.html",
+        "verona-player-aspect-1.12.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.17.0+player/1.11.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.17.0%2Bplayer/1.11.0",
+      "assets": [
+        "verona-editor-aspect-1.17.0.html",
+        "verona-player-aspect-1.11.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.16.0+player/1.10.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.16.0%2Bplayer/1.10.0",
+      "assets": [
+        "verona-editor-aspect-1.16.0.html",
+        "verona-player-aspect-1.10.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.15.0+player/1.9.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.15.0%2Bplayer/1.9.0",
+      "assets": [
+        "verona-editor-aspect-1.15.0.html",
+        "verona-player-aspect-1.9.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.14.0+player/1.8.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.14.0%2Bplayer/1.8.0",
+      "assets": [
+        "verona-editor-aspect-1.14.0.html",
+        "verona-player-aspect-1.8.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.13.0+player/1.7.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.13.0%2Bplayer/1.7.0",
+      "assets": [
+        "verona-editor-aspect-1.13.0.html",
+        "verona-player-aspect-1.7.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.12.0+player/1.6.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.12.0%2Bplayer/1.6.0",
+      "assets": [
+        "verona-editor-aspect-1.12.0.html",
+        "verona-player-aspect-1.6.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.11.0+player/1.5.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.11.0%2Bplayer/1.5.0",
+      "assets": [
+        "verona-editor-aspect-1.11.0.html",
+        "verona-player-aspect-1.5.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.9.1+player/1.4.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.9.1%2Bplayer/1.4.1",
+      "assets": [
+        "verona-editor-aspect-1.9.1.html",
+        "verona-player-aspect-1.4.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.10.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.10.0",
+      "assets": [
+        "verona-editor-aspect-1.10.0.html",
+        "verona-player-aspect-1.4.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.9.0+player/1.4.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.9.0%2Bplayer/1.4.0",
+      "assets": [
+        "verona-editor-aspect-1.9.0.html",
+        "verona-player-aspect-1.4.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.8.1+player/1.3.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.8.1%2Bplayer/1.3.0",
+      "assets": [
+        "verona-editor-aspect-1.8.1.html",
+        "verona-player-aspect-1.3.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.7.2+player/1.2.4",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.7.2%2Bplayer/1.2.4",
+      "assets": [
+        "verona-editor-aspect-1.7.2.html",
+        "verona-player-aspect-1.2.4.html"
+      ]
+    },
+    {
+      "tag": "editor/1.7.1+player/1.2.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.7.1%2Bplayer/1.2.3",
+      "assets": [
+        "verona-editor-aspect-1.7.1.html",
+        "verona-player-aspect-1.2.3.html"
+      ]
+    },
+    {
+      "tag": "editor/1.7.0+player/1.2.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.7.0%2Bplayer/1.2.2",
+      "assets": [
+        "verona-editor-aspect-1.7.0.html",
+        "verona-player-aspect-1.2.2.html"
+      ]
+    },
+    {
+      "tag": "editor/1.6.1+player/1.2.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.6.1%2Bplayer/1.2.1",
+      "assets": [
+        "verona-editor-aspect-1.6.1.html",
+        "verona-player-aspect-1.2.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.6.0+player/1.2.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.6.0%2Bplayer/1.2.0",
+      "assets": [
+        "verona-editor-aspect-1.6.0.html",
+        "verona-player-aspect-1.2.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.5.1+player/1.1.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.5.1%2Bplayer/1.1.1",
+      "assets": [
+        "verona-editor-aspect-1.5.1.html",
+        "verona-player-aspect-1.1.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.5.0+player/1.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.5.0%2Bplayer/1.1.0",
+      "assets": [
+        "verona-editor-aspect-1.5.0.html",
+        "verona-player-aspect-1.1.0.html"
+      ]
+    },
+    {
+      "tag": "editor/1.4.0+player/1.0.11",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.4.0%2Bplayer/1.0.11",
+      "assets": [
+        "verona-editor-aspect-1.4.0.html",
+        "verona-player-aspect-1.0.11.html"
+      ]
+    },
+    {
+      "tag": "editor/1.3.1+player/1.0.10",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.3.1%2Bplayer/1.0.10",
+      "assets": [
+        "verona-editor-aspect-1.3.1.html",
+        "verona-player-aspect-1.0.10.html"
+      ]
+    },
+    {
+      "tag": "player/1.0.9",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/1.0.9",
+      "assets": [
+        "verona-editor-aspect-1.3.0.html",
+        "verona-player-aspect-1.0.9.html"
+      ]
+    },
+    {
+      "tag": "editor/1.3.0+player/1.0.8",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.3.0%2Bplayer/1.0.8",
+      "assets": [
+        "verona-editor-aspect-1.3.0.html",
+        "verona-player-aspect-1.0.8.html"
+      ]
+    },
+    {
+      "tag": "editor/1.2.3+player/1.0.7",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.2.3%2Bplayer/1.0.7",
+      "assets": [
+        "verona-editor-aspect-1.2.3.html",
+        "verona-player-aspect-1.0.7.html"
+      ]
+    },
+    {
+      "tag": "editor/1.2.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.2.2",
+      "assets": [
+        "verona-editor-aspect-1.2.2.html",
+        "verona-player-aspect-1.0.6.html"
+      ]
+    },
+    {
+      "tag": "editor/1.2.1+player/1.0.6",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.2.1%2Bplayer/1.0.6",
+      "assets": [
+        "verona-editor-aspect-1.2.1.html",
+        "verona-player-aspect-1.0.6.html"
+      ]
+    },
+    {
+      "tag": "editor/1.2.0+player/1.0.5",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.2.0%2Bplayer/1.0.5",
+      "assets": [
+        "verona-editor-aspect-1.2.0.html",
+        "verona-player-aspect-1.0.5.html"
+      ]
+    },
+    {
+      "tag": "editor/1.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.1.0",
+      "assets": [
+        "verona-editor-aspect-1.1.0.html",
+        "verona-player-aspect-1.0.4.html"
+      ]
+    },
+    {
+      "tag": "player/1.0.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/player/1.0.3",
+      "assets": [
+        "verona-editor-aspect-1.0.3.html",
+        "verona-player-aspect-1.0.3.html"
+      ]
+    },
+    {
+      "tag": "1.0.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/1.0.2",
+      "assets": [
+        "verona-editor-aspect-1.0.3.html",
+        "verona-player-aspect-1.0.2.html"
+      ]
+    },
+    {
+      "tag": "editor/1.0.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.0.3",
+      "assets": [
+        "verona-editor-aspect-1.0.3.html",
+        "verona-player-aspect-1.0.1.html"
+      ]
+    },
+    {
+      "tag": "editor/1.0.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/editor/1.0.2",
+      "assets": [
+        "verona-editor-aspect-1.0.2.html",
+        "verona-player-aspect-1.0.1.html"
+      ]
+    },
+    {
+      "tag": "1.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/1.0.0",
+      "assets": [
+        "verona-editor-aspect-1.0.0.html",
+        "verona-player-aspect-1.0.0.html"
+      ]
+    },
+    {
+      "tag": "0.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/0.1.0",
+      "assets": [
+        "verona-editor-aspect-0.1.0.html",
+        "verona-player-aspect-0.1.0.html"
+      ]
+    },
+    {
+      "tag": "0.0.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/tag/0.0.1",
+      "assets": [
+        "verona-editor-aspect-0.0.1.html"
+      ]
+    }
+  ],
+  "abi": [
+    {
+      "tag": "5.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/5.0.0",
+      "assets": [
+        "verona-player-abi-5.0.0.html"
+      ]
+    },
+    {
+      "tag": "4.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/4.0.0",
+      "assets": [
+        "verona-player-abi-4.0.0.html"
+      ]
+    },
+    {
+      "tag": "4.0.0-beta",
+      "prerelease": true,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/4.0.0-beta",
+      "assets": [
+        "verona-player-abi-4.0.0-beta.html"
+      ]
+    },
+    {
+      "tag": "v3.3.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/v3.3.3",
+      "assets": [
+        "iqb-player-abi@3.3.3.html"
+      ]
+    },
+    {
+      "tag": "v3.3.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/v3.3.2",
+      "assets": [
+        "iqb-player-abi@3.3.2.html"
+      ]
+    },
+    {
+      "tag": "v3.3.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/v3.3.1",
+      "assets": [
+        "iqb-player-abi@3.3.1.html"
+      ]
+    },
+    {
+      "tag": "v3.3.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/v3.3.0",
+      "assets": [
+        "example-script.voud",
+        "iqb-player-abi@3.3.0.html"
+      ]
+    },
+    {
+      "tag": "3.2.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/3.2.1",
+      "assets": [
+        "abi_player_3.2.1.html"
+      ]
+    },
+    {
+      "tag": "3.2.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/3.2.0",
+      "assets": [
+        "abi_player_3.2.0.html"
+      ]
+    },
+    {
+      "tag": "3.1.3",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/3.1.3",
+      "assets": [
+        "abi_player_3.1.3.html"
+      ]
+    },
+    {
+      "tag": "3.1.2",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/3.1.2",
+      "assets": [
+        "abi_player_3.1.2.html"
+      ]
+    },
+    {
+      "tag": "3.1.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/3.1.0",
+      "assets": [
+        "example-script.voud",
+        "index_packed.html"
+      ]
+    },
+    {
+      "tag": "3.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/3.0.0",
+      "assets": [
+        "index_packed.html"
+      ]
+    },
+    {
+      "tag": "2.0.1",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/2.0.1",
+      "assets": [
+        "index_packed.html"
+      ]
+    },
+    {
+      "tag": "2.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/2.0.0",
+      "assets": [
+        "index_packed.html"
+      ]
+    },
+    {
+      "tag": "1.0.0",
+      "prerelease": false,
+      "source": "https://github.com/iqb-berlin/verona-player-abi/releases/tag/1.0.0",
+      "assets": [
+        "IQBSurveyPlayerV3.html",
+        "unitAuthoring.zip"
+      ]
+    }
+  ],
+  "ib": []
+}

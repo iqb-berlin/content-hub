@@ -5,7 +5,8 @@
     "types": ["node"],
     "lib": ["ES2022", "DOM"],
     "module": "CommonJS",
-    "moduleResolution": "Node"
+    "moduleResolution": "Node",
+    "allowJs": true
   },
   "files": [],
   "include": ["e2e/synthetic-*.ts"]

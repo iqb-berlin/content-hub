@@ -1,0 +1,19 @@
+{
+  "id": "speed-multi-m1-image-row",
+  "name": "Speedtest 1.0.0: image, row",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "1.0.0",
+    "layout": "row",
+    "questions": [
+      {
+        "imgSrc": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+        "answers": [
+          "Richtig",
+          "Falsch"
+        ]
+      }
+    ],
+    "buttonColor": "#166b8c"
+  }
+}

@@ -21,6 +21,7 @@ export async function seedSyntheticPool(
   await seedPool(dataSource, fixtureDirectory, managerId, "synthetic-aspect");
   await prepareSyntheticResources(fixtureDirectory);
   await seedPool(dataSource, fixtureDirectory, managerId, "synthetic-players");
+  await seedPool(dataSource, fixtureDirectory, managerId, "player-generations");
 }
 
 async function seedPool(

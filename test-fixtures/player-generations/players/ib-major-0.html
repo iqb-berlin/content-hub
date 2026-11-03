@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Verona Player for ItemBuilder</title>
+  <link rel="icon" href="data:,">
+  <script type="application/ld+json">
+    {
+      "$schema": "https://raw.githubusercontent.com/verona-interfaces/metadata/master/verona-module-metadata.json",
+      "type": "player",
+      "id": "verona-player-ib",
+      "name": [
+        {
+          "value": "Verona Player for DIPF Item Builder Items using IB Runtime: «««« ibVersion »»»»)",
+          "lang": "en"
+        }
+      ],
+      "version": "0.2.0",
+      "specVersion": "6.0",
+      "description": [
+        {
+          "value": "TODO",
+          "lang": "en"
+        }
+      ],
+      "maintainer": {
+        "name": [
+          {
+            "value": "IQB - Institute for Educational Quality Improvement",
+            "lang": "en"
+          }
+        ],
+        "email": "iqb-tbadev@hu-berlin.de",
+        "url": "https://www.iqb.hu-berlin.de"
+      },
+      "code": {
+        "repositoryUrl": "https://github.com/iqb-berlin/verona-modules-ib",
+        "repositoryType": "git",
+        "licenseType": "MIT",
+        "licenseUrl": "https://raw.githubusercontent.com/iqb-berlin/verona-modules-ib/main/LICENSE"
+      },
+      "metadataVersion": "2.0"
+    }
+  </script>
+
+  <style>
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+      margin: 0;
+      background: #5e93c5
+    }
+  </style>
+
+</head>
+<body>
+
+
+  <iframe id='ib-runtime-host' style='margin: 0; padding: 0; border: 1px solid indianred; position: fixed; height: calc(100vh - 2px); width: calc(100vw - 2px); background: white'></iframe>
+
+  <script>
+    /* eslint-disable new-parens, class-methods-use-this, max-classes-per-file, no-use-before-define, no-console */
+    const unitStateDataType = 'iqb-standard@1.4';
+
+    const taskPlayerElem = document.getElementById('ib-runtime-host');
+
+    const playerMetaData = JSON.parse(document.querySelector('script[type="application/ld+json"]').innerText);
+
+    let playerConfig = {
+      logPolicy: 'eager', // "disabled" | "lean" | "rich" | "debug"
+      unitNumber: 0,
+      unitTitle: 'Unit',
+      unitId: 'unit',
+      enabledNavigationTargets: [], // can contain  "next" "previous" "first" "last" "end"
+      pagingMode: 'buttons', // "separate" | "concat-scroll" | "concat-scroll-snap" | "buttons"
+      printMode: 'off',
+      startPage: null,
+      directDownloadUrl: null
+    };
+
+    let sessionId = '';
+
+    const TaskPlayer = new class {
+      receive = (type, message) => {
+        switch (type) {
+          case 'getTasksStateReturn':
+            return Message.send.vopStateChangedNotification({
+              unitState: {
+                dataParts: {
+                  variables: JSON.stringify(IQBStandard.fromIBVariablesMap(message.state.variables))
+                },
+                presentationProgress: 'some', // TODO
+                responseProgress: 'some', // TODO
+                unitStateDataType
+              }
+            });
+          case 'getScoringResultReturn': {
+            return Message.send.vopStateChangedNotification({
+              unitState: {
+                dataParts: {
+                  scores: JSON.stringify(IQBStandard.fromIBScoringResult(message.result))
+                },
+                presentationProgress: 'some', // TODO
+                responseProgress: 'some', // TODO
+                unitStateDataType
+              }
+            });
+          }
+          case 'taskSwitchRequest': {
+            switch (message.request) {
+              case 'nextTask': return Message.send.vopUnitNavigationRequestedNotification('next');
+              case 'previousTask': return Message.send.vopUnitNavigationRequestedNotification('previous');
+              default: throw new Error(`Target not supported by verona-player-ib: '${message.request}'`);
+            }
+          }
+          default: {
+            return null; // satisfy eslint
+          }
+        }
+      };
+
+      send = msg => {
+        taskPlayerElem.contentWindow.postMessage(JSON.stringify(msg), { targetOrigin: '*' });
+      };
+    };
+
+    const IQBStandard = new class {
+      fromIBVariablesMap = variablesMap => Object.entries(variablesMap)
+        .flatMap(([hostItem, variablesList]) => Object.values(variablesList)
+          .map(variable => ({
+            id: this.#cleanVarId(variable.name),
+            status: 'VALUE_CHANGED',
+            value: this.#cleanValue(variable.value),
+            subForm: hostItem
+          })));
+
+      fromIBScoringResult = scoringResult => Object.entries(scoringResult)
+        .map(([id, value]) => ({
+          id: this.#cleanVarId(id),
+          status: 'VALUE_CHANGED',
+          value: this.#cleanValue(value)
+        }));
+
+      #cleanVarId = variableName => variableName
+        .replaceAll(/[^0-9a-zA-Z_]/g, c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+
+      #cleanValue = value => {
+        if (typeof value === 'undefined') return null;
+        if (['number', 'string', 'boolean'].includes(typeof value)) return value;
+        if (Array.isArray(value)) {
+          const types = value.reduce((agg, valueItem) => {
+            if (!agg.includes(typeof valueItem)) {
+              agg.push(typeof valueItem);
+            }
+            return agg;
+          }, []);
+          return value.map(types.length > 1 ? JSON.stringify : this.#cleanValue);
+        }
+        return JSON.stringify(value);
+      };
+    };
+
+    const Message = new class {
+      send = new class {
+        vopStateChangedNotification = ({ unitState, playerState, log }) => {
+          this.#send({
+            type: 'vopStateChangedNotification',
+            sessionId,
+            timeStamp: Date.now(),
+            unitState,
+            playerState,
+            log
+          });
+        };
+
+        vopReadyNotification = () => {
+          this.#send({
+            type: 'vopReadyNotification',
+            metadata: playerMetaData
+          });
+        };
+
+        vopUnitNavigationRequestedNotification = target => {
+          this.#send({
+            type: 'vopUnitNavigationRequestedNotification',
+            sessionId,
+            target
+          });
+        };
+
+        vopWindowFocusChangedNotification = hasFocus => {
+          this.#send({
+            type: 'vopWindowFocusChangedNotification',
+            sessionId,
+            hasFocus
+          });
+        };
+
+        vopRuntimeErrorNotification = (code, message) => {
+          this.#send({
+            type: 'vopRuntimeErrorNotification',
+            sessionId,
+            code,
+            message
+          });
+        };
+
+        #send = msg => {
+          window.parent.postMessage(msg, '*');
+          document.dispatchEvent(new CustomEvent(`sent:${msg.type}`, { detail: msg }));
+        };
+      };
+
+      receive = (type, data) => {
+        if (type === 'vopStartCommand') {
+          Unit.start(data);
+          document.dispatchEvent(new CustomEvent(type, { detail: data }));
+        } else if (sessionId && (data.sessionId !== sessionId) && type && type.startsWith('vop')) {
+          throw new VspRuntimeError('wrong-session-id', `Wrong Session-Id: '${sessionId}' (was: '${sessionId}').`);
+        } else if (sessionId) {
+          document.dispatchEvent(new CustomEvent(type, { detail: data }));
+        } else {
+          console.warn(`Message before first vopStartCommand, ignored: ${type}`, data);
+        }
+      };
+    };
+
+    const Unit = new class {
+      definition = {
+        runtimeVersion: undefined,
+        item: undefined,
+        task: undefined,
+        scope: undefined,
+        package: undefined,
+        folder: undefined
+      };
+
+      start = async data => {
+        if (!data.sessionId) {
+          throw new VspRuntimeError('session-id-missing', 'Session-Id is missing.');
+        }
+        sessionId = data.sessionId;
+        if (!data.unitDefinition) {
+          throw new VspRuntimeError('unit-definition-missing', 'Unit-Definition is missing.');
+        }
+        this.#setPlayerConfig(data.playerConfig || {});
+
+        const ib2veronaFile = JSON.parse(data.unitDefinition);
+        // TODO catch error
+        this.#setUnit(ib2veronaFile);
+        await this.#loadTaskPlayer();
+      };
+
+      #loadTaskPlayer = async () => {
+        // -- load runtime version
+        taskPlayerElem.addEventListener('load', this.#startTaskPlayer);
+        taskPlayerElem.addEventListener('error', () => { throw new Error('could not load'); });
+        taskPlayerElem.src = `${playerConfig.directDownloadUrl}/${this.definition.package}/runtimes/ib-runtime.${this.definition.runtimeVersion}.html`;
+      };
+
+      #startTaskPlayer = async () => {
+        // -- login
+        TaskPlayer.send({ eventType: 'setUserId', id: `verona:${sessionId}` });
+
+        // unit path
+        const unitPath = `${playerConfig.directDownloadUrl}/${this.definition.package}/units/${this.definition.folder}`;
+
+        // -- get item config
+        const configFileCallResponse = await fetch(`${unitPath}/config.json`);
+        if (!configFileCallResponse.ok) {
+          console.error(configFileCallResponse);
+          throw new Error('Network response was not ok');
+        }
+
+        const itemConfig = await configFileCallResponse.json();
+        // TODO catch error
+
+        // -- set taskSequencer
+        TaskPlayer.send({
+          eventType: 'setTaskSequencer',
+          targetWindowType: 'parent',
+          targetOrigin: '*'
+        });
+
+        // -- push item to taskplayer
+        const mathJaxCdnUrl = undefined; // TODO
+        TaskPlayer.send({
+          eventType: 'addItem',
+          itemConfig,
+          resourcePath: `${unitPath}/resources`,
+          externalResourcePath: `${unitPath}/external-resources`,
+          libraryPathsMap: { MathJax: mathJaxCdnUrl === undefined ? 'math-jax unknown' : mathJaxCdnUrl }
+        });
+
+        TaskPlayer.send({
+          eventType: 'startTask',
+          item: this.definition.item,
+          task: this.definition.task,
+          scope: this.definition.scope
+        });
+      };
+
+      #setUnit = unitDef => {
+        Object.keys(this.definition)
+          .forEach(field => {
+            if (typeof unitDef[field] === 'undefined') {
+              throw new Error(`Invalid Unit Definition, ${field} missing`);
+            }
+            this.definition[field] = unitDef[field];
+          });
+      };
+
+      #setPlayerConfig = newPlayerConfig => {
+        playerConfig = Object.assign(playerConfig, newPlayerConfig);
+      };
+    };
+
+    class VspRuntimeError extends Error {
+      name = 'VspRuntimeError';
+
+      constructor(code, message) {
+        super(message);
+        this.code = code;
+      }
+    }
+
+    window.addEventListener('message', event => {
+      if (typeof event.data === 'object'
+        && typeof event.data.type !== 'undefined'
+        && event.data.type.startsWith('vop')
+      ) {
+        Message.receive(event.data.type, event.data);
+      } else if (typeof event.data === 'string'
+        && event.data.includes('"eventType":')
+      ) {
+        const data = JSON.parse(event.data);
+        TaskPlayer.receive(data.eventType, data);
+      } else {
+        console.log('unknown message: ', event.data);
+      }
+    }, false);
+
+    window.addEventListener('error', event => {
+      // TODO check if window == self
+      if (event.error.name === VspRuntimeError.name) {
+        Message.send.vopRuntimeErrorNotification(event.error.code, event.error.message);
+      } else {
+        Message.send.vopRuntimeErrorNotification('runtime-error', event.error.message);
+      }
+    }, false);
+
+    document.addEventListener('DOMContentLoaded', Message.send.vopReadyNotification);
+
+    document.addEventListener('vopPageNavigationCommand', () => { /* TODO */ });
+    document.addEventListener('vopNavigationDeniedNotification', () => { /* TODO */ });
+    document.addEventListener('vopPlayerConfigChangedNotification', () => { /* TODO */ });
+
+    setInterval(() => {
+      TaskPlayer.send({
+        eventType: 'getTasksState'
+      });
+    }, 2500);
+    setInterval(() => {
+      TaskPlayer.send({
+        eventType: 'getScoringResult'
+      });
+    }, 5000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "id": "speed-multi-m1-text-column",
+  "name": "Speedtest 1.0.0: text, column",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "1.0.0",
+    "layout": "column",
+    "questions": [
+      {
+        "text": "Wasser ist ein Getränk.",
+        "answers": [
+          "Richtig",
+          "Falsch"
+        ]
+      }
+    ],
+    "buttonColor": "#166b8c"
+  }
+}
