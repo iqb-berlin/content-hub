@@ -30,7 +30,7 @@ Benutzerverwaltung.
 
 ### 1. Anmelden
 
-Die Anmeldung fuer ContentPool-Nutzerinnen und -Nutzer erfolgt ueber Keycloak / OIDC.
+Die Anmeldung fuer Content Hub-Nutzerinnen und -Nutzer erfolgt ueber Keycloak / OIDC.
 Separate ACP-Zugangsdaten werden nur fuer entsprechend geschuetzte Nur-Lese-Zugaenge
 verwendet.
 
@@ -614,7 +614,13 @@ aktuellen Aktivierungsstatus.
 5. Aktivieren Sie den Review und speichern Sie die Konfiguration.
 6. Vergeben Sie unter den Personen oder ACP-Zugaengen die Berechtigung `Review: teilnehmen`.
 
-Unter **Metadaten in der Prüfansicht** koennen Sie **Namen und Kürzel der
+Unter **Metadaten in der Prüfansicht** koennen Sie **Reiter „Metadaten“ ausblenden**
+aktivieren. Nach dem Speichern der Review-Konfiguration ist der gesamte Reiter
+in der Testheft-Pruefansicht fuer alle Review-Teilnehmenden ausgeblendet.
+Ohne diese Einstellung bleibt er wie bisher sichtbar. Die normale Aufgabenansicht
+wird weiterhin durch ihre eigene Metadaten-Einstellung gesteuert.
+
+Alternativ koennen Sie **Namen und Kürzel der
 Aufgabenentwickler/innen ausblenden** aktivieren. Speichern Sie anschliessend die
 Review-Konfiguration. In der Testheft-Pruefansicht wird das Metadatenfeld
 `iqb_author` bzw. „Entwickler/in“ dann fuer alle Review-Teilnehmenden ausgeblendet.

@@ -1,13 +1,48 @@
 # Changelog
 
-All notable changes to ContentPool are documented in this file. Releases use
+All notable changes to Content Hub are documented in this file. Releases use
 [Semantic Versioning](https://semver.org/); release candidates add an
 `-rc.N` suffix without changing the canonical version in `VERSION`.
 
 ## [Unreleased]
 
+## [0.7.0] - Unreleased
+
 ### Changes
 
+- Recreate dedicated databases during full backup restoration so objects added
+  after the backup cannot survive and interfere with a subsequent upgrade.
+- Update backend body-parser, Multer and compatible brace-expansion branches,
+  and require patched nginx/Alpine runtime libraries after the candidate image
+  security scan blocked publication.
+- Align visible assessment-package labels with AP, AP-Index and Assessment Package.
+- Add configurable reduced Item Explorer views, optional Studio comments and
+  item-level review comments. Refs #167, #163, #230.
+- Improve review page navigation, metadata visibility, labels, downloads and
+  panel resizing. Refs #224, #225, #226, #227, #229, #231, #232, #233,
+  #234, #235, #236, #237, #241.
+- Add guarded model answers, readable coding information and visibility-aware
+  player previews, including drag-and-drop answer preservation. Refs #228,
+  #238, #160, #150.
+- Preserve personal-data drafts during conflict recovery, ignore empty item
+  parameter CSV records and restart OIDC login after a missing callback state.
+- Wait for the reloaded item list before measuring reduced-view table geometry
+  in the browser layout regression test. Refs #167.
+- Refine the booklet review workspace with a clear booklet heading, compact task
+  navigation, a lighter application header and responsive review tools. Retain
+  pointer and keyboard resizing of the review panel.
+- Copy the current booklet task link on click, confirm success and offer a
+  selectable URL when clipboard access is blocked. Refs #245.
+- Stop the active application/database before restoring older service names and
+  retain the current runtime when stopping fails. Make Keycloak client migration
+  retryable after a failed environment write or replacement.
+- Rename the visible product to Content Hub and use the approved violet network
+  logo across the application and Keycloak login theme. Replace legacy image
+  files with SVG, PNG, multi-size ICO and mobile icons.
+- Rename the repository, package/deployment identifiers, images and browser keys
+  to Content Hub. Keep iqb-contentpool.de and neutral API/callback paths.
+- Apply the violet palette once to saved themes and retain their original values
+  for guarded rollback. Transfer legacy browser data without losing pending work.
 - Shorten booklet task links with structure-bound occurrence IDs. Preserve
   existing links and report stale short links after booklet structure changes.
 - Add direct links to individual booklet task occurrences, with reload and
@@ -21,15 +56,23 @@ All notable changes to ContentPool are documented in this file. Releases use
 
 ### Configuration
 
-- None.
+- Existing Keycloak display names and mail sender labels need a separate, scoped
+  update; see `docs/operations/content-hub-branding.md`. Use the new updater for
+  the service-name transition. Old environment variables remain aliases;
+  existing database/volume assignments and custom content are retained.
 
 ### Database migrations
 
 - Classification: `backward-compatible`
 - `1789700000000-CommentCategories` adds categories and optional comment assignments.
+- `1793318400000-ContentHubTheme` backs up saved palettes and resets them to violet
+  once. Later edits are preserved; rollback checks for intervening changes.
 
 ### Rollback
 
+- Restore the previous application images and runtime theme files to revert
+  branding. Restore separately edited display fields from their saved values.
+  Restore old palettes through the guarded Content Hub theme migration rollback.
 - The category migration refuses rollback while configured categories or
   assignments exist, preserving review data.
 

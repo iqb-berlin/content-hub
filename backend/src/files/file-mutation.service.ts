@@ -101,7 +101,7 @@ export class FileMutationService {
           lock: { mode: "pessimistic_write" },
         });
         if (!lockedAcp) {
-          throw new NotFoundException(`ACP with ID ${acpId} not found`);
+          throw new NotFoundException(`AP with ID ${acpId} not found`);
         }
 
         const repository = manager.getRepository(AcpFile);
@@ -241,10 +241,10 @@ export class FileMutationService {
   }
 
   private async getAcpOrFail(acpId: string): Promise<Acp> {
-    assertUuidParam(acpId, "ACP ID");
+    assertUuidParam(acpId, "AP ID");
     const acp = await this.acpRepository.findOne({ where: { id: acpId } });
     if (!acp) {
-      throw new NotFoundException(`ACP with ID ${acpId} not found`);
+      throw new NotFoundException(`AP with ID ${acpId} not found`);
     }
     return acp;
   }

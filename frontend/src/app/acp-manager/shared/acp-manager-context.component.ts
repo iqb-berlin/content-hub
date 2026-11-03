@@ -19,7 +19,7 @@ import { getAcpRoleLabel } from '../../core/utils/acp-role-label.util';
           <span class="context-name">{{ acp.name }}</span>
           <span class="badge badge-info">{{ acp.packageId }}</span>
         } @else {
-          <span class="context-name">ACP wird geladen...</span>
+          <span class="context-name">AP wird geladen...</span>
         }
         <span class="badge badge-success">{{ roleLabel }}</span>
       </div>
@@ -55,7 +55,7 @@ export class AcpManagerContextComponent implements OnInit {
   acp: Acp | null = null;
   roleLabel = 'Zugriff gewährt';
   backLink: string[] = ['/acps'];
-  backLabel = '← Zur ACP-Liste';
+  backLabel = '← Zur AP-Liste';
 
   private roleAssignments: AcpRoleAssignment[] = [];
 
@@ -115,11 +115,11 @@ export class AcpManagerContextComponent implements OnInit {
     const currentPath = this.route.snapshot.routeConfig?.path ?? '';
     if (!currentPath) {
       this.backLink = ['/acps'];
-      this.backLabel = '← Zur ACP-Liste';
+      this.backLabel = '← Zur AP-Liste';
       return;
     }
 
     this.backLink = ['/manage', this.acpId];
-    this.backLabel = '← Zur ACP-Übersicht';
+    this.backLabel = '← Zur AP-Übersicht';
   }
 }

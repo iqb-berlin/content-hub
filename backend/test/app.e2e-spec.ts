@@ -17,9 +17,9 @@ import { ReviewReadinessService } from "../src/review/review-readiness.service";
 
 if (!process.env.DB_HOST) process.env.DB_HOST = "localhost";
 if (!process.env.DB_PORT) process.env.DB_PORT = "5433";
-if (!process.env.DB_USERNAME) process.env.DB_USERNAME = "contentpool";
-if (!process.env.DB_PASSWORD) process.env.DB_PASSWORD = "contentpool_dev";
-if (!process.env.DB_DATABASE) process.env.DB_DATABASE = "contentpool";
+if (!process.env.DB_USERNAME) process.env.DB_USERNAME = "contenthub";
+if (!process.env.DB_PASSWORD) process.env.DB_PASSWORD = "contenthub_dev";
+if (!process.env.DB_DATABASE) process.env.DB_DATABASE = "contenthub";
 if (!process.env.NODE_ENV) process.env.NODE_ENV = "test";
 if (!process.env.DB_SYNCHRONIZE) process.env.DB_SYNCHRONIZE = "true";
 if (!process.env.DB_RUN_MIGRATIONS) process.env.DB_RUN_MIGRATIONS = "false";

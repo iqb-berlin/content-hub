@@ -1,3 +1,4 @@
+import type { PreviewStart } from '../../core/services/preview-visibility';
 import { CodingAsText } from '@iqb/responses';
 import { ItemExplorerPerspective, StudioItemComment } from '../../core/models/api.models';
 
@@ -64,6 +65,7 @@ export interface ExplorerItem {
   bookletOccurrences?: Array<{ booklet: string; position: number | null }>;
   tags?: string[];
   previewTargetId?: string;
+  previewStart?: PreviewStart;
   excluded?: boolean;
 }
 
@@ -158,6 +160,22 @@ export interface CodingVariableFocusResolution {
   matches: CodingAsText[];
   isDerived: boolean;
   sourceIds: string[];
+}
+
+export interface CodingInformationAnswer {
+  responseId: string;
+  label: string;
+  valueLabel: string;
+}
+
+export type CodingInformationStatus = 'exact' | 'multiple' | 'rules' | 'unavailable';
+
+export interface CodingInformation {
+  status: CodingInformationStatus;
+  title: string;
+  message: string;
+  answers: CodingInformationAnswer[];
+  ruleGroups: CodingAsText[];
 }
 
 export type ExplorerUiStatus = 'CLEAN' | 'DIRTY' | 'SAVING' | 'SAVED' | 'ERROR';

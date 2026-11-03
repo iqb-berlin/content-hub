@@ -1,5 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createOidcAppToken, installOidcSession } from './oidc-test-session';
+import { conditionalVisibilityDefinition } from './fixtures/conditional-visibility';
 
 const acpId = '10000000-0000-4000-8000-000000000201';
 const managerId = '10000000-0000-4000-8000-000000000002';
@@ -239,6 +242,149 @@ test('shows readable coding and a reversible partial solution in the booklet rev
   expect(errors).toEqual([]);
 });
 
+for (const mode of ['move', 'copy', 'conflict'] as const) {
+  test(`real ASPECT review reconciles ${mode} drag solutions and preserves personal answers`, async ({
+    page,
+  }, testInfo) => {
+    await installContent(page);
+    const errors: string[] = [];
+    const answerWrites: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('request', (request) => {
+      if (/\/response-state(?:\?|$)/.test(request.url()) && request.method() !== 'GET') {
+        answerWrites.push(request.url());
+      }
+    });
+    const template = conditionalVisibilityDefinition();
+    const taskPage = template.pages[1];
+    const section = taskPage.sections[0];
+    const model = section.elements[0];
+    const element = (id: string, row: number, extra: object) => ({
+      ...model,
+      type: 'drop-list',
+      id: `internal-${id}`,
+      alias: id,
+      label: id === 'POOL' ? 'Vorrat' : `Rucksack ${id}`,
+      isSortList: false,
+      copyOnDrop: false,
+      ...extra,
+      position: { ...model.position, gridRow: row },
+    });
+    const definition = {
+      ...template,
+      stateVariables: [],
+      pages: [
+        {
+          ...taskPage,
+          sections: [
+            {
+              ...section,
+              visibilityRules: [],
+              height: 420,
+              elements: [
+                element('POOL', 1, {
+                  onlyOneItem: false,
+                  copyOnDrop: mode === 'copy',
+                  connectedTo: ['internal-A', 'internal-B'],
+                  value: [
+                    { id: 'object-X', alias: 'X', text: 'Brot' },
+                    { id: 'object-Y', alias: 'Y', text: 'Wasser' },
+                    { id: 'object-Z', alias: 'Z', text: 'Apfel' },
+                  ],
+                }),
+                ...['A', 'B'].map((id, index) =>
+                  element(id, index + 2, {
+                    onlyOneItem: true,
+                    connectedTo: ['internal-POOL'],
+                    value: [],
+                  }),
+                ),
+              ],
+              gridRowSizes: [1, 2, 3].map(() => ({ value: 'auto', unit: '' })),
+            },
+          ],
+        },
+      ],
+    };
+    const variable = (alias: string, value: string) => ({
+      id: `internal-${alias}`,
+      alias,
+      sourceType: 'BASE',
+      codes: [
+        {
+          id: 1,
+          type: 'FULL_CREDIT',
+          score: 1,
+          ruleSets: [{ rules: [{ method: 'MATCH', parameters: [value] }] }],
+        },
+        { id: 0, type: 'RESIDUAL_AUTO', score: 0 },
+      ],
+    });
+    const scheme = {
+      variableCodings: [variable('A', 'X'), variable('B', mode === 'move' ? 'Y' : 'X')],
+    };
+    await page.route(`**/api/view/acp/${acpId}/units/review-u*`, (route) =>
+      route.fulfill({
+        json: {
+          id: 'review-u1',
+          name: 'Rucksäcke packen',
+          items: [],
+          codingScheme: scheme,
+          dependencies: [
+            { type: 'PLAYER', downloadUrl: '/review-drag/player' },
+            { type: 'UNIT_DEFINITION', downloadUrl: '/review-drag/definition' },
+          ],
+        },
+      }),
+    );
+    await page.route('**/review-drag/player*', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: readFileSync(join(__dirname, '../tmp/aspect-3.0.1.html'), 'utf8'),
+      }),
+    );
+    await page.route('**/review-drag/definition*', (route) => route.fulfill({ json: definition }));
+    await page.goto(reviewUrl);
+    const player = page.frameLocator('app-unit-view iframe');
+    const pool = player.locator('[data-element-id="internal-POOL"]');
+    const targetA = player.locator('[data-element-id="internal-A"]');
+    const targetB = player.locator('[data-element-id="internal-B"]');
+    await expect(pool.getByText('Wasser', { exact: true })).toBeVisible();
+    await pool.getByText('Wasser', { exact: true }).dragTo(targetA);
+    await expect(targetA).toContainText('Wasser');
+    await page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }).click();
+    if (mode === 'conflict') {
+      await expect(page.locator('.coding-content')).toContainText(
+        'widersprüchliche Objektbelegungen',
+      );
+      await expect(targetA).toContainText('Wasser');
+      await expect(
+        page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }),
+      ).toHaveAttribute('aria-pressed', 'false');
+    } else {
+      await expect(targetA).toContainText('Brot');
+      await expect(targetA).not.toContainText('Wasser');
+      await expect(targetB).toContainText(mode === 'copy' ? 'Brot' : 'Wasser');
+      await expect(pool).toContainText('Apfel');
+      if (mode === 'copy') {
+        await expect(pool).toContainText('Brot');
+        await expect(pool).toContainText('Wasser');
+      } else {
+        await expect(pool).not.toContainText('Brot');
+        await expect(pool).not.toContainText('Wasser');
+      }
+      await page.getByRole('button', { name: 'Musterlösung ausblenden', exact: true }).click();
+      await expect(targetA).toContainText('Wasser');
+      await expect(targetA).not.toContainText('Brot');
+      await expect(targetB).not.toContainText('Brot');
+      await expect(targetB).not.toContainText('Wasser');
+    }
+    await page.screenshot({ path: testInfo.outputPath(`review-drag-${mode}.png`), fullPage: true });
+    expect(answerWrites).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+}
+
 test('synchronizes initial totals, both navigation directions, display modes and unit changes', async ({
   page,
 }, testInfo) => {
@@ -297,6 +443,75 @@ test('synchronizes initial totals, both navigation directions, display modes and
     fullPage: true,
   });
   expect(errors).toEqual([]);
+});
+
+test('persists hiding the metadata tab across reload and task changes and can restore it', async ({
+  page,
+  request,
+}, testInfo) => {
+  const headers = { Authorization: `Bearer ${createOidcAppToken(managerId, 'e2e-manager')}` };
+  const initialResponse = await request.get(configUrl, { headers });
+  expect(initialResponse.ok()).toBe(true);
+  const initial = await initialResponse.json();
+  await installContent(page);
+  try {
+    await page.goto(`/view/${acpId}/review/manage`);
+    const setting = page.getByRole('checkbox', {
+      name: 'Reiter „Metadaten“ ausblenden',
+      exact: true,
+    });
+    const developerSetting = page.getByRole('checkbox', {
+      name: 'Namen und Kürzel der Aufgabenentwickler/innen ausblenden',
+    });
+    await setting.check();
+    await expect(developerSetting).toBeDisabled();
+    const saved = page.waitForResponse(
+      (response) => response.url().endsWith(configUrl) && response.request().method() === 'PUT',
+    );
+    await page.getByRole('button', { name: 'Review-Konfiguration speichern', exact: true }).click();
+    expect((await saved).ok()).toBe(true);
+    await page.reload();
+    await expect(setting).toBeChecked();
+    await page.goto(reviewUrl);
+    await expect(
+      page.getByRole('heading', { name: 'Aufgabe 1 (review-u1)', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Kodierung', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Metadaten', exact: true })).toHaveCount(0);
+    await expect(page.locator('.meta-dl')).toHaveCount(0);
+    await page.screenshot({
+      path: testInfo.outputPath('review-metadata-tab-hidden.png'),
+      fullPage: true,
+    });
+    await page.getByRole('button', { name: 'Weiter →', exact: true }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Aufgabe 2 (review-u2)', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Metadaten', exact: true })).toHaveCount(0);
+
+    await page.goto(`/view/${acpId}/unit/review-u1`);
+    await page.getByRole('button', { name: 'Zusatzdaten anzeigen', exact: true }).click();
+    await expect(page.locator('.meta-dl')).toContainText('Deutsch');
+
+    await page.goto(`/view/${acpId}/review/manage`);
+    await setting.uncheck();
+    await expect(developerSetting).toBeEnabled();
+    const shown = page.waitForResponse(
+      (response) => response.url().endsWith(configUrl) && response.request().method() === 'PUT',
+    );
+    await page.getByRole('button', { name: 'Review-Konfiguration speichern', exact: true }).click();
+    expect((await shown).ok()).toBe(true);
+    await page.goto(reviewUrl);
+    await page.getByRole('button', { name: 'Metadaten', exact: true }).click();
+    await expect(page.locator('.meta-dl')).toContainText('Deutsch');
+  } finally {
+    const current = await (await request.get(configUrl, { headers })).json();
+    const restored = await request.put(configUrl, {
+      headers,
+      data: { ...current, hideReviewMetadata: initial.hideReviewMetadata },
+    });
+    expect(restored.ok()).toBe(true);
+  }
 });
 
 test('persists the visibility choice and limits hiding to review metadata', async ({

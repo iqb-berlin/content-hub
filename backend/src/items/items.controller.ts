@@ -71,7 +71,7 @@ export class ItemsController {
   @Get()
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({
-    summary: "List all items in an ACP (with optional filter/sort)",
+    summary: "List all items in an AP (with optional filter/sort)",
   })
   @ApiQuery({ name: "filter", required: false })
   @ApiQuery({ name: "sortBy", required: false })
@@ -90,7 +90,7 @@ export class ItemsController {
   @Get("tags")
   @UseGuards(JwtAuthGuard, ExplorerReadGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Get persisted item tags for an ACP" })
+  @ApiOperation({ summary: "Get persisted item tags for an AP" })
   async getItemTags(@UuidParam("acpId") acpId: string, @Request() req: any) {
     const isManager = req.user?.isAppAdmin || req.acpAccessLevel === "MANAGER";
     if (
@@ -98,7 +98,7 @@ export class ItemsController {
       !isManager &&
       !(await this.itemsService.canUseItemTags(acpId))
     ) {
-      throw new ForbiddenException("Item tags are not enabled for this ACP");
+      throw new ForbiddenException("Item tags are not enabled for this AP");
     }
     return this.itemsService.getItemTags(acpId);
   }
@@ -106,7 +106,7 @@ export class ItemsController {
   @Put("tags")
   @UseGuards(JwtAuthGuard, ExplorerEditGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Persist item tags for an ACP" })
+  @ApiOperation({ summary: "Persist item tags for an AP" })
   async saveItemTags(
     @UuidParam("acpId") acpId: string,
     @Body() dto: SaveItemTagsDto,
@@ -118,7 +118,7 @@ export class ItemsController {
       !isManager &&
       !(await this.itemsService.canUseItemTags(acpId))
     ) {
-      throw new ForbiddenException("Item tags are not enabled for this ACP");
+      throw new ForbiddenException("Item tags are not enabled for this AP");
     }
     const actor = this.itemExplorerStateService.resolveActor(req?.user, acpId);
     const result = await this.itemExplorerStateService.publishTagsImmediately(
@@ -223,7 +223,7 @@ export class ItemsController {
   @Delete("empirical-difficulty")
   @UseGuards(JwtAuthGuard, ExplorerEditGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Clear all empirical difficulties for an ACP" })
+  @ApiOperation({ summary: "Clear all empirical difficulties for an AP" })
   async clearEmpiricalDifficulties(
     @UuidParam("acpId") acpId: string,
     @Query("draft") draft?: string,
@@ -308,7 +308,7 @@ export class ItemsController {
   @UseGuards(JwtAuthGuard, ExplorerEditGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Get all response states for an ACP (Manager only)",
+    summary: "Get all response states for an AP (Manager only)",
   })
   async getAllResponseStates(
     @UuidParam("acpId") acpId: string,
@@ -553,7 +553,7 @@ export class ItemsController {
       !isManager &&
       !(await this.itemsService.canUseItemList(acpId))
     ) {
-      throw new ForbiddenException("Item list is not enabled for this ACP");
+      throw new ForbiddenException("Item list is not enabled for this AP");
     }
   }
 

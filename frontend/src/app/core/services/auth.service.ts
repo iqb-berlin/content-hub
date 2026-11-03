@@ -27,14 +27,14 @@ type AuthChannelMessage =
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly API = '/api/auth';
-  private readonly tokenKey = 'cp_token';
+  private readonly tokenKey = 'ch_token';
   private readonly OIDC_REDIRECT_KEY = 'oidc_redirect_url';
   private readonly OIDC_STATE_KEY = 'oidc_state';
   private readonly OIDC_CODE_VERIFIER_KEY = 'oidc_code_verifier';
-  private readonly ID_TOKEN_KEY = 'cp_oidc_id_token';
-  private readonly ACCESS_TOKEN_KEY = 'cp_oidc_access_token';
-  private readonly REFRESH_TOKEN_KEY = 'cp_oidc_refresh_token';
-  private readonly AUTH_TYPE_KEY = 'cp_auth_type';
+  private readonly ID_TOKEN_KEY = 'ch_oidc_id_token';
+  private readonly ACCESS_TOKEN_KEY = 'ch_oidc_access_token';
+  private readonly REFRESH_TOKEN_KEY = 'ch_oidc_refresh_token';
+  private readonly AUTH_TYPE_KEY = 'ch_auth_type';
   private readonly OIDC_REFRESH_LEEWAY_MS = 60_000;
   private readonly OIDC_REFRESH_FALLBACK_MS = 5 * 60 * 1000;
   private authChannel: BroadcastChannel | null = null;
@@ -83,7 +83,7 @@ export class AuthService {
 
   private initBroadcastChannel(): void {
     if (typeof BroadcastChannel !== 'undefined') {
-      this.authChannel = new BroadcastChannel('cp_auth');
+      this.authChannel = new BroadcastChannel('ch_auth');
       this.authChannel.onmessage = (event: MessageEvent<AuthChannelMessage | 'logout'>) => {
         if (event.data === 'logout' || event.data?.type === 'logout') {
           this.performLogout(false);

@@ -21,6 +21,7 @@ import {
   IsArray,
   ArrayMaxSize,
   ValidateNested,
+  ValidateIf,
   IsUUID,
   IsString,
   MaxLength,
@@ -64,6 +65,9 @@ class CommentCategoryDto {
 }
 class ReviewConfigDto {
   @IsBoolean() enableReview!: boolean;
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  hideReviewMetadata?: boolean;
   @IsOptional() @IsBoolean() hideReviewDeveloperNames?: boolean;
   @IsInt() @Min(1) configVersion!: number;
   @IsIn(["PRIVATE", "SHARED", "GROUP"]) visibilityMode!:
@@ -118,6 +122,14 @@ export class ReviewController {
     const explorerAvailable = isExplorerAvailable(req, config?.featureConfig);
     return {
       capabilities: grants,
+      canViewUnit:
+        req?.acpAccessLevel === "ADMIN" ||
+        req?.acpAccessLevel === "MANAGER" ||
+        config?.featureConfig?.enableUnitView !== false ||
+        (config?.featureConfig?.enableReview === true &&
+          Boolean(req?.user?.sub) &&
+          (grants.includes("review:participate") ||
+            grants.includes("review:manage"))),
       canViewExplorer:
         explorerAvailable &&
         (hasCapability(grants, "item-explorer:view") ||
@@ -142,7 +154,7 @@ export class ReviewController {
   ) {
     await this.capabilities.assert(req, "review:manage");
     const current = await this.configs.findOne({ where: { acpId } });
-    if (!current) throw new ForbiddenException("ACP-Konfiguration fehlt");
+    if (!current) throw new ForbiddenException("AP-Konfiguration fehlt");
     if (dto.enableReview && current.featureConfig.enableReview !== true) {
       const readiness = await this.readiness.check(acpId);
       if (readiness.stale || readiness.status === "BLOCKED") {
@@ -171,7 +183,7 @@ export class ReviewController {
         where: { acpId },
         lock: { mode: "pessimistic_write" },
       });
-      if (!config) throw new ForbiddenException("ACP-Konfiguration fehlt");
+      if (!config) throw new ForbiddenException("AP-Konfiguration fehlt");
       if (config.reviewConfigVersion !== dto.configVersion)
         throw new ConflictException(
           "Die Review-Konfiguration wurde geändert. Bitte neu laden.",
@@ -223,7 +235,7 @@ export class ReviewController {
               )
                 continue;
               throw new BadRequestException(
-                "Gruppenmitglied gehört nicht zu diesem ACP",
+                "Gruppenmitglied gehört nicht zu diesem AP",
               );
             }
             members.push(member);
@@ -292,6 +304,9 @@ export class ReviewController {
       config.featureConfig = {
         ...config.featureConfig,
         enableReview: dto.enableReview,
+        ...(dto.hideReviewMetadata !== undefined
+          ? { hideReviewMetadata: dto.hideReviewMetadata }
+          : {}),
         ...(dto.hideReviewDeveloperNames !== undefined
           ? { hideReviewDeveloperNames: dto.hideReviewDeveloperNames }
           : {}),
@@ -320,7 +335,7 @@ export class ReviewController {
   async getConfig(@UuidParam("acpId") acpId: string, @Request() req: any) {
     await this.capabilities.assert(req, "review:manage");
     const config = await this.configs.findOne({ where: { acpId } });
-    if (!config) throw new ForbiddenException("ACP-Konfiguration fehlt");
+    if (!config) throw new ForbiddenException("AP-Konfiguration fehlt");
     return this.configView(config);
   }
 
@@ -328,7 +343,7 @@ export class ReviewController {
   async getMembers(@UuidParam("acpId") acpId: string, @Request() req: any) {
     await this.capabilities.assert(req, "review:manage");
     const config = await this.configs.findOne({ where: { acpId } });
-    if (!config) throw new ForbiddenException("ACP-Konfiguration fehlt");
+    if (!config) throw new ForbiddenException("AP-Konfiguration fehlt");
     const users = await this.configs.manager.find(AcpUserRole, {
       where: { acpId },
       relations: ["user"],
@@ -353,6 +368,7 @@ export class ReviewController {
   private configView(config: AcpAccessConfig) {
     return {
       enableReview: config.featureConfig.enableReview === true,
+      hideReviewMetadata: config.featureConfig.hideReviewMetadata === true,
       hideReviewDeveloperNames:
         config.featureConfig.hideReviewDeveloperNames === true,
       visibilityMode: config.featureConfig.commentVisibilityMode || "PRIVATE",

@@ -1,6 +1,6 @@
 # Keycloak Email Delivery
 
-ContentPool uses Keycloak for transactional email such as address verification,
+Content Hub uses Keycloak for transactional email such as address verification,
 password reset, and administrative notifications.
 
 The recommended HU deployment path is:
@@ -10,7 +10,7 @@ Keycloak container -> local MTA/Postfix on Docker host -> mailhost.cms.hu-berlin
 ```
 
 This keeps Keycloak simple and gives the server a local mail queue if the HU
-relay is temporarily unavailable. Because the ContentPool server is outside the
+relay is temporarily unavailable. Because the Content Hub server is outside the
 HU network, Postfix must authenticate to the HU relay with the CMS function
 account.
 
@@ -28,7 +28,7 @@ During the Postfix prompt, choose a relay/smarthost-style setup if offered.
 The important final setting is that outbound mail is relayed to the HU relay
 over authenticated submission:
 
-For the ContentPool server, run the helper script from the deployment checkout:
+For the Content Hub server, run the helper script from the deployment checkout:
 
 ```bash
 ./scripts/configure-hu-postfix-relay.sh
@@ -131,7 +131,7 @@ The script reads these optional values from `.env`:
 KEYCLOAK_SMTP_HOST=host.docker.internal
 KEYCLOAK_SMTP_PORT=25
 KEYCLOAK_SMTP_FROM=iqb-noreply@hu-berlin.de
-KEYCLOAK_SMTP_FROM_DISPLAY_NAME="IQB ContentPool"
+KEYCLOAK_SMTP_FROM_DISPLAY_NAME="Content Hub"
 KEYCLOAK_SMTP_SSL=false
 KEYCLOAK_SMTP_STARTTLS=false
 KEYCLOAK_SMTP_AUTH=false

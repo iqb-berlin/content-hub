@@ -223,7 +223,7 @@ export class ItemRowNumberingService {
         .where("acp.id = :acpId", { acpId })
         .getOne();
       if (!acp) {
-        throw new NotFoundException("ACP not found");
+        throw new NotFoundException("AP not found");
       }
       return work(manager.getRepository(AcpItemRowNumber));
     };

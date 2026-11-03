@@ -204,6 +204,77 @@ describe('UnitViewComponent', () => {
     expect(component.visibleCodingSchemeAsText).toHaveLength(1);
   });
 
+  it('starts a drag solution with a reconciled palette and restores the prior personal state', async () => {
+    const scheme = structuredClone(solutionScheme);
+    scheme.variableCodings[0].alias = 'A';
+    scheme.variableCodings[0].codes[0].ruleSets![0].rules[0].parameters = ['X'];
+    const definition = JSON.stringify({
+      pages: [
+        {
+          elements: [
+            {
+              type: 'drop-list',
+              id: 'pool',
+              alias: 'POOL',
+              onlyOneItem: false,
+              isSortList: false,
+              copyOnDrop: false,
+              connectedTo: ['target'],
+              value: [
+                { alias: 'X', text: 'First object' },
+                { alias: 'Y', text: 'Second object' },
+              ],
+            },
+            {
+              type: 'drop-list',
+              id: 'target',
+              alias: 'A',
+              onlyOneItem: true,
+              isSortList: false,
+              copyOnDrop: false,
+              connectedTo: ['pool'],
+              value: [],
+            },
+          ],
+        },
+      ],
+    });
+    const { fixture, component, message } = await playerFixture(definition, scheme);
+    const send = vi.spyOn(component as any, 'sendToPlayer');
+    await message({ type: 'vopReadyNotification' });
+    const ownParts = {
+      elementCodes: JSON.stringify([
+        { id: 'POOL', value: ['X'], status: 'VALUE_CHANGED' },
+        { id: 'A', value: ['Y'], status: 'VALUE_CHANGED' },
+      ]),
+    };
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: component.playerSessionId,
+      timeStamp: Date.now(),
+      unitState: { dataParts: ownParts },
+    });
+    const ready = async () => {
+      fixture.detectChanges();
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(fixture.nativeElement.querySelector('iframe')).not.toBeNull();
+      });
+      const frame = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+      await message({ type: 'vopReadyNotification' }, frame.contentWindow!);
+    };
+    component.toggleSolution();
+    await ready();
+    const solutionStart = send.mock.calls.at(-1)![0];
+    expect(JSON.parse(solutionStart.unitState.dataParts.elementCodes)).toEqual([
+      { id: 'POOL', value: ['Y'], status: 'VALUE_CHANGED' },
+      { id: 'A', value: ['X'], status: 'VALUE_CHANGED' },
+    ]);
+    component.toggleSolution();
+    await ready();
+    expect(send.mock.calls.at(-1)![0].unitState.dataParts).toEqual(ownParts);
+  });
+
   it('restores personal data parts and the page after hiding the solution, ignoring stale and synthetic states', async () => {
     const definition = JSON.stringify({
       pages: [{}, { elements: [{ id: 'input', alias: 'ANSWER', type: 'text-field' }] }],
@@ -348,6 +419,62 @@ describe('UnitViewComponent', () => {
       'Keine eindeutige Musterlösung',
     );
   });
+
+  it('waits for a fresh state after an Aspect drag without relying on unload reports', async () => {
+    const { component, frame, message } = await playerFixture(
+      JSON.stringify({ pages: [{ elements: [{ alias: 'ANSWER', type: 'text-field' }] }] }),
+      solutionScheme,
+    );
+    await message({ type: 'vopReadyNotification' });
+    const doc = frame.contentDocument!;
+    const object = doc.createElement('div');
+    object.setAttribute('data-aspect-draggable', 'true');
+    doc.body.append(object);
+    object.dispatchEvent(
+      new MouseEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10 }),
+    );
+    doc.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientX: 100, clientY: 100 }));
+    component.toggleSolution();
+    expect(component.solutionRequestPending).toBe(true);
+    expect(component.solutionVisible).toBe(false);
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: component.playerSessionId,
+      timeStamp: Date.now() + 1,
+      unitState: { dataParts: { elementCodes: '[]' } },
+    });
+    expect(component.solutionRequestPending).toBe(false);
+    expect(component.solutionVisible).toBe(true);
+  });
+
+  it.each(['click', 'cancel'])(
+    'does not wait for an answer report after a drag object %s without a drop',
+    async (mode) => {
+      const { component, frame, message } = await playerFixture(
+        JSON.stringify({ pages: [{ elements: [{ alias: 'ANSWER', type: 'text-field' }] }] }),
+        solutionScheme,
+      );
+      await message({ type: 'vopReadyNotification' });
+      const doc = frame.contentDocument!;
+      const object = doc.createElement('div');
+      object.setAttribute('data-aspect-draggable', 'true');
+      doc.body.append(object);
+      object.dispatchEvent(
+        new MouseEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10 }),
+      );
+      if (mode === 'cancel') doc.dispatchEvent(new MouseEvent('pointercancel', { bubbles: true }));
+      doc.dispatchEvent(
+        new MouseEvent('pointerup', {
+          bubbles: true,
+          clientX: mode === 'cancel' ? 100 : 10,
+          clientY: 10,
+        }),
+      );
+      component.toggleSolution();
+      expect(component.solutionRequestPending).toBe(false);
+      expect(component.solutionVisible).toBe(true);
+    },
+  );
 
   it.each(['iso', 'milliseconds'])(
     'waits for a fresh player response with %s timestamps after an input before showing the solution',
@@ -523,6 +650,56 @@ describe('UnitViewComponent', () => {
     await vi.waitFor(() => expect(postMessage).toHaveBeenCalledTimes(1));
     expect(component.totalPages).toBe(3);
     expect(component.currentPage).toBe(1);
+  });
+
+  it.each([
+    { reviewMode: true, showMetadata: true, hideReviewMetadata: true, visible: false },
+    { reviewMode: true, showMetadata: false, hideReviewMetadata: true, visible: false },
+    { reviewMode: true, showMetadata: false, hideReviewMetadata: false, visible: true },
+    { reviewMode: true, showMetadata: false, hideReviewMetadata: undefined, visible: true },
+    { reviewMode: false, showMetadata: true, hideReviewMetadata: true, visible: true },
+    { reviewMode: false, showMetadata: false, hideReviewMetadata: false, visible: false },
+  ])(
+    'applies metadata visibility independently in review and ordinary views: %j',
+    async ({ reviewMode, showMetadata, hideReviewMetadata, visible }) => {
+      const { fixture, component } = await playerFixture();
+      fixture.componentRef.setInput('reviewMode', reviewMode);
+      fixture.componentRef.setInput('featureConfigOverride', {
+        showMetadata,
+        hideReviewMetadata,
+        showCodingScheme: true,
+      } satisfies FeatureConfig);
+      fixture.detectChanges();
+      component.panelVisible = true;
+      component.reviewPanelCollapsed = false;
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+      const tabs = Array.from(
+        fixture.nativeElement.querySelectorAll('.panel-tabs button'),
+      ) as HTMLElement[];
+      expect(tabs.some((tab) => tab.textContent?.trim() === 'Metadaten')).toBe(visible);
+    },
+  );
+
+  it('removes an open metadata panel when hidden and keeps it hidden after unit changes', async () => {
+    const { fixture, component } = await playerFixture();
+    component.reviewPanelCollapsed = false;
+    component.activeTab = 'metadata';
+    component.unitMetadata = [{ id: 'subject', label: 'Fach', value: 'Deutsch' }];
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.meta-dl').textContent).toContain('Deutsch');
+    fixture.componentRef.setInput('featureConfigOverride', { hideReviewMetadata: true });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.meta-dl')).toBeNull();
+    expect(component.activeTab).toBe('comments');
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.showMetadata).toBe(false);
+    fixture.componentRef.setInput('featureConfigOverride', { hideReviewMetadata: false });
+    fixture.detectChanges();
+    expect(component.showMetadata).toBe(true);
   });
 
   it.each([true, false])(
@@ -813,8 +990,9 @@ describe('UnitViewComponent', () => {
     const resizeHandle = fixture.nativeElement.querySelector(
       '.panel-resize-handle',
     ) as HTMLButtonElement;
+    const widthBeforeKeyboardResize = component.reviewPanelWidth;
     resizeHandle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
-    expect(component.reviewPanelWidth).toBe(444);
+    expect(component.reviewPanelWidth).toBe(widthBeforeKeyboardResize + 24);
     component.toggleReviewPanel();
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
@@ -894,6 +1072,7 @@ describe('Review panel interactions', () => {
     'destroy',
   ])('stops dragging on %s and ignores subsequent movement', (ending) => {
     const view = component();
+    const initialWidth = view.reviewPanelWidth;
     const handle = document.createElement('button');
     const capture = vi.fn();
     const release = vi.fn();
@@ -905,10 +1084,10 @@ describe('Review panel interactions', () => {
       pointer(handle, 'pointerdown');
       expect(capture).toHaveBeenCalledWith(1);
       pointer(window, 'pointermove', { clientX: 750 });
-      expect(view.reviewPanelWidth).toBe(470);
+      expect(view.reviewPanelWidth).toBe(initialWidth + 50);
       pointer(window, 'pointerup', { pointerId: 2 });
       pointer(window, 'pointermove', { clientX: 730 });
-      expect(view.reviewPanelWidth).toBe(490);
+      expect(view.reviewPanelWidth).toBe(initialWidth + 70);
       if (ending === 'blur') window.dispatchEvent(new Event('blur'));
       else if (ending === 'released-button')
         pointer(window, 'pointermove', { buttons: 0, clientX: 600 });
@@ -916,7 +1095,7 @@ describe('Review panel interactions', () => {
       else if (ending === 'destroy') view.ngOnDestroy();
       else pointer(ending === 'lostpointercapture' ? handle : window, ending, { buttons: 0 });
       pointer(window, 'pointermove', { clientX: 600 });
-      expect(view.reviewPanelWidth).toBe(490);
+      expect(view.reviewPanelWidth).toBe(initialWidth + 70);
       expect(release).toHaveBeenCalledWith(1);
     } finally {
       view.ngOnDestroy();

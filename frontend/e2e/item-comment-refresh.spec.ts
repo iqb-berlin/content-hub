@@ -63,7 +63,7 @@ async function switchSession(page: Page) {
   const other = await page.context().newPage();
   await other.goto('/');
   await other.evaluate(
-    (token) => localStorage.setItem('cp_token', token),
+    (token) => localStorage.setItem('ch_token', token),
     createOidcAppToken(VIEWER, 'e2e-viewer'),
   );
   await other.close();

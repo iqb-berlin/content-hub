@@ -1,8 +1,10 @@
 import { Inject, Injectable } from '@angular/core';
 import DOMPurify from 'dompurify';
 import { CodingSchemeTextFactory, CodingAsText } from '@iqb/responses';
-import { VoudService } from '../../core/services/voud.service';
+import { PlayerResponseTarget, VoudService } from '../../core/services/voud.service';
 import {
+  CodingInformation,
+  CodingInformationAnswer,
   CodingVariableFocusResolution,
   CodingVariableFocusStatus,
   DeepReadonly,
@@ -14,6 +16,11 @@ import {
   derivePlayerSolutionPrefill,
   PlayerSolutionPrefill,
 } from './item-explorer-solution-prefill';
+import {
+  CodingVariableLike,
+  deriveSolutionAnalysis,
+  DerivedSolutionAnswer,
+} from './item-explorer-solution-analysis';
 
 type ExplorerCodingAsText = CodingAsText & {
   generalInstructionText?: string | null;
@@ -38,6 +45,14 @@ export class ItemExplorerCodingService {
 
   setScheme(scheme: any): void {
     this.currentCodingScheme = scheme;
+    this.codingInformation = {
+      status: 'unavailable',
+      title: 'Keine eindeutige richtige Antwort',
+      message: 'Für dieses Item wurde noch keine Kodierinformation ermittelt.',
+      answers: [],
+      ruleGroups: [],
+    };
+
     this.currentCodingSchemeAsText = scheme
       ? this.createCodingSchemeAsText(Array.isArray(scheme) ? scheme : scheme.variableCodings || [])
       : null;
@@ -63,6 +78,14 @@ export class ItemExplorerCodingService {
     status: 'unavailable',
     responses: [],
     message: 'Für dieses Item wurde noch keine Musterlösung ermittelt.',
+  };
+
+  codingInformation: CodingInformation = {
+    status: 'unavailable',
+    title: 'Keine eindeutige richtige Antwort',
+    message: 'Für dieses Item wurde noch keine Kodierinformation ermittelt.',
+    answers: [],
+    ruleGroups: [],
   };
 
   selectedPreviewTargetId = '';
@@ -416,35 +439,270 @@ export class ItemExplorerCodingService {
         responses: [],
         message: 'Für dieses Item konnte keine eindeutige Kodiervariable ermittelt werden.',
       };
+      this.codingInformation = {
+        status: 'unavailable',
+        title: 'Keine eindeutige Kodiervariable',
+        message: 'Für dieses Item konnte keine eindeutige Kodiervariable ermittelt werden.',
+        answers: [],
+        ruleGroups: [],
+      };
       return;
     }
-    if (!definition) {
+
+    const selectedVariable = variableMatch.variable as CodingVariableLike;
+    const analysis = deriveSolutionAnalysis(selectedVariable, variables);
+    const ruleGroups = this.getRelevantCodingRuleGroups(selectedVariable, variables).filter(
+      (coding) => this.showAudioVideoCodingVariables || !this.isAudioVideoCodingVariable(coding),
+    );
+    if (definition) {
+      this.correctSolutionPrefill = derivePlayerSolutionPrefill(
+        selectedVariable,
+        variables,
+        (variable) => this.resolvePlayerResponseTarget(definition, variable),
+      );
+    } else {
       this.correctSolutionPrefill = {
         status: 'unavailable',
         responses: [],
         message: 'Für dieses Item ist keine auswertbare Player-Definition verfügbar.',
       };
+    }
+
+    const hasAutomaticRules = ruleGroups.some((coding) =>
+      coding.codes.some((code) => code.ruleSetDescriptions.length > 0),
+    );
+    const hasCodeManualInformation = ruleGroups.some((coding) =>
+      coding.codes.some((code) => Boolean((code as any).manualInstructionText)),
+    );
+    const hasVisibleGeneralInstruction =
+      this.showGeneralCodingInstructions &&
+      ruleGroups.some((coding) => Boolean((coding as any).generalInstructionText));
+    const hasVisibleManualInformation = hasCodeManualInformation || hasVisibleGeneralInstruction;
+    const preferredManualInstruction =
+      analysis.status === 'exact' &&
+      this.preferManualCodingInstructions &&
+      this.hasPreferredManualInstruction(
+        selectedVariable,
+        analysis.selectedCodeId,
+        analysis.answers,
+        variables,
+      );
+
+    if (analysis.status === 'exact' && !preferredManualInstruction) {
+      const visibleAnswers = analysis.answers.filter((answer) =>
+        this.isCodingVariableVisible(answer.variable, variables),
+      );
+      const answers = visibleAnswers.map((answer) =>
+        this.toCodingInformationAnswer(definition, answer),
+      );
+      if (!answers.length || answers.some((answer) => answer === null)) {
+        this.codingInformation = {
+          status: ruleGroups.length ? 'rules' : 'unavailable',
+          title: ruleGroups.length
+            ? 'Kodierinformation aus dem Codebook'
+            : 'Kodierinformation ausgeblendet',
+          message: answers.length
+            ? this.correctSolutionPrefill.message
+            : 'Die Antwortvariablen sind durch die Anzeigeeinstellungen ausgeblendet.',
+          answers: [],
+          ruleGroups,
+        };
+        return;
+      }
+      this.codingInformation = {
+        status: 'exact',
+        title: 'Richtige Antwort',
+        message:
+          visibleAnswers.length === analysis.answers.length
+            ? analysis.message
+            : 'Die sichtbaren Teilantworten werden angezeigt. Weitere Antwortvariablen sind durch die Anzeigeeinstellungen ausgeblendet.',
+        answers: answers.filter((answer): answer is CodingInformationAnswer => answer !== null),
+        ruleGroups,
+      };
       return;
     }
 
-    this.correctSolutionPrefill = derivePlayerSolutionPrefill(
-      variableMatch.variable,
-      variables,
-      (variable) => {
-        const candidates = Array.from(
-          new Set(
-            [variable?.['alias'], variable?.['id']]
-              .map((value) => String(value || '').trim())
-              .filter((value) => value.length > 0),
-          ),
-        );
-        for (const candidate of candidates) {
-          const target = this.voudService.resolvePlayerResponseTarget(definition!, candidate);
-          if (target) return target;
-        }
-        return undefined;
-      },
+    if (
+      preferredManualInstruction ||
+      (this.preferManualCodingInstructions && hasCodeManualInformation)
+    ) {
+      this.codingInformation = {
+        status: 'rules',
+        title: 'Manuelle Kodieranweisung',
+        message: preferredManualInstruction
+          ? 'Für die richtige Bewertung ist eine manuelle Kodieranweisung hinterlegt.'
+          : analysis.message,
+        answers: [],
+        ruleGroups,
+      };
+      return;
+    }
+
+    if (analysis.status === 'multiple') {
+      this.codingInformation = {
+        status: 'multiple',
+        title: 'Mehrere gültige Antworten',
+        message: analysis.message,
+        answers: [],
+        ruleGroups,
+      };
+      return;
+    }
+
+    if (hasAutomaticRules) {
+      this.codingInformation = {
+        status: 'rules',
+        title: 'Kodierinformation aus dem Codebook',
+        message:
+          analysis.status === 'rules'
+            ? analysis.message
+            : 'Die vorhandenen Regeln beschreiben die Bewertung, ergeben aber keine eindeutige Musterlösung.',
+        answers: [],
+        ruleGroups,
+      };
+      return;
+    }
+
+    if (hasVisibleManualInformation) {
+      this.codingInformation = {
+        status: 'rules',
+        title: 'Manuelle Kodieranweisung',
+        message: analysis.message,
+        answers: [],
+        ruleGroups,
+      };
+      return;
+    }
+
+    this.codingInformation = {
+      status: 'unavailable',
+      title: 'Keine eindeutige richtige Antwort',
+      message:
+        'Aus der vorhandenen Kodierung kann keine eindeutige richtige Antwort ermittelt werden.',
+      answers: [],
+      ruleGroups,
+    };
+  }
+
+  private resolvePlayerResponseTarget(
+    definition: string | null,
+    variable: CodingVariableLike,
+  ): PlayerResponseTarget | undefined {
+    if (!definition) return undefined;
+    const candidates = Array.from(
+      new Set(
+        [variable?.alias, variable?.id]
+          .map((value) => String(value || '').trim())
+          .filter((value) => value.length > 0),
+      ),
     );
+    for (const candidate of candidates) {
+      const target = this.voudService.resolvePlayerResponseTarget(definition, candidate);
+      if (target) return target;
+    }
+    return undefined;
+  }
+
+  private toCodingInformationAnswer(
+    definition: string | null,
+    answer: DerivedSolutionAnswer,
+  ): CodingInformationAnswer | null {
+    const target = this.resolvePlayerResponseTarget(definition, answer.variable);
+    const responseId = String(
+      target?.responseId || answer.variable.alias || answer.variable.id || '',
+    ).trim();
+    const playerResponse =
+      this.correctSolutionPrefill.status === 'available'
+        ? this.correctSolutionPrefill.responses.find(
+            (response) => response.id.toLowerCase() === responseId.toLowerCase(),
+          )
+        : undefined;
+    // Known player targets must use the same validated value as the player preview.
+    if (target && !playerResponse) return null;
+    const value = playerResponse?.value ?? answer.value;
+    const elementType = String(target?.elementType || '')
+      .trim()
+      .toLowerCase();
+    let valueLabel = String(value);
+    if (
+      ['radio', 'radio-group-images', 'dropdown', 'toggle-button', 'likert-row'].includes(
+        elementType,
+      ) &&
+      typeof value === 'number'
+    ) {
+      valueLabel =
+        target?.options?.find((option) => option.position === value)?.label || `Option ${value}`;
+    } else if (elementType === 'drop-list' && Array.isArray(value)) {
+      valueLabel = value
+        .map(
+          (token) => target?.valueOptions?.find((option) => option.value === token)?.label || token,
+        )
+        .join(', ');
+    } else if (typeof value === 'boolean') {
+      valueLabel = value ? 'ausgewählt' : 'nicht ausgewählt';
+    }
+
+    const rawLabel = String((answer.variable as any)?.label || '').trim();
+    return {
+      responseId,
+      label: target?.label || rawLabel || responseId || 'Antwort',
+      valueLabel,
+    };
+  }
+
+  private isCodingVariableVisible(
+    variable: CodingVariableLike,
+    variables: CodingVariableLike[],
+  ): boolean {
+    const index = variables.indexOf(variable);
+    const coding = index >= 0 ? this.currentCodingSchemeAsText?.[index] : undefined;
+    return Boolean(
+      coding && (this.showAudioVideoCodingVariables || !this.isAudioVideoCodingVariable(coding)),
+    );
+  }
+
+  private hasPreferredManualInstruction(
+    selectedVariable: CodingVariableLike,
+    selectedCodeId: string,
+    answers: DerivedSolutionAnswer[],
+    variables: CodingVariableLike[],
+  ): boolean {
+    const hasManualCode = (variable: CodingVariableLike, codeIds: string[]): boolean => {
+      return (
+        this.isCodingVariableVisible(variable, variables) &&
+        (Array.isArray(variable.codes) ? variable.codes : []).some(
+          (code) =>
+            codeIds.includes(String(code.id)) &&
+            Boolean(this.sanitizeManualInstruction(code.manualInstruction)),
+        )
+      );
+    };
+    return (
+      hasManualCode(selectedVariable, [selectedCodeId]) ||
+      answers.some((answer) => hasManualCode(answer.variable, answer.codeIds))
+    );
+  }
+
+  private getRelevantCodingRuleGroups(
+    selectedVariable: CodingVariableLike,
+    variables: CodingVariableLike[],
+  ): CodingAsText[] {
+    const indices: number[] = [];
+    const visited = new Set<number>();
+    const collect = (variable: CodingVariableLike) => {
+      const index = variables.indexOf(variable);
+      if (index < 0 || visited.has(index)) return;
+      visited.add(index);
+      indices.push(index);
+      for (const source of Array.isArray(variable.deriveSources) ? variable.deriveSources : []) {
+        const match = this.resolveCodingVariableReference(String(source || ''), variables, true);
+        if (match.status === 'unique' && match.variable) collect(match.variable);
+      }
+    };
+    collect(selectedVariable);
+    return indices
+      .map((index) => this.currentCodingSchemeAsText?.[index])
+      .filter((coding): coding is CodingAsText => Boolean(coding));
   }
 
   createCodingSchemeAsText(codings: any[]): ExplorerCodingAsText[] {
@@ -459,6 +717,7 @@ export class ItemExplorerCodingService {
         rawVariable.manualInstruction,
       );
       coding.codes.forEach((code) => {
+        code.ruleSetDescriptions ??= [];
         const rawCode = rawVariable.codes?.find(
           (candidate: any) =>
             String(candidate?.id === null ? 'null' : candidate?.id) === String(code.id),

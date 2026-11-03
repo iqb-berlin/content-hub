@@ -4,9 +4,9 @@ export default registerAs("database", () => ({
   type: "postgres" as const,
   host: process.env.DB_HOST || "localhost",
   port: parseInt(process.env.DB_PORT || "5432", 10),
-  username: process.env.DB_USERNAME || "contentpool",
-  password: process.env.DB_PASSWORD || "contentpool_dev",
-  database: process.env.DB_DATABASE || "contentpool",
+  username: process.env.DB_USERNAME || "contenthub",
+  password: process.env.DB_PASSWORD || "contenthub_dev",
+  database: process.env.DB_DATABASE || "contenthub",
   synchronize:
     process.env.DB_SYNCHRONIZE === "true" ||
     process.env.NODE_ENV === "development",

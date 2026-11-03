@@ -70,8 +70,8 @@ async function bootstrap() {
 
   if (swaggerEnabled) {
     const config = new DocumentBuilder()
-      .setTitle("IQB ContentPool API")
-      .setDescription("API for managing Assessment Content Packages")
+      .setTitle("Content Hub API")
+      .setDescription("API for managing Assessment Packages")
       .setVersion(process.env.APP_VERSION || "0.0.0-dev")
       .addBearerAuth()
       .build();
@@ -81,9 +81,9 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`ContentPool API running on port ${port}`);
+  console.log(`Content Hub API running on port ${port}`);
 }
 bootstrap().catch((error: unknown) => {
-  console.error("Failed to start ContentPool API", error);
+  console.error("Failed to start Content Hub API", error);
   process.exitCode = 1;
 });

@@ -20,7 +20,7 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
           <h1>{{ data.name }}</h1>
           @if (canManageAcp) {
             <a [routerLink]="['/manage', acpId]" class="btn btn-outline btn-sm"
-              >← Zur ACP-Übersicht</a
+              >← Zur AP-Übersicht</a
             >
           }
         </div>
@@ -85,7 +85,7 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
             <div class="download-links">
               @if (fc.allowIndexDownload) {
                 <button class="btn btn-outline btn-sm" (click)="downloadIndex()">
-                  ACP-Index (JSON)
+                  AP-Index (JSON)
                 </button>
               }
               @if (fc.allowUnitDownload) {
@@ -115,12 +115,12 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
       </div>
       @if (fc.showIndexOnStartPage !== false) {
         <a class="index-link" [routerLink]="['/view', acpId, 'index']"
-          >Paketstruktur (ACP-Index) ansehen</a
+          >Paketstruktur (AP-Index) ansehen</a
         >
       }
     } @else {
       <div class="empty-state">
-        <h3>Lade ACP-Daten...</h3>
+        <h3>Lade AP-Daten...</h3>
       </div>
     }
   `,
@@ -295,9 +295,9 @@ export class AcpStartComponent implements OnInit, OnDestroy {
       ? [{ label: 'Verwaltung', route: ['/manage', this.acpId] }]
       : [];
     this.breadcrumbs = [
-      { label: 'Assessment Content Pool', route: ['/'] },
+      { label: 'Content Hub', route: ['/'] },
       ...managerCrumb,
-      { label: this.data?.name || 'ACP' },
+      { label: this.data?.name || 'AP' },
     ];
   }
 }

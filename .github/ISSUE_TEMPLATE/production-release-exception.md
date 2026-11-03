@@ -6,7 +6,7 @@ labels: release
 assignees: ''
 ---
 
-<!-- content-pool-production-release-exception -->
+<!-- content-hub-production-release-exception -->
 
 ## Decision
 

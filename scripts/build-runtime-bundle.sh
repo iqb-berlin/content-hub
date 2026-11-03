@@ -20,6 +20,7 @@ files=(
   VERSION
   CHANGELOG.md
   RELEASE_CHECKLIST.md
+  docs/operations/content-hub-branding.md
   .env.example
   docker-compose.server.yml
   docker-compose.traefik.yml
@@ -33,6 +34,7 @@ files=(
   scripts/configure-hu-postfix-relay.sh
   scripts/init-keycloak.sh
   scripts/deploy-common.sh
+  scripts/migrate-keycloak-client.py
   scripts/install.sh
   scripts/update.sh
   scripts/restore.sh

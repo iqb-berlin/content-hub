@@ -259,7 +259,7 @@ test('imports booklet assignments without positions and retains known positions'
   await upload('item;booklet;position\ni1;B1;3\ni2;B2;4');
   await upload('item;booklet\ni1;B1\ni2;B3');
 
-  const managerToken = await page.evaluate(() => localStorage.getItem('cp_token'));
+  const managerToken = await page.evaluate(() => localStorage.getItem('ch_token'));
   expect(managerToken).toBeTruthy();
   const itemListResponse = await request.get(`/api/acp/${ACP_ID}/files/item-list`, {
     headers: { Authorization: `Bearer ${managerToken}` },

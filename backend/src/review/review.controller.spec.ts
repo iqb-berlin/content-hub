@@ -6,6 +6,47 @@ import {
 } from "../database/entities";
 import { ReviewController } from "./review.controller";
 
+describe("unit view access in capability responses", () => {
+  it.each([
+    ["PUBLIC", false, false, [], false, false],
+    ["PUBLIC", true, false, [], false, true],
+    ["PUBLIC", undefined, false, [], false, true],
+    ["MANAGER", false, false, [], true, true],
+    ["ADMIN", false, false, [], true, true],
+    ["CREDENTIAL", false, true, ["review:participate"], true, true],
+    ["CREDENTIAL", false, false, ["review:participate"], true, false],
+    ["CREDENTIAL", false, true, ["item-explorer:view"], true, false],
+    ["CREDENTIAL", false, true, ["review:participate"], false, false],
+    ["USER", false, true, ["review:manage"], true, true],
+  ])(
+    "matches unit-route access for %s (unit=%s, review=%s, grants=%j, identity=%s)",
+    async (
+      acpAccessLevel,
+      enableUnitView,
+      enableReview,
+      grants,
+      identity,
+      expected,
+    ) => {
+      const controller = new ReviewController(
+        { resolve: jest.fn().mockResolvedValue(grants) } as any,
+        {} as any,
+        {
+          findOne: async () => ({
+            featureConfig: { enableUnitView, enableReview },
+          }),
+        } as any,
+        {} as any,
+      );
+      const access = await controller.getCapabilities("acp", {
+        acpAccessLevel,
+        ...(identity ? { user: { sub: "viewer" } } : {}),
+      });
+      expect(access.canViewUnit).toBe(expected);
+    },
+  );
+});
+
 describe("ReviewController stale memberships", () => {
   it.each(["user", "credential"] as const)(
     "removes a deleted %s while saving config and preserves live members and groups",
@@ -63,6 +104,7 @@ describe("ReviewController stale memberships", () => {
       expect(result).toEqual({
         categories: [],
         enableReview: false,
+        hideReviewMetadata: false,
         hideReviewDeveloperNames: false,
         visibilityMode: "GROUP",
         configVersion: 2,
@@ -250,51 +292,55 @@ describe("deleting review groups", () => {
   });
 });
 
-describe("review developer metadata visibility", () => {
-  it.each([true, false, undefined])(
-    "persists %s and preserves the setting for older clients that omit it",
-    async (hideReviewDeveloperNames) => {
-      const config = {
-        reviewConfigVersion: 1,
-        reviewRevision: "0",
-        featureConfig: {
-          enableReview: true,
-          hideReviewDeveloperNames: true,
-          showMetadata: true,
-        },
-        reviewGroups: [],
-      };
-      const manager: any = {
-        findOne: jest.fn(async () => config),
-        save: jest.fn(async (value) => value),
-        transaction: async (fn: any) => fn(manager),
-      };
-      const capabilities = { assert: jest.fn() };
-      const controller = new ReviewController(
-        capabilities as any,
-        {} as any,
-        { manager, findOne: async () => config } as any,
-        {} as any,
-      );
-      const result = await controller.configure(
-        "acp",
-        {
-          enableReview: true,
-          visibilityMode: "PRIVATE",
-          configVersion: 1,
-          hideReviewDeveloperNames,
-        },
-        {},
-      );
-      expect(result.hideReviewDeveloperNames).toBe(
-        hideReviewDeveloperNames ?? true,
-      );
-      expect(config.featureConfig.showMetadata).toBe(true);
-      expect(
-        (await controller.getConfig("acp", {})).hideReviewDeveloperNames,
-      ).toBe(hideReviewDeveloperNames ?? true);
-      expect(capabilities.assert).toHaveBeenCalledWith({}, "review:manage");
-      expect(manager.save).toHaveBeenCalledWith(config);
-    },
-  );
-});
+describe.each(["hideReviewMetadata", "hideReviewDeveloperNames"])(
+  "review setting %s",
+  (setting) => {
+    it.each([true, false, undefined])(
+      "persists %s and preserves the setting for older clients that omit it",
+      async (hidden) => {
+        const config = {
+          reviewConfigVersion: 1,
+          reviewRevision: "0",
+          featureConfig: {
+            enableReview: true,
+            hideReviewMetadata: true,
+            hideReviewDeveloperNames: true,
+            showMetadata: true,
+          },
+          reviewGroups: [],
+        };
+        const manager: any = {
+          findOne: jest.fn(async () => config),
+          save: jest.fn(async (value) => value),
+          transaction: async (fn: any) => fn(manager),
+        };
+        const capabilities = { assert: jest.fn() };
+        const controller = new ReviewController(
+          capabilities as any,
+          {} as any,
+          { manager, findOne: async () => config } as any,
+          {} as any,
+        );
+        const result = await controller.configure(
+          "acp",
+          {
+            enableReview: true,
+            visibilityMode: "PRIVATE",
+            configVersion: 1,
+            [setting]: hidden,
+          },
+          {},
+        );
+        expect(result[setting as keyof typeof result]).toBe(hidden ?? true);
+        expect(config.featureConfig.showMetadata).toBe(true);
+        expect(
+          (await controller.getConfig("acp", {}))[
+            setting as keyof typeof result
+          ],
+        ).toBe(hidden ?? true);
+        expect(capabilities.assert).toHaveBeenCalledWith({}, "review:manage");
+        expect(manager.save).toHaveBeenCalledWith(config);
+      },
+    );
+  },
+);

@@ -1,4 +1,4 @@
-# ContentPool Release Go/No-Go Checklist
+# Content Hub Release Go/No-Go Checklist
 
 Record the owner, timestamps, evidence links, candidate manifest, and final
 decision in the release issue or operational change record.

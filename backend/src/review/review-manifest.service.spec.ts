@@ -65,7 +65,7 @@ describe("ReviewManifestService", () => {
   it("rejects unknown ACPs", async () => {
     acps.findOne.mockResolvedValue(null);
     await expect(service.getManifest("missing")).rejects.toThrow(
-      "ACP nicht gefunden",
+      "AP nicht gefunden",
     );
     expect(files.find).not.toHaveBeenCalled();
   });

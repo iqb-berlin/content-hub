@@ -7,7 +7,7 @@ import sys
 from typing import Any
 
 
-MARKER = "<!-- content-pool-production-release-exception -->"
+MARKER = "<!-- content-hub-production-release-exception -->"
 PRECONDITIONS_HEADING = "## Required production preconditions"
 
 
@@ -17,6 +17,8 @@ class ProductionExceptionError(ValueError):
 
 def validate_issue(repository: str, issue_url: str, issue: dict[str, Any]) -> int:
     prefix = f"https://github.com/{repository}/issues/"
+    if repository == "iqb-berlin/content-hub":
+        issue_url = issue_url.replace("https://github.com/iqb-berlin/content-pool-next/issues/", prefix, 1)
     if not issue_url.startswith(prefix):
         raise ProductionExceptionError(
             f"production exception evidence must be an issue in {repository}"
@@ -27,7 +29,7 @@ def validate_issue(repository: str, issue_url: str, issue: dict[str, Any]) -> in
     if issue.get("state") != "OPEN":
         raise ProductionExceptionError("production exception issue must remain open")
     body = issue.get("body")
-    if not isinstance(body, str) or MARKER not in body:
+    if not isinstance(body, str) or not any(marker in body for marker in (MARKER, "<!-- content-pool-production-release-exception -->")):
         raise ProductionExceptionError(
             "issue is not a production release exception record"
         )

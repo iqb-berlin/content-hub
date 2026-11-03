@@ -16,7 +16,7 @@ type ScopeOption = {
 };
 
 const SCOPE_OPTIONS: ScopeOption[] = [
-  { value: 'acp.read', label: 'ACP lesen' },
+  { value: 'acp.read', label: 'AP lesen' },
   { value: 'transfer.read', label: 'Transfer lesen' },
   { value: 'transfer.write', label: 'Transfer schreiben' },
   { value: 'index.read', label: 'Index lesen' },
@@ -110,12 +110,12 @@ const SCOPE_OPTIONS: ScopeOption[] = [
           </div>
 
           <div class="form-group">
-            <label>ACP-Begrenzung</label>
+            <label>AP-Begrenzung</label>
             <div class="acp-limit-actions">
               <button type="button" class="btn btn-outline btn-sm" (click)="clearAcpLimits()">
                 Global
               </button>
-              <span class="subtle"> Ohne Auswahl gilt der Token für alle ACPs. </span>
+              <span class="subtle"> Ohne Auswahl gilt der Token für alle APs. </span>
             </div>
             <div class="acp-grid">
               @for (acp of acps; track acp.id) {
@@ -129,7 +129,7 @@ const SCOPE_OPTIONS: ScopeOption[] = [
                   <code>{{ acp.packageId }}</code>
                 </label>
               } @empty {
-                <div class="subtle">Keine ACPs verfügbar.</div>
+                <div class="subtle">Keine APs verfügbar.</div>
               }
             </div>
           </div>
@@ -188,7 +188,7 @@ const SCOPE_OPTIONS: ScopeOption[] = [
                 <th>Name</th>
                 <th>Prefix</th>
                 <th>Berechtigungen</th>
-                <th>ACP</th>
+                <th>AP</th>
                 <th>Status</th>
                 <th>Ablauf</th>
                 <th>Letzte Nutzung</th>

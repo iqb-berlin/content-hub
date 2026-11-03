@@ -22,6 +22,7 @@ type EditableCommentCategory = Omit<CommentCategory, 'id'> & { id?: string };
 
 interface ReviewConfig {
   enableReview: boolean;
+  hideReviewMetadata?: boolean;
   hideReviewDeveloperNames?: boolean;
   visibilityMode: 'PRIVATE' | 'SHARED' | 'GROUP';
   configVersion: number;
@@ -260,7 +261,7 @@ interface ReviewConfig {
     `,
   ],
   template: `<a class="btn btn-outline btn-sm" [routerLink]="['/view', acpId]"
-      >← Zur ACP-Übersicht</a
+      >← Zur AP-Übersicht</a
     >
     <div class="page-header">
       <h1>Review</h1>
@@ -401,7 +402,19 @@ interface ReviewConfig {
         <fieldset [disabled]="busy">
           <legend>Metadaten in der Prüfansicht</legend>
           <label>
-            <input type="checkbox" [(ngModel)]="config.hideReviewDeveloperNames" />
+            <input type="checkbox" [(ngModel)]="config.hideReviewMetadata" />
+            Reiter „Metadaten“ ausblenden
+          </label>
+          <p>
+            Blendet den gesamten Metadaten-Reiter in der Testheft-Prüfansicht für alle
+            Review-Teilnehmenden aus. Die Einstellung gilt nach dem Speichern.
+          </p>
+          <label>
+            <input
+              type="checkbox"
+              [(ngModel)]="config.hideReviewDeveloperNames"
+              [disabled]="config.hideReviewMetadata === true"
+            />
             Namen und Kürzel der Aufgabenentwickler/innen ausblenden
           </label>
           <p>
@@ -416,7 +429,7 @@ interface ReviewConfig {
         @if (manifest.booklets?.length) {
           <app-booklet-selection [acpId]="acpId" [booklets]="manifest.booklets" />
         } @else {
-          <p>Dieser ACP enthält noch keine Testhefte.</p>
+          <p>Dieser AP enthält noch keine Testhefte.</p>
         }
       }
       @if (access?.canManageReview && config) {
@@ -479,7 +492,7 @@ interface ReviewConfig {
                     />
                     <span class="member-name">{{ member.label }}</span>
                     @if (member.kind === 'credential') {
-                      <small class="member-kind">ACP-Zugang</small>
+                      <small class="member-kind">AP-Zugang</small>
                     }
                   </label>
                 }
@@ -801,7 +814,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
             this.comments = [];
           }
         },
-        error: () => (this.error = 'Kein Zugriff auf diesen ACP.'),
+        error: () => (this.error = 'Kein Zugriff auf diesen AP.'),
       }),
     );
   }

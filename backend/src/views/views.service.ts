@@ -835,7 +835,7 @@ export class ViewsService {
   ): Promise<Buffer> {
     const ExcelJS = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = "IQB ContentPool";
+    workbook.creator = "Content Hub";
     workbook.created = new Date();
 
     const sheet = workbook.addWorksheet("Persönliche Itemdaten");

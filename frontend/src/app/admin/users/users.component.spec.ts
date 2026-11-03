@@ -106,7 +106,7 @@ describe('UsersComponent', () => {
     component.confirmDeleteUser();
 
     expect(component.deleteDialogBusy).toBe(false);
-    expect(component.deleteDialogError).toContain('letzte ACP-Manager');
+    expect(component.deleteDialogError).toContain('letzte AP-Manager');
     expect(component.deleteDialogOpen).toBe(true);
   });
 

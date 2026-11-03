@@ -205,7 +205,8 @@ describe('VoudService.resolvePlayerResponseTarget', () => {
                   id: 'radio_1',
                   alias: 'A1',
                   type: 'radio',
-                  options: [{ text: 'A' }, { text: 'B' }],
+                  label: [{ lang: 'de', value: '<strong>Lieblingsfarbe</strong>' }],
+                  options: [{ text: 'Rot' }, { text: '<em>Blau</em>' }],
                 },
               ],
             },
@@ -219,7 +220,33 @@ describe('VoudService.resolvePlayerResponseTarget', () => {
       elementType: 'radio',
       identifiers: ['radio_1', 'A1'],
       optionCount: 2,
+      label: 'Lieblingsfarbe',
+      options: [
+        { position: 1, label: 'Rot' },
+        { position: 2, label: 'Blau' },
+      ],
     });
+  });
+
+  it('uses safe ordinal labels when options contain no readable text', () => {
+    const definition = JSON.stringify({
+      pages: [
+        {
+          elements: [
+            {
+              id: 'images',
+              type: 'radio-group-images',
+              options: [{ image: 'a.png' }, { image: 'b.png' }],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(service.resolvePlayerResponseTarget(definition, 'images')?.options).toEqual([
+      { position: 1, label: 'Option 1' },
+      { position: 2, label: 'Option 2' },
+    ]);
   });
 
   it('falls back to the internal id when the element has no alias', () => {
@@ -319,5 +346,54 @@ describe('VoudService.stripConditionalVisibility', () => {
       startControl: true,
       showRestRuns: true,
     });
+  });
+});
+
+describe('VoudService compound response targets', () => {
+  const service = new VoudService();
+  it('uses the containing Likert table options and the row text', () => {
+    const definition = JSON.stringify({
+      pages: [
+        {
+          elements: [
+            {
+              type: 'likert',
+              options: [{ text: 'stimmt' }, { text: '<p>stimmt nicht</p>' }],
+              rows: [
+                {
+                  type: 'likert-row',
+                  id: 'internal',
+                  alias: 'A',
+                  label: 'Beschriftung',
+                  rowLabel: { text: '<span>Buchdruck</span>' },
+                  columnCount: 2,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(service.resolvePlayerResponseTarget(definition, 'A')).toMatchObject({
+      responseId: 'A',
+      elementType: 'likert-row',
+      label: 'Buchdruck',
+      optionCount: 2,
+      options: [
+        { position: 1, label: 'stimmt' },
+        { position: 2, label: 'stimmt nicht' },
+      ],
+    });
+  });
+  it('does not guess columns for orphaned or inconsistent Likert rows', () => {
+    const row = { type: 'likert-row', id: 'A', columnCount: 3 };
+    for (const elements of [[row], [{ type: 'likert', options: ['yes', 'no'], rows: [row] }]]) {
+      const target = service.resolvePlayerResponseTarget(
+        JSON.stringify({ pages: [{ elements }] }),
+        'A',
+      );
+      expect(target).toMatchObject({ responseId: 'A', elementType: 'likert-row' });
+      expect(target?.optionCount).toBeUndefined();
+    }
   });
 });

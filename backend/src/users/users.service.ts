@@ -98,7 +98,7 @@ export class UsersService {
       });
       if (managerCount <= 1) {
         throw new BadRequestException(
-          `Cannot delete user because ACP ${managerRole.acpId} would have no ACP_MANAGER`,
+          `Cannot delete user because AP ${managerRole.acpId} would have no ACP_MANAGER`,
         );
       }
     }

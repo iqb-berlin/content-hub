@@ -1,6 +1,6 @@
-# IQB ContentPool Documentation
+# Content Hub Documentation
 
-This folder contains the main project documentation for the ContentPool application.
+This folder contains the main project documentation for the Content Hub application.
 The repository is a split Angular frontend and NestJS backend that manages Assessment
 Content Packages (ACPs), their files, access rules, review workflows, and external
 transfer APIs.
@@ -80,6 +80,8 @@ For ACP managers who need a task-oriented user guide, see:
   Health checks, backups, upgrades, observability, and routine operator tasks.
 - [Keycloak Email Delivery](operations/keycloak-email.md)
   Local Postfix relay and HU authenticated SMTP setup for transactional Keycloak mail.
+- [Content Hub Branding](operations/content-hub-branding.md)
+  Approved assets, technical-name transition, palette migration and rollback.
 
 ## Existing Root-Level Runbooks
 

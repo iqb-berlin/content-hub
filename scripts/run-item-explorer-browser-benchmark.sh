@@ -6,7 +6,7 @@ BASELINE_ROOT="${ITEM_EXPLORER_BENCHMARK_BASELINE_ROOT:-}"
 CANDIDATE_ROOT="${ITEM_EXPLORER_BENCHMARK_CANDIDATE_ROOT:-$REPOSITORY_ROOT}"
 EXPECTED_BASELINE_REVISION="${ITEM_EXPLORER_BENCHMARK_BASELINE_REVISION:-5cb549b}"
 BENCHMARK_RUNS="${ITEM_EXPLORER_BENCHMARK_RUNS:-6}"
-DATABASE_CONTAINER="content-pool-browser-benchmark-$$"
+DATABASE_CONTAINER="content-hub-browser-benchmark-$$"
 DATABASE_PORT="${ITEM_EXPLORER_BENCHMARK_DATABASE_PORT:-55432}"
 DATABASE_CONTAINER_STARTED=false
 RESULT_DIRECTORY="${ITEM_EXPLORER_BENCHMARK_RESULT_DIR:-$REPOSITORY_ROOT/frontend/benchmark-results/item-explorer-ab-$(date +%Y%m%d-%H%M%S)-$$}"
@@ -89,9 +89,9 @@ docker info >/dev/null 2>&1 || {
 }
 docker run --rm -d \
   --name "$DATABASE_CONTAINER" \
-  -e POSTGRES_DB=contentpool_e2e \
-  -e POSTGRES_USER=contentpool \
-  -e POSTGRES_PASSWORD=contentpool_dev \
+  -e POSTGRES_DB=contenthub_e2e \
+  -e POSTGRES_USER=contenthub \
+  -e POSTGRES_PASSWORD=contenthub_dev \
   -p "$DATABASE_PORT:5432" \
   postgres:16-alpine >/dev/null
 DATABASE_CONTAINER_STARTED=true
@@ -99,7 +99,7 @@ DATABASE_CONTAINER_STARTED=true
 database_ready=false
 for _attempt in $(seq 1 30); do
   if docker exec "$DATABASE_CONTAINER" \
-    pg_isready -U contentpool -d contentpool_e2e >/dev/null 2>&1; then
+    pg_isready -U contenthub -d contenthub_e2e >/dev/null 2>&1; then
     database_ready=true
     break
   fi

@@ -6,7 +6,7 @@ The frontend is an Angular 21 standalone application. It uses:
 
 - Angular router with lazy `loadComponent` routes,
 - Angular `HttpClient`,
-- an auth interceptor that injects the ContentPool JWT,
+- an auth interceptor that injects the Content Hub JWT,
 - small service-based state management instead of a global store,
 - route guards for access flow orchestration.
 

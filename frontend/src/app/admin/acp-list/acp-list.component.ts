@@ -11,7 +11,7 @@ import { Acp } from '../../core/models/api.models';
   imports: [FormsModule, RouterLink],
   template: `
     <div class="page-header">
-      <h1>{{ auth.isAdmin ? 'Assessment Content Packages' : 'Meine ACP-Pakete' }}</h1>
+      <h1>{{ auth.isAdmin ? 'Assessment Packages' : 'Meine AP-Pakete' }}</h1>
       @if (auth.isAdmin) {
         <button
           class="btn btn-outline btn-state"
@@ -19,14 +19,14 @@ import { Acp } from '../../core/models/api.models';
           [attr.aria-expanded]="showCreate"
           aria-controls="acp-create-form"
         >
-          + ACP anlegen
+          + AP anlegen
         </button>
       }
     </div>
 
     @if (showCreate && auth.isAdmin) {
       <div id="acp-create-form" class="card">
-        <h3>Neues ACP anlegen</h3>
+        <h3>Neues AP anlegen</h3>
         <form (ngSubmit)="createAcp()">
           <div class="form-group">
             <label>Package-ID</label>
@@ -135,7 +135,7 @@ import { Acp } from '../../core/models/api.models';
       @if (!acps.length) {
         <div class="empty-state">
           <h3>
-            {{ auth.isAdmin ? 'Keine ACPs vorhanden' : 'Keine zugewiesenen ACP-Pakete vorhanden' }}
+            {{ auth.isAdmin ? 'Keine APs vorhanden' : 'Keine zugewiesenen AP-Pakete vorhanden' }}
           </h3>
         </div>
       }
@@ -180,7 +180,7 @@ export class AcpListComponent implements OnInit {
 
   deleteAcp(acp: Acp) {
     if (!this.auth.isAdmin) return;
-    if (confirm(`ACP "${acp.name}" wirklich löschen?`)) {
+    if (confirm(`AP "${acp.name}" wirklich löschen?`)) {
       this.api.deleteAcp(acp.id).subscribe({ next: () => this.load() });
     }
   }

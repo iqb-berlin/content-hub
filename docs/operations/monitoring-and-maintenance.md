@@ -29,7 +29,7 @@ These endpoints are also used by the Docker health checks in production.
 
 The compose files already define health checks for:
 
-- ContentPool API,
+- Content Hub API,
 - nginx or frontend container,
 - PostgreSQL containers,
 - Keycloak.
@@ -47,7 +47,7 @@ Use targeted logs instead of tailing everything when possible.
 Examples:
 
 ```bash
-docker compose -f docker-compose.prod.yml logs --since 15m content-pool-api
+docker compose -f docker-compose.prod.yml logs --since 15m content-hub-api
 docker compose -f docker-compose.prod.yml logs --since 15m keycloak
 docker compose -f docker-compose.prod.yml logs --since 15m nginx
 ```
@@ -73,7 +73,7 @@ The application records server API activity in a dedicated audit table. Use that
 
 At minimum, backup:
 
-- the ContentPool PostgreSQL database,
+- the Content Hub PostgreSQL database,
 - the Keycloak PostgreSQL database,
 - the uploads volume.
 

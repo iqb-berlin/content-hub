@@ -282,7 +282,7 @@ test('renders the preview without document overflow on desktop and narrow screen
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
     .toBe(true);
   await page.screenshot({
-    path: '/tmp/content-pool-item-explorer-desktop.png',
+    path: '/tmp/content-hub-item-explorer-desktop.png',
     fullPage: true,
   });
 
@@ -296,10 +296,52 @@ test('renders the preview without document overflow on desktop and narrow screen
   expect(previewBounds!.x).toBeGreaterThanOrEqual(0);
   expect(previewBounds!.x + previewBounds!.width).toBeLessThanOrEqual(391);
   await page.screenshot({
-    path: '/tmp/content-pool-item-explorer-mobile.png',
+    path: '/tmp/content-hub-item-explorer-mobile.png',
     fullPage: true,
   });
 });
 
 // Coding, draft/published separation and reader reload are exercised on all
 // browsers in critical-journeys-cross-browser.spec.ts with isolated ACPs.
+
+test('edits, saves, reloads and deletes current-session player answers', async ({ page }) => {
+  await loginAsManager(page);
+  await openExplorer(page);
+  await selectAndReadResponseState(page, rowIds.legacy, 'i4');
+  const answer = page.frameLocator('iframe.player-iframe').getByLabel('Testantwort');
+  await answer.fill('Neue Antwort aus der aktiven Sitzung');
+  await page.getByText('Weitere Aktionen ▾', { exact: true }).last().click();
+  await page.getByRole('button', { name: 'Player-Eingaben speichern …', exact: true }).click();
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/items/i4/response-state') &&
+      response.ok(),
+  );
+  await page.getByRole('button', { name: '💾 Speichern', exact: true }).click();
+  const saveResponse = await saved;
+  expect(saveResponse.request().postDataJSON().responseData.answer).toBe(
+    'Neue Antwort aus der aktiven Sitzung',
+  );
+  await page.reload();
+  await selectAndReadResponseState(page, rowIds.legacy, 'i4');
+  await expect(answer).toHaveValue('Neue Antwort aus der aktiven Sitzung');
+  await page.getByText('Weitere Aktionen ▾', { exact: true }).last().click();
+  await page
+    .getByRole('button', { name: 'Gespeicherte Player-Eingaben löschen …', exact: true })
+    .click();
+  const deleted = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'DELETE' &&
+      new URL(response.url()).pathname.endsWith('/items/i4/response-state') &&
+      response.ok(),
+  );
+  await page
+    .getByRole('button', { name: /Löschen/, exact: false })
+    .last()
+    .click();
+  await deleted;
+  await page.reload();
+  const state = await selectAndReadResponseState(page, rowIds.legacy, 'i4');
+  expect(state.state?.responseData?.answer).toBeUndefined();
+});

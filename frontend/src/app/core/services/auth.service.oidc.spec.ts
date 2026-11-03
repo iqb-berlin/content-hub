@@ -112,7 +112,7 @@ describe('AuthService OIDC and Crypto Paths', () => {
 
   it('marks OIDC users from auth type flag', () => {
     expect(service.isOidcUser).toBe(false);
-    localStorage.setItem('cp_auth_type', 'oidc');
+    localStorage.setItem('ch_auth_type', 'oidc');
     expect(service.isOidcUser).toBe(true);
   });
 
@@ -207,11 +207,11 @@ describe('AuthService OIDC and Crypto Paths', () => {
     const result = await firstValueFrom(service.handleOidcAuthorizationCode('code-1', 'state-1'));
 
     expect(result).toEqual({ accessToken: 'app-jwt', user: profile });
-    expect(localStorage.getItem('cp_token')).toBe('app-jwt');
-    expect(localStorage.getItem('cp_oidc_access_token')).toBe('oidc-access');
-    expect(localStorage.getItem('cp_oidc_id_token')).toBe('oidc-id');
-    expect(localStorage.getItem('cp_oidc_refresh_token')).toBe('oidc-refresh');
-    expect(localStorage.getItem('cp_auth_type')).toBe('oidc');
+    expect(localStorage.getItem('ch_token')).toBe('app-jwt');
+    expect(localStorage.getItem('ch_oidc_access_token')).toBe('oidc-access');
+    expect(localStorage.getItem('ch_oidc_id_token')).toBe('oidc-id');
+    expect(localStorage.getItem('ch_oidc_refresh_token')).toBe('oidc-refresh');
+    expect(localStorage.getItem('ch_auth_type')).toBe('oidc');
     expect(sessionStorage.getItem('oidc_state')).toBeNull();
     expect(sessionStorage.getItem('oidc_code_verifier')).toBeNull();
     expect(service.currentUser).toEqual(profile);
@@ -225,14 +225,14 @@ describe('AuthService OIDC and Crypto Paths', () => {
     const result = await firstValueFrom(service.handleOidcCallback('id-token-only'));
 
     expect(result).toEqual({ accessToken: 'app-jwt', user: profile });
-    expect(localStorage.getItem('cp_oidc_id_token')).toBe('id-token-only');
-    expect(localStorage.getItem('cp_auth_type')).toBe('oidc');
+    expect(localStorage.getItem('ch_oidc_id_token')).toBe('id-token-only');
+    expect(localStorage.getItem('ch_auth_type')).toBe('oidc');
     expect(service.currentUser).toEqual(profile);
   });
 
   it('does not trigger password flow for non-oidc users', () => {
     const getOidcSpy = vi.spyOn(service, 'getOidcConfig');
-    localStorage.removeItem('cp_auth_type');
+    localStorage.removeItem('ch_auth_type');
 
     service.changePassword();
 
@@ -240,7 +240,7 @@ describe('AuthService OIDC and Crypto Paths', () => {
   });
 
   it('prepares password-change flow for oidc users', () => {
-    localStorage.setItem('cp_auth_type', 'oidc');
+    localStorage.setItem('ch_auth_type', 'oidc');
     sessionStorage.removeItem('oidc_redirect_url');
     httpClientMock.get.mockReturnValue(of(oidcConfig));
 
@@ -252,8 +252,8 @@ describe('AuthService OIDC and Crypto Paths', () => {
   });
 
   it('loads profile using OIDC sync path', () => {
-    localStorage.setItem('cp_auth_type', 'oidc');
-    localStorage.setItem('cp_oidc_id_token', 'id-token');
+    localStorage.setItem('ch_auth_type', 'oidc');
+    localStorage.setItem('ch_oidc_id_token', 'id-token');
     const syncSpy = vi.spyOn(service, 'syncOidcRoles').mockReturnValue(of(profile));
 
     service.loadProfile();
@@ -263,8 +263,8 @@ describe('AuthService OIDC and Crypto Paths', () => {
   });
 
   it('logs out on OIDC sync failure during profile load', () => {
-    localStorage.setItem('cp_auth_type', 'oidc');
-    localStorage.setItem('cp_oidc_id_token', 'id-token');
+    localStorage.setItem('ch_auth_type', 'oidc');
+    localStorage.setItem('ch_oidc_id_token', 'id-token');
     vi.spyOn(service, 'syncOidcRoles').mockReturnValue(throwError(() => new Error('sync failed')));
     const logoutSpy = vi.spyOn(service, 'logout').mockImplementation(() => undefined);
 
@@ -286,16 +286,16 @@ describe('AuthService OIDC and Crypto Paths', () => {
 
     const result = await firstValueFrom(service.syncOidcRoles('id-token'));
 
-    expect(localStorage.getItem('cp_token')).toBe('new-jwt');
+    expect(localStorage.getItem('ch_token')).toBe('new-jwt');
     expect(result.acpRoles).toEqual([]);
   });
 
   it('handles OIDC logout branch and clears local/session state without broadcast', () => {
-    localStorage.setItem('cp_token', 'jwt');
-    localStorage.setItem('cp_auth_type', 'oidc');
-    localStorage.setItem('cp_oidc_id_token', 'id-token');
-    localStorage.setItem('cp_oidc_access_token', 'access-token');
-    localStorage.setItem('cp_oidc_refresh_token', 'refresh-token');
+    localStorage.setItem('ch_token', 'jwt');
+    localStorage.setItem('ch_auth_type', 'oidc');
+    localStorage.setItem('ch_oidc_id_token', 'id-token');
+    localStorage.setItem('ch_oidc_access_token', 'access-token');
+    localStorage.setItem('ch_oidc_refresh_token', 'refresh-token');
     sessionStorage.setItem('oidc_redirect_url', '/admin');
     sessionStorage.setItem('oidc_state', 'state-x');
     sessionStorage.setItem('oidc_code_verifier', 'verifier-x');
@@ -307,11 +307,11 @@ describe('AuthService OIDC and Crypto Paths', () => {
 
     expect(httpClientMock.post).toHaveBeenCalledWith('/api/auth/logout', {});
     expect(redirectSpy).toHaveBeenCalledWith('id-token');
-    expect(localStorage.getItem('cp_token')).toBeNull();
-    expect(localStorage.getItem('cp_oidc_id_token')).toBeNull();
-    expect(localStorage.getItem('cp_oidc_access_token')).toBeNull();
-    expect(localStorage.getItem('cp_oidc_refresh_token')).toBeNull();
-    expect(localStorage.getItem('cp_auth_type')).toBeNull();
+    expect(localStorage.getItem('ch_token')).toBeNull();
+    expect(localStorage.getItem('ch_oidc_id_token')).toBeNull();
+    expect(localStorage.getItem('ch_oidc_access_token')).toBeNull();
+    expect(localStorage.getItem('ch_oidc_refresh_token')).toBeNull();
+    expect(localStorage.getItem('ch_auth_type')).toBeNull();
     expect(sessionStorage.getItem('oidc_redirect_url')).toBeNull();
     expect(sessionStorage.getItem('oidc_state')).toBeNull();
     expect(sessionStorage.getItem('oidc_code_verifier')).toBeNull();
@@ -356,10 +356,10 @@ describe('AuthService OIDC and Crypto Paths', () => {
   });
 
   it('restores an OIDC session by refreshing tokens when the app token is missing', async () => {
-    localStorage.setItem('cp_auth_type', 'oidc');
-    localStorage.setItem('cp_oidc_access_token', createJwt(600));
-    localStorage.setItem('cp_oidc_id_token', createJwt(600));
-    localStorage.setItem('cp_oidc_refresh_token', 'refresh-1');
+    localStorage.setItem('ch_auth_type', 'oidc');
+    localStorage.setItem('ch_oidc_access_token', createJwt(600));
+    localStorage.setItem('ch_oidc_id_token', createJwt(600));
+    localStorage.setItem('ch_oidc_refresh_token', 'refresh-1');
 
     httpClientMock.post.mockImplementation((url: string) => {
       if (url.includes('/protocol/openid-connect/token')) {
@@ -384,18 +384,18 @@ describe('AuthService OIDC and Crypto Paths', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(localStorage.getItem('cp_token')).toBe('app-jwt');
-    expect(localStorage.getItem('cp_oidc_access_token')).toBe('new-oidc-access');
-    expect(localStorage.getItem('cp_oidc_id_token')).toBe('new-oidc-id');
-    expect(localStorage.getItem('cp_oidc_refresh_token')).toBe('refresh-2');
+    expect(localStorage.getItem('ch_token')).toBe('app-jwt');
+    expect(localStorage.getItem('ch_oidc_access_token')).toBe('new-oidc-access');
+    expect(localStorage.getItem('ch_oidc_id_token')).toBe('new-oidc-id');
+    expect(localStorage.getItem('ch_oidc_refresh_token')).toBe('refresh-2');
     expect(service.currentUser).toEqual(profile);
   });
 
   it('refreshes OIDC tokens automatically before expiry', async () => {
-    localStorage.setItem('cp_auth_type', 'oidc');
-    localStorage.setItem('cp_oidc_access_token', createJwt(30));
-    localStorage.setItem('cp_oidc_id_token', createJwt(30));
-    localStorage.setItem('cp_oidc_refresh_token', 'refresh-1');
+    localStorage.setItem('ch_auth_type', 'oidc');
+    localStorage.setItem('ch_oidc_access_token', createJwt(30));
+    localStorage.setItem('ch_oidc_id_token', createJwt(30));
+    localStorage.setItem('ch_oidc_refresh_token', 'refresh-1');
 
     httpClientMock.post.mockImplementation((url: string) => {
       if (url.includes('/protocol/openid-connect/token')) {
@@ -420,17 +420,17 @@ describe('AuthService OIDC and Crypto Paths', () => {
 
     await vi.advanceTimersByTimeAsync(1);
 
-    expect(localStorage.getItem('cp_token')).toBe('rotated-app-jwt');
-    expect(localStorage.getItem('cp_oidc_access_token')).toBe('rotated-access');
-    expect(localStorage.getItem('cp_oidc_id_token')).toBe('rotated-id');
-    expect(localStorage.getItem('cp_oidc_refresh_token')).toBe('refresh-2');
+    expect(localStorage.getItem('ch_token')).toBe('rotated-app-jwt');
+    expect(localStorage.getItem('ch_oidc_access_token')).toBe('rotated-access');
+    expect(localStorage.getItem('ch_oidc_id_token')).toBe('rotated-id');
+    expect(localStorage.getItem('ch_oidc_refresh_token')).toBe('refresh-2');
   });
 
   it('retries token refresh with the latest refresh token after a parallel rotation', async () => {
-    localStorage.setItem('cp_auth_type', 'oidc');
-    localStorage.setItem('cp_oidc_access_token', createJwt(30));
-    localStorage.setItem('cp_oidc_id_token', createJwt(30));
-    localStorage.setItem('cp_oidc_refresh_token', 'refresh-1');
+    localStorage.setItem('ch_auth_type', 'oidc');
+    localStorage.setItem('ch_oidc_access_token', createJwt(30));
+    localStorage.setItem('ch_oidc_id_token', createJwt(30));
+    localStorage.setItem('ch_oidc_refresh_token', 'refresh-1');
 
     let refreshAttempts = 0;
     httpClientMock.post.mockImplementation((url: string, body?: string, options?: any) => {
@@ -440,7 +440,7 @@ describe('AuthService OIDC and Crypto Paths', () => {
 
         if (refreshAttempts === 1) {
           expect(body).toContain('refresh_token=refresh-1');
-          localStorage.setItem('cp_oidc_refresh_token', 'refresh-2');
+          localStorage.setItem('ch_oidc_refresh_token', 'refresh-2');
           return throwError(() => new Error('stale refresh token'));
         }
 
@@ -464,10 +464,10 @@ describe('AuthService OIDC and Crypto Paths', () => {
 
     expect(refreshed).toBe(true);
     expect(refreshAttempts).toBe(2);
-    expect(localStorage.getItem('cp_token')).toBe('rotated-app-jwt-2');
-    expect(localStorage.getItem('cp_oidc_access_token')).toBe('rotated-access-2');
-    expect(localStorage.getItem('cp_oidc_id_token')).toBe('rotated-id-2');
-    expect(localStorage.getItem('cp_oidc_refresh_token')).toBe('refresh-3');
+    expect(localStorage.getItem('ch_token')).toBe('rotated-app-jwt-2');
+    expect(localStorage.getItem('ch_oidc_access_token')).toBe('rotated-access-2');
+    expect(localStorage.getItem('ch_oidc_id_token')).toBe('rotated-id-2');
+    expect(localStorage.getItem('ch_oidc_refresh_token')).toBe('refresh-3');
   });
 
   it('exercises base64url, sha256 and challenge generation (subtle + fallback)', async () => {

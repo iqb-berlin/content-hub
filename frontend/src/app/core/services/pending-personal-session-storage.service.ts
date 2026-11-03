@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class PendingPersonalSessionStorageService {
-  private readonly snapshotKeyPrefix = 'cp_item_explorer_pending_personal:';
+  private readonly snapshotKeyPrefix = 'ch_item_explorer_pending_personal:';
   private readonly memoryFallback = new Map<string, string | null>();
 
   resolveIdentityFromToken(token: string | null): string | null {

@@ -349,6 +349,87 @@ describe("AcpService", () => {
       expect(accessConfigRepo.save).toHaveBeenCalled();
     });
 
+    it("creates access config without accepting review visibility settings", async () => {
+      acpRepo.findOne.mockResolvedValue(mockAcp);
+      accessConfigRepo.findOne.mockResolvedValue(null);
+      await service.updateAccessConfig("acp-1", {
+        accessModel: "PUBLIC",
+        featureConfig: {
+          hideReviewMetadata: true,
+          hideReviewDeveloperNames: true,
+          showMetadata: true,
+        },
+      });
+      expect(accessConfigRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          featureConfig: expect.objectContaining({
+            enablePlayerFocusHighlight: false,
+            hideReviewMetadata: false,
+            hideReviewDeveloperNames: false,
+            showMetadata: true,
+          }),
+        }),
+      );
+      expect(accessConfigRepo.save).toHaveBeenCalled();
+    });
+
+    it.each([
+      [true, true],
+      [true, false],
+      [false, true],
+      [false, false],
+      [undefined, undefined],
+    ])(
+      "preserves stored review visibility (%s, %s) when access settings change",
+      async (hideReviewMetadata, hideReviewDeveloperNames) => {
+        for (const incoming of [
+          undefined,
+          true,
+          false,
+          "true",
+          null,
+          1,
+          [],
+          {},
+        ]) {
+          const config = {
+            acpId: "acp-1",
+            accessModel: AccessModel.PUBLIC,
+            reviewConfigVersion: 3,
+            reviewRevision: "7",
+            featureConfig: {
+              hideReviewMetadata,
+              hideReviewDeveloperNames,
+              showMetadata: true,
+            },
+          };
+          accessConfigRepo.findOne.mockResolvedValue(config);
+          const result = await service.updateAccessConfig("acp-1", {
+            accessModel: "PUBLIC",
+            featureConfig: {
+              ...(incoming !== undefined
+                ? {
+                    hideReviewMetadata: incoming,
+                    hideReviewDeveloperNames: incoming,
+                  }
+                : {}),
+              showMetadata: false,
+              extension: { version: 1 },
+            },
+          });
+          expect(result.featureConfig).toMatchObject({
+            hideReviewMetadata: hideReviewMetadata ?? false,
+            hideReviewDeveloperNames: hideReviewDeveloperNames ?? false,
+            showMetadata: false,
+            extension: { version: 1 },
+          });
+          expect(result.reviewConfigVersion).toBe(3);
+          expect(result.reviewRevision).toBe("7");
+          expect(accessConfigRepo.save).toHaveBeenLastCalledWith(config);
+        }
+      },
+    );
+
     it("normalizes legacy metadata column key on update", async () => {
       acpRepo.findOne.mockResolvedValue(mockAcp);
       accessConfigRepo.findOne.mockResolvedValue({

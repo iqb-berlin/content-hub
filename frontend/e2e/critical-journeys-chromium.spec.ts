@@ -27,7 +27,7 @@ test('credential access cannot cross into ACP management or another private ACP'
   await page.goto(`/manage/${baseAcp}`);
   await expect(page.getByRole('heading', { name: 'Kein Zugriff' })).toBeVisible();
   await expect(page.locator('a[href^="/manage/"]')).toHaveCount(0);
-  const token = await page.evaluate(() => localStorage.getItem('cp_token'));
+  const token = await page.evaluate(() => localStorage.getItem('ch_token'));
   expect(token).toBeTruthy();
   const otherAcp = await page.request.get(`/api/view/acp/${regressionAcp}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -53,10 +53,10 @@ test('snapshot diff, cancelled restore and confirmed restore track an index chan
   await page.locator('details.index-section summary').click();
   await page.getByRole('button', { name: 'JSON anzeigen' }).click();
   const index = JSON.parse(
-    await page.getByRole('dialog', { name: 'ACP-Index als JSON' }).locator('pre').innerText(),
+    await page.getByRole('dialog', { name: 'AP-Index als JSON' }).locator('pre').innerText(),
   );
   await page
-    .getByRole('dialog', { name: 'ACP-Index als JSON' })
+    .getByRole('dialog', { name: 'AP-Index als JSON' })
     .getByRole('button', { name: 'Schließen' })
     .click();
 
@@ -75,21 +75,21 @@ test('snapshot diff, cancelled restore and confirmed restore track an index chan
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(index)),
   });
-  await expect(page.getByText('ACP-Index wurde importiert.', { exact: true })).toBeVisible();
+  await expect(page.getByText('AP-Index wurde importiert.', { exact: true })).toBeVisible();
   await page.goto(`/manage/${snapshotsAcp}/snapshots`);
   const changedSnapshot = page.locator('tbody tr').filter({ hasText: 'Vor Indexänderung' });
   await changedSnapshot.getByRole('button', { name: 'Diff zum aktuellen Stand' }).click();
-  await expect(page.getByText('ACP-Index geändert:')).toBeVisible();
-  await expect(page.getByText('ACP-Index geändert:').locator('..')).toContainText('Ja');
+  await expect(page.getByText('AP-Index geändert:')).toBeVisible();
+  await expect(page.getByText('AP-Index geändert:').locator('..')).toContainText('Ja');
   await changedSnapshot.getByRole('button', { name: 'Wiederherstellen' }).click();
   const confirmation = page.locator('app-confirm-dialog .dialog');
   await confirmation.getByRole('button', { name: 'Abbrechen' }).click();
-  await expect(page.getByText('ACP-Index geändert:').locator('..')).toContainText('Ja');
+  await expect(page.getByText('AP-Index geändert:').locator('..')).toContainText('Ja');
   await changedSnapshot.getByRole('button', { name: 'Wiederherstellen' }).click();
   await confirmation.getByRole('button', { name: 'Wiederherstellen' }).click();
   await expect(page.getByText(/Snapshot v1 wurde wiederhergestellt/)).toBeVisible();
   await changedSnapshot.getByRole('button', { name: 'Diff zum aktuellen Stand' }).click();
-  await expect(page.getByText('ACP-Index geändert:').locator('..')).toContainText('Nein');
+  await expect(page.getByText('AP-Index geändert:').locator('..')).toContainText('Nein');
 });
 
 test('imports a task package, renders it, activates review and retains a participant comment', async ({

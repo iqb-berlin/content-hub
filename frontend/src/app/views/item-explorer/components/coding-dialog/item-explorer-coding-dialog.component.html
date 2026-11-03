@@ -79,8 +79,34 @@
             </div>
           }
 
+          <section
+            class="coding-information"
+            [class.coding-information-exact]="vm.codingInformation.status === 'exact'"
+            [class.coding-information-warning]="vm.codingInformation.status !== 'exact'"
+            data-testid="coding-information"
+            aria-live="polite"
+          >
+            <strong>{{ vm.codingInformation.title }}</strong>
+            <p>{{ vm.codingInformation.message }}</p>
+            @if (vm.codingInformation.status === 'exact') {
+              <dl class="coding-answer-list">
+                @for (answer of vm.codingInformation.answers; track answer.responseId) {
+                  <div class="coding-answer">
+                    <dt>{{ answer.label }}</dt>
+                    <dd>{{ answer.valueLabel }}</dd>
+                  </div>
+                }
+              </dl>
+            }
+          </section>
+
           <div class="coding-scheme-view">
-            @for (coding of vm.filteredCodingSchemeAsText; track coding.id) {
+            @for (
+              coding of vm.codingVariableFocus.status === 'unique'
+                ? vm.codingInformation.ruleGroups
+                : vm.filteredCodingSchemeAsText;
+              track $index
+            ) {
               <div class="coding-item">
                 <div class="coding-item-header">
                   <h4>Kodiervariable {{ coding.id }}</h4>
@@ -97,6 +123,16 @@
                       class="html-content"
                       [innerHTML]="$any(coding).generalInstructionText"
                     ></div>
+                  </div>
+                }
+                @if (coding.source) {
+                  <div class="coding-structure-info">
+                    <strong>Quelle:</strong> {{ coding.source }}
+                  </div>
+                }
+                @if (coding.processing) {
+                  <div class="coding-structure-info">
+                    <strong>Verarbeitung:</strong> {{ coding.processing }}
                   </div>
                 }
                 <div class="codes-list">
@@ -120,11 +156,23 @@
                         </div>
                       }
                       @if (vm.shouldShowAutomaticCodingRules(code)) {
-                        <ul class="rule-list">
-                          @for (rule of code.ruleSetDescriptions; track rule) {
-                            <li>{{ rule }}</li>
+                        <div class="automatic-coding-rule">
+                          <strong>Automatische Kodiervorschrift:</strong>
+                          @if (code.ruleSetDescriptions.length > 1) {
+                            <span class="rule-operator">
+                              {{
+                                code.ruleSetOperatorAnd
+                                  ? 'alle Regelgruppen (UND)'
+                                  : 'eine Regelgruppe (ODER)'
+                              }}
+                            </span>
                           }
-                        </ul>
+                          <ul class="rule-list">
+                            @for (rule of code.ruleSetDescriptions; track rule) {
+                              <li>{{ rule }}</li>
+                            }
+                          </ul>
+                        </div>
                       }
                     </div>
                   }

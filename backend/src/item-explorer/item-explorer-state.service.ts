@@ -1,4 +1,5 @@
 import { ReviewerColumnPolicy } from "./reviewer-column-policy";
+import { normalizePreviewContext } from "./preview-context";
 import {
   ConflictException,
   Injectable,
@@ -640,7 +641,7 @@ export class ItemExplorerStateService {
         lock: { mode: "pessimistic_write" },
       });
       if (!acp) {
-        throw new NotFoundException("ACP not found");
+        throw new NotFoundException("AP not found");
       }
 
       const concurrentlyCreated = await stateRepository.findOne({
@@ -735,7 +736,7 @@ export class ItemExplorerStateService {
       where: { id: acpId },
     });
     if (!acp) {
-      throw new NotFoundException("ACP not found");
+      throw new NotFoundException("AP not found");
     }
 
     acp.itemProperties = this.normalizeItemProperties(state.itemProperties);
@@ -1140,6 +1141,44 @@ export class ItemExplorerStateService {
           delete nextItemValue.empiricalDifficulty;
         }
       }
+
+      const previewStart = itemValue.previewStart;
+      if (
+        previewStart &&
+        typeof previewStart === "object" &&
+        !Array.isArray(previewStart)
+      ) {
+        const raw = previewStart as Record<string, unknown>;
+        const values = raw.values;
+        const context =
+          raw.context === undefined
+            ? null
+            : normalizePreviewContext(raw.context);
+        if (
+          (raw.context === undefined || context !== null) &&
+          values &&
+          typeof values === "object" &&
+          !Array.isArray(values) &&
+          Object.keys(values).length <= 100 &&
+          Object.entries(values).every(
+            ([key, value]) =>
+              key.length <= 256 &&
+              typeof value === "string" &&
+              value.length <= 4096,
+          ) &&
+          (raw.page === undefined ||
+            (typeof raw.page === "number" &&
+              Number.isInteger(raw.page) &&
+              raw.page >= 0 &&
+              raw.page < 10000))
+        ) {
+          nextItemValue.previewStart = {
+            ...(raw.page === undefined ? {} : { page: raw.page }),
+            values,
+            ...(context ? { context } : {}),
+          };
+        } else delete nextItemValue.previewStart;
+      } else delete nextItemValue.previewStart;
 
       const previewTargetIdRaw = itemValue.previewTargetId;
       if (typeof previewTargetIdRaw === "string") {

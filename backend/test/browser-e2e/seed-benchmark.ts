@@ -227,7 +227,7 @@ async function seed(): Promise<void> {
 
     const fixtureDirectory =
       process.env.BROWSER_E2E_FIXTURE_DIR ||
-      "/tmp/content-pool-browser-benchmark";
+      "/tmp/content-hub-browser-benchmark";
     await mkdir(fixtureDirectory, { recursive: true });
     const files = [
       ...units.flatMap((unit) => createUnitFiles(unit)),

@@ -78,12 +78,12 @@ test-backend-e2e:
     NODE_ENV: test
     DB_HOST: db
     DB_PORT: "5432"
-    DB_USERNAME: contentpool
-    DB_PASSWORD: contentpool_dev
-    DB_DATABASE: contentpool
-    POSTGRES_USER: contentpool
-    POSTGRES_PASSWORD: contentpool_dev
-    POSTGRES_DB: contentpool
+    DB_USERNAME: contenthub
+    DB_PASSWORD: contenthub_dev
+    DB_DATABASE: contenthub
+    POSTGRES_USER: contenthub
+    POSTGRES_PASSWORD: contenthub_dev
+    POSTGRES_DB: contenthub
     DB_SYNCHRONIZE: "true"
     DB_RUN_MIGRATIONS: "false"
     JWT_SECRET: ci-test-secret-at-least-32-characters
@@ -101,12 +101,12 @@ test-migrations:
     NODE_ENV: test
     DB_HOST: db
     DB_PORT: "5432"
-    DB_USERNAME: contentpool
-    DB_PASSWORD: contentpool_dev
-    DB_DATABASE: contentpool
-    POSTGRES_USER: contentpool
-    POSTGRES_PASSWORD: contentpool_dev
-    POSTGRES_DB: contentpool
+    DB_USERNAME: contenthub
+    DB_PASSWORD: contenthub_dev
+    DB_DATABASE: contenthub
+    POSTGRES_USER: contenthub
+    POSTGRES_PASSWORD: contenthub_dev
+    POSTGRES_DB: contenthub
     DB_SYNCHRONIZE: "false"
     DB_RUN_MIGRATIONS: "false"
   script:

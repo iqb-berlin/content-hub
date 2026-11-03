@@ -524,7 +524,10 @@ describe("ItemExplorerStateService", () => {
       "acp-1",
       {
         itemPropertiesPatch: {
-          item1: { previewTargetId: "  BASE_B  " },
+          item1: {
+            previewTargetId: "  BASE_B  ",
+            previewStart: { page: 2, values: { state: "2" } },
+          },
         },
       },
       {
@@ -533,6 +536,10 @@ describe("ItemExplorerStateService", () => {
       },
     );
 
+    expect(envelope.draftState.itemProperties.item1.previewStart).toEqual({
+      page: 2,
+      values: { state: "2" },
+    });
     expect(envelope.status).toBe("DIRTY");
     expect(envelope.draftState.itemProperties.item1.previewTargetId).toBe(
       "BASE_B",
@@ -690,6 +697,34 @@ describe("ItemExplorerStateService", () => {
     );
   });
 
+  it("drops malformed preview start settings", () => {
+    for (const previewStart of [
+      { page: -1, values: {} },
+      { values: { v: 3 } },
+      { values: [] },
+      { values: {}, context: { definitionKey: "invalid" } },
+    ]) {
+      expect(
+        (service as any).normalizeItemProperties({ item1: { previewStart } })
+          .item1?.previewStart,
+      ).toBeUndefined();
+    }
+  });
+
+  it("retains captured presentation context in shared preview settings", () => {
+    const context = {
+      definitionKey: "123-abc-def",
+      target: "item",
+      page: 1,
+      dataParts: { elementCodes: "[]" },
+    };
+    expect(
+      (service as any).normalizeItemProperties({
+        item1: { previewStart: { values: {}, context } },
+      }).item1.previewStart,
+    ).toEqual({ values: {}, context });
+  });
+
   it("publishes draft atomically into ACP domain data and feature config", async () => {
     const draftState = {
       ...baseSharedState,
@@ -700,6 +735,7 @@ describe("ItemExplorerStateService", () => {
           excluded: true,
           tags: ["x"],
           previewTargetId: "BASE_A",
+          previewStart: { page: 2, values: { state: "2" } },
         },
       },
     };

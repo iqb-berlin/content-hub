@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>de.iqb.contentpool</groupId>
-  <artifactId>content-pool-keycloak-altcha</artifactId>
+  <groupId>de.iqb.contenthub</groupId>
+  <artifactId>content-hub-keycloak-altcha</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
 
@@ -49,7 +49,7 @@
   </dependencies>
 
   <build>
-    <finalName>content-pool-keycloak-altcha</finalName>
+    <finalName>content-hub-keycloak-altcha</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

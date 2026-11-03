@@ -53,7 +53,7 @@ test('aligns roles and supports inline changes, errors, adding and removing peop
   await row.getByLabel('Review: verwalten').check();
   expect(writes).toHaveLength(0);
   await saveButton.click();
-  await expect(section.getByRole('alert')).toContainText('Mindestens ein ACP-Manager');
+  await expect(section.getByRole('alert')).toContainText('Mindestens ein AP-Manager');
   await expect(row.getByRole('combobox')).toHaveValue('READ_ONLY');
   await expect(row.getByLabel('Review: verwalten')).toBeChecked();
   await expect(saveButton).toBeEnabled();
