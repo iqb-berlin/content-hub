@@ -340,3 +340,38 @@ test('interacts with the ASPECT 3 tet.folio element', async ({ page }, testInfo)
     contentType: 'image/png',
   });
 });
+
+test('uses the historical ASPECT string-grid settings in the original players', async ({
+  page,
+}) => {
+  for (const major of [0, 1])
+    for (const property of ['gridColumnSizes', 'gridRowSizes'])
+      for (const unit of pool.units.filter((unit) =>
+        unit.id.startsWith(`aspect-m${major}-section-${property}-`),
+      )) {
+        const content = definition(unit),
+          value = content.pages[0].sections[0][property];
+        const frame = await loadModule(
+          page,
+          host.url,
+          `players/aspect-major-${major}.html`,
+          content,
+        );
+        expect(
+          await frame
+            .locator('body')
+            .evaluate(
+              ({ ownerDocument }: HTMLElement, args: { property: string; value: string }) =>
+                ownerDocument.defaultView!.CSS.supports(args.property, args.value),
+              {
+                property:
+                  property === 'gridColumnSizes' ? 'grid-template-columns' : 'grid-template-rows',
+                value,
+              },
+            ),
+        ).toBe(true);
+        const input = frame.locator('input[type=text],input:not([type])').first();
+        await input.fill('Wasser');
+        await expect(input).toHaveValue('Wasser');
+      }
+});

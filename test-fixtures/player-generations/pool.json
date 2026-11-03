@@ -40902,28 +40902,28 @@
     },
     {
       "id": "aspect-m0-section-gridColumnSizes-0",
-      "name": "ASPECT 0: section.gridColumnSizes = \"\"",
+      "name": "ASPECT 0: section.gridColumnSizes = \"120px 1fr\"",
       "file": "units/aspect-m0-section-gridColumnSizes-0.json",
       "player": "aspect-m0",
       "context": "section"
     },
     {
       "id": "aspect-m0-section-gridColumnSizes-1",
-      "name": "ASPECT 0: section.gridColumnSizes = \"Synthetisch: Wasser, Brot und Äpfel\"",
+      "name": "ASPECT 0: section.gridColumnSizes = \"50% 50%\"",
       "file": "units/aspect-m0-section-gridColumnSizes-1.json",
       "player": "aspect-m0",
       "context": "section"
     },
     {
       "id": "aspect-m0-section-gridRowSizes-0",
-      "name": "ASPECT 0: section.gridRowSizes = \"\"",
+      "name": "ASPECT 0: section.gridRowSizes = \"120px 1fr\"",
       "file": "units/aspect-m0-section-gridRowSizes-0.json",
       "player": "aspect-m0",
       "context": "section"
     },
     {
       "id": "aspect-m0-section-gridRowSizes-1",
-      "name": "ASPECT 0: section.gridRowSizes = \"Synthetisch: Wasser, Brot und Äpfel\"",
+      "name": "ASPECT 0: section.gridRowSizes = \"50% 50%\"",
       "file": "units/aspect-m0-section-gridRowSizes-1.json",
       "player": "aspect-m0",
       "context": "section"
@@ -41112,28 +41112,28 @@
     },
     {
       "id": "aspect-m1-section-gridColumnSizes-0",
-      "name": "ASPECT 1: section.gridColumnSizes = \"\"",
+      "name": "ASPECT 1: section.gridColumnSizes = \"120px 1fr\"",
       "file": "units/aspect-m1-section-gridColumnSizes-0.json",
       "player": "aspect-m1",
       "context": "section"
     },
     {
       "id": "aspect-m1-section-gridColumnSizes-1",
-      "name": "ASPECT 1: section.gridColumnSizes = \"Synthetisch: Wasser, Brot und Äpfel\"",
+      "name": "ASPECT 1: section.gridColumnSizes = \"50% 50%\"",
       "file": "units/aspect-m1-section-gridColumnSizes-1.json",
       "player": "aspect-m1",
       "context": "section"
     },
     {
       "id": "aspect-m1-section-gridRowSizes-0",
-      "name": "ASPECT 1: section.gridRowSizes = \"\"",
+      "name": "ASPECT 1: section.gridRowSizes = \"120px 1fr\"",
       "file": "units/aspect-m1-section-gridRowSizes-0.json",
       "player": "aspect-m1",
       "context": "section"
     },
     {
       "id": "aspect-m1-section-gridRowSizes-1",
-      "name": "ASPECT 1: section.gridRowSizes = \"Synthetisch: Wasser, Brot und Äpfel\"",
+      "name": "ASPECT 1: section.gridRowSizes = \"50% 50%\"",
       "file": "units/aspect-m1-section-gridRowSizes-1.json",
       "player": "aspect-m1",
       "context": "section"

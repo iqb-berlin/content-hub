@@ -1,6 +1,6 @@
 {
   "id": "aspect-m1-section-gridColumnSizes-0",
-  "name": "ASPECT 1: section.gridColumnSizes = \"\"",
+  "name": "ASPECT 1: section.gridColumnSizes = \"120px 1fr\"",
   "definition": {
     "type": "aspect-unit-definition",
     "version": "3.10.0",
@@ -106,9 +106,9 @@
             "height": 600,
             "backgroundColor": "#ffffff",
             "dynamicPositioning": true,
-            "autoColumnSize": true,
+            "autoColumnSize": false,
             "autoRowSize": true,
-            "gridColumnSizes": "",
+            "gridColumnSizes": "120px 1fr",
             "gridRowSizes": "1fr",
             "activeAfterID": null,
             "activeAfterIdDelay": 0

@@ -151,7 +151,7 @@
             "backgroundColor": "#ffffff",
             "dynamicPositioning": true,
             "autoColumnSize": true,
-            "autoRowSize": true,
+            "autoRowSize": false,
             "gridColumnSizes": [
               {
                 "value": 1,

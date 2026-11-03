@@ -149,7 +149,7 @@
             "height": 600,
             "backgroundColor": "#ffffff",
             "dynamicPositioning": true,
-            "autoColumnSize": true,
+            "autoColumnSize": false,
             "autoRowSize": true,
             "gridColumnSizes": [
               {

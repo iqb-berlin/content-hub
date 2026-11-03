@@ -1,6 +1,6 @@
 {
   "id": "aspect-m0-section-gridColumnSizes-0",
-  "name": "ASPECT 0: section.gridColumnSizes = \"\"",
+  "name": "ASPECT 0: section.gridColumnSizes = \"120px 1fr\"",
   "definition": {
     "veronaModuleVersion": "iqb-aspect-module@0.0.1",
     "pages": [
@@ -73,7 +73,7 @@
             "height": 600,
             "backgroundColor": "#FFFAF0",
             "dynamicPositioning": false,
-            "gridColumnSizes": "",
+            "gridColumnSizes": "120px 1fr",
             "gridRowSizes": "1fr"
           }
         ],

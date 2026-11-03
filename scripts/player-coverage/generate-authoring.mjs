@@ -76,6 +76,11 @@ function samples(property) {
   const { path, type, default: initial } = property;
   const name = path.split(".").at(-1);
   if (/[Ii][Dd]$|[Ii]ds$/.test(name)) return [initial ?? null];
+  if (
+    ["gridColumnSizes", "gridRowSizes"].includes(name) &&
+    typeof initial === "string"
+  )
+    return ["120px 1fr", "50% 50%"];
   if (["imgSrc", "imageSrc"].includes(name))
     return [null, fixture("image").src];
   if (property.values?.length)
@@ -399,6 +404,10 @@ for (const major of [0, 1, 2, 3]) {
               ? definition.pages[0]
               : definition.pages[0].sections[0];
         set(target, property.path, value);
+        if (property.path === "gridColumnSizes" && "autoColumnSize" in target)
+          target.autoColumnSize = false;
+        if (property.path === "gridRowSizes" && "autoRowSize" in target)
+          target.autoRowSize = false;
         if (property.path === "alwaysVisible" && value === true)
           definition.pages.push(clone(snapshot.base.pages[0]));
         const id = `aspect-m${major}-${scope}-${property.path.replaceAll(".", "-")}-${index}`;

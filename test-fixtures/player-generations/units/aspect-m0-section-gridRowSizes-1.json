@@ -1,6 +1,6 @@
 {
   "id": "aspect-m0-section-gridRowSizes-1",
-  "name": "ASPECT 0: section.gridRowSizes = \"Synthetisch: Wasser, Brot und Äpfel\"",
+  "name": "ASPECT 0: section.gridRowSizes = \"50% 50%\"",
   "definition": {
     "veronaModuleVersion": "iqb-aspect-module@0.0.1",
     "pages": [
@@ -74,7 +74,7 @@
             "backgroundColor": "#FFFAF0",
             "dynamicPositioning": false,
             "gridColumnSizes": "1fr",
-            "gridRowSizes": "Synthetisch: Wasser, Brot und Äpfel"
+            "gridRowSizes": "50% 50%"
           }
         ],
         "width": 1100,

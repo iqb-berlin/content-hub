@@ -73,10 +73,10 @@ boolesche Schalter sind vollständig aufgezählt; offene Zahlen-/Text-/Dateifeld
 werden mit Beispielen und Randwerten geprüft. Eine vollständige Kombination
 sämtlicher Einstellungen wird nicht behauptet.
 
-107 zusätzliche Prüfungen pro Browser kontrollieren die Generationen,
+108 zusätzliche Prüfungen pro Browser kontrollieren die Generationen,
 Import/Änderung/Export der aktuellen ASPECT-Einstellungsaufgaben, verbundene
 Laufzeitregeln, tet.folio und alle UI-Assistentenaufgaben durch die App. Zusammen
-mit den bisherigen 69 Fällen sind das 528 Prüfungen in Chromium, Firefox und
+mit den bisherigen 69 Fällen sind das 531 Prüfungen in Chromium, Firefox und
 WebKit. Die UI-Rundläufe prüfen die gespeicherten Einstellungswerte; sie ersetzen
 keinen Verhaltenstest jeder einzelnen Kombination. Historische Majors erhalten
 generationsgerechte Aufgaben und einen echten Interaktionstest je Player.

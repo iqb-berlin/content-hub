@@ -132,6 +132,19 @@ describe('pinned player generations and authoring coverage', () => {
       }
     }
   });
+  it('uses valid CSS size lists for the historical string-based section grids', () => {
+    for (const setting of coverage.filter(
+      (entry: Setting) =>
+        entry.major < 2 && ['gridColumnSizes', 'gridRowSizes'].includes(entry.path),
+    )) {
+      for (const scenario of setting.cases) {
+        const task = units.find((unit) => unit.id === scenario.unit)!;
+        const value = read(task.file).definition.pages[0].sections[0][setting.path];
+        expect(value).toMatch(/^(?:\d+(?:\.\d+)?(?:px|fr|%)\s*)+$/);
+      }
+    }
+  });
+
   it('maps every discovered UI property to stored settings or a documented editor control', () => {
     const ui = read('authoring/ui-controls.json'),
       mapping = read('authoring/ui-control-mapping.json');

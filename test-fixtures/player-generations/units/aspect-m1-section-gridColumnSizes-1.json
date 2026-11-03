@@ -1,6 +1,6 @@
 {
   "id": "aspect-m1-section-gridColumnSizes-1",
-  "name": "ASPECT 1: section.gridColumnSizes = \"Synthetisch: Wasser, Brot und Äpfel\"",
+  "name": "ASPECT 1: section.gridColumnSizes = \"50% 50%\"",
   "definition": {
     "type": "aspect-unit-definition",
     "version": "3.10.0",
@@ -106,9 +106,9 @@
             "height": 600,
             "backgroundColor": "#ffffff",
             "dynamicPositioning": true,
-            "autoColumnSize": true,
+            "autoColumnSize": false,
             "autoRowSize": true,
-            "gridColumnSizes": "Synthetisch: Wasser, Brot und Äpfel",
+            "gridColumnSizes": "50% 50%",
             "gridRowSizes": "1fr",
             "activeAfterID": null,
             "activeAfterIdDelay": 0
