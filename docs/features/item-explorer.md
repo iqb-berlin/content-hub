@@ -481,14 +481,17 @@ The same distinction exists when clearing empirical difficulty values.
 ### Wide item-parameter import
 
 Managers can also upload a semicolon-separated wide CSV through the Item Explorer. Its canonical
-headers are `item`, `sub_id`, `est`, `infit`, `discrimination`, `solution_rate`, `item_time_s`,
+headers are `item`, `sub_id`, `est`, `bista`, `infit`, `discrimination`, `solution_rate`, `item_time_s`,
 `stimulus_time_s`, `text_complexity`, `kstufe`, `booklet`, and `position`. Only `item` and at least one
 parameter column are required. `text_complexity` is imported and filtered as free text, including
 content that looks numeric. `kstufe` accepts the shared competence levels `I` to `V`
 (case-insensitive) and is normalized to upper case. It belongs to the item, so all partial-credit
 rows inherit the same value; conflicting values for the same item are rejected. An empty `kstufe`
 cell clears the value, while omitting the column preserves it. Time values are non-negative seconds;
-decimal point and decimal comma are accepted.
+decimal point and decimal comma are accepted. `bista` imports the numeric BiSta value per Explorer
+row, including partial-credit rows. It has no fixed decimal-place limit: `1.234567` and `1,234567`
+are both accepted without rounding to two decimal places. Like the other numeric parameters, it
+uses JavaScript's finite-number precision; arbitrary-precision decimal storage is not provided.
 
 Without a CSV import, the Explorer uses the numeric raw `value` of `iqb_time_item` from each VOMD
 item profile and `iqb_time_stimulus` from the VOMD unit profile. The legacy item property
@@ -512,7 +515,7 @@ booklet columns but supplies no booklet values. A CSV containing only `booklet` 
 `position`) can still clear occurrences explicitly with empty values. Other columns that are absent
 leave stored values unchanged; a supplied but empty value clears that parameter in its defined scope:
 
-- difficulty, Infit, discrimination, solution rate, and booklet occurrences belong to the stable
+- difficulty, BiSta, Infit, discrimination, solution rate, and booklet occurrences belong to the stable
   Explorer row,
 - item time belongs to the underlying item UUID and is shared by its partial-credit rows,
 - stimulus time belongs to the complete unit and is shared by all of its item rows.

@@ -491,6 +491,57 @@ describe("ItemsService", () => {
     });
   });
 
+  it.each([true, false])(
+    "retains bista precision in grouped imports with persist=%s",
+    async (persist) => {
+      const acp = {
+        id: "acp-1",
+        itemProperties: { "uuid-1": { bista: 500, tags: ["keep"] } },
+      };
+      acpRepository.findOne.mockResolvedValue(acp);
+      unitParserService.getItemListFromFiles.mockResolvedValue({
+        items: [
+          {
+            uuid: "uuid-1",
+            itemId: "I-1",
+            unitId: "U-1",
+            unitLabel: "Aufgabe 1",
+          },
+        ],
+      });
+
+      const result = await service.uploadItemParameters(
+        "acp-1",
+        Buffer.from("item;bista;booklet\nI1;1.234567;B1\nI1;1,234567;B2"),
+        { persist },
+      );
+
+      expect(result.updated).toBe(1);
+      expect(result.failed).toEqual([]);
+      expect(result.nextItemProperties).toEqual({
+        "uuid-1": {
+          bista: 1.234567,
+          tags: ["keep"],
+          bookletOccurrences: [
+            { booklet: "B1", position: null },
+            { booklet: "B2", position: null },
+          ],
+        },
+      });
+      if (persist) {
+        expect(acpRepository.save).toHaveBeenCalledWith({
+          id: "acp-1",
+          itemProperties: result.nextItemProperties,
+        });
+      } else {
+        expect(acpRepository.save).not.toHaveBeenCalled();
+        expect(acp.itemProperties).toEqual({
+          "uuid-1": { bista: 500, tags: ["keep"] },
+        });
+      }
+    },
+  );
+
   it("reports clearing booklet occurrences as an explicit field update", async () => {
     acpRepository.findOne.mockResolvedValue({
       id: "acp-1",
