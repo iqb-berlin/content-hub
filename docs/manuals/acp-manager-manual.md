@@ -208,6 +208,13 @@ Die Ergebnisse zeigen:
 - `Fehler`
 - `Nicht geprueft`
 
+Die Spalte `Validierung` bewertet jede Datei fuer sich. Fehler bei Booklets oder
+Verweisen im gesamten AP stehen getrennt unter `AP-weite Prüfung`. Oeffnen Sie
+`Hinweise zur AP-weiten Prüfung`, um die Meldungen und ihre Fundstellen zu sehen.
+Eine fehlerfreie Datei kann deshalb `OK` anzeigen, obwohl im AP noch ein
+Booklet- oder Referenzfehler besteht. Mit `Dateien prüfen` werden auch bereits
+gespeicherte Dateiergebnisse neu berechnet.
+
 Falls Unit-Dateien unvollstaendig sind, sehen Sie zusaetzlich Hinweise zu fehlenden Bestandteilen,
 zum Beispiel:
 

@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { filter, firstValueFrom, map, tap } from 'rxjs';
@@ -178,8 +178,12 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
     @if (lastValidationSummary) {
       <div
         class="alert"
-        [class.alert-success]="lastValidationSummary.invalidFiles === 0"
-        [class.alert-warning]="lastValidationSummary.invalidFiles > 0"
+        [class.alert-success]="
+          lastValidationSummary.invalidFiles === 0 && lastValidationSummary.semanticIssueCount === 0
+        "
+        [class.alert-warning]="
+          lastValidationSummary.invalidFiles > 0 || lastValidationSummary.semanticIssueCount > 0
+        "
       >
         Auto-Validierung: {{ lastValidationSummary.validFiles }} von
         {{ lastValidationSummary.totalFiles }} Datei(en) ohne Fehler.
@@ -187,12 +191,38 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
           <span> {{ lastValidationSummary.invalidFiles }} Datei(en) enthalten Fehler.</span>
         }
         <div style="margin-top:6px">
-          AP-Semantik:
-          {{ lastValidationSummary.semanticValid ? 'OK' : 'Fehler/Warnungen vorhanden' }} ({{
-            lastValidationSummary.semanticIssueCount
+          AP-weite Prüfung:
+          {{
+            lastValidationSummary.semanticIssueCount === 0
+              ? 'OK'
+              : lastValidationSummary.semanticValid
+                ? 'Warnungen vorhanden'
+                : 'Fehler vorhanden'
           }}
-          Issue(s))
+          ({{ lastValidationSummary.semanticIssueCount }} Hinweis(e))
         </div>
+        @if (lastValidationSummary.semanticIssues?.length) {
+          <details class="ap-validation-issues">
+            <summary>Hinweise zur AP-weiten Prüfung</summary>
+            @for (issue of lastValidationSummary.semanticIssues; track issueTrack(issue, $index)) {
+              <div class="ap-validation-issue">
+                <strong
+                  >{{
+                    issue.severity === 'error'
+                      ? 'Fehler'
+                      : issue.severity === 'warning'
+                        ? 'Warnung'
+                        : 'Hinweis'
+                  }}:</strong
+                >
+                {{ issue.message }}
+                @if (issue.path) {
+                  <code>{{ issue.path }}</code>
+                }
+              </div>
+            }
+          </details>
+        }
       </div>
     }
 
@@ -543,6 +573,14 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
         gap: 4px;
         min-width: 320px;
       }
+      .ap-validation-issues,
+      .ap-validation-issue {
+        margin-top: 8px;
+        overflow-wrap: anywhere;
+      }
+      .ap-validation-issue code {
+        display: block;
+      }
       .file-validation-issue {
         display: flex;
         gap: 6px;
@@ -752,8 +790,8 @@ export class FilesComponent implements OnInit {
   deleteDialogError = '';
 
   constructor(
-    private route: ActivatedRoute,
-    private api: ApiService,
+    @Inject(ActivatedRoute) private route: ActivatedRoute,
+    @Inject(ApiService) private api: ApiService,
   ) {}
 
   get isBusy(): boolean {

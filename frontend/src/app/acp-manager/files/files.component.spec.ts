@@ -1,8 +1,36 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { Component, input, provideZonelessChangeDetection } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { of } from 'rxjs';
 import { FilesComponent } from './files.component';
-import { AcpFile, FilePreviewResponse, FileProcessingJob } from '../../core/models/api.models';
+import {
+  AcpFile,
+  FilePreviewResponse,
+  FileProcessingJob,
+  UploadValidationSummary,
+} from '../../core/models/api.models';
+import { ApiService } from '../../core/services/api.service';
+import { AcpManagerContextComponent } from '../shared/acp-manager-context.component';
+import { FilePreviewPanelComponent } from './file-preview-panel.component';
+
+@Component({ selector: 'app-acp-manager-context', standalone: true, template: '' })
+class AcpManagerContextStubComponent {}
+
+@Component({
+  selector: 'app-file-preview-panel',
+  standalone: true,
+  template: '',
+})
+class FilePreviewPanelStubComponent {
+  file = input<AcpFile | null>(null);
+  preview = input<FilePreviewResponse | null>(null);
+  inlineUrl = input<string | null>(null);
+  downloadUrl = input<string | null>(null);
+  loading = input(false);
+  error = input('');
+}
 
 function createFile(overrides: Partial<AcpFile>): AcpFile {
   return {
@@ -36,6 +64,92 @@ function createJob(overrides: Partial<FileProcessingJob>): FileProcessingJob {
     ...overrides,
   };
 }
+
+describe('FilesComponent AP validation summary', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  async function renderSummary(summary: UploadValidationSummary) {
+    await TestBed.configureTestingModule({
+      imports: [FilesComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { parent: { snapshot: { paramMap: new Map([['acpId', 'acp-1']]) } } },
+        },
+        {
+          provide: ApiService,
+          useValue: {
+            getFileDownloadUrl: vi.fn().mockReturnValue('/api/acp/acp-1/files/file-1/download'),
+            getFiles: vi.fn().mockReturnValue(
+              of([
+                createFile({
+                  originalName: 'task.voud',
+                  validationResult: { valid: true, issues: [], timestamp: summary.timestamp },
+                }),
+              ]),
+            ),
+          },
+        },
+      ],
+    })
+      .overrideComponent(FilesComponent, {
+        remove: { imports: [AcpManagerContextComponent, FilePreviewPanelComponent] },
+        add: { imports: [AcpManagerContextStubComponent, FilePreviewPanelStubComponent] },
+      })
+      .compileComponents();
+    const fixture = TestBed.createComponent(FilesComponent);
+    fixture.componentInstance.lastValidationSummary = summary;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it.each(['error', 'warning'] as const)(
+    'shows AP %s details once outside valid file rows',
+    async (severity) => {
+      const message = 'Booklet besitzt weder XML-Definition noch Module.';
+      const path = 'assessmentParts[0].instruments[0].testcenterBooklet[0]';
+      const root = await renderSummary({
+        totalFiles: 1,
+        validFiles: 1,
+        invalidFiles: 0,
+        semanticValid: severity !== 'error',
+        semanticIssueCount: 1,
+        semanticIssues: [{ severity, message, path }],
+        timestamp: '2026-11-04T10:00:00.000Z',
+      });
+
+      expect(root.querySelector('.alert-warning')?.textContent).toContain(
+        severity === 'error' ? 'Fehler vorhanden' : 'Warnungen vorhanden',
+      );
+      expect(root.querySelector('.alert-success')).toBeNull();
+      const details = root.querySelectorAll('.ap-validation-issue');
+      expect(details).toHaveLength(1);
+      expect(details[0].textContent).toContain(message);
+      expect(details[0].textContent).toContain(path);
+      const fileRows = root.querySelector('tbody')!;
+      expect(fileRows.textContent).toContain('task.voud');
+      expect(fileRows.querySelector('.badge-success')?.textContent?.trim()).toBe('OK');
+      expect(fileRows.textContent).not.toContain(message);
+    },
+  );
+
+  it('renders older saved summaries without issue details', async () => {
+    const root = await renderSummary({
+      totalFiles: 1,
+      validFiles: 1,
+      invalidFiles: 0,
+      semanticValid: true,
+      semanticIssueCount: 0,
+      timestamp: '2026-11-04T10:00:00.000Z',
+    });
+
+    expect(root.querySelector('.alert-success')?.textContent).toContain('AP-weite Prüfung: OK');
+    expect(root.querySelector('.ap-validation-issues')).toBeNull();
+  });
+});
 
 describe('FilesComponent filtering', () => {
   const seedFiles: AcpFile[] = [

@@ -6,6 +6,12 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ## [Unreleased]
 
+### Changes
+
+- Keep upload file validation separate from AP-wide consistency errors and show
+  Booklet/reference issues once in the validation summary with their source paths.
+  Refs #271.
+
 ## [0.7.0] - Unreleased
 
 ### Changes

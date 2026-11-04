@@ -37,6 +37,7 @@ export interface AutoValidationSummary {
   invalidFiles: number;
   semanticValid: boolean;
   semanticIssueCount: number;
+  semanticIssues: ValidationIssue[];
   timestamp: string;
 }
 
@@ -129,7 +130,7 @@ export class ValidationService {
 
   /**
    * Validate freshly uploaded files automatically and persist per-file results.
-   * Merges syntactic/schema checks with ACP-wide semantic checks.
+   * Keeps file results separate from ACP-wide semantic checks in the summary.
    */
   async autoValidateUploadedFiles(
     acpId: string,
@@ -146,6 +147,7 @@ export class ValidationService {
           invalidFiles: 0,
           semanticValid: true,
           semanticIssueCount: 0,
+          semanticIssues: [],
           timestamp: new Date().toISOString(),
         },
       };
@@ -202,17 +204,12 @@ export class ValidationService {
         ],
         timestamp: now,
       };
-      const mergedIssues = [...fileResult.issues, ...semanticIssues];
-      const mergedResult: ValidationResult = {
-        valid: fileResult.valid && semanticResult.valid,
-        issues: mergedIssues,
+      const result: ValidationResult = {
+        ...fileResult,
         timestamp: now,
       };
-      file.validationResult = mergedResult as unknown as Record<
-        string,
-        unknown
-      >;
-      return { file, result: mergedResult };
+      file.validationResult = result as unknown as Record<string, unknown>;
+      return { file, result };
     });
     const validatedFiles = validatedEntries.map((entry) => entry.file);
 
@@ -230,6 +227,7 @@ export class ValidationService {
         invalidFiles: validatedFiles.length - validFiles,
         semanticValid: semanticResult.valid,
         semanticIssueCount: semanticResult.issues.length,
+        semanticIssues,
         timestamp: now,
       },
     };
