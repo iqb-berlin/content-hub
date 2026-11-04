@@ -499,6 +499,10 @@ describe('FilesComponent upload conflict recovery', () => {
     );
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('opens the dialog for server conflicts from a ZIP and retries mixed decisions', async () => {
     api.uploadFiles.mockReturnValueOnce(conflict('unit.xml', 'metadata.json'));
     const upload = start('bundle.zip', 'new.txt');
@@ -733,6 +737,145 @@ describe('FilesComponent upload conflict recovery', () => {
       fileIds: ['first-batch'],
       runCleanup: false,
     });
+  });
+
+  it('processes the confirmed replacement batch after a later ZIP fails and preserves that error', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const savedFiles = Array.from({ length: 50 }, (_, i) =>
+      createFile({
+        id: `saved-${i}`,
+        originalName: i === 0 ? 'existing.txt' : `new-${i}.txt`,
+      }),
+    );
+    api.uploadFiles
+      .mockReturnValueOnce(conflict('existing.txt'))
+      .mockReturnValueOnce(of(new HttpResponse({ body: { files: savedFiles } })))
+      .mockReturnValueOnce(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              error: { message: 'ZIP archive "broken.zip" could not be extracted' },
+            }),
+        ),
+      );
+    const upload = start(
+      'existing.txt',
+      ...savedFiles.slice(1).map((file) => file.originalName),
+      'broken.zip',
+    );
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.applyDecisionToAll('replace');
+    component.confirmConflictDialog();
+    await upload;
+
+    expect(api.uploadFiles).toHaveBeenCalledTimes(3);
+    expect(api.startFileProcessing).toHaveBeenCalledExactlyOnceWith('acp-1', {
+      fileIds: savedFiles.map((file) => file.id),
+      runCleanup: true,
+    });
+    expect((component as any).waitForJob).toHaveBeenCalledTimes(1);
+    expect(component.uploadError).toBe('ZIP archive "broken.zip" could not be extracted');
+    expect(component.processingJob?.status).toBe('completed');
+    expect(component.lastConflictSummary).toEqual({ conflicts: 1, replaced: 1, skipped: 0 });
+    expect(component.isBusy).toBe(false);
+    expect(input.value).toBe('');
+  });
+
+  it('does not start processing when the first batch fails before any files are confirmed', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    api.uploadFiles.mockReturnValueOnce(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 400,
+            error: { message: 'Invalid ZIP' },
+          }),
+      ),
+    );
+    await start('broken.zip');
+
+    expect(api.startFileProcessing).not.toHaveBeenCalled();
+    expect(component.uploadError).toBe('Invalid ZIP');
+    expect(component.load).toHaveBeenCalledTimes(1);
+    expect(component.isBusy).toBe(false);
+  });
+
+  it('stops later batches after a server error and processes only earlier confirmed files', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    api.uploadFiles.mockReturnValueOnce(response(['first-batch'])).mockReturnValueOnce(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 500,
+            error: { message: 'Upload failed' },
+          }),
+      ),
+    );
+    await start(...Array.from({ length: 101 }, (_, i) => `file-${i}.txt`));
+
+    expect(api.uploadFiles).toHaveBeenCalledTimes(2);
+    expect(api.startFileProcessing).toHaveBeenCalledExactlyOnceWith('acp-1', {
+      fileIds: ['first-batch'],
+      runCleanup: false,
+    });
+    expect(component.uploadError).toBe('Upload failed');
+  });
+
+  it.each(['start', 'wait'] as const)(
+    'preserves both failures without retrying processing when %s fails',
+    async (phase) => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      api.uploadFiles.mockReturnValueOnce(response(['first-batch'])).mockReturnValueOnce(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              error: { message: 'Invalid ZIP' },
+            }),
+        ),
+      );
+      if (phase === 'start') {
+        api.startFileProcessing.mockReturnValueOnce(
+          throwError(
+            () =>
+              new HttpErrorResponse({
+                status: 503,
+                error: { message: 'Processing unavailable' },
+              }),
+          ),
+        );
+      } else {
+        vi.mocked((component as any).waitForJob).mockRejectedValueOnce(
+          new Error('Processing unavailable'),
+        );
+      }
+      await start(...Array.from({ length: 51 }, (_, i) => `file-${i}.txt`));
+
+      expect(api.startFileProcessing).toHaveBeenCalledTimes(1);
+      expect(component.uploadError).toBe(
+        'Invalid ZIP Bereits gespeicherte Dateien konnten nicht vollständig verarbeitet werden: Processing unavailable',
+      );
+      expect(component.isBusy).toBe(false);
+    },
+  );
+
+  it('processes earlier confirmed files if navigation happens before a later upload error', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const request = new Subject<HttpResponse<any>>();
+    api.uploadFiles.mockReturnValueOnce(response(['first-batch'])).mockReturnValueOnce(request);
+    const upload = start(...Array.from({ length: 51 }, (_, i) => `file-${i}.txt`));
+    await vi.waitFor(() => expect(api.uploadFiles).toHaveBeenCalledTimes(2));
+    component.ngOnDestroy();
+    request.error(new HttpErrorResponse({ status: 400, error: { message: 'Invalid ZIP' } }));
+    await upload;
+
+    expect(api.startFileProcessing).toHaveBeenCalledExactlyOnceWith('acp-1', {
+      fileIds: ['first-batch'],
+      runCleanup: false,
+    });
+    expect(component.load).not.toHaveBeenCalled();
+    expect((component as any).waitForJob).not.toHaveBeenCalled();
   });
 
   it('releases a pending conflict dialog when the component is destroyed', async () => {

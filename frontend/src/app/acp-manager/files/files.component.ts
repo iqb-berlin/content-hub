@@ -1072,7 +1072,12 @@ export class FilesComponent implements OnInit, OnDestroy {
             break;
           } catch (error) {
             const conflicts = this.getUploadConflicts(error);
-            if (!conflicts.length) throw error;
+            if (!conflicts.length) {
+              this.uploadError = this.getUploadErrorMessage(error);
+              console.error('Upload Error:', error);
+              // Stop uploading, but still process earlier confirmed batches.
+              break;
+            }
             if (this.destroyed) break;
             this.updateUploadProgress(
               uploadedBytes,
@@ -1120,7 +1125,10 @@ export class FilesComponent implements OnInit, OnDestroy {
         if (this.destroyed) break;
       }
 
-      if (!uploadedFilesByName.size) return;
+      if (!uploadedFilesByName.size) {
+        if (this.uploadError && !this.destroyed) this.load();
+        return;
+      }
       this.uploading = false;
       this.processing = true;
       this.uploadProgress = '';
@@ -1147,7 +1155,10 @@ export class FilesComponent implements OnInit, OnDestroy {
       this.load();
       this.validateFiles();
     } catch (err) {
-      this.uploadError = this.getUploadErrorMessage(err);
+      const message = this.getUploadErrorMessage(err);
+      this.uploadError = this.uploadError
+        ? `${this.uploadError} Bereits gespeicherte Dateien konnten nicht vollständig verarbeitet werden: ${message}`
+        : message;
       console.error('Upload Error:', err);
       if (!this.destroyed) this.load();
     } finally {
