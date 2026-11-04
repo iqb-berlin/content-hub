@@ -3,14 +3,17 @@
 ## Overview
 
 The Content Hub data model mixes relational structure with JSONB payloads. That balance
-fits the domain well because ACPs contain a combination of:
+fits the domain well because APs contain a combination of:
 
 - strongly structured access and identity data,
-- loosely structured ACP index payloads,
+- loosely structured AP-Index payloads,
 - item-level annotations that evolve over time,
 - uploaded files that live on disk rather than in the database.
 
 ## Core Entities
+
+AP is the product term; the existing `Acp` entity and `acp` table names remain unchanged.
+See [terminology and technical identifiers](../README.md#terminology-and-technical-identifiers).
 
 ### `Acp`
 
@@ -27,7 +30,7 @@ Key fields:
 - `settings` as JSONB
 - timestamps
 
-An ACP is linked to files, snapshots, access configurations, comments, and user roles.
+An AP is linked to files, snapshots, access configurations, comments, and user roles.
 
 ### `User`
 
@@ -40,23 +43,23 @@ Key fields:
 - `isAppAdmin`
 - `oidcSub`
 
-OIDC-backed users exist in the local database so ACP roles, comments, and app-admin
+OIDC-backed users exist in the local database so AP roles, comments, and app-admin
 state can be resolved consistently. Authentication itself remains in Keycloak.
 
 ### `AcpUserRole`
 
-This table is the ACP-level authorization join table.
+This table is the AP-level authorization join table.
 
 Supported roles:
 
 - `ACP_MANAGER`
 - `READ_ONLY`
 
-One user can hold different roles across different ACPs.
+One user can hold different roles across different APs.
 
 ### `AcpAccessConfig`
 
-This table defines how an ACP is exposed to viewers.
+This table defines how an AP is exposed to viewers.
 
 Key fields:
 
@@ -66,12 +69,12 @@ Key fields:
 - `validFrom`
 - `validUntil`
 
-New ACPs receive a default access-config row with `accessModel = PRIVATE`. The table also
+New APs receive a default access-config row with `accessModel = PRIVATE`. The table also
 owns the credential list entries for `CREDENTIALS_LIST` access.
 
 ### `AcpCredential`
 
-This table stores ACP-specific credentials for restricted read-only access.
+This table stores AP-specific credentials for restricted read-only access.
 
 Key fields:
 
@@ -86,7 +89,7 @@ per view.
 
 ### `AcpFile`
 
-This table stores metadata for uploaded ACP files.
+This table stores metadata for uploaded AP files.
 
 Key fields:
 
@@ -101,11 +104,11 @@ The actual file content is stored on the filesystem at `filePath`.
 
 ### `AcpSnapshot` and `AcpSnapshotFile`
 
-Snapshots preserve historical ACP state.
+Snapshots preserve historical AP state.
 
 `AcpSnapshot` stores:
 
-- ACP linkage,
+- AP linkage,
 - version number,
 - index snapshot JSON,
 - optional changelog.
@@ -114,7 +117,7 @@ Snapshots preserve historical ACP state.
 
 ### `Comment`
 
-Comments belong to an ACP and target one of three domain object types:
+Comments belong to an AP and target one of three domain object types:
 
 - `UNIT`
 - `ITEM`
@@ -133,7 +136,7 @@ Global application settings are stored in a single table with fields for:
 - imprint HTML,
 - privacy HTML,
 - accessibility HTML,
-- default ACP index JSON.
+- default AP-Index JSON.
 
 ### `ItemResponseState`
 
@@ -187,7 +190,7 @@ Every server API request can be recorded here with:
 - client ID,
 - action,
 - HTTP method and path,
-- ACP/resource identifiers,
+- AP/resource identifiers,
 - success flag,
 - status code,
 - details JSON.
@@ -208,11 +211,11 @@ The most important relationships are:
 
 ## JSONB Usage
 
-JSONB is used heavily for data that varies per ACP or is likely to evolve:
+JSONB is used heavily for data that varies per AP or is likely to evolve:
 
 ### `acp.acpIndex`
 
-The complete ACP index payload. This avoids forcing a brittle relational model on a
+The complete AP-Index payload. This avoids forcing a brittle relational model on a
 domain object that is naturally hierarchical.
 
 ### `acp.itemProperties`
@@ -221,7 +224,7 @@ Per-item annotations such as empirical difficulty and explorer-managed state.
 
 ### `acp_access_configs.featureConfig`
 
-Per-ACP feature flags controlling read-only functionality.
+Per-AP feature flags controlling read-only functionality.
 
 ### `acp_files.validationResult`
 
@@ -240,7 +243,7 @@ without a schema migration for every UI-level change.
 
 The practical ownership model is:
 
-- ACP metadata belongs to `Acp`.
+- AP metadata belongs to `Acp`.
 - Viewer exposure rules belong to `AcpAccessConfig`.
 - Uploaded binaries belong to the filesystem, with `AcpFile` as the metadata index.
 - Historical rollbacks belong to snapshots.

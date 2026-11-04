@@ -7,61 +7,61 @@ Es ist keine vollstaendige Abnahme oder Sicherheitspruefung der Implementierung.
 
 ## Ziel und Umfang
 
-Content Hub verwaltet Assessment Content Packages (ACPs), ihre Indexdaten und
+Content Hub verwaltet Assessment Packages (APs), ihre Indexdaten und
 Dateien. Verantwortliche bereiten Inhalte auf, pruefen sie, konfigurieren den
 Zugang und stellen sie zur Ansicht oder Weiterverarbeitung bereit. Betrachtende
 koennen freigeschaltete Aufgaben, Einheiten und Items untersuchen und kommentieren.
 
-Zum aktuellen Umfang gehoeren ACP-Verwaltung, Dateiimport und -export,
+Zum aktuellen Umfang gehoeren AP-Verwaltung, Dateiimport und -export,
 syntaktische und semantische Validierung, Snapshots mit Vergleich und
-Wiederherstellung, ACP-bezogene Zugriffsregeln, Verona-Player-Ansichten,
+Wiederherstellung, AP-bezogene Zugriffsregeln, Verona-Player-Ansichten,
 Kommentare, Item Explorer sowie eine authentifizierte Server-API.
 
-Ein formaler Review-Aufgabenprozess, kryptografisch signierte ACP-Freigaben und
+Ein formaler Review-Aufgabenprozess, kryptografisch signierte AP-Freigaben und
 eine Queue-/Worker-Zielarchitektur sind durch diese Beschreibung nicht zugesagt.
 Eine oeffentliche Ansicht oder ein veroeffentlichter Explorer-Stand ist kein
-Nachweis eines formal geprueften und signierten ACP-Releases.
+Nachweis eines formal geprueften und signierten AP-Releases.
 
 ## Nutzer und Berechtigungen
 
 | Nutzergruppe | Verantwortung und Zugang |
 | --- | --- |
-| App-Administration | Benutzer, globale Einstellungen und ACP-Verwaltung |
-| ACP_MANAGER | Inhalte und Konfiguration zugewiesener ACPs bearbeiten |
-| READ_ONLY | Zugewiesene ACPs im erlaubten Funktionsumfang betrachten |
-| ACP-Zugangsdaten-Nutzer | Auf das zugeordnete ACP begrenzter Betrachtungszugang |
-| Anonyme Besucher | Oeffentliche ACPs im freigeschalteten Umfang betrachten |
+| App-Administration | Benutzer, globale Einstellungen und AP-Verwaltung |
+| ACP_MANAGER | Inhalte und Konfiguration zugewiesener APs bearbeiten |
+| READ_ONLY | Zugewiesene APs im erlaubten Funktionsumfang betrachten |
+| AP-Zugangsdaten-Nutzer | Auf das zugeordnete AP begrenzter Betrachtungszugang |
+| Anonyme Besucher | Oeffentliche APs im freigeschalteten Umfang betrachten |
 | Externe Systeme | Server-API mit Token und berechtigten Scopes verwenden |
 
 Registrierte Benutzer authentifizieren sich ueber OIDC/Keycloak. Das Backend
-entscheidet anhand der Identitaet, ACP-Rollen, des Zugangsmodells und der
+entscheidet anhand der Identitaet, AP-Rollen, des Zugangsmodells und der
 Feature-Konfiguration ueber den Zugriff. Details: [Access Control](../features/access-control.md).
 
 ## Fachlicher Ablauf
 
-1. ACP anlegen und Verantwortliche zuweisen; neue ACPs beginnen privat.
+1. AP anlegen und Verantwortliche zuweisen; neue APs beginnen privat.
 2. Index importieren oder bearbeiten und zugehoerige Dateien hochladen.
 3. Validierungsergebnisse pruefen und Inkonsistenzen korrigieren.
 4. Metadaten und Item-Daten aufbereiten; Explorer-Entwuerfe bearbeiten.
 5. Vor wichtigen Aenderungen Snapshots fuer Vergleich und Rueckkehr erzeugen.
 6. Zugang und Funktionen fuer die vorgesehene Zielgruppe konfigurieren.
 7. Inhalte betrachten, im Player pruefen und Kommentare sammeln.
-8. Index, Dateien oder ACP-Inhalte exportieren bzw. ueber die Server-API uebertragen.
+8. Index, Dateien oder AP-Inhalte exportieren bzw. ueber die Server-API uebertragen.
 
 Die Schritte beschreiben einen Arbeitsablauf, keine technisch erzwungene
-Freigabe-Statusmaschine. Details: [ACP Workflows](../features/acp-workflows.md).
+Freigabe-Statusmaschine. Details: [AP Workflows](../features/acp-workflows.md).
 
 ## Architektur und Datenhaltung
 
 Angular stellt das Frontend bereit. Ein modularer NestJS-Backend mit TypeORM
 enthaelt API, Autorisierung, Fachlogik und Persistenzzugriff. PostgreSQL speichert
-relationale Zuordnungen und variable ACP-Daten als JSONB. Binaere Dateien liegen
+relationale Zuordnungen und variable AP-Daten als JSONB. Binaere Dateien liegen
 im Dateisystem und besitzen Datenbankeintraege. Keycloak liefert Identitaeten;
 Docker Compose und Reverse-Proxy-Konfigurationen unterstuetzen den Betrieb.
 
-Das ACP ist das zentrale Aggregat mit Index, Dateien, Rollen, Zugangsregeln,
+Das AP ist das zentrale Aggregat mit Index, Dateien, Rollen, Zugangsregeln,
 Kommentaren und Snapshots. Explorer-Entwurf und veroeffentlichter Explorer-Stand
-sind eigenstaendige Zustaende. Sie ersetzen keine globale ACP-Release-Historie.
+sind eigenstaendige Zustaende. Sie ersetzen keine globale AP-Release-Historie.
 
 ## Qualitaetsziele
 

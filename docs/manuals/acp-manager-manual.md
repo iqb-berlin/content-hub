@@ -1,12 +1,12 @@
-# ACP-Manager Handbuch
+# AP-Manager-Handbuch
 
 ## Ziel und Zielgruppe
 
-Dieses Handbuch richtet sich an Personen mit der ACP-Rolle `ACP_MANAGER`. Es beschreibt die
+Dieses Handbuch richtet sich an Personen mit der AP-Rolle `ACP_MANAGER`. Es beschreibt die
 typischen Arbeitsablaeufe in der Anwendung aus Sicht der Paketverantwortlichen:
 
-- ACP oeffnen und ueberblicken
-- ACP-Index importieren oder exportieren
+- AP oeffnen und ueberblicken
+- AP-Index importieren oder exportieren
 - Rollen zuweisen
 - Dateien hochladen, pruefen und loeschen
 - Zugriffsmodell und Features konfigurieren
@@ -14,117 +14,131 @@ typischen Arbeitsablaeufe in der Anwendung aus Sicht der Paketverantwortlichen:
 - Vorschau, Item-Liste und Item-Explorer fuer die fachliche Kontrolle nutzen
 
 Nicht alle Funktionen dieses Handbuchs stehen jeder Person zur Verfuegung. App-Admins haben
-zusaetzliche Rechte, zum Beispiel fuer das Anlegen und Loeschen von ACPs oder fuer die
+zusaetzliche Rechte, zum Beispiel fuer das Anlegen und Loeschen von APs oder fuer die
 Benutzerverwaltung.
 
 ## Grundprinzipien
 
-- Ein ACP ist ein inhaltliches Paket mit Metadaten, ACP-Index, Dateien, Rollen, Kommentaren und
+- AP steht fuer Assessment Package; der AP-Index ist das zentrale JSON-Verzeichnis des Pakets.
+  Die frueheren Bezeichnungen ACP und ACP-Index meinen dieselben Inhalte.
+- Ein AP ist ein inhaltliches Paket mit Metadaten, AP-Index, Dateien, Rollen, Kommentaren und
   optionalen Zugangsdaten.
-- Die Verwaltung erfolgt ueber die Route `Verwalten`.
-- Die fachliche Pruefung erfolgt ueber die Route `Vorschau`.
+- `Verwalten` in der AP-Liste oeffnet die AP-Uebersicht mit den Bereichen `Inhalte` und `Verwaltung`.
+- Die fachliche Pruefung beginnt unter `Inhalte`, zum Beispiel mit `Item-Explorer` oder
+  `Aufgaben ansehen`.
 - Viele Einstellungen wirken nur auf die Nur-Lese-Sicht fuer andere Nutzerinnen und Nutzer.
-  ACP-Manager und App-Admins sehen teilweise mehr als normale Betrachter.
+  AP-Manager und App-Admins sehen teilweise mehr als normale Betrachter.
 
 ## Anmeldung und Einstieg
 
 ### 1. Anmelden
 
 Die Anmeldung fuer Content Hub-Nutzerinnen und -Nutzer erfolgt ueber Keycloak / OIDC.
-Separate ACP-Zugangsdaten werden nur fuer entsprechend geschuetzte Nur-Lese-Zugaenge
+Separate AP-Zugangsdaten werden nur fuer entsprechend geschuetzte Nur-Lese-Zugaenge
 verwendet.
 
-Nach erfolgreicher Anmeldung oeffnen Sie die ACP-Liste ueber:
+Nach erfolgreicher Anmeldung oeffnen Sie die AP-Liste ueber:
 
+- den Navigationspunkt `APs`, sofern er fuer Ihr Konto sichtbar ist,
 - die Startseite, falls dort eine Schaltflaeche `Verwalten` sichtbar ist, oder
 - direkt ueber `/acps`.
 
-### 2. ACP auswaehlen
+### 2. AP auswaehlen
 
-In der ACP-Liste sehen Sie:
+In der AP-Liste sehen Sie:
 
-- `Meine ACP-Pakete`, wenn Sie normale ACP-Rechte besitzen
-- `Assessment Content Packages`, wenn Sie App-Admin sind
+- `Meine AP-Pakete`, wenn Sie normale AP-Rechte besitzen
+- `Assessment Packages`, wenn Sie App-Admin sind
 
-Zu jedem ACP gibt es die Schaltflaeche `Verwalten`, sofern Sie Verwaltungsrechte besitzen.
+Zu jedem AP gibt es die Schaltflaeche `Verwalten`, sofern Sie Verwaltungsrechte besitzen.
 
 ## Die Verwaltungsuebersicht
 
-Nach dem Oeffnen eines ACPs gelangen Sie auf die Uebersicht. Dort finden Sie die wichtigsten
-Bereiche:
+Nach dem Oeffnen eines APs gelangen Sie auf die AP-Uebersicht. Unter `Inhalte` oeffnen Sie
+`Item-Explorer`, `Aufgaben ansehen` sowie vorhandene Testhefte und Aufgabenfolgen, soweit
+diese fuer Ihr Konto verfuegbar sind. Unter `Verwaltung` finden Sie:
 
-- `Dateien`
-- `Snapshots`
-- `Zugriffskonfiguration`
-- `Applikationstoken`
-- `Vorschau`
+- `Dateien verwalten`
+- `Sicherungsstände`
+- `Zugriff & Funktionen`
+- `Review`, wenn Sie `Review: verwalten` besitzen
+- `API-Zugänge`
 
 Zusatzfunktionen direkt auf der Uebersichtsseite:
 
-- ACP-Namen umbenennen
-- ACP-Index anzeigen, exportieren, importieren oder loeschen
-- Rollenzuweisungen verwalten
+- AP-Namen umbenennen
+- AP-Index anzeigen, exportieren, importieren oder zuruecksetzen
+- `Personen & Rollen` verwalten
 
-### Applikationstoken fuer ein ACP verwalten
+### Applikationstoken fuer ein AP verwalten
 
-Im Bereich `Applikationstoken` koennen ACP-Manager Tokens fuer externe Anwendungen
-anlegen, die ausschliesslich auf das aktuelle ACP begrenzt sind.
+Im Bereich `API-Zugänge` koennen AP-Manager Tokens fuer externe Anwendungen
+anlegen, die ausschliesslich auf das aktuelle AP begrenzt sind.
 
 Typischer Ablauf:
 
-1. `Applikationstoken` in der Verwaltungsuebersicht oeffnen.
-2. `Token anlegen` klicken.
-3. Namen, optionale Ablaufzeit und benoetigte Berechtigungen auswaehlen.
-4. Den neu angezeigten Klartext-Token sofort in der externen Anwendung hinterlegen.
+1. `API-Zugänge` in der Verwaltungsuebersicht oeffnen.
+2. `+ Token anlegen` klicken.
+3. Im Feld `Name` einen Namen eingeben.
+4. Bei Bedarf ein `Ablaufdatum` eintragen.
+5. Unter `Berechtigungen` die benoetigten Zugriffe auswaehlen, zum Beispiel `AP lesen`.
+6. `Token anlegen` klicken.
+7. Den neu angezeigten Klartext-Token sofort in der externen Anwendung hinterlegen.
 
 Wichtige Hinweise:
 
 - Der Klartext-Token wird nur einmal direkt nach dem Anlegen angezeigt.
-- ACP-Manager koennen keine globalen Tokens erstellen.
-- Tokens aus diesem Bereich gelten nur fuer das aktuelle ACP.
+- AP-Manager koennen keine globalen Tokens erstellen.
+- Tokens aus diesem Bereich gelten nur fuer das aktuelle AP.
 - Ein Token kann spaeter widerrufen werden; die Aktion kann nicht rueckgaengig gemacht werden.
 
-### ACP umbenennen
+### AP umbenennen
 
-1. Auf das Stiftsymbol neben dem ACP-Namen klicken.
+1. Auf das Stiftsymbol neben dem AP-Namen klicken.
 2. Neuen Namen eingeben.
 3. Mit `Speichern` bestaetigen.
 
-### ACP-Index verwalten
+### AP-Index verwalten
 
-Im Bereich `ACP-Index` koennen Sie:
+Klappen Sie auf der AP-Uebersicht `Paketstruktur (AP-Index)` auf. Dort koennen Sie:
 
-- `Anzeigen`: aktuellen Index als JSON einblenden
+- `Struktur ansehen`: den Index als gegliederte Paketstruktur oeffnen
+- `JSON anzeigen`: aktuellen Index im Dialog `AP-Index als JSON` einblenden
 - `Exportieren`: Index als JSON herunterladen
 - `Importieren`: Index aus einer JSON-Datei ersetzen
-- `Index loeschen`: Index auf einen Standardzustand zuruecksetzen
+- `Index zurücksetzen`: Index auf einen Standardzustand zuruecksetzen
 
 Wichtige Hinweise:
 
 - Beim Import muss die Datei gueltiges JSON sein.
-- Das Loeschen betrifft den gesamten Index, nicht jedoch die bereits hochgeladenen Dateien.
+- Das Zuruecksetzen betrifft den gesamten Index, nicht jedoch die bereits hochgeladenen Dateien.
 - Nach groesseren Index-Aenderungen sollten Sie einen Snapshot erstellen.
 
 ### Rollen zuweisen
 
-Im Bereich `Rollenzuweisungen` koennen Sie Personen einem ACP zuordnen.
+Im Bereich `Personen & Rollen` auf der AP-Uebersicht koennen Sie Personen einem AP zuordnen.
 
 Verfuegbare Rollen:
 
-- `ACP-Manager`
-- `Nur Lesen`
+- `AP-Manager`
+- `Nur lesend`
 
 Typischer Ablauf:
 
-1. Benutzerin oder Benutzer aus der Liste auswaehlen.
-2. Rolle auswaehlen.
-3. `Zuweisen` klicken.
+1. `Person hinzufügen` aufklappen.
+2. Unter `Person` die gewuenschte Person auswaehlen.
+3. Unter `Paketrolle` die Rolle auswaehlen.
+4. Bei Bedarf zusaetzliche Rechte fuer Review und Item Explorer auswaehlen.
+5. `Person hinzufügen` klicken.
+
+Bestehende Zuordnungen aendern Sie direkt in der jeweiligen Tabellenzeile. Bestaetigen Sie
+diese Aenderungen mit `Änderungen speichern` in derselben Zeile.
 
 Wichtig:
 
 - App-Admins koennen `ACP_MANAGER` vergeben und entziehen.
-- Nicht-adminische ACP-Manager koennen in der Praxis in der Regel nur `READ_ONLY` vergeben.
-- Entfernen Sie Rollen, wenn ein ACP nicht mehr betreut oder eingesehen werden soll.
+- Nicht-adminische AP-Manager koennen in der Praxis in der Regel nur `READ_ONLY` vergeben.
+- Entfernen Sie Rollen, wenn ein AP nicht mehr betreut oder eingesehen werden soll.
 
 ## Dateien verwalten
 
@@ -148,9 +162,9 @@ Beim Upload passieren im Hintergrund mehrere Schritte:
 
 1. Dateien werden gespeichert.
 2. ZIP-Dateien werden automatisch entpackt.
-3. Der ACP-Index wird mit den hochgeladenen Dateien synchronisiert.
+3. Der AP-Index wird mit den hochgeladenen Dateien synchronisiert.
 4. Dateien werden automatisch validiert.
-5. Eine semantische ACP-Pruefung wird ausgefuehrt.
+5. Eine semantische AP-Pruefung wird ausgefuehrt.
 
 ### Dateikonflikte behandeln
 
@@ -226,14 +240,14 @@ Die Vorschau zeigt, sofern moeglich:
 
 ### Alle Dateien loeschen
 
-Mit `Alle loeschen` entfernen Sie den gesamten Dateibestand des ACP.
+Mit `Alle loeschen` entfernen Sie den gesamten Dateibestand des AP.
 
 Das ist ein starker Eingriff. Erstellen Sie vorher einen Snapshot, wenn Sie den bisherigen Stand
 noch brauchen.
 
-## Zugriffskonfiguration
+## Zugriff & Funktionen
 
-Im Bereich `Zugriffskonfiguration` verwalten Sie sowohl das Zugriffsmodell als auch die
+Im Bereich `Zugriff & Funktionen` verwalten Sie sowohl das Zugriffsmodell als auch die
 Nur-Lese-Features fuer andere Nutzerinnen und Nutzer.
 
 Die Aktion `Änderungen speichern` speichert Zugangsart, Funktionen und Darstellung gemeinsam.
@@ -246,23 +260,23 @@ Sie koennen eines der Basismodelle waehlen:
 
 - `Nur zugewiesene Personen`
 - `Öffentlich – ohne Anmeldung`
-- `Zugang mit ACP-Zugangsdaten`
+- `Zugang mit AP-Zugangsdaten`
 
-App-Admins und Personen mit zugewiesener ACP-Rolle haben unabhängig von der
+App-Admins und Personen mit zugewiesener AP-Rolle haben unabhängig von der
 Zugangsart Zugriff. Eine Registrierung allein reicht nicht. Die Rollen werden
-unter `Personen und Rollen verwalten` auf der ACP-Übersicht gepflegt.
+unter `Personen und Rollen verwalten` auf der AP-Übersicht gepflegt.
 
 #### 1. Privat
 
 Verwendung:
 
 - fuer interne Vorbereitung
-- fuer ACPs, die noch nicht sichtbar sein sollen
+- fuer APs, die noch nicht sichtbar sein sollen
 
 Wirkung:
 
 - keine anonyme Sichtbarkeit
-- Zugriff nur fuer App-Admins und Personen mit ACP-Rolle
+- Zugriff nur fuer App-Admins und Personen mit AP-Rolle
 
 #### 2. Oeffentlich
 
@@ -283,7 +297,7 @@ Verwendung:
 
 Wirkung:
 
-- Zugriff nur mit ACP-spezifischen Zugangsdaten
+- Zugriff nur mit AP-spezifischen Zugangsdaten
 
 Zusaetzliche Einstellungen:
 
@@ -338,24 +352,24 @@ Die Feature-Schalter steuern die Lesesicht fuer andere Nutzerinnen und Nutzer.
 
 #### Auf dieser Startseite anzeigen
 
-Hier legen Sie fest, welche Einstiege auf der ACP-Startseite erscheinen:
+Hier legen Sie fest, welche Einstiege auf der AP-Startseite erscheinen:
 
 - Item-Explorer
 - Aufgaben ansehen
 - Testhefte und Aufgabenfolgen
-- Paketstruktur (ACP-Index)
+- Paketstruktur (AP-Index)
 
 Diese Schalter aendern keine Funktionsrechte. Die fachlichen Funktionen werden weiterhin in den
 Bereichen `Aufgaben-Ansicht`, `Navigation`, `Kommentare` und `Item-Explorer` aktiviert. Auch ein
 ausgeblendeter Einstieg ist keine Zugriffssperre; Zugriffe werden ueber das Zugriffsmodell und die
-Funktionsrechte geregelt. Bestehende ACPs zeigen alle Eintraege weiterhin an. Eine vorhandene,
+Funktionsrechte geregelt. Bestehende APs zeigen alle Eintraege weiterhin an. Eine vorhandene,
 deaktivierte Einstellung `Navigation ueber die Unit-Liste` bleibt als Alt-Konfiguration erhalten.
 
 #### Downloads
 
 Sie koennen einzeln erlauben:
 
-- ACP-Index-Download
+- AP-Index-Download
 - Unit-Download als ZIP
 - sonstige Datei-Downloads
 
@@ -398,12 +412,12 @@ Wenn `Item-Tagging erlauben` aktiv ist, pflegen Sie darunter die Liste `Verfuegb
 
 - Waehlen Sie `Privat`, solange Dateien und Index noch in Arbeit sind.
 - Aktivieren Sie erst danach oeffentliche oder credentials-basierte Zugaenge.
-- Testen Sie die Lesesicht mit einem passenden Testkonto oder mit ACP-Zugangsdaten, nicht nur als
+- Testen Sie die Lesesicht mit einem passenden Testkonto oder mit AP-Zugangsdaten, nicht nur als
   Managerkonto.
 
 ## Snapshots
 
-Snapshots sind Sicherheitsstaende Ihres ACPs.
+Snapshots sind Sicherheitsstaende Ihres APs.
 
 ### Wann ein Snapshot sinnvoll ist
 
@@ -424,14 +438,14 @@ Erstellen Sie einen Snapshot insbesondere:
 
 Mit `Diff zum aktuellen Stand` sehen Sie:
 
-- ob der ACP-Index veraendert ist
+- ob der AP-Index veraendert ist
 - neue Dateien im aktuellen Stand
 - fehlende Dateien im aktuellen Stand
 - inhaltlich geaenderte Dateien
 
 ### Snapshot wiederherstellen
 
-Mit `Wiederherstellen` setzen Sie ACP-Index und Dateien auf den Stand dieses Snapshots zurueck.
+Mit `Wiederherstellen` setzen Sie AP-Index und Dateien auf den Stand dieses Snapshots zurueck.
 
 Wichtig:
 
@@ -443,30 +457,30 @@ Wichtig:
 Mit `Loeschen` entfernen Sie einen Snapshot dauerhaft. Diese Aktion kann nicht rueckgaengig gemacht
 werden.
 
-## Vorschau und fachliche Kontrolle
+## Inhalte und fachliche Kontrolle
 
-Die Schaltflaeche `Vorschau` oeffnet die Lesesicht des ACPs. Dort kontrollieren Sie, wie Inhalte
-fuer Nutzerinnen und Nutzer praesentiert werden.
+Oeffnen Sie unter `Inhalte` auf der AP-Uebersicht den `Item-Explorer`, `Aufgaben ansehen`
+oder ein vorhandenes Testheft. Dort kontrollieren Sie die Inhalte fachlich. Die Lesesicht
+des APs ist unter `/view/:acpId` erreichbar; setzen Sie anstelle von `:acpId` die ID des APs ein.
 
-Auf der Startseite des ACPs finden Sie je nach Konfiguration:
+Auf der Startseite des APs finden Sie je nach Konfiguration:
 
-- `ACP-Index`
-- `Aufgaben`
-- `Aufgabenfolgen`
-- `Item-Liste`
 - `Item-Explorer`
+- `Aufgaben ansehen`
+- `Testhefte und Aufgabenfolgen`
+- `Review`, wenn Sie die entsprechende Berechtigung besitzen
 - `Downloads`
-- `Kommentare`
+- `Paketstruktur (AP-Index) ansehen`
 
-Wenn Sie ACP-Manager sind, erscheint zusaetzlich `Zur Verwaltung`.
+Wenn Sie AP-Manager sind, erscheint in der Lesesicht zusaetzlich `← Zur AP-Übersicht`.
 
 ### Wichtiger Testhinweis
 
-ACP-Manager und App-Admins koennen mehr sehen als normale Betrachter. Wenn Sie die
+AP-Manager und App-Admins koennen mehr sehen als normale Betrachter. Wenn Sie die
 Nutzerperspektive pruefen moechten, testen Sie zusaetzlich:
 
 - mit einem `READ_ONLY`-Konto oder
-- mit ACP-Zugangsdaten bei `Zugangsliste`
+- mit AP-Zugangsdaten bei `Zugangsliste`
 
 ## Aufgaben-Ansicht
 
@@ -519,7 +533,7 @@ metadatenbezogene Bearbeitung.
 ### Studio-Kommentare anzeigen
 
 Unter `Zugriff & Funktionen` → `Item-Explorer` → `Inhalte und Darstellung` können
-ACP-Manager `Studio-Kommentare im Item-Explorer anzeigen` einschalten. Die Einstellung
+AP-Manager `Studio-Kommentare im Item-Explorer anzeigen` einschalten. Die Einstellung
 ist standardmäßig ausgeschaltet und unabhängig von der Freigabe für Review-Kommentare.
 
 Voraussetzung ist ein Studio-Export einschließlich Kommentaren: Die Aufgaben-XML
@@ -562,7 +576,7 @@ und erscheint als fachliche Spalte `Kompetenzstufe`. Erlaubt sind die Werte `I` 
 Technische Bedienungsspalten wie die laufende Position oder die Auswahl
 fuer eine Auswahlliste bleiben fest.
 
-Diese Einstellungen werden veroeffentlicht und damit Teil der gemeinsamen ACP-Konfiguration.
+Diese Einstellungen werden veroeffentlicht und damit Teil der gemeinsamen AP-Konfiguration.
 Vorhandene reine Metadatenspalten-Konfigurationen werden weiterhin uebernommen.
 
 ### Tags verwalten
@@ -604,7 +618,7 @@ Das ist vor allem fuer Test- und Analysezwecke hilfreich.
 
 ## Review vorbereiten und starten
 
-Die ACP-Uebersicht zeigt fuer Personen mit `Review: verwalten` eine eigene Review-Karte mit dem
+Die AP-Uebersicht zeigt fuer Personen mit `Review: verwalten` eine eigene Review-Karte mit dem
 aktuellen Aktivierungsstatus.
 
 1. Oeffnen Sie die Review-Karte.
@@ -612,7 +626,7 @@ aktuellen Aktivierungsstatus.
 3. Beheben Sie technische Blocker. Hinweise duerfen nach bewusster Bestaetigung bestehen bleiben.
 4. Waehlen Sie die Kommentarsicht und konfigurieren Sie bei Bedarf Review-Gruppen.
 5. Aktivieren Sie den Review und speichern Sie die Konfiguration.
-6. Vergeben Sie unter den Personen oder ACP-Zugaengen die Berechtigung `Review: teilnehmen`.
+6. Vergeben Sie unter den Personen oder AP-Zugaengen die Berechtigung `Review: teilnehmen`.
 
 Unter **Metadaten in der Prüfansicht** koennen Sie **Reiter „Metadaten“ ausblenden**
 aktivieren. Nach dem Speichern der Review-Konfiguration ist der gesamte Reiter
@@ -634,7 +648,7 @@ Die Bereitschaftspruefung kontrolliert insbesondere Booklets, referenzierte Unit
 Aufgabendefinitionen, Player sowie syntaktische und semantische Validierungsergebnisse. Sie ist
 keine formale Release-Freigabe.
 
-Teilnehmende sehen auf der ACP-Startseite eine Review-Karte. Dort oeffnen sie ein Testheft direkt im
+Teilnehmende sehen auf der AP-Startseite eine Review-Karte. Dort oeffnen sie ein Testheft direkt im
 Review-Arbeitsplatz mit Player und Reviewbereich. Eine zusaetzliche Review-Zwischenseite ist fuer
 Teilnehmende nicht erforderlich.
 
@@ -648,7 +662,7 @@ jeweiligen fachlichen Kontext anlegen. Item-Kommentare werden beim ausgewaehlten
 Item-Explorer erfasst; Unit-Kommentare in der Ansicht der jeweiligen Unit.
 
 Im Review-Arbeitsplatz kann unter `Kommentarziel` zwischen `Aufgabe`, `Item` und `Testheft`
-gewechselt werden, soweit diese Ziele fuer den ACP aktiviert sind. Fuer `Item` waehlen Sie
+gewechselt werden, soweit diese Ziele fuer den AP aktiviert sind. Fuer `Item` waehlen Sie
 anschliessend das gewuenschte Item der aktuellen Aufgabe aus. Die Auswahl zeigt die Item-ID
 und, soweit vorhanden, die Bezeichnung. Nicht abgesendete Kommentare bleiben beim Wechsel
 zwischen Items und Kommentarzielen erhalten. Ein separater Zugang zum Item-Explorer ist fuer
@@ -665,7 +679,7 @@ aendern. Nach dem Loslassen endet die Groessenaenderung auch ueber dem Player.
 Kommentarbewertungen sind nur bei geteilter Kommentarsicht moeglich; der Hinweis dazu steht
 unter `Review` bei der Konfiguration der Kommentarsicht und Gruppen.
 
-Auf der ACP-Startseite stehen dann typischerweise zur Verfuegung:
+Auf der AP-Startseite stehen dann typischerweise zur Verfuegung:
 
 - ein Link zu den Item-Kommentaren im Item-Explorer, falls diese aktiviert sind
 - `Kommentare exportieren (XLSX)`
@@ -675,22 +689,22 @@ Pruefen Sie vor der Freigabe:
 - ob die gewuenschten Kommentarziele aktiviert sind
 - ob der Export fuer den geplanten Review-Prozess ausreicht
 
-## Empfohlener Standardablauf fuer ACP-Manager
+## Empfohlener Standardablauf fuer AP-Manager
 
-1. ACP in `Verwalten` oeffnen.
+1. AP in `Verwalten` oeffnen.
 2. Namen, Rollen und Ausgangskonfiguration pruefen.
 3. Falls noetig Snapshot anlegen.
-4. ACP-Index importieren oder kontrollieren.
+4. AP-Index importieren oder kontrollieren.
 5. Dateien oder ZIP hochladen.
 6. Upload-Berichte und Validierung pruefen.
-7. In `Zugriffskonfiguration` das gewuenschte Zugriffsmodell und die Features setzen.
-8. In `Vorschau` Units, Item-Liste und Item-Explorer fachlich kontrollieren.
+7. In `Zugriff & Funktionen` das gewuenschte Zugriffsmodell und die Features setzen.
+8. Unter `Inhalte` Aufgaben und Item-Explorer fachlich kontrollieren.
 9. Falls genutzt: Explorer-Aenderungen veroeffentlichen.
 10. Mit Testkonto oder Zugangsdaten die Zielperspektive pruefen.
 
 ## Typische Fehler vermeiden
 
-- Nach Aenderungen in der Zugriffskonfiguration beide Speichern-Schaltflaechen nicht verwechseln.
+- Aenderungen unter `Zugriff & Funktionen` mit `Änderungen speichern` bestaetigen.
 - Vor grossen Importen immer einen Snapshot anlegen.
 - Oeffentliche Freigabe erst nach erfolgreicher Dateipruefung vornehmen.
 - Bei Dateikonflikten bewusst entscheiden, ob wirklich ersetzt werden soll.
@@ -698,6 +712,6 @@ Pruefen Sie vor der Freigabe:
 
 ## Weiterfuehrende Dokumentation
 
-- [ACP Workflows](../features/acp-workflows.md)
+- [AP Workflows](../features/acp-workflows.md)
 - [Access Control](../features/access-control.md)
 - [Item Explorer](../features/item-explorer.md)

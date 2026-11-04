@@ -7,9 +7,9 @@ effective permissions for a request depend on:
 
 1. authentication method,
 2. global app-admin status,
-3. ACP-specific roles,
-4. ACP access model,
-5. ACP feature flags.
+3. AP-specific roles,
+4. AP access model,
+5. AP feature flags.
 
 This gives the application a lot of flexibility without requiring completely separate
 codepaths for public, managed, and restricted content.
@@ -34,7 +34,7 @@ Important behavior:
 - the backend validates the returned ID token,
 - the backend then issues its own JWT for application use.
 
-### ACP credential login
+### AP credential login
 
 Endpoint:
 
@@ -42,13 +42,13 @@ Endpoint:
 
 Use case:
 
-- ACP-specific viewer access when the access model is `CREDENTIALS_LIST`.
+- AP-specific viewer access when the access model is `CREDENTIALS_LIST`.
 
 Important behavior:
 
-- credentials are stored per ACP access config,
+- credentials are stored per AP access config,
 - credential users are not normal application users,
-- their access token is only valid for the associated ACP.
+- their access token is only valid for the associated AP.
 
 ## Role Model
 
@@ -60,17 +60,17 @@ App admins can:
 
 - access admin settings,
 - manage users,
-- create and delete ACPs,
-- manage any ACP,
-- bypass most ACP-level restrictions.
+- create and delete APs,
+- manage any AP,
+- bypass most AP-level restrictions.
 
-### ACP-level roles
+### AP-level roles
 
 - `ACP_MANAGER`
 - `READ_ONLY`
 
-`ACP_MANAGER` allows write access to manager functionality for a specific ACP.
-`READ_ONLY` grants authenticated access to that ACP without management rights.
+`ACP_MANAGER` allows write access to manager functionality for a specific AP.
+`READ_ONLY` grants authenticated access to that AP without management rights.
 
 ### Management API validation
 
@@ -94,31 +94,31 @@ includes user details, while assigning a role can return just the assignment.
 Assignable users contain `id`, `username`, and an optional nullable `displayName`.
 Access responses can contain `null` validity dates.
 
-## ACP Access Models
+## AP Access Models
 
-Each ACP also has an access configuration.
+Each AP also has an access configuration.
 
 ### `PRIVATE`
 
-This is the default for newly created ACPs. The ACP is not listed on the public landing
+This is the default for newly created APs. The AP is not listed on the public landing
 page and is not reachable anonymously. Access is limited to app admins and users with an
-explicit ACP role.
+explicit AP role.
 
 ### `PUBLIC`
 
-The ACP is viewable without login. Feature flags still determine what anonymous viewers
+The AP is viewable without login. Feature flags still determine what anonymous viewers
 can do inside the read-only UI.
 
 ### `REGISTERED`
 
-`REGISTERED` is an effective access state for authenticated users with an ACP role. It is
+`REGISTERED` is an effective access state for authenticated users with an AP role. It is
 used in frontend presentation logic, but newly created access configurations are stored
 with `PRIVATE`, `PUBLIC`, or `CREDENTIALS_LIST` as the base model.
 
 ### `CREDENTIALS_LIST`
 
-The ACP requires ACP-specific viewer credentials. Managers configure and maintain the
-username/password list through the ACP access settings.
+The AP requires AP-specific viewer credentials. Managers configure and maintain the
+username/password list through the AP access settings.
 
 ## Who Decides Access?
 
@@ -127,9 +127,9 @@ username/password list through the ACP access settings.
 The backend is the final authority. `AcpAccessGuard` can grant access when:
 
 1. the current user is an app admin,
-2. the current user holds an ACP role,
-3. the current token is a credential token for the ACP,
-4. the ACP is public.
+2. the current user holds an AP role,
+3. the current token is a credential token for the AP,
+4. the AP is public.
 
 If none of those conditions apply, the request is rejected.
 
@@ -172,7 +172,7 @@ Important supported flags include:
 - `enablePlayerFocusHighlight`
 
 Managers and app admins generally bypass these restrictions so they can inspect and
-maintain ACP content even when public-facing features are disabled.
+maintain AP content even when public-facing features are disabled.
 
 ## Metadata Columns and Legacy Compatibility
 
@@ -183,7 +183,7 @@ That matters for:
 
 - item list column visibility,
 - item explorer column order and widths across system, metadata, tag, and personal columns,
-- backward compatibility with older ACP configuration payloads.
+- backward compatibility with older AP configuration payloads.
 
 The unified table layout is stored alongside the legacy metadata-only fields. Older saved
 configurations therefore retain their visibility, order, and widths until a manager explicitly
@@ -191,7 +191,7 @@ creates a full table layout.
 
 ## Credential Security Rules
 
-ACP credential passwords have strong validation:
+AP credential passwords have strong validation:
 
 - minimum 12 characters,
 - at least one uppercase letter,
@@ -209,17 +209,17 @@ The admin controller is protected by:
 - `OidcAuthGuard`
 - `RolesGuard`
 
-All normal application sessions are OIDC-backed. The additional guard ensures that ACP
+All normal application sessions are OIDC-backed. The additional guard ensures that AP
 credential tokens can never be used for admin-only configuration areas.
 
 ## Access Outcome Matrix
 
-| User type | Can open public ACP | Can open registered ACP | Can manage ACP | Can use admin UI |
+| User type | Can open public AP | Can open registered AP | Can manage AP | Can use admin UI |
 | --- | --- | --- | --- | --- |
 | Anonymous visitor | Yes | No | No | No |
-| Credential viewer | Only linked ACP | No | No | No |
-| OIDC user with `READ_ONLY` | Yes | Yes for assigned ACP | No | No |
-| OIDC user with `ACP_MANAGER` | Yes | Yes for assigned ACP | Yes for assigned ACP | No |
+| Credential viewer | Only linked AP | No | No | No |
+| OIDC user with `READ_ONLY` | Yes | Yes for assigned AP | No | No |
+| OIDC user with `ACP_MANAGER` | Yes | Yes for assigned AP | Yes for assigned AP | No |
 | OIDC app admin | Yes | Yes | Yes | Yes |
 
 ## Access UX on the Frontend
@@ -236,6 +236,6 @@ That makes access failures more understandable than a raw 401 or 403.
 
 ## Related Documents
 
-- [ACP Workflows](acp-workflows.md)
+- [AP Workflows](acp-workflows.md)
 - [Item Explorer](item-explorer.md)
 - [Backend Architecture](../architecture/backend.md)

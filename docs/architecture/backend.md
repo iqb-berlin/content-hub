@@ -9,9 +9,9 @@ and a separate server-to-server integration surface.
 Primary backend concerns:
 
 - authentication and authorization,
-- ACP CRUD and access management,
+- AP CRUD and access management,
 - file upload, download, and ZIP export,
-- ACP index import/export,
+- AP-Index import/export,
 - semantic and syntactic validation,
 - snapshot creation and restore,
 - item explorer shared draft state,
@@ -38,7 +38,7 @@ loads the global `ConfigModule`, configures TypeORM, and imports the functional 
 Files under `backend/src/auth` handle two authentication modes:
 
 - OIDC login callback and role synchronization,
-- ACP credential-list login.
+- AP credential-list login.
 
 Key pieces:
 
@@ -47,7 +47,7 @@ Key pieces:
 - `JwtAuthGuard` protects authenticated routes.
 - `RolesGuard` enforces `APP_ADMIN` and `ACP_MANAGER` style role checks.
 - `OidcAuthGuard` is used on admin endpoints to require OIDC-backed sessions.
-- `AcpAccessGuard` makes ACP-specific access decisions and supports optional auth.
+- `AcpAccessGuard` makes AP-specific access decisions and supports optional auth.
 
 ### Users module
 
@@ -64,17 +64,17 @@ The admin module manages global application settings, including:
 - logo URL,
 - landing page HTML,
 - imprint, privacy, and accessibility HTML,
-- default ACP index content.
+- default AP-Index content.
 
-### ACP module
+### AP module
 
 This is the core manager API. It handles:
 
-- ACP creation and deletion,
-- ACP metadata updates,
-- ACP index read/write/import/export,
-- ACP role assignment,
-- ACP access configuration,
+- AP creation and deletion,
+- AP metadata updates,
+- AP-Index read/write/import/export,
+- AP role assignment,
+- AP access configuration,
 - credential list upload and maintenance,
 - metadata column configuration,
 - item explorer draft endpoints.
@@ -92,21 +92,21 @@ The files module is responsible for:
 - cleanup after overwrites or deletions.
 
 Uploaded binaries live on disk. The database stores metadata, checksum, validation
-results, and ACP linkage.
+results, and AP linkage.
 
 ### Validation module
 
 Validation runs in two layers:
 
 - syntactic/schema checks on individual files,
-- semantic ACP-wide consistency checks across index references and uploaded files.
+- semantic AP-wide consistency checks across index references and uploaded files.
 
 This module is called automatically after uploads and can also be triggered through
 manager endpoints such as unit validation.
 
 ### Snapshots module
 
-Snapshots persist a point-in-time copy of the ACP index together with snapshot file
+Snapshots persist a point-in-time copy of the AP-Index together with snapshot file
 metadata. Managers can:
 
 - create snapshots,
@@ -121,12 +121,12 @@ metadata. Managers can:
 This module powers the read-only browser experience under `/api/view`. It serves:
 
 - public settings,
-- public ACP list,
-- ACP landing/start data,
+- public AP list,
+- AP landing/start data,
 - unit, item, sequence, and index views,
 - persisted item preferences for non-manager viewers.
 
-This module depends heavily on `AcpAccessGuard` and ACP feature flags.
+This module depends heavily on `AcpAccessGuard` and AP feature flags.
 
 ### Items module
 
@@ -143,7 +143,7 @@ changes before publishing them.
 
 ### Item Explorer module
 
-The item explorer state service manages a separate draft/published model for shared ACP
+The item explorer state service manages a separate draft/published model for shared AP
 view state. It keeps:
 
 - UI preferences,
@@ -160,10 +160,10 @@ manager collaboration.
 The server API lives under `/api/server` and is intentionally separate from browser
 auth. It supports scoped token-based access for:
 
-- ACP listing,
+- AP listing,
 - transfer export,
-- ACP import,
-- ACP index read/write,
+- AP import,
+- AP-Index read/write,
 - file listing/download/upload,
 - coding scheme replacement,
 - audit-log retrieval.
@@ -185,27 +185,27 @@ The backend has two overlapping authorization systems:
 - `ACP_MANAGER`
 - `READ_ONLY`
 
-`APP_ADMIN` is global. ACP roles are attached per ACP.
+`APP_ADMIN` is global. AP roles are attached per AP.
 
-### ACP access models
+### AP access models
 
-ACP read access can also be granted through an access configuration:
+AP read access can also be granted through an access configuration:
 
 - `PRIVATE`
 - `PUBLIC`
 - `REGISTERED`
 - `CREDENTIALS_LIST`
 
-In current application behavior, newly created ACPs start with `PRIVATE`. The
+In current application behavior, newly created APs start with `PRIVATE`. The
 `REGISTERED` label is mainly used as an effective frontend state for authenticated users
-with ACP roles, while the persisted base configuration is typically `PRIVATE`, `PUBLIC`,
+with AP roles, while the persisted base configuration is typically `PRIVATE`, `PUBLIC`,
 or `CREDENTIALS_LIST`.
 
 The `AcpAccessGuard` considers:
 
 1. app-admin status,
-2. credential-token ACP match,
-3. ACP role assignment,
+2. credential-token AP match,
+3. AP role assignment,
 4. public fallback.
 
 Managers and admins typically bypass read-only feature restrictions.
@@ -217,9 +217,9 @@ The backend uses PostgreSQL for metadata and the filesystem for uploaded files.
 Stored in PostgreSQL:
 
 - users,
-- ACP records,
-- ACP access config and credentials,
-- ACP role assignments,
+- AP records,
+- AP access config and credentials,
+- AP role assignments,
 - snapshots,
 - comments,
 - item response state,
@@ -229,7 +229,7 @@ Stored in PostgreSQL:
 
 Stored on disk:
 
-- uploaded ACP files,
+- uploaded AP files,
 - files bundled into generated ZIP downloads at request time.
 
 ## Database Initialization Strategy
@@ -245,7 +245,7 @@ This makes development convenient while keeping production schema changes explic
 ## Backend Conventions Worth Knowing
 
 - DTO validation is used consistently on write endpoints.
-- Many ACP-specific settings are stored as JSONB, not as deeply normalized tables.
+- Many AP-specific settings are stored as JSONB, not as deeply normalized tables.
 - Download URLs sometimes accept `auth_token` query parameters to support direct browser downloads.
 - Server API tokens are compared with `timingSafeEqual`.
 - OIDC uses an internal issuer URL for backend validation and a public issuer URL for browser redirects.

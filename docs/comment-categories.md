@@ -1,7 +1,7 @@
 # Kommentarkategorien (#239)
 
-Unter **Review → Vorbereitung** konfigurieren ACP-Manager bis zu 100 Kategorien
-je ACP. Namen sind nach Entfernen äußerer Leerzeichen erforderlich, maximal
+Unter **Review → Vorbereitung** konfigurieren AP-Manager bis zu 100 Kategorien
+je AP. Namen sind nach Entfernen äußerer Leerzeichen erforderlich, maximal
 120 Zeichen lang und unabhängig von Groß-/Kleinschreibung eindeutig.
 
 Jeder Kommentar und jede Antwort kann unabhängig eine optionale Kategorie
@@ -23,14 +23,14 @@ Felder leer. Der Kategoriefilter gilt wie die übrigen Anzeigefilter für Export
 solange „Anzeigefilter beim Export ignorieren“ ausgeschaltet ist. Archivierte
 Kategorien werden mit ihrer aktuellen Bezeichnung exportiert.
 
-Exporte lesen Kommentare und Kategorien gemeinsam unter der ACP-Sperre. Dadurch
+Exporte lesen Kommentare und Kategorien gemeinsam unter der AP-Sperre. Dadurch
 bleiben Zuordnungen und Bezeichnungen auch bei gleichzeitigem Entfernen oder
 Löschen einer Kategorie konsistent. Die Sperre endet vor der Dateierzeugung.
 
 Die Review-Konfiguration liefert und akzeptiert `categories` mit `id`, `name`
 und `archived`; bei neuen Kategorien fehlt die ID. Entfernte IDs werden zusätzlich
 in `deletedCategoryIds` gesendet. Konfigurationsänderungen verwenden die
-vorhandene Versionsprüfung und dieselbe ACP-Sperre wie Kommentaränderungen.
+vorhandene Versionsprüfung und dieselbe AP-Sperre wie Kommentaränderungen.
 Ältere Clients, die `categories` auslassen, erhalten die gespeicherte Liste.
 
 Die Kommentar-API akzeptiert `categoryId` beim Anlegen und Bearbeiten. Beim
@@ -41,6 +41,6 @@ Auswahl je Kommentarziel; wird eine gewählte Kategorie archiviert, bleibt der
 Text erhalten und eine neue Auswahl ist vor dem Absenden erforderlich.
 
 Migration `1789700000000-CommentCategories` ergänzt `comment_categories` an der
-ACP-Konfiguration und die nullable `category_id` am Kommentar. Ein Rollback
+AP-Konfiguration und die nullable `category_id` am Kommentar. Ein Rollback
 verweigert das Entfernen der Spalten, solange Kategorien oder Zuordnungen
 vorhanden sind.

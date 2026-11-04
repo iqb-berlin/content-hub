@@ -1,6 +1,10 @@
 # Content Hub
 
-Web application for managing **Assessment Content Packages (ACPs)** — bundles of data required to conduct and evaluate educational assessments.
+Web application for managing **Assessment Packages (APs)** — bundles of data required to conduct and evaluate educational assessments.
+
+The UI and current documentation use **AP** and **AP-Index**. Technical identifiers such as
+`acpIndex`, `ACP_MANAGER` and `/api/acp` remain unchanged; see
+[terminology and technical identifiers](docs/README.md#terminology-and-technical-identifiers).
 
 ## Documentation
 
@@ -204,7 +208,7 @@ docker exec content-hub-nginx nginx -t
 │   ├── src/
 │   │   ├── auth/           # JWT auth, 3 guards, credential login
 │   │   ├── users/          # User CRUD, admin seeding
-│   │   ├── acp/            # ACP lifecycle, Index import/export, roles
+│   │   ├── acp/            # AP lifecycle, Index import/export, roles
 │   │   ├── files/          # Upload/download, checksums
 │   │   ├── snapshots/      # Versioning, restore, diff
 │   │   ├── views/          # Public read-only endpoints
@@ -220,7 +224,7 @@ docker exec content-hub-nginx nginx -t
 │   └── src/app/
 │       ├── core/           # AuthService, ApiService, guards
 │       ├── auth/           # Login pages
-│       ├── admin/          # Users, settings, ACP list
+│       ├── admin/          # Users, settings, AP list
 │       ├── acp-manager/    # Dashboard, files, snapshots, access
 │       └── views/          # Landing, units, sequences, items, index
 ├── docs/                    # Project documentation
@@ -246,10 +250,10 @@ cd frontend && npm test
 ## Key Features
 
 - **3 Access Models**: Public, Registered Users, Credentials List
-- **ACP-Index Management**: JSON import/export, interactive browser
+- **AP-Index Management**: JSON import/export, interactive browser
 - **File Management**: Multi-file upload, SHA-256 checksums, validation
 - **Versioning**: Snapshots with copy-on-write, restore, diff
-- **Configurable Feature Flags**: Per-ACP control over read-only features
+- **Configurable Feature Flags**: Per-AP control over read-only features
 - **Verona Player Integration**: Unit display via iframe
 - **Server-to-Server API**: For Studio, Testcenter, Kodierbox integration
 
@@ -261,15 +265,15 @@ Application admins can create, inspect and revoke integration tokens in the UI u
 
 ### Core Endpoints
 
-- `GET /api/server/capabilities`: Inspect the authenticated token's scopes and ACP restriction without addressing an ACP
-- `GET /api/server/acp`: List transferable ACPs
+- `GET /api/server/capabilities`: Inspect the authenticated token's scopes and AP restriction without addressing an AP
+- `GET /api/server/acp`: List transferable APs
 - `GET /api/server/acp/:acpId`: Full transfer payload (index + files metadata)
 - `GET /api/server/acp/:acpId/export`: Alias for full transfer payload
-- `POST /api/server/acp/import`: Create/update ACP by `packageId`
+- `POST /api/server/acp/import`: Create/update AP by `packageId`
 - `POST /api/server/acp`: Legacy alias for import
-- `GET /api/server/acp/:acpId/index`: Transfer only ACP index
-- `PUT /api/server/acp/:acpId/index`: Update ACP index only
-- `GET /api/server/acp/:acpId/files`: List ACP files for transfer
+- `GET /api/server/acp/:acpId/index`: Transfer only AP-Index
+- `PUT /api/server/acp/:acpId/index`: Update AP-Index only
+- `GET /api/server/acp/:acpId/files`: List AP files for transfer
 - `GET /api/server/acp/:acpId/files/:fileId`: File metadata
 - `GET /api/server/acp/:acpId/files/:fileId/download`: Download one file
 - `POST /api/server/acp/:acpId/files/upload`: Upload one or more files (multipart)
@@ -278,9 +282,9 @@ Application admins can create, inspect and revoke integration tokens in the UI u
 
 ### Conflict Strategy
 
-- ACP import (`POST /api/server/acp/import`, `POST /api/server/acp`):
+- AP import (`POST /api/server/acp/import`, `POST /api/server/acp`):
   - `conflictStrategy=reject` (default): fail when `packageId` already exists
-  - `conflictStrategy=overwrite`: replace existing ACP index
+  - `conflictStrategy=overwrite`: replace existing AP-Index
   - `conflictStrategy=merge`: deep-merge incoming index into existing index
 - Index update (`PUT /api/server/acp/:acpId/index`):
   - `strategy=overwrite` (default) or `strategy=merge`
@@ -290,7 +294,7 @@ Application admins can create, inspect and revoke integration tokens in the UI u
   - replaces existing `.vocs` by filename (case-insensitive)
   - rejects unknown/non-existing `.vocs` (strict replace semantics)
   - creates a new snapshot version and stores the provided `changelog` (or auto-generated text)
-- Optimistic concurrency is supported via `expectedUpdatedAt` (ISO timestamp) for ACP/index updates and coding-scheme replacement.
+- Optimistic concurrency is supported via `expectedUpdatedAt` (ISO timestamp) for AP/index updates and coding-scheme replacement.
 
 ### Integration Scopes
 
@@ -309,11 +313,11 @@ Tokens can be scoped per integration client. Supported scopes:
 particular scope. It returns the token's granted `scopes`, a capability map for
 all supported scopes, and its `allowedAcpIds` restriction. Integrations should
 use this endpoint for connection and permission checks instead of probing an
-ACP route with a synthetic ID.
+AP route with a synthetic ID.
 
 ## OIDC / Keycloak Integration
 
-All application users sign in through Keycloak OIDC. ACP-specific credential-list access remains available independently for restricted viewer access.
+All application users sign in through Keycloak OIDC. AP-specific credential-list access remains available independently for restricted viewer access.
 
 Highlights:
 

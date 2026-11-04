@@ -49,7 +49,7 @@ Dockerized environments.
 | --- | --- |
 | `JWT_SECRET` | signing secret for the app JWT |
 | `JWT_EXPIRATION` | JWT lifetime |
-| `CREDENTIAL_LOGIN_MAX_ATTEMPTS` | ACP credential login rate-limit threshold |
+| `CREDENTIAL_LOGIN_MAX_ATTEMPTS` | AP credential login rate-limit threshold |
 | `CREDENTIAL_LOGIN_WINDOW_MS` | rate-limit observation window |
 | `CREDENTIAL_LOGIN_BLOCK_MS` | temporary block duration |
 

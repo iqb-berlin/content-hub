@@ -1,20 +1,20 @@
-# ACP-Berechtigungen und Zugangsliste (#60)
+# AP-Berechtigungen und Zugangsliste (#60)
 
-Die vier Grants sind ACP-bezogen und werden als explizite JSON-Arrays an
+Die vier Grants sind AP-bezogen und werden als explizite JSON-Arrays an
 `acp_user_roles` bzw. `acp_credentials` gespeichert. Leere Arrays sind gültig.
 `review:manage` impliziert keine Teilnahme; `item-explorer:edit` umfasst Lesen.
-Grants ändern die allgemeine ACP-Rolle nicht. ACP-Manager verwalten weiterhin
+Grants ändern die allgemeine AP-Rolle nicht. AP-Manager verwalten weiterhin
 Dateien, Rollen und Zugangsdaten. App-Admins besitzen einen administrativen
 Management-Override, zum Kommentieren benötigen auch sie einen Teilnahme-Grant.
 
 ## Migration
 
-`1789200000000-AcpCapabilityGrants` migriert bestehende ACP-Manager auf alle vier
+`1789200000000-AcpCapabilityGrants` migriert bestehende AP-Manager auf alle vier
 Grants. READ_ONLY und Credentials erhalten Teilnahme bei bisher aktivierter
 Kommentierung sowie Explorer-Lesen bei aktivem Item Explorer. Ein nicht gesetztes
 `enableItemList` entspricht dem bisherigen Standard `true`. Neue Zuordnungen und
 Credentials erhalten standardmäßig **keine** Grants. Der neue Review-Einstieg wird
-für alle bestehenden ACPs deaktiviert und muss bewusst aktiviert werden.
+für alle bestehenden APs deaktiviert und muss bewusst aktiviert werden.
 
 Vor dem Release Datenbanksicherung und Migrationsprobe vorsehen. Die Migration
 wurde lokal gegen eine separate PostgreSQL-Datenbank getestet. Ein Rollback der
@@ -28,23 +28,23 @@ breiteres Rollenmodell. Ein Rollback ist daher kein Ersatz für einen Rechteentz
   Importparametern und Entwürfen) prüfen Bearbeiten.
 - `enableItemList=false` sperrt Explorer-Zugriffe für Teilnehmer auch bei vorhandenen
   Lese-/Bearbeitungs-Grants. Die Grants bleiben gespeichert und werden nach erneuter
-  Aktivierung wieder wirksam. ACP-Manager und App-Admins behalten ihren bisherigen
+  Aktivierung wieder wirksam. AP-Manager und App-Admins behalten ihren bisherigen
   Verwaltungszugriff.
 - Persönliche Präferenzen und Listen bleiben mit Lesezugriff bearbeitbar.
 - Review-Lesen erfordert Teilnahme oder Management; eigene Mutationen erfordern
   Teilnahme. Ownership-Prüfungen bleiben bestehen.
-- `/view/acp/:acpId/review` liefert alle Booklets des ACP über das Manifest aus #59.
+- `/view/acp/:acpId/review` liefert alle Booklets des AP über das Manifest aus #59.
   `/view/:acpId/review` bietet den Einstieg und die Aktivierung für Verantwortliche.
 - Bestehende Kommentar-APIs einschließlich `/comments` bleiben verfügbar, prüfen
   aber explizite Review-Grants. Bestehende Kommentierungs-Features bleiben getrennt
   von der Aktivierung des neuen Review-Einstiegs: Item-/Aufgabenkommentare bleiben
   mit `enableCommenting=true` und Teilnahme-Grant auch bei `enableReview=false`
-  nutzbar, insbesondere für ACPs ohne Testheft. Der Booklet-Einstieg und Abstimmungen
+  nutzbar, insbesondere für APs ohne Testheft. Der Booklet-Einstieg und Abstimmungen
   benötigen weiterhin die Review-Aktivierung.
-- Öffentliche Explorer-Lesezugriffe bleiben bestehen. Auf einem öffentlichen ACP
+- Öffentliche Explorer-Lesezugriffe bleiben bestehen. Auf einem öffentlichen AP
   kann ein Nutzer daher auch ohne persönlichen Explorer-Grant öffentlich lesen.
-- Gemeinsame ACP-Inhalte (Index, Booklets, Player-Dateien) bleiben über die
-  allgemeinen ACP-Lesepfade verfügbar; der Review benötigt diese Inhalte ebenfalls.
+- Gemeinsame AP-Inhalte (Index, Booklets, Player-Dateien) bleiben über die
+  allgemeinen AP-Lesepfade verfügbar; der Review benötigt diese Inhalte ebenfalls.
 - Grants werden serverseitig aus der Datenbank gelesen. Entzug und gelöschte
   Credentials wirken bei der nächsten Anfrage auch mit bereits ausgestellten Tokens.
 
@@ -78,7 +78,7 @@ Sie reserviert keinen Datenbankstand; beim Import wird erneut geprüft.
 und ersetzt deren Grants durch das gewählte Profil. `replace` verfährt ebenso und
 löscht zusätzlich nicht enthaltene Zugänge. Wiederverwendete Nutzernamen behalten
 in allen Modi ihre Credential-ID. Passwort-Hashes und Grants werden in derselben
-Transaktion gespeichert; Imports desselben ACP werden serialisiert.
+Transaktion gespeichert; Imports desselben AP werden serialisiert.
 
 Der bisherige JSON-Import bleibt kompatibel: Fehlt dort eine Profil-/Grant-Angabe,
 bleiben bestehende Grants erhalten, neue Zugänge erhalten keine. Neue Clients

@@ -17,7 +17,7 @@ neu eingegangene Kommentare hinzukommen.
 ## Letzte Bereitschaftsprüfung
 
 Migration `1789600000000-ReviewReadinessSnapshots` ergänzt die Tabelle
-`review_readiness_snapshots` (ein Ergebnis pro ACP, Löschung zusammen mit dem ACP).
+`review_readiness_snapshots` (ein Ergebnis pro AP, Löschung zusammen mit dem AP).
 `POST /api/view/acp/:acpId/review/readiness` prüft und speichert;
 `GET` liefert das letzte Ergebnis mit aktuell berechnetem `stale`-Kennzeichen.
 Beide Endpunkte benötigen `review:manage`.
@@ -46,7 +46,7 @@ Neue Gruppen können vor dem Speichern verworfen werden. Zum Löschen gespeicher
 Gruppen entfernt der Client sie nach Bestätigung aus `groups` und übermittelt ihre
 IDs zusätzlich in `deletedGroupIds`. Erst Speichern führt die Löschung aus.
 
-Der Server sperrt die ACP-Konfiguration wie beim Schreiben von Review-Kommentaren,
+Der Server sperrt die AP-Konfiguration wie beim Schreiben von Review-Kommentaren,
 prüft die Konfigurationsversion und zählt alle Kommentare der entfernten Gruppe,
 auch solche mit `deleted_at`. Nur Gruppen ohne Kommentare dürfen verschwinden.
 Gruppen mit Verlauf werden archiviert; es findet keine Umgruppierung oder Löschung

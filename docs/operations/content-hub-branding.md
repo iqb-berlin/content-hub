@@ -65,7 +65,7 @@ versioned image URLs retain the existing static asset cache policy.
 The one-time `ContentHubTheme1793318400000` database migration replaces the saved
 color palette with the violet Content Hub defaults, including explicitly
 customized palettes. This is intentional. It saves every previous palette in
-`content_hub_theme_backup`, leaves legal/landing content and all ACP data intact,
+`content_hub_theme_backup`, leaves legal/landing content and all AP data intact,
 and does not run the reset again on subsequent starts. Later admin color changes
 remain possible. Development schema synchronization applies the same one-time
 transition after creating the schema.
@@ -171,7 +171,7 @@ set realm/client/mail display labels to Content Hub as appropriate.
 
 ## Acceptance and rollback
 
-Verify existing users, roles, ACPs, uploads and saved personal work after upgrade.
+Verify existing users, roles, APs, uploads and saved personal work after upgrade.
 Check the API, login, callback, logout, mail sender and existing integration tokens
 on the unchanged domain. Confirm the initial violet palette and a later admin
 color edit surviving a restart. Asset responses must contain real image/manifest
