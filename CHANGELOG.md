@@ -6,8 +6,28 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ## [Unreleased]
 
+## [0.7.0] - Unreleased
+
 ### Changes
 
+- Recreate dedicated databases during full backup restoration so objects added
+  after the backup cannot survive and interfere with a subsequent upgrade.
+- Update backend body-parser, Multer and compatible brace-expansion branches,
+  and require patched nginx/Alpine runtime libraries after the candidate image
+  security scan blocked publication.
+- Align visible assessment-package labels with AP, AP-Index and Assessment Package.
+- Add configurable reduced Item Explorer views, optional Studio comments and
+  item-level review comments. Refs #167, #163, #230.
+- Improve review page navigation, metadata visibility, labels, downloads and
+  panel resizing. Refs #224, #225, #226, #227, #229, #231, #232, #233,
+  #234, #235, #236, #237, #241.
+- Add guarded model answers, readable coding information and visibility-aware
+  player previews, including drag-and-drop answer preservation. Refs #228,
+  #238, #160, #150.
+- Preserve personal-data drafts during conflict recovery, ignore empty item
+  parameter CSV records and restart OIDC login after a missing callback state.
+- Wait for the reloaded item list before measuring reduced-view table geometry
+  in the browser layout regression test. Refs #167.
 - Refine the booklet review workspace with a clear booklet heading, compact task
   navigation, a lighter application header and responsive review tools. Retain
   pointer and keyboard resizing of the review panel.

@@ -31,6 +31,36 @@ ch_die() {
   exit 1
 }
 
+# A full restore must also remove objects introduced after the backup. Restoring
+# with pg_restore --clean alone only drops objects that occur in the archive.
+ch_validate_database_restore() {
+  local container="$1" user="$2" database="$3" dump="$4" can_create
+  case "$database" in
+    ''|postgres|template0|template1) ch_die "Restore requires a dedicated application database" ;;
+  esac
+  docker exec -i "$container" pg_restore --list < "$dump" >/dev/null || \
+    ch_die "Invalid PostgreSQL custom dump: $dump"
+  can_create="$(docker exec "$container" psql -qAt -v ON_ERROR_STOP=1 \
+    -U "$user" -d postgres \
+    -c 'select rolcreatedb or rolsuper from pg_roles where rolname = current_user')" || \
+    ch_die "Could not check database restore privileges"
+  [[ "$can_create" == t ]] || ch_die "Restore user must be able to recreate the database"
+}
+
+ch_restore_database() {
+  local container="$1" user="$2" database="$3" dump="$4"
+  ch_validate_database_restore "$container" "$user" "$database" "$dump"
+  # Do not force other connections closed: a database still in use must fail
+  # before it is removed. Each command targets only the configured database.
+  docker exec "$container" dropdb --if-exists -U "$user" -- "$database" || \
+    ch_die "Could not remove restore database: $database"
+  docker exec "$container" createdb -U "$user" --template=template0 -- "$database" || \
+    ch_die "Could not recreate restore database: $database"
+  docker exec -i "$container" pg_restore \
+    --no-owner --no-privileges --exit-on-error \
+    -U "$user" -d "$database" < "$dump" || ch_die "Database restore failed: $database"
+}
+
 ch_require_cmd() {
   local cmd="$1"
   command -v "$cmd" >/dev/null 2>&1 || ch_die "Required command not found: $cmd"

@@ -120,12 +120,19 @@ perform the documented downtime restore from one complete update backup:
 make restore-backup BACKUP=backups/update_YYYYMMDD_HHMMSS MODE=traefik
 ```
 
-The restore stops public/application services, restores both PostgreSQL custom
-dumps with `pg_restore`, restores uploads and runtime configuration, restarts
+The restore stops public/application services, recreates each dedicated
+application/Keycloak database and restores its PostgreSQL custom dump with
+`pg_restore`, restores uploads and runtime configuration, restarts
 the stack, and verifies health and release identity. Before stopping services,
 it verifies `SHA256SUMS` and both tar archives; before replacing database
 objects, it validates both custom dumps with `pg_restore --list`. Test this path
 in an isolated environment before the first production release.
+
+Recreating the databases removes tables and schemas introduced after the backup;
+`pg_restore --clean` alone does not remove those objects. Restore users must have
+database creation privileges. The maintenance databases `postgres`, `template0`
+and `template1` cannot be restore targets. Connections still using a target
+database are not forcibly terminated.
 
 An isolated stack on a shared Docker host may supply an additional Compose file
 and a non-default health URL:

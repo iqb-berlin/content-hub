@@ -72,6 +72,11 @@ if args[0] == "exec":
         sys.stdout.buffer.write(b"database dump fixture")
     elif "pg_restore" in args:
         sys.stdin.buffer.read()
+    elif "psql" in args and "pg_roles" in args[-1]:
+        user = args[args.index("-U") + 1]
+        print("f" if user == os.environ.get("RESTORE_DENY_ROLE") else "t")
+    elif "dropdb" in args or "createdb" in args:
+        pass
     elif "tar" in args:
         with tarfile.open(fileobj=sys.stdout.buffer, mode="w|gz"):
             pass
@@ -220,6 +225,20 @@ class RuntimeRollbackTest(unittest.TestCase):
 
     def test_restore_stops_current_database_before_starting_legacy_database(self):
         self.assert_safe_rollback("restore")
+
+    def test_restore_checks_both_users_before_replacing_either_database(self):
+        self.environment["RESTORE_DENY_ROLE"] = "keycloak"
+        result = self.run_command("restore")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must be able to recreate the database", result.stderr)
+        self.assertFalse(any("dropdb" in call["args"] for call in self.calls()))
+
+    def test_restore_refuses_a_maintenance_database(self):
+        (self.old / ".env").write_text(self.legacy_env.replace("POSTGRES_DB=content_pool", "POSTGRES_DB=postgres"))
+        result = self.run_command("restore")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("dedicated application database", result.stderr)
+        self.assertFalse(any("dropdb" in call["args"] for call in self.calls()))
 
     def test_baseline_stops_current_database_before_starting_legacy_database(self):
         self.assert_safe_rollback("baseline")

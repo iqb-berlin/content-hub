@@ -88,15 +88,19 @@ ch_info "Waiting for both restore databases to become ready"
 ch_compose up -d --wait --wait-timeout 120 \
   content-hub-db keycloak-db
 
+# Validate both archives and both restore users before replacing either database.
+ch_validate_database_restore "$(ch_compose_container_id content-hub-db)" \
+  "$(ch_env_get .env POSTGRES_USER)" "$(ch_env_get .env POSTGRES_DB)" \
+  "${BACKUP_DIR}/${APP_DUMP}"
+ch_validate_database_restore "$(ch_compose_container_id keycloak-db)" \
+  "$(ch_env_get .env KEYCLOAK_DB_USER)" "$(ch_env_get .env KEYCLOAK_DB_NAME)" \
+  "${BACKUP_DIR}/keycloak-db.dump"
+
 restore_database() {
   local service="$1" user="$2" database="$3" dump="$4" container
   container="$(ch_compose_container_id "$service")" || ch_die "Restore service is unavailable: $service"
-  docker exec -i "$container" pg_restore --list < "$dump" >/dev/null || \
-    ch_die "Invalid PostgreSQL custom dump: $dump"
-  ch_info "Restoring ${database} in ${service} with pg_restore"
-  docker exec -i "$container" pg_restore \
-    --clean --if-exists --no-owner --no-privileges --exit-on-error \
-    -U "$user" -d "$database" < "$dump"
+  ch_info "Recreating and restoring ${database} in ${service} from the complete backup"
+  ch_restore_database "$container" "$user" "$database" "$dump"
 }
 
 restore_database content-hub-db \
