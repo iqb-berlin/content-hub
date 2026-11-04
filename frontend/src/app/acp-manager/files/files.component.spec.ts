@@ -1,6 +1,6 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { FilesComponent } from './files.component';
 import { AcpFile, FilePreviewResponse, FileProcessingJob } from '../../core/models/api.models';
 
@@ -458,5 +458,185 @@ describe('FilesComponent filtering', () => {
     expect(message).toBe(
       'Die ausgewählte Datei ist größer als das aktuell erlaubte Upload-Limit des Servers.',
     );
+  });
+});
+
+describe('FilesComponent upload conflict recovery', () => {
+  let api: {
+    uploadFiles: ReturnType<typeof vi.fn>;
+    startFileProcessing: ReturnType<typeof vi.fn>;
+  };
+  let component: FilesComponent;
+  let input: { files: File[]; value: string };
+  const response = (ids: string[]) =>
+    of(new HttpResponse({ body: { files: ids.map((id) => createFile({ id })) } }));
+  const conflict = (...names: string[]) =>
+    throwError(() => new HttpErrorResponse({ status: 409, error: { conflicts: names } }));
+  const start = (...names: string[]) => {
+    input = { files: names.map((name) => new File(['content'], name)), value: 'selected' };
+    return component.upload({ target: input } as unknown as Event);
+  };
+  const lastDecisions = () => {
+    const formData = api.uploadFiles.mock.calls.at(-1)![1] as FormData;
+    return JSON.parse(String(formData.get('conflictDecisions')));
+  };
+
+  beforeEach(() => {
+    api = {
+      uploadFiles: vi.fn().mockReturnValue(response(['stored'])),
+      startFileProcessing: vi.fn().mockReturnValue(of(createJob({ id: 'upload-job' }))),
+    };
+    component = new FilesComponent({} as any, api as any);
+    component.acpId = 'acp-1';
+    vi.spyOn(component, 'load').mockImplementation(() => {});
+    vi.spyOn(component, 'validateFiles').mockImplementation(() => {});
+    vi.spyOn(component as any, 'waitForJob').mockResolvedValue(
+      createJob({ id: 'upload-job', status: 'completed' }),
+    );
+  });
+
+  it('opens the dialog for server conflicts from a ZIP and retries mixed decisions', async () => {
+    api.uploadFiles.mockReturnValueOnce(conflict('unit.xml', 'metadata.json'));
+    const upload = start('bundle.zip', 'new.txt');
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+
+    expect(component.conflictEntries.map((entry) => entry.fileName)).toEqual([
+      'unit.xml',
+      'metadata.json',
+    ]);
+    expect(component.isBusy).toBe(true);
+    component.confirmConflictDialog();
+    expect(api.uploadFiles).toHaveBeenCalledTimes(1);
+    component.setConflictDecision(0, 'replace');
+    expect(component.canConfirmConflictDialog()).toBe(false);
+    component.setConflictDecision(1, 'skip');
+    component.confirmConflictDialog();
+    await upload;
+
+    expect(api.uploadFiles).toHaveBeenCalledTimes(2);
+    expect(lastDecisions()).toEqual([
+      { fileName: 'unit.xml', decision: 'replace' },
+      { fileName: 'metadata.json', decision: 'skip' },
+    ]);
+    const retry = api.uploadFiles.mock.calls[1][1] as FormData;
+    expect(retry.getAll('files').map((file) => (file as File).name)).toEqual([
+      'bundle.zip',
+      'new.txt',
+    ]);
+    expect(api.startFileProcessing).toHaveBeenCalledWith('acp-1', {
+      fileIds: ['stored'],
+      runCleanup: true,
+    });
+    expect(component.lastConflictSummary).toEqual({ conflicts: 2, replaced: 1, skipped: 1 });
+    expect(component.uploadError).toBeNull();
+    expect(input.value).toBe('');
+    expect(component.isBusy).toBe(false);
+  });
+
+  it.each(['replace', 'skip'] as const)('applies %s to all conflicts', async (decision) => {
+    api.uploadFiles.mockReturnValueOnce(conflict('first.txt', 'second.txt'));
+    if (decision === 'skip') api.uploadFiles.mockReturnValue(response([]));
+    const upload = start('bundle.zip');
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.applyDecisionToAll(decision);
+    component.confirmConflictDialog();
+    await upload;
+
+    expect(lastDecisions()).toEqual([
+      { fileName: 'first.txt', decision },
+      { fileName: 'second.txt', decision },
+    ]);
+    if (decision === 'skip') expect(api.startFileProcessing).not.toHaveBeenCalled();
+    expect(component.lastConflictSummary).toEqual({
+      conflicts: 2,
+      replaced: decision === 'replace' ? 2 : 0,
+      skipped: decision === 'skip' ? 2 : 0,
+    });
+  });
+
+  it('cancels without another upload or a processing job and allows the same selection again', async () => {
+    api.uploadFiles.mockReturnValueOnce(conflict('unit.xml'));
+    const upload = start('unit.xml');
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.cancelConflictDialog();
+    await upload;
+
+    expect(api.uploadFiles).toHaveBeenCalledTimes(1);
+    expect(api.startFileProcessing).not.toHaveBeenCalled();
+    expect(component.lastConflictSummary).toBeNull();
+    expect(component.uploadError).toBeNull();
+    expect(component.isBusy).toBe(false);
+    expect(input.value).toBe('');
+    await start('unit.xml');
+    expect(api.uploadFiles).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps prior decisions when a retry reveals an additional conflict', async () => {
+    api.uploadFiles
+      .mockReturnValueOnce(conflict('first.txt'))
+      .mockReturnValueOnce(conflict('second.txt'));
+    const upload = start('bundle.zip');
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.applyDecisionToAll('replace');
+    component.confirmConflictDialog();
+    await vi.waitFor(() => {
+      expect(component.conflictDialogOpen).toBe(true);
+      expect(component.conflictEntries[0].fileName).toBe('second.txt');
+    });
+    component.applyDecisionToAll('skip');
+    component.confirmConflictDialog();
+    await upload;
+
+    expect(lastDecisions()).toEqual([
+      { fileName: 'first.txt', decision: 'replace' },
+      { fileName: 'second.txt', decision: 'skip' },
+    ]);
+  });
+
+  it('does not reupload successful chunks and processes them after cancelling a later chunk', async () => {
+    api.uploadFiles
+      .mockReturnValueOnce(response(['first-batch']))
+      .mockReturnValueOnce(conflict('file-50.txt'));
+    const upload = start(...Array.from({ length: 51 }, (_, i) => `file-${i}.txt`));
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.cancelConflictDialog();
+    await upload;
+
+    expect(api.uploadFiles).toHaveBeenCalledTimes(2);
+    expect(api.startFileProcessing).toHaveBeenCalledWith('acp-1', {
+      fileIds: ['first-batch'],
+      runCleanup: false,
+    });
+  });
+
+  it('blocks a second upload while the conflict dialog is open', async () => {
+    api.uploadFiles.mockReturnValueOnce(conflict('unit.xml'));
+    const upload = start('unit.xml');
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    await start('other.txt');
+    expect(api.uploadFiles).toHaveBeenCalledTimes(1);
+    component.cancelConflictDialog();
+    await upload;
+  });
+
+  it('releases a pending conflict dialog when the component is destroyed', async () => {
+    api.uploadFiles.mockReturnValueOnce(conflict('unit.xml'));
+    const upload = start('unit.xml');
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.ngOnDestroy();
+    await upload;
+    expect(component.conflictDialogOpen).toBe(false);
+    expect(api.uploadFiles).toHaveBeenCalledTimes(1);
+    expect(component.isBusy).toBe(false);
+  });
+
+  it('reports unstructured conflicts without suggesting unavailable controls', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    api.uploadFiles.mockReturnValueOnce(conflict());
+    await start('unit.xml');
+    expect(component.conflictDialogOpen).toBe(false);
+    expect(component.uploadError).toContain('Dateiliste neu laden');
+    expect(component.uploadError).not.toContain('Ersetzen');
+    log.mockRestore();
   });
 });

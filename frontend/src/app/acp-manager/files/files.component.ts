@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { filter, firstValueFrom, map, tap } from 'rxjs';
@@ -19,9 +19,7 @@ import { FilePreviewPanelComponent } from './file-preview-panel.component';
 type UploadConflictDecision = 'replace' | 'skip';
 
 interface UploadConflictEntry {
-  selectedIndex: number;
-  incoming: File;
-  existing: AcpFile;
+  fileName: string;
   decision?: UploadConflictDecision;
 }
 
@@ -72,7 +70,9 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
     @if (uploading) {
       <div class="alert alert-success">
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
-          <strong>Dateien werden hochgeladen</strong>
+          <strong>{{
+            conflictDialogOpen ? 'Upload wartet auf Ihre Auswahl' : 'Dateien werden hochgeladen'
+          }}</strong>
           <span>{{ uploadPercent }}%</span>
         </div>
         <div
@@ -442,69 +442,70 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
     />
 
     @if (conflictDialogOpen) {
-      <div class="overlay-backdrop" (click)="cancelConflictDialog()">
-        <div class="overlay-dialog card" (click)="$event.stopPropagation()">
-          <h3 style="margin-top: 0">Dateikonflikte beim Upload</h3>
-          <p>
-            Für bereits vorhandene Dateinamen bitte pro Datei entscheiden, ob die vorhandene Datei
-            ersetzt oder der Upload übersprungen wird.
-          </p>
+      <dialog
+        #uploadConflictDialog
+        class="overlay-dialog card"
+        aria-labelledby="upload-conflict-title"
+        (cancel)="cancelConflictDialog()"
+      >
+        <h3 id="upload-conflict-title" style="margin-top: 0">Dateikonflikte beim Upload</h3>
+        <p>
+          Diese Dateinamen sind bereits vorhanden oder kommen im Upload mehrfach vor. Bitte pro
+          Datei entscheiden, ob sie ersetzt oder übersprungen wird. Bei mehrfachen Namen im Upload
+          wird beim Ersetzen die letzte Datei verwendet; beim Überspringen werden alle Dateien
+          dieses Namens ausgelassen.
+        </p>
 
-          <div class="conflict-toolbar">
-            <button class="btn btn-outline btn-sm" (click)="applyDecisionToAll('replace')">
-              Alle ersetzen
-            </button>
-            <button class="btn btn-outline btn-sm" (click)="applyDecisionToAll('skip')">
-              Alle überspringen
-            </button>
-          </div>
-
-          <div class="conflict-list">
-            @for (entry of conflictEntries; track conflictTrack(entry, $index); let i = $index) {
-              <div class="conflict-row">
-                <div class="conflict-name">
-                  <strong>{{ entry.incoming.name }}</strong>
-                </div>
-                <div class="conflict-meta">
-                  Neu: {{ formatSize(entry.incoming.size) }} | Vorhanden:
-                  {{ formatSize(entry.existing.fileSize) }}
-                </div>
-                <div
-                  class="conflict-actions"
-                  role="group"
-                  [attr.aria-label]="'Konfliktentscheidung für ' + entry.incoming.name"
-                >
-                  <button
-                    class="btn btn-sm btn-outline btn-state"
-                    [attr.aria-pressed]="entry.decision === 'replace'"
-                    (click)="setConflictDecision(i, 'replace')"
-                  >
-                    Ersetzen
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline btn-state"
-                    [attr.aria-pressed]="entry.decision === 'skip'"
-                    (click)="setConflictDecision(i, 'skip')"
-                  >
-                    Überspringen
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-
-          <div class="dialog-actions">
-            <button class="btn btn-outline" (click)="cancelConflictDialog()">Abbrechen</button>
-            <button
-              class="btn btn-primary"
-              [disabled]="!canConfirmConflictDialog()"
-              (click)="confirmConflictDialog()"
-            >
-              Upload starten
-            </button>
-          </div>
+        <div class="conflict-toolbar">
+          <button class="btn btn-outline btn-sm" (click)="applyDecisionToAll('replace')">
+            Alle Dateien ersetzen
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="applyDecisionToAll('skip')">
+            Alle Dateien überspringen
+          </button>
         </div>
-      </div>
+
+        <div class="conflict-list">
+          @for (entry of conflictEntries; track entry.fileName; let i = $index) {
+            <div class="conflict-row">
+              <div class="conflict-name">
+                <strong>{{ entry.fileName }}</strong>
+              </div>
+              <div
+                class="conflict-actions"
+                role="group"
+                [attr.aria-label]="'Konfliktentscheidung für ' + entry.fileName"
+              >
+                <button
+                  class="btn btn-sm btn-outline btn-state"
+                  [attr.aria-pressed]="entry.decision === 'replace'"
+                  (click)="setConflictDecision(i, 'replace')"
+                >
+                  Ersetzen
+                </button>
+                <button
+                  class="btn btn-sm btn-outline btn-state"
+                  [attr.aria-pressed]="entry.decision === 'skip'"
+                  (click)="setConflictDecision(i, 'skip')"
+                >
+                  Überspringen
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="dialog-actions">
+          <button class="btn btn-outline" (click)="cancelConflictDialog()">Abbrechen</button>
+          <button
+            class="btn btn-primary"
+            [disabled]="!canConfirmConflictDialog()"
+            (click)="confirmConflictDialog()"
+          >
+            Upload starten
+          </button>
+        </div>
+      </dialog>
     }
   `,
   styles: [
@@ -642,25 +643,22 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
         background: rgba(39, 174, 96, 0.08);
       }
 
-      .overlay-backdrop {
-        position: fixed;
-        inset: 0;
+      .overlay-dialog::backdrop {
         background: rgba(0, 0, 0, 0.45);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2000;
-        padding: 16px;
       }
 
       .overlay-dialog {
-        width: min(780px, 100%);
+        width: min(780px, calc(100% - 32px));
         max-height: 85vh;
+        margin: auto;
+        border: none;
+        color: var(--color-text);
         overflow: auto;
       }
 
       .conflict-toolbar {
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 12px;
       }
@@ -681,12 +679,7 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
 
       .conflict-name {
         margin-bottom: 4px;
-      }
-
-      .conflict-meta {
-        font-size: 0.85rem;
-        color: var(--color-text-secondary);
-        margin-bottom: 8px;
+        overflow-wrap: anywhere;
       }
 
       .conflict-actions {
@@ -707,7 +700,7 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
     `,
   ],
 })
-export class FilesComponent implements OnInit {
+export class FilesComponent implements OnInit, OnDestroy {
   readonly FILE_TYPE_FILTER_ALL = 'all';
   readonly FILE_TYPE_FILTER_NONE = '__no_type__';
 
@@ -744,6 +737,13 @@ export class FilesComponent implements OnInit {
   conflictDialogOpen = false;
   conflictEntries: UploadConflictEntry[] = [];
   private conflictDialogResolver: ((value: UploadConflictEntry[] | null) => void) | null = null;
+  private destroyed = false;
+  @ViewChild('uploadConflictDialog')
+  set uploadConflictDialog(element: ElementRef<HTMLDialogElement> | undefined) {
+    if (element && !element.nativeElement.open) {
+      element.nativeElement.showModal();
+    }
+  }
   deleteDialogOpen = false;
   deleteDialogMode: DeleteDialogMode = 'single';
   deleteDialogTarget: AcpFile | null = null;
@@ -888,6 +888,11 @@ export class FilesComponent implements OnInit {
     this.load();
   }
 
+  ngOnDestroy() {
+    this.destroyed = true;
+    this.cancelConflictDialog();
+  }
+
   load() {
     this.api.getFiles(this.acpId).subscribe((f) => {
       this.files = f;
@@ -1013,7 +1018,7 @@ export class FilesComponent implements OnInit {
 
   async upload(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
+    if (!input.files?.length || this.isBusy || this.destroyed) return;
 
     const selectedFiles = Array.from(input.files);
     this.uploadError = null;
@@ -1021,112 +1026,96 @@ export class FilesComponent implements OnInit {
     this.lastValidationSummary = null;
     this.lastConflictSummary = null;
     this.processingJob = null;
-    this.processing = false;
     this.uploadPercent = 0;
     this.uploadProgress = '';
-
-    const conflicts = this.findUploadConflicts(selectedFiles);
-    const decisions = new Map<number, UploadConflictDecision>();
-
-    if (conflicts.length) {
-      const resolvedConflicts = await this.openConflictDialog(conflicts);
-      if (!resolvedConflicts) {
-        input.value = '';
-        return;
-      }
-
-      for (const conflict of resolvedConflicts) {
-        if (!conflict.decision) {
-          input.value = '';
-          return;
-        }
-        decisions.set(conflict.selectedIndex, conflict.decision);
-      }
-    }
-
-    const nonConflictingFiles: File[] = [];
-    const replacementFiles: File[] = [];
-    let skippedCount = 0;
-
-    selectedFiles.forEach((file, index) => {
-      const decision = decisions.get(index);
-      if (!decision) {
-        nonConflictingFiles.push(file);
-        return;
-      }
-
-      if (decision === 'replace') {
-        replacementFiles.push(file);
-      } else {
-        skippedCount += 1;
-      }
-    });
-
-    if (conflicts.length) {
-      this.lastConflictSummary = {
-        conflicts: conflicts.length,
-        replaced: replacementFiles.length,
-        skipped: skippedCount,
-      };
-    }
-
-    const totalToUpload = nonConflictingFiles.length + replacementFiles.length;
-    if (totalToUpload === 0) {
-      input.value = '';
-      return;
-    }
-
     this.uploading = true;
+
     const chunkSize = 50;
-    const totalBytes = nonConflictingFiles
-      .concat(replacementFiles)
-      .reduce((sum, file) => sum + file.size, 0);
+    const totalBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
     const uploadedFileIds: string[] = [];
     let uploadedBytes = 0;
     let uploadedFilesCount = 0;
-
-    const uploadInChunks = async (batchFiles: File[], strategy?: 'overwrite'): Promise<void> => {
-      for (let i = 0; i < batchFiles.length; i += chunkSize) {
-        const chunk = batchFiles.slice(i, i + chunkSize);
-        const chunkBytes = chunk.reduce((sum, file) => sum + file.size, 0);
-
-        const fd = new FormData();
-        for (const file of chunk) {
-          fd.append('files', file);
-        }
-
-        const uploadResult = await firstValueFrom(
-          this.api
-            .uploadFiles(this.acpId, fd, strategy ? { conflictStrategy: strategy } : undefined)
-            .pipe(
-              tap((httpEvent) => {
-                if (httpEvent.type !== HttpEventType.UploadProgress) {
-                  return;
-                }
-                const loaded = typeof httpEvent.loaded === 'number' ? httpEvent.loaded : 0;
-                this.updateUploadProgress(
-                  uploadedBytes + loaded,
-                  totalBytes,
-                  uploadedFilesCount,
-                  totalToUpload,
-                );
-              }),
-              filter((httpEvent) => httpEvent.type === HttpEventType.Response),
-              map((httpEvent) => httpEvent.body as FileUploadResponse),
-            ),
-        );
-
-        uploadedBytes += chunkBytes;
-        uploadedFilesCount += chunk.length;
-        this.updateUploadProgress(uploadedBytes, totalBytes, uploadedFilesCount, totalToUpload);
-        uploadedFileIds.push(...uploadResult.files.map((file) => file.id));
-      }
-    };
+    let runCleanup = false;
 
     try {
-      await uploadInChunks(nonConflictingFiles);
-      await uploadInChunks(replacementFiles, 'overwrite');
+      for (let i = 0; i < selectedFiles.length; i += chunkSize) {
+        const chunk = selectedFiles.slice(i, i + chunkSize);
+        const decisions = new Map<string, UploadConflictEntry>();
+        let uploadResult: FileUploadResponse | null = null;
 
+        while (!this.destroyed) {
+          const fd = new FormData();
+          for (const file of chunk) {
+            fd.append('files', file);
+          }
+          if (decisions.size) {
+            fd.set('conflictDecisions', JSON.stringify(Array.from(decisions.values())));
+          }
+
+          try {
+            uploadResult = await firstValueFrom(
+              this.api.uploadFiles(this.acpId, fd).pipe(
+                tap((httpEvent) => {
+                  if (httpEvent.type !== HttpEventType.UploadProgress) return;
+                  const loaded = typeof httpEvent.loaded === 'number' ? httpEvent.loaded : 0;
+                  this.updateUploadProgress(
+                    uploadedBytes + loaded,
+                    totalBytes,
+                    uploadedFilesCount,
+                    selectedFiles.length,
+                  );
+                }),
+                filter((httpEvent) => httpEvent.type === HttpEventType.Response),
+                map((httpEvent) => httpEvent.body as FileUploadResponse),
+              ),
+            );
+            break;
+          } catch (error) {
+            const conflicts = this.getUploadConflicts(error);
+            if (!conflicts.length) throw error;
+            if (this.destroyed) break;
+            this.updateUploadProgress(
+              uploadedBytes,
+              totalBytes,
+              uploadedFilesCount,
+              selectedFiles.length,
+            );
+            const resolved = await this.openConflictDialog(conflicts);
+            if (!resolved) break;
+            for (const entry of resolved) {
+              decisions.set(this.normalizeFileName(entry.fileName), entry);
+            }
+          }
+        }
+
+        // A cancelled batch was rejected atomically. Earlier successful batches
+        // still need indexing and validation; do not upload them again.
+        if (!uploadResult || this.destroyed) break;
+        if (decisions.size) {
+          const replaced = Array.from(decisions.values()).filter(
+            (entry) => entry.decision === 'replace',
+          ).length;
+          const summary: { conflicts: number; replaced: number; skipped: number } = this
+            .lastConflictSummary || { conflicts: 0, replaced: 0, skipped: 0 };
+          this.lastConflictSummary = {
+            conflicts: summary.conflicts + decisions.size,
+            replaced: summary.replaced + replaced,
+            skipped: summary.skipped + decisions.size - replaced,
+          };
+          runCleanup ||= replaced > 0;
+        }
+        uploadedBytes += chunk.reduce((sum, file) => sum + file.size, 0);
+        uploadedFilesCount += chunk.length;
+        this.updateUploadProgress(
+          uploadedBytes,
+          totalBytes,
+          uploadedFilesCount,
+          selectedFiles.length,
+        );
+        uploadedFileIds.push(...uploadResult.files.map((file) => file.id));
+      }
+
+      if (!uploadedFileIds.length || this.destroyed) return;
       this.uploading = false;
       this.processing = true;
       this.uploadProgress = '';
@@ -1135,7 +1124,7 @@ export class FilesComponent implements OnInit {
       const job = await firstValueFrom(
         this.api.startFileProcessing(this.acpId, {
           fileIds: uploadedFileIds,
-          runCleanup: replacementFiles.length > 0,
+          runCleanup,
         }),
       );
       this.processingJob = job;
@@ -1434,10 +1423,6 @@ export class FilesComponent implements OnInit {
     return `${issue?.severity || 'unknown'}-${issue?.message || ''}-${issue?.path || ''}-${index}`;
   }
 
-  conflictTrack(entry: UploadConflictEntry, index: number): string {
-    return `${entry.selectedIndex}-${this.normalizeFileName(entry.incoming.name)}-${index}`;
-  }
-
   setConflictDecision(index: number, decision: UploadConflictDecision) {
     this.conflictEntries = this.conflictEntries.map((entry, currentIndex) => {
       if (currentIndex !== index) {
@@ -1490,35 +1475,16 @@ export class FilesComponent implements OnInit {
     resolver?.(payload);
   }
 
-  private findUploadConflicts(selectedFiles: File[]): UploadConflictEntry[] {
-    const existingByName = new Map<string, AcpFile[]>();
-
-    for (const file of this.files) {
-      const key = this.normalizeFileName(file.originalName);
-      if (!key) {
-        continue;
-      }
-      const bucket = existingByName.get(key) || [];
-      bucket.push(file);
-      existingByName.set(key, bucket);
+  private getUploadConflicts(error: unknown): UploadConflictEntry[] {
+    if (!(error instanceof HttpErrorResponse) || error.status !== 409) return [];
+    const names: unknown = error.error?.conflicts;
+    if (!Array.isArray(names)) return [];
+    const unique = new Map<string, UploadConflictEntry>();
+    for (const fileName of names) {
+      if (typeof fileName !== 'string' || !fileName.trim()) continue;
+      unique.set(this.normalizeFileName(fileName), { fileName });
     }
-
-    const conflicts: UploadConflictEntry[] = [];
-
-    selectedFiles.forEach((incoming, selectedIndex) => {
-      const key = this.normalizeFileName(incoming.name);
-      const existingMatch = key ? existingByName.get(key)?.[0] : undefined;
-
-      if (existingMatch) {
-        conflicts.push({
-          selectedIndex,
-          incoming,
-          existing: existingMatch,
-        });
-      }
-    });
-
-    return conflicts;
+    return Array.from(unique.values());
   }
 
   private updateUploadProgress(
@@ -1874,15 +1840,8 @@ export class FilesComponent implements OnInit {
 
   private getUploadErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
-      const conflicts = Array.isArray(error.error?.conflicts)
-        ? error.error.conflicts.filter((entry: unknown) => typeof entry === 'string')
-        : [];
-
       if (error.status === 409) {
-        if (conflicts.length) {
-          return `Konflikt erkannt: ${conflicts.join(', ')}. Bitte für diese Dateien "Ersetzen" oder "Überspringen" wählen und erneut hochladen.`;
-        }
-        return 'Konflikt erkannt. Bitte prüfen, ob bestehende Dateien ersetzt oder übersprungen werden sollen.';
+        return 'Die Dateikonflikte konnten nicht aufgelöst werden. Bitte die Dateiliste neu laden und den Upload erneut starten.';
       }
 
       if (error.status === 413) {
