@@ -1032,7 +1032,7 @@ export class FilesComponent implements OnInit, OnDestroy {
 
     const chunkSize = 50;
     const totalBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
-    const uploadedFileIds: string[] = [];
+    const uploadedFilesByName = new Map<string, AcpFile>();
     let uploadedBytes = 0;
     let uploadedFilesCount = 0;
     let runCleanup = false;
@@ -1090,7 +1090,7 @@ export class FilesComponent implements OnInit, OnDestroy {
 
         // A cancelled batch was rejected atomically. Earlier successful batches
         // still need indexing and validation; do not upload them again.
-        if (!uploadResult || this.destroyed) break;
+        if (!uploadResult) break;
         if (decisions.size) {
           const replaced = Array.from(decisions.values()).filter(
             (entry) => entry.decision === 'replace',
@@ -1112,10 +1112,15 @@ export class FilesComponent implements OnInit, OnDestroy {
           uploadedFilesCount,
           selectedFiles.length,
         );
-        uploadedFileIds.push(...uploadResult.files.map((file) => file.id));
+        // A later batch can replace a file saved by an earlier batch. Keep
+        // only the current ID for each name, including files extracted from ZIPs.
+        for (const file of uploadResult.files) {
+          uploadedFilesByName.set(this.normalizeFileName(file.originalName), file);
+        }
+        if (this.destroyed) break;
       }
 
-      if (!uploadedFileIds.length || this.destroyed) return;
+      if (!uploadedFilesByName.size) return;
       this.uploading = false;
       this.processing = true;
       this.uploadProgress = '';
@@ -1123,15 +1128,19 @@ export class FilesComponent implements OnInit, OnDestroy {
 
       const job = await firstValueFrom(
         this.api.startFileProcessing(this.acpId, {
-          fileIds: uploadedFileIds,
+          fileIds: Array.from(uploadedFilesByName.values(), (file) => file.id),
           runCleanup,
         }),
       );
+      // Confirmed uploads must be processed even after navigation. Once the
+      // server has accepted the job, the destroyed view needs no further reads.
+      if (this.destroyed) return;
       this.processingJob = job;
 
       const completedJob = await this.waitForJob(job.id, (nextJob) => {
         this.processingJob = nextJob;
       });
+      if (this.destroyed) return;
       this.processingJob = completedJob;
       this.lastSyncReport = completedJob.syncReport || null;
       this.lastValidationSummary = completedJob.validationSummary || null;
@@ -1140,7 +1149,7 @@ export class FilesComponent implements OnInit, OnDestroy {
     } catch (err) {
       this.uploadError = this.getUploadErrorMessage(err);
       console.error('Upload Error:', err);
-      this.load();
+      if (!this.destroyed) this.load();
     } finally {
       this.uploading = false;
       this.processing = false;

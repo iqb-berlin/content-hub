@@ -1,6 +1,6 @@
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { FilesComponent } from './files.component';
 import { AcpFile, FilePreviewResponse, FileProcessingJob } from '../../core/models/api.models';
 
@@ -469,7 +469,11 @@ describe('FilesComponent upload conflict recovery', () => {
   let component: FilesComponent;
   let input: { files: File[]; value: string };
   const response = (ids: string[]) =>
-    of(new HttpResponse({ body: { files: ids.map((id) => createFile({ id })) } }));
+    of(
+      new HttpResponse({
+        body: { files: ids.map((id) => createFile({ id, originalName: `${id}.txt` })) },
+      }),
+    );
   const conflict = (...names: string[]) =>
     throwError(() => new HttpErrorResponse({ status: 409, error: { conflicts: names } }));
   const start = (...names: string[]) => {
@@ -617,6 +621,118 @@ describe('FilesComponent upload conflict recovery', () => {
     expect(api.uploadFiles).toHaveBeenCalledTimes(1);
     component.cancelConflictDialog();
     await upload;
+  });
+
+  it('processes a confirmed in-flight upload after navigation without uploading later batches', async () => {
+    const request = new Subject<HttpResponse<any>>();
+    api.uploadFiles.mockReturnValueOnce(request);
+    const upload = start(...Array.from({ length: 51 }, (_, i) => `file-${i}.txt`));
+    component.ngOnDestroy();
+    request.next(new HttpResponse({ body: { files: [createFile({ id: 'saved-on-server' })] } }));
+    request.complete();
+    await upload;
+
+    expect(api.uploadFiles).toHaveBeenCalledTimes(1);
+    expect(api.startFileProcessing).toHaveBeenCalledWith('acp-1', {
+      fileIds: ['saved-on-server'],
+      runCleanup: false,
+    });
+    expect((component as any).waitForJob).not.toHaveBeenCalled();
+    expect(component.load).not.toHaveBeenCalled();
+    expect(component.validateFiles).not.toHaveBeenCalled();
+  });
+
+  it('processes earlier accepted batches when navigation closes a later conflict dialog', async () => {
+    api.uploadFiles
+      .mockReturnValueOnce(response(['first-batch']))
+      .mockReturnValueOnce(conflict('file-50.txt'));
+    const upload = start(...Array.from({ length: 51 }, (_, i) => `file-${i}.txt`));
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.ngOnDestroy();
+    await upload;
+
+    expect(api.uploadFiles).toHaveBeenCalledTimes(2);
+    expect(api.startFileProcessing).toHaveBeenCalledWith('acp-1', {
+      fileIds: ['first-batch'],
+      runCleanup: false,
+    });
+    expect((component as any).waitForJob).not.toHaveBeenCalled();
+    expect(component.load).not.toHaveBeenCalled();
+    expect(component.validateFiles).not.toHaveBeenCalled();
+  });
+
+  it('preserves cleanup when navigation happens during a confirmed replacement', async () => {
+    const request = new Subject<HttpResponse<any>>();
+    api.uploadFiles.mockReturnValueOnce(conflict('unit.xml')).mockReturnValueOnce(request);
+    const upload = start('bundle.zip');
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.applyDecisionToAll('replace');
+    component.confirmConflictDialog();
+    await vi.waitFor(() => expect(api.uploadFiles).toHaveBeenCalledTimes(2));
+    component.ngOnDestroy();
+    request.next(new HttpResponse({ body: { files: [createFile({ id: 'replacement' })] } }));
+    request.complete();
+    await upload;
+
+    expect(api.startFileProcessing).toHaveBeenCalledWith('acp-1', {
+      fileIds: ['replacement'],
+      runCleanup: true,
+    });
+    expect(component.load).not.toHaveBeenCalled();
+  });
+
+  it('uses current IDs after a later ZIP replaces an earlier batch filename with different casing', async () => {
+    api.uploadFiles
+      .mockReturnValueOnce(
+        of(
+          new HttpResponse({
+            body: {
+              files: [
+                createFile({ id: 'old-id', originalName: 'UNIT.XML' }),
+                createFile({ id: 'untouched-id', originalName: 'other.xml' }),
+              ],
+            },
+          }),
+        ),
+      )
+      .mockReturnValueOnce(conflict('unit.xml'))
+      .mockReturnValueOnce(
+        of(
+          new HttpResponse({
+            body: { files: [createFile({ id: 'new-id', originalName: 'unit.xml' })] },
+          }),
+        ),
+      );
+    const upload = start(
+      ...Array.from({ length: 50 }, (_, i) => `file-${i}.txt`),
+      'later-batch.zip',
+    );
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.applyDecisionToAll('replace');
+    component.confirmConflictDialog();
+    await upload;
+
+    expect(api.startFileProcessing).toHaveBeenCalledWith('acp-1', {
+      fileIds: ['new-id', 'untouched-id'],
+      runCleanup: true,
+    });
+  });
+
+  it('retains earlier IDs when a later duplicate is skipped', async () => {
+    api.uploadFiles
+      .mockReturnValueOnce(response(['first-batch']))
+      .mockReturnValueOnce(conflict('first-batch.txt'))
+      .mockReturnValueOnce(response([]));
+    const upload = start(...Array.from({ length: 51 }, (_, i) => `file-${i}.txt`));
+    await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
+    component.applyDecisionToAll('skip');
+    component.confirmConflictDialog();
+    await upload;
+
+    expect(api.startFileProcessing).toHaveBeenCalledWith('acp-1', {
+      fileIds: ['first-batch'],
+      runCleanup: false,
+    });
   });
 
   it('releases a pending conflict dialog when the component is destroyed', async () => {
