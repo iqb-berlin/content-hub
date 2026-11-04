@@ -11,6 +11,13 @@ import {
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService, ItemExplorerDraftResult } from './item-explorer-draft.service';
+import {
+  getExistingItemStateKey,
+  getItemStateKeys,
+  normalizeTags,
+  projectExplorerItem,
+  resolveItemTags,
+} from './item-explorer-shared-state';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
 import { ItemExplorerPersonalDataService } from './item-explorer-personal-data.service';
 import { ItemExplorerCommentsService } from './item-explorer-comments.service';
@@ -2549,35 +2556,15 @@ export class ItemExplorerFacade implements OnDestroy {
   private getPrimaryItemStateKey(item?: ExplorerItem | null): string {
     if (!item) return '';
 
-    const resolvedItemId = item.itemId?.startsWith(`${item.unitId}_`)
-      ? item.itemId
-      : `${item.unitId}_${item.itemId}`;
-
-    for (const candidate of [item.rowKey, item.uuid, resolvedItemId, item.itemId]) {
-      const key = String(candidate || '').trim();
-      if (key) {
-        return key;
-      }
-    }
-
-    return '';
+    return getItemStateKeys(item)[0] || '';
   }
 
   private getExistingItemStateKey(item?: ExplorerItem | null): string {
     if (!item) return '';
-
-    const activeState = this.getExplorerStateForCurrentPerspective();
-    const itemProperties = this.isRecord(activeState?.itemProperties)
-      ? (activeState.itemProperties as Record<string, Record<string, unknown>>)
-      : {};
-
-    for (const key of this.getItemStateKeys(item)) {
-      if (this.isRecord(itemProperties[key])) {
-        return key;
-      }
-    }
-
-    return '';
+    return getExistingItemStateKey(
+      item,
+      this.getExplorerStateForCurrentPerspective()?.itemProperties,
+    );
   }
 
   private getMissingPreviewTargetMessage(): string {
@@ -2744,7 +2731,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private saveTags() {
-    const normalizedTags = this.normalizeTags(this.itemTags);
+    const normalizedTags = normalizeTags(this.itemTags);
     this.itemTags = normalizedTags;
     if (!this.canEditExplorer) {
       return;
@@ -3240,7 +3227,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.draft.setPatchSuppressed(true);
     try {
       this.applyUiPreferences((activeState as ItemExplorerSharedState).ui);
-      this.itemTags = this.normalizeTags((activeState as ItemExplorerSharedState).tags);
+      this.itemTags = normalizeTags((activeState as ItemExplorerSharedState).tags);
       this.table.metadataSettings = this.resolveMetadataSettings({
         metadataColumns: (activeState as ItemExplorerSharedState).metadataColumns,
       });
@@ -3287,50 +3274,14 @@ export class ItemExplorerFacade implements OnDestroy {
       return;
     }
 
-    const itemProperties = this.isRecord(activeState.itemProperties)
-      ? (activeState.itemProperties as Record<string, Record<string, unknown>>)
-      : {};
-    const stateTags = this.normalizeTags(activeState.tags);
-
+    const stateTags = normalizeTags(activeState.tags);
     for (const item of this.items) {
-      const keys = this.getItemStateKeys(item);
-      const itemProps = this.getItemPropsForKeys(itemProperties, keys);
-
-      const empiricalDifficultyRaw = itemProps?.['empiricalDifficulty'];
-      if (empiricalDifficultyRaw === undefined || empiricalDifficultyRaw === null) {
-        delete item.empiricalDifficulty;
-      } else {
-        const parsed = Number(empiricalDifficultyRaw);
-        if (Number.isFinite(parsed)) {
-          item.empiricalDifficulty = parsed;
-        } else {
-          delete item.empiricalDifficulty;
-        }
-      }
-
-      item.previewStart = itemProps?.['previewStart'] as PreviewStart | undefined;
-
-      const previewTargetId = String(itemProps?.[this.previewTargetItemPropertyKey] || '').trim();
-      if (previewTargetId) {
-        item.previewTargetId = previewTargetId;
-      } else {
-        delete item.previewTargetId;
-      }
-
-      if (itemProps?.[this.excludedItemPropertyKey] === true) {
-        item.excluded = true;
-      } else {
-        delete item.excluded;
-      }
-
-      const tagsFromState = this.getTagsForKeys(stateTags, keys);
-      if (tagsFromState !== null) {
-        item.tags = tagsFromState;
-      } else if (Array.isArray(itemProps?.['tags'])) {
-        item.tags = this.normalizeTagValues(itemProps['tags']);
-      } else if (!Array.isArray(item.tags)) {
-        item.tags = [];
-      }
+      const projected = projectExplorerItem(item, activeState.itemProperties, stateTags);
+      // Keep row identity: selection and pending player operations refer to this object.
+      delete item.empiricalDifficulty;
+      delete item.previewTargetId;
+      delete item.excluded;
+      Object.assign(item, projected);
     }
 
     this.hydrateItemTagsFromItems();
@@ -3349,54 +3300,6 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private reconcileMeanTaskDifficultyState(): void {
     if (this.table.reconcileMeanTaskDifficultyState(this.items)) this.saveUiPreferences();
-  }
-
-  private getItemStateKeys(item: ExplorerItem): string[] {
-    const keys = new Set<string>();
-    const resolvedItemId = item.itemId?.startsWith(`${item.unitId}_`)
-      ? item.itemId
-      : `${item.unitId}_${item.itemId}`;
-
-    for (const candidate of [item.rowKey, item.uuid, resolvedItemId, item.itemId]) {
-      const key = String(candidate || '').trim();
-      if (key) {
-        keys.add(key);
-      }
-    }
-    return Array.from(keys);
-  }
-
-  private getItemPropsForKeys(
-    itemProperties: Record<string, Record<string, unknown>>,
-    keys: string[],
-  ): Record<string, unknown> | null {
-    const merged: Record<string, unknown> = {};
-    let found = false;
-    for (const key of [...keys].reverse()) {
-      if (this.isRecord(itemProperties[key])) {
-        Object.assign(merged, itemProperties[key]);
-        found = true;
-      }
-    }
-    return found ? merged : null;
-  }
-
-  private getTagsForKeys(tagsMap: Record<string, string[]>, keys: string[]): string[] | null {
-    for (const key of keys) {
-      const tags = tagsMap[key];
-      if (Array.isArray(tags)) {
-        return this.normalizeTagValues(tags);
-      }
-    }
-    return null;
-  }
-
-  private normalizeTagValues(values: unknown[]): string[] {
-    return Array.from(
-      new Set(
-        values.map((value) => String(value || '').trim()).filter((value) => value.length > 0),
-      ),
-    );
   }
 
   hasPendingDraftChanges(): boolean {
@@ -3824,21 +3727,9 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private rollbackItemTagsToLatestExplorerState(): void {
     const activeState = this.getExplorerStateForCurrentPerspective();
-    const stateTags = this.normalizeTags(activeState.tags);
-    const itemProperties = this.isRecord(activeState.itemProperties)
-      ? (activeState.itemProperties as Record<string, Record<string, unknown>>)
-      : {};
-
+    const stateTags = normalizeTags(activeState.tags);
     for (const item of this.items) {
-      const keys = this.getItemStateKeys(item);
-      const tagsFromState = this.getTagsForKeys(stateTags, keys);
-      const itemProps = this.getItemPropsForKeys(itemProperties, keys);
-      item.tags =
-        tagsFromState !== null
-          ? [...tagsFromState]
-          : Array.isArray(itemProps?.['tags'])
-            ? this.normalizeTagValues(itemProps['tags'])
-            : [];
+      item.tags = resolveItemTags(item, activeState.itemProperties, stateTags);
     }
     this.itemTags = {};
     this.hydrateItemTagsFromItems();
@@ -3846,31 +3737,6 @@ export class ItemExplorerFacade implements OnDestroy {
       this.itemTags = { ...this.itemTags, ...stateTags };
     }
     this.applyFilter(false);
-  }
-
-  private normalizeTags(rawTags: unknown): Record<string, string[]> {
-    if (!this.isRecord(rawTags)) {
-      return {};
-    }
-
-    const tags: Record<string, string[]> = {};
-    for (const [itemId, values] of Object.entries(rawTags)) {
-      const normalizedItemId = String(itemId || '').trim();
-      if (!normalizedItemId || !Array.isArray(values)) continue;
-
-      const normalizedValues = Array.from(
-        new Set(
-          values.map((value) => String(value || '').trim()).filter((value) => value.length > 0),
-        ),
-      );
-
-      // An explicit empty array is a deletion tombstone. Dropping it would
-      // allow stale tags from the imported item payload to reappear when the
-      // server returns the updated draft state.
-      tags[normalizedItemId] = normalizedValues;
-    }
-
-    return tags;
   }
 
   private syncItemCommentCountSession(): void {

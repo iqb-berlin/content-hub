@@ -2906,7 +2906,6 @@ describe('ItemExplorerFacade', () => {
 
     expect(component.itemTags).toEqual({ 'uuid-1': [] });
     expect(component.items[0].tags).toEqual([]);
-    expect((component as any).normalizeTags({ 'uuid-1': [] })).toEqual({ 'uuid-1': [] });
   });
 
   it('ignores stale item-list responses after a newer reload completes', () => {
@@ -3747,6 +3746,7 @@ describe('ItemExplorerFacade', () => {
 
     (component as any).applySharedExplorerEnvelope(envelope);
 
+    expect(component.items[0]).toBe(item);
     expect(component.itemTags['uuid-1::1']).toEqual([]);
     expect(item.tags).toEqual([]);
     expect(item.excluded).toBeUndefined();
