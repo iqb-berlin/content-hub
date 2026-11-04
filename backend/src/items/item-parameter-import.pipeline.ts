@@ -289,7 +289,11 @@ export class ItemParameterImportPipeline {
         const rawValue = row[definition.index]?.trim() || "";
         if (!rawValue) continue;
         const value = Number(rawValue.replace(",", "."));
-        if (!Number.isFinite(value)) {
+        if (
+          !Number.isFinite(value) ||
+          (definition.property === "bista" &&
+            !/^[+-]?\d+(?:[.,]\d+)?$/.test(rawValue))
+        ) {
           invalidReason = `Ungültiger Zahlenwert in ${definition.header}`;
           break;
         }

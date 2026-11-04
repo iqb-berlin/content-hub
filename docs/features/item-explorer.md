@@ -490,8 +490,10 @@ rows inherit the same value; conflicting values for the same item are rejected. 
 cell clears the value, while omitting the column preserves it. Time values are non-negative seconds;
 decimal point and decimal comma are accepted. `bista` imports the numeric BiSta value per Explorer
 row, including partial-credit rows. It has no fixed decimal-place limit: `1.234567` and `1,234567`
-are both accepted without rounding to two decimal places. Like the other numeric parameters, it
-uses JavaScript's finite-number precision; arbitrary-precision decimal storage is not provided.
+are both accepted without rounding to two decimal places. BiSta values must use decimal notation
+with an optional sign; hexadecimal, binary, octal, and exponent notation are rejected. Like the
+other numeric parameters, BiSta uses JavaScript's finite-number precision; arbitrary-precision
+decimal storage is not provided.
 
 Without a CSV import, the Explorer uses the numeric raw `value` of `iqb_time_item` from each VOMD
 item profile and `iqb_time_stimulus` from the VOMD unit profile. The legacy item property
