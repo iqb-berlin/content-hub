@@ -2,8 +2,34 @@
 
 This folder contains the main project documentation for the Content Hub application.
 The repository is a split Angular frontend and NestJS backend that manages Assessment
-Content Packages (ACPs), their files, access rules, review workflows, and external
-transfer APIs.
+Packages (APs), their files, access rules, review workflows, and external transfer APIs.
+
+## Terminology and Technical Identifiers
+
+The current product terms are **Assessment Package (AP)** and **AP-Index**. They follow
+the [IQB specifications overview](https://iqb-specifications.github.io/) and the
+[StarS Assessment Package documentation](https://iqb-berlin.github.io/rising-stars/content-package/).
+The [StarS application documentation](https://iqb-berlin.github.io/rising-stars/content-hub/index.html)
+uses the name ContentHub.
+
+Earlier documentation used Assessment Content Package (ACP) and ACP-Index. These names
+refer to the same package and index. The terminology change does not migrate data or
+change the supported index format.
+
+Existing technical identifiers remain unchanged for compatibility:
+
+| Product term | Existing technical identifiers |
+| --- | --- |
+| AP | `Acp`, `acp`, `acpId`, `acp_id`, `/acps`, `/api/acp`, `/api/server/acp` |
+| AP-Index | `acpIndex`, `defaultAcpIndex`, `acp-index` schema identifiers |
+| AP-Manager | `ACP_MANAGER` role value |
+| AP read permission | `acp.read` API scope |
+
+Use the documented technical names in requests, configuration, code and database
+operations. The [schema URL](https://iqb-specifications.github.io/acp-index/) and
+existing documentation filenames such as `acp-workflows.md` and `acp-manager-manual.md`
+also remain valid. Historical concepts, implementation plans, release notes and test
+evidence retain the terminology used when they were written.
 
 ## Concepts
 
@@ -23,12 +49,12 @@ If you are new to the project, read the documentation in this order:
 1. [Architecture Overview](architecture/overview.md)
 2. [Getting Started](development/getting-started.md)
 3. [Access Control](features/access-control.md)
-4. [ACP Workflows](features/acp-workflows.md)
+4. [AP Workflows](features/acp-workflows.md)
 5. [Deployment](operations/deployment.md)
 
-For ACP managers who need a task-oriented user guide, see:
+For AP managers who need a task-oriented user guide, see:
 
-- [ACP-Manager Handbuch](manuals/acp-manager-manual.md)
+- [AP-Manager-Handbuch](manuals/acp-manager-manual.md)
 
 ## Documentation Map
 
@@ -56,8 +82,8 @@ For ACP managers who need a task-oriented user guide, see:
 
 - [Access Control](features/access-control.md)
   Authentication methods, access models, roles, feature flags, and route/guard behavior.
-- [ACP Workflows](features/acp-workflows.md)
-  How ACPs are created, populated, configured, versioned, and reviewed.
+- [AP Workflows](features/acp-workflows.md)
+  How APs are created, populated, configured, versioned, and reviewed.
 - [Item Explorer](features/item-explorer.md)
   Shared draft state, publish/discard flow, metadata columns, tags, and empirical difficulty workflows.
 - [Musterlösung und Kodierinformation im Booklet-Review](review-solutions.md)
@@ -67,8 +93,8 @@ For ACP managers who need a task-oriented user guide, see:
 
 ### Manuals
 
-- [ACP-Manager Handbuch](manuals/acp-manager-manual.md)
-  Task-oriented guide for day-to-day ACP management in the current UI.
+- [AP-Manager-Handbuch](manuals/acp-manager-manual.md)
+  Task-oriented guide for day-to-day AP management in the current UI.
 
 ### Operations
 

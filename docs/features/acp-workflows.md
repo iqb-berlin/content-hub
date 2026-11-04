@@ -1,13 +1,13 @@
-# ACP Workflows
+# AP Workflows
 
 ## Overview
 
-Most product functionality is organized around the ACP lifecycle. This guide explains how
-an ACP typically moves through the system from creation to viewing, review, and export.
+Most product functionality is organized around the AP lifecycle. This guide explains how
+an AP typically moves through the system from creation to viewing, review, and export.
 
-## 1. Create the ACP
+## 1. Create the AP
 
-An app admin creates an ACP through the ACP management API or admin UI.
+An app admin creates an AP through the AP management API or admin UI.
 
 Core fields:
 
@@ -15,26 +15,26 @@ Core fields:
 - `name`
 - `description`
 
-At this stage the ACP exists, but it usually still needs:
+At this stage the AP exists, but it usually still needs:
 
-- an ACP index,
+- an AP-Index,
 - files,
 - access configuration review,
 - role assignments.
 
-New ACPs are created with a default access configuration of `PRIVATE`, so they are not
+New APs are created with a default access configuration of `PRIVATE`, so they are not
 publicly visible until a manager changes that setting.
 
 ## 2. Configure Access
 
-Before sharing the ACP, managers define how it should be exposed.
+Before sharing the AP, managers define how it should be exposed.
 
 Typical choices:
 
 - private setup while managers prepare content,
 - public preview for open content,
 - role-based access for known internal users,
-- ACP credential list for tightly scoped review access.
+- AP credential list for tightly scoped review access.
 
 This same step also controls feature flags such as:
 
@@ -52,15 +52,15 @@ Typical patterns:
 
 - app admin assigns `ACP_MANAGER` to project maintainers,
 - managers or admins assign `READ_ONLY` to internal reviewers,
-- credential viewers are handled through the credential list rather than ACP role assignment.
+- credential viewers are handled through the credential list rather than AP role assignment.
 
 Important rule:
 
 - non-admin managers can assign `READ_ONLY`, but only app admins can assign or remove `ACP_MANAGER`.
 
-## 4. Build or Import the ACP Index
+## 4. Build or Import the AP-Index
 
-The ACP index is the main structured content payload. Managers can:
+The AP-Index is the main structured content payload. Managers can:
 
 - fetch it,
 - update it directly,
@@ -82,9 +82,9 @@ Managers upload files through the file-management endpoints or UI.
 The backend then performs follow-up work automatically:
 
 1. file metadata is persisted,
-2. the ACP index can be synchronized from uploaded files,
+2. the AP-Index can be synchronized from uploaded files,
 3. syntactic validation runs per file,
-4. semantic ACP-wide validation runs across index and file references.
+4. semantic AP-wide validation runs across index and file references.
 
 Conflict strategies currently supported on upload:
 
@@ -100,7 +100,7 @@ The file and validation subsystems help managers answer several practical questi
 - are JSON payloads syntactically valid,
 - do referenced files exist,
 - do index references point to real units or dependencies,
-- is the current ACP internally consistent.
+- is the current AP internally consistent.
 
 Validation feedback is stored with file metadata so the UI can surface the result later.
 
@@ -120,7 +120,7 @@ For collaborative metadata curation, the Item Explorer is the main UI. It is doc
 
 ## 8. Create Snapshots
 
-Snapshots are the rollback and comparison mechanism for ACPs.
+Snapshots are the rollback and comparison mechanism for APs.
 
 Managers should create a snapshot:
 
@@ -142,13 +142,13 @@ Snapshots support:
 
 Review management and Review participation use separate entry points:
 
-1. A user with `review:manage` opens the Review card on the ACP management overview.
+1. A user with `review:manage` opens the Review card on the AP management overview.
 2. `Bereitschaft prüfen` validates files, semantic references, the Review manifest, referenced
    Units, Unit definitions, and players.
 3. Technical blockers prevent a new Review activation. Non-blocking warnings can be confirmed.
 4. The manager configures visibility and optional Review groups, activates Review, and grants
-   `review:participate` to the intended user accounts or ACP credentials.
-5. Participants open the Review card on the ACP start page and select a Booklet directly.
+   `review:participate` to the intended user accounts or AP credentials.
+5. Participants open the Review card on the AP start page and select a Booklet directly.
 6. The Booklet workspace shows the player and the Review panel side by side.
 
 Review readiness has three states:
@@ -162,7 +162,7 @@ The readiness check is not a formal release approval. It verifies that the mater
 for Review; content quality is still assessed during Review.
 
 `review:manage` does not imply `review:participate`. Review groups control comment visibility but do
-not grant ACP or Review access.
+not grant AP or Review access.
 
 ## 10. Collect Comments
 
@@ -180,27 +180,27 @@ enable comment targets. Managers can export comments as:
 
 Non-manager users can export only the subset they are allowed to see.
 
-For item comments, managers also choose a visibility mode. Existing ACPs default to `PRIVATE`;
-`SHARED` must be selected explicitly before authenticated ACP users can see and reply to each
+For item comments, managers also choose a visibility mode. Existing APs default to `PRIVATE`;
+`SHARED` must be selected explicitly before authenticated AP users can see and reply to each
 other's comments in the Item Explorer. Users can edit or delete only comments they authored.
 
 ## 11. Export or Integrate
 
-When an ACP is ready for handoff or synchronization, there are several export paths:
+When an AP is ready for handoff or synchronization, there are several export paths:
 
-- ACP index JSON export,
+- AP-Index JSON export,
 - file download and ZIP export,
-- full ACP transfer through the server API,
+- full AP transfer through the server API,
 - coding-scheme replacement through the server API for managed update workflows.
 
 ## Practical Manager Checklist
 
-When setting up a new ACP, a good sequence is:
+When setting up a new AP, a good sequence is:
 
-1. create the ACP,
+1. create the AP,
 2. set access model and feature flags,
 3. assign manager roles,
-4. import or initialize the ACP index,
+4. import or initialize the AP-Index,
 5. upload files,
 6. review validation output,
 7. adjust metadata columns and tags,

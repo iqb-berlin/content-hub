@@ -2,8 +2,8 @@
 
 ## Purpose
 
-The Item Explorer is a shared ACP-level workspace for curating item-oriented metadata and
-presentation preferences without forcing every change directly into the main ACP record.
+The Item Explorer is a shared AP-level workspace for curating item-oriented metadata and
+presentation preferences without forcing every change directly into the main AP record.
 
 It is one of the more advanced parts of the application because it supports:
 
@@ -54,16 +54,16 @@ overwriting someone else's work.
 
 ## Default Explorer State
 
-When an ACP gets explorer state for the first time, the backend builds it from existing
-ACP data:
+When an AP gets explorer state for the first time, the backend builds it from existing
+AP data:
 
 - item tags are derived from `acp.itemProperties`,
 - metadata columns are derived from normalized `featureConfig.metadataColumns`,
 - UI state starts empty, so the client falls back to sorting by task (`unitLabel`),
 - item order starts empty,
-- item properties are taken from the ACP record.
+- item properties are taken from the AP record.
 
-This keeps the explorer aligned with existing ACP data rather than creating a blank editor.
+This keeps the explorer aligned with existing AP data rather than creating a blank editor.
 
 ## Editing Workflow
 
@@ -78,12 +78,12 @@ Typical manager loop:
 
 ## Reduced read-only view
 
-ACP managers configure **Ansicht für Reviewer vereinfachen** under **Zugriff & Funktionen**.
+AP managers configure **Ansicht für Reviewer vereinfachen** under **Zugriff & Funktionen**.
 These settings are saved directly in `featureConfig.itemExplorerReducedView`. They take effect on
 subsequent Explorer loads without publishing an Explorer draft. Publishing or discarding an Explorer
 draft does not change them. They are presentation settings, not API permissions.
 
-The feature is opt-in. Existing ACPs retain the complete view. Managers always retain their full
+The feature is opt-in. Existing APs retain the complete view. Managers always retain their full
 editing view and can inspect the configured view through **Leseansicht**. The return action
 **Bearbeitungsansicht** is always available to managers, even when the header is hidden.
 
@@ -101,7 +101,7 @@ all visibility settings can then be changed independently:
 Fullscreen, permitted manual-order, export and save actions, and loading/error/save messages remain
 available independently of optional controls. Per-column table filters remain in the table.
 Management actions still require their existing permissions. Studio comments are omitted from the
-reduced view, even when their separate ACP feature is enabled.
+reduced view, even when their separate AP feature is enabled.
 
 Hidden regions are removed from the DOM. Without the right-hand panel the table fills the available
 width and height, including narrow screens and fullscreen. The existing split percentage is retained
@@ -206,7 +206,7 @@ request settles and is not carried over to the next selection.
 Backend responses expose `Server-Timing` entries for file-signature and Explorer-version reads,
 source reads, parsing, row-number revision and assignment, total endpoint time, parsed-cache status,
 and numbered-result cache status. File downloads additionally use private `ETag` caching. Calls over
-1.5 seconds produce a structured `item-explorer-slow-load` warning containing the ACP ID, phase,
+1.5 seconds produce a structured `item-explorer-slow-load` warning containing the AP ID, phase,
 duration, and cache status, but no item or file contents.
 
 For detailed browser measurements, enable diagnostics in the browser console and reload the
@@ -310,24 +310,24 @@ The explorer can manage which metadata columns are visible and in what order.
 
 Publishing the explorer draft updates:
 
-- the ACP `itemProperties`,
-- the ACP access-config `featureConfig.metadataColumns`.
+- the AP `itemProperties`,
+- the AP access-config `featureConfig.metadataColumns`.
 
 This means column choices are not just temporary UI preferences. They become part of the
-ACP's published shared configuration.
+AP's published shared configuration.
 
 ## Item Comment Threads
 
-Authenticated ACP users can comment directly below the selected Item Explorer preview when
+Authenticated AP users can comment directly below the selected Item Explorer preview when
 commenting is enabled for the `ITEM` target. The thread is identified by `unitId` and `itemId`;
 partial-credit rows with different Sub-IDs therefore use the same thread.
 
-Managers choose the visibility explicitly in the ACP feature configuration:
+Managers choose the visibility explicitly in the AP feature configuration:
 
 - `PRIVATE` keeps the existing behavior and shows users only their own comments,
-- `SHARED` makes item comments and replies visible to all authenticated users of the ACP.
+- `SHARED` makes item comments and replies visible to all authenticated users of the AP.
 
-Existing ACPs default to `PRIVATE`. Every comment shows an author label and creation time. Users
+Existing APs default to `PRIVATE`. Every comment shows an author label and creation time. Users
 may edit or delete only their own comments; concurrent edits are rejected through a version check.
 Replies have one level and are grouped below their root comment. Deleting a root with replies keeps
 a neutral placeholder so the remaining conversation is understandable.
@@ -348,7 +348,7 @@ XLSX comment exports include `unitId`, `itemId`, `threadId`, `parentCommentId`, 
 timestamp. The original `/api/acp/:acpId/comments` endpoints remain available; the threaded Item
 Explorer UI uses `/api/acp/:acpId/review/comments`.
 
-The ACP start page does not offer a context-free comment action. It links to the Item Explorer
+The AP start page does not offer a context-free comment action. It links to the Item Explorer
 when item comments are enabled and keeps the XLSX export and recent-comment summary available.
 The legacy create endpoint rejects `target_id = acp_id` with `400 Bad Request`, including for
 managers and app admins. Before releasing this safeguard, the affected existing rows can be counted
@@ -364,12 +364,12 @@ WHERE target_type = 'UNIT'
 This audit query does not update or delete comments. Any cleanup requires a separate, explicitly
 approved procedure.
 
-The legacy ACP-wide `DELETE /api/acp/:acpId/comments` endpoint removes only unreferenced,
+The legacy AP-wide `DELETE /api/acp/:acpId/comments` endpoint removes only unreferenced,
 non-item legacy rows. Its response reports both `deletedCount` and `retainedCount` plus the
-restricted deletion scope, so callers cannot mistake it for deleting every comment in the ACP.
+restricted deletion scope, so callers cannot mistake it for deleting every comment in the AP.
 
 Ownership and personal exports use stable user or credential IDs, never display names. A central
-review policy contains the temporary ACP permission mapping so future review capabilities can
+review policy contains the temporary AP permission mapping so future review capabilities can
 replace it without changing the thread API. Snapshot revisions are calculated only from the
 comments visible to the requester and can later be used for polling or ETags. Legacy comments with
 an unambiguous unit-qualified target remain available in their item thread; ambiguous raw target
@@ -381,7 +381,7 @@ items.
 Tags can come from two places:
 
 - shared explorer state,
-- existing item properties in the ACP.
+- existing item properties in the AP.
 
 The explorer normalizes tags and exposes them in the UI so managers can:
 
@@ -401,7 +401,7 @@ maintain three private fields for each Explorer row:
 - zero or more configured colored markers,
 - one plain-text note.
 
-ACP managers configure the category label and allowed values as well as marker labels and colors in
+AP managers configure the category label and allowed values as well as marker labels and colors in
 the access configuration. Notes use a plain textarea and are never interpreted as Markdown or HTML.
 Clearing a field removes it from the stored row data.
 
@@ -434,7 +434,7 @@ marker colors, note, competence level, empirical item difficulty, and the mean e
 of the unit when at least one value is available. Missing personal or difficulty values remain empty
 cells.
 
-ACP managers and application admins can additionally download one ACP-wide CSV from the Explorer
+AP managers and application admins can additionally download one AP-wide CSV from the Explorer
 toolbar. The endpoint rejects read-only users, credential logins, and public access. It exports every
 stored personal row across participants, using a stable participant identifier and including unit,
 item, Sub-ID, stable row key, category, tags, note, empirical difficulty, and mean unit difficulty.
@@ -466,7 +466,7 @@ Two modes exist:
 
 ### Direct persistence
 
-The import updates ACP item properties and the clean published explorer state immediately. If an
+The import updates AP item properties and the clean published explorer state immediately. If an
 unpublished explorer draft already exists, the direct operation is rejected with a conflict so it
 cannot silently overwrite or be overwritten by that draft. The caller must then use draft-aware
 persistence or publish/discard the pending draft first.
@@ -546,7 +546,7 @@ The explorer then creates one table row per Sub-ID. Every row has:
 - a visible and sortable/filterable Sub-ID column,
 - the normal item preview and coding view of the underlying item.
 
-The ACP feature configuration controls `itemSubIdLabel` (the column heading) and
+The AP feature configuration controls `itemSubIdLabel` (the column heading) and
 `itemSubIdLabels` (display labels keyed by imported Sub-ID). Items without a Sub-ID continue to
 use their item UUID as their row key and remain single rows.
 
@@ -559,7 +559,7 @@ item from overwriting one another and gives exports a unique identifier for ever
 When `enableItemCollections` is enabled, authenticated users and credential identities can maintain
 multiple named collections. Collections are stored in the existing `acp_item_preferences` JSONB
 record under the `item-explorer` view. Private collections remain visible only to their owner;
-explicitly shared collections are available to other authorized participants in the same ACP.
+explicitly shared collections are available to other authorized participants in the same AP.
 Every collection stores an ordered list of stable row keys and an optimistic-lock version.
 Non-manager collection access additionally requires the Item Explorer item list to be enabled.
 
@@ -570,7 +570,7 @@ reports how many item and unit time values are missing. Stale row keys remain re
 excluded from totals and exports.
 
 Collections can be created, renamed, cleared, deleted, and exported as semicolon-separated UTF-8
-CSV. Up to 100 named collections can be stored per identity and ACP. Direct generation of ACP
+CSV. Up to 100 named collections can be stored per identity and AP. Direct generation of AP
 booklets or task sequences is intentionally outside this feature.
 
 ## Player Preview and Legacy Player Compatibility
@@ -580,8 +580,8 @@ try to focus the currently selected item automatically.
 
 By default, the Item Explorer preview neutralizes conditional visibility logic from the VOUD so
 that managers can inspect all relevant content even when the original unit would hide parts
-of it behind section visibility rules or media dependencies. ACP managers can re-enable the
-original conditional behavior through the ACP access-config feature flag
+of it behind section visibility rules or media dependencies. AP managers can re-enable the
+original conditional behavior through the AP access-config feature flag
 `enableItemExplorerConditionalVisibility`.
 
 When enabled, a fresh item preview derives a transient start state from the target section,
@@ -600,7 +600,7 @@ priority and are forwarded unchanged. Prepared states cannot be saved as answer 
 
 Missing, ambiguous, conflicting, external-response or timer-dependent conditions display an
 unavailable explanation and a link to the regular unit workflow. No audio progress or answers
-are fabricated, and the original unit definition is forwarded unchanged. The ACP flag remains
+are fabricated, and the original unit definition is forwarded unchanged. The AP flag remains
 opt-in. Definition/player version compatibility is still required by Aspect itself.
 
 ### Conditional visibility acceptance scope (Issue #150)
@@ -638,11 +638,11 @@ make no compatibility claim for Aspect 2.12.6 or for the old DLB002 production e
 The preview keeps the corresponding schema fields in place with neutral default values so the
 embedded Aspect player can still parse the generated unit definition reliably.
 
-Visual item highlighting inside the embedded player can be controlled per ACP through
-`enablePlayerFocusHighlight`. Newly created ACPs default this to off. Legacy ACPs keep the
+Visual item highlighting inside the embedded player can be controlled per AP through
+`enablePlayerFocusHighlight`. Newly created APs default this to off. Legacy APs keep the
 previous highlighted behavior until the setting is changed explicitly.
 
-The preview pipeline is intentionally defensive because ACPs can reference different
+The preview pipeline is intentionally defensive because APs can reference different
 generations of Aspect player builds:
 
 1. the client resolves the preview target from `sourceVariable` or `variableId`,
@@ -652,7 +652,7 @@ generations of Aspect player builds:
    the same VOUD element,
 4. the iframe DOM is searched using both newer and older marker conventions.
 
-ACP managers can override the preview target per item in two ways:
+AP managers can override the preview target per item in two ways:
 
 - select a known variable from the coding scheme,
 - enter a free-text VOUD identifier or alias manually.
@@ -718,7 +718,7 @@ for collaborative curation work.
 
 ## Why the Explorer Exists Separately
 
-The explorer state is intentionally not just another field on the ACP record because it needs:
+The explorer state is intentionally not just another field on the AP record because it needs:
 
 - draft versus published separation,
 - optimistic lock handling,
@@ -726,7 +726,7 @@ The explorer state is intentionally not just another field on the ACP record bec
 - collaborative change tracking.
 
 Those concerns are much easier to model in dedicated tables than through ad-hoc writes to
-the ACP JSON payload.
+the AP JSON payload.
 
 ## Operational Advice
 
@@ -742,7 +742,7 @@ Create a snapshot before a large explorer publishing step if the changes are imp
 
 ## Related Documents
 
-- [ACP Workflows](acp-workflows.md)
+- [AP Workflows](acp-workflows.md)
 - [Data Model](../architecture/data-model.md)
 - [Backend Architecture](../architecture/backend.md)
 

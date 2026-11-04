@@ -7,7 +7,7 @@ bestätigt**. #60 und die weiteren Review-Tickets sind nicht Teil dieser Änderu
 ## Upload und Auffindbarkeit
 
 Die bestehende Upload-Nachverarbeitung erkennt Booklet-XMLs und trägt ihre
-Metadaten-ID sowie den Dateinamen automatisch im ACP-Index ein. Neue Booklets
+Metadaten-ID sowie den Dateinamen automatisch im AP-Index ein. Neue Booklets
 werden im ersten Assessment-Part in einem eigenen Instrument registriert.
 Vorhandene Dateiverknüpfungen werden an ihrer bisherigen Position ergänzt;
 manuelle Namen, Modulzuordnungen und andere Instrumente bleiben erhalten.
@@ -16,7 +16,7 @@ mehrere Dateien mit derselben Booklet-ID und ungültige Booklet-Dateien werden
 als Warnungen gemeldet und nicht stillschweigend neu zugeordnet.
 
 Nach abgeschlossener Upload-Verarbeitung erscheinen Booklets in der
-ACP-Übersicht als „Testheft“ beziehungsweise unter „Testhefte und Aufgabenfolgen“.
+AP-Übersicht als „Testheft“ beziehungsweise unter „Testhefte und Aufgabenfolgen“.
 Ein erneuter Upload stößt die Synchronisierung auch für bereits vorhandene
 Booklet-Dateien an; alternativ steht die bestehende Synchronisierungs-API zur Verfügung. Aufgaben und Player-Dateien müssen
 weiterhin vorhanden sein; fehlende Unit-Referenzen meldet die Validierung.
@@ -24,7 +24,7 @@ weiterhin vorhanden sein; fehlende Unit-Referenzen meldet die Validierung.
 ## Unterstützte Eingaben
 
 - Referenzen unter `assessmentParts[].instruments[].testcenterBooklet[]`.
-- `definitionId` benennt eine im selben ACP hochgeladene Booklet-XML-Datei.
+- `definitionId` benennt eine im selben AP hochgeladene Booklet-XML-Datei.
 - Die kanonische ID stammt aus `testcenterBooklet.id`, alternativ aus
   `Booklet/Metadata/Id`. Sind beide angegeben, müssen sie übereinstimmen.
 - `Booklet/Units` enthält Units und rekursive `Testlet`-Blöcke in Dokumentreihenfolge.
@@ -107,24 +107,24 @@ dass der Direktlink ungültig oder veraltet ist; die Ansicht zeigt die erste
 Aufgabe an. Veraltete Kurzlinks fallen nicht auf eine inzwischen anders
 belegte Strukturposition zurück. Der nächste Navigationsschritt erzeugt
 wieder einen gültigen Link. Die Links verwenden weiterhin die reguläre
-ACP-Zugriffsprüfung.
+AP-Zugriffsprüfung.
 
 ## Laufzeitmodell und Fehler
 
 Ein gemeinsames Manifest enthält Booklets, verschachtelte Blöcke, geordnete
-Unit-Vorkommen und einen separaten ACP-weiten Inhaltskatalog. Eine
+Unit-Vorkommen und einen separaten AP-weiten Inhaltskatalog. Eine
 `occurrenceId` unterscheidet Navigationspositionen anhand von Booklet-ID und
 Strukturpfad; die Unit-ID bleibt bei wiederholter Verwendung identisch.
 Navigationspositionen sind nicht als dauerhafte Kommentar-IDs vorgesehen.
 
-Uploadvalidierung und ACP-Konsistenzprüfung melden XML-Fehler, fehlende
+Uploadvalidierung und AP-Konsistenzprüfung melden XML-Fehler, fehlende
 Referenzen und ID-Konflikte mit dem jeweiligen Strukturpfad. Ein Booklet mit
 fehlender XML-Datei kann über vorhandene Legacy-Module angezeigt werden;
 der fehlende Dateibezug wird weiterhin gemeldet. Es gibt keine automatische
 Kommentar-Migration und keine Aktivierung einer neuen Review-Funktion.
 
 Die Aufgabenfolge zeigt Blockpfade und Aliase an. Wiederholte Unit-Vorkommen
-bleiben einzeln auswählbar. Die vorhandene ACP-Oberfläche bleibt der gemeinsame
+bleiben einzeln auswählbar. Die vorhandene AP-Oberfläche bleibt der gemeinsame
 Einstiegspunkt für das Content Package.
 
 ## Beispiel und Prüfung

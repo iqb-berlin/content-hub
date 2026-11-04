@@ -1,7 +1,7 @@
 # Itembezogene Player-Vorschau
 
-Die ACP-Option `enableItemExplorerConditionalVisibility` erhält die originale
-Aufgabendefinition. Sie wird durch diesen Code nicht in bestehenden ACPs aktiviert.
+Die AP-Option `enableItemExplorerConditionalVisibility` erhält die originale
+Aufgabendefinition. Sie wird durch diesen Code nicht in bestehenden APs aktiviert.
 
 ## Ansichten
 

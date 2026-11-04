@@ -126,11 +126,11 @@ After booting the stack, verify:
 
 The usual happy path is:
 
-1. create or reuse an ACP,
+1. create or reuse an AP,
 2. configure access,
 3. upload files,
 4. inspect validation results,
-5. browse the ACP through `/view/:acpId`,
+5. browse the AP through `/view/:acpId`,
 6. create snapshots before risky changes.
 
 ## Local Identity and Login Notes
@@ -138,7 +138,7 @@ The usual happy path is:
 The application supports two login paths:
 
 - OIDC login via Keycloak,
-- ACP credential login for restricted viewers.
+- AP credential login for restricted viewers.
 
 In Docker development, Keycloak is part of the stack. In direct local runs, you need a
 reachable Keycloak instance if you are testing OIDC behavior.

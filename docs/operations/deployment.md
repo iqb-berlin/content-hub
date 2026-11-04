@@ -499,7 +499,7 @@ downtime restore described in [Releases and Promotion](releases.md) for an
 incompatible emergency.
 
 The `CompleteCommentLifecycle1789300000000` migration resolves legacy comment
-targets against both the ACP index and uploaded Unit/VOMD files. For ACPs with
+targets against both the AP-Index and uploaded Unit/VOMD files. For APs with
 comments, unreadable or invalid item sources abort the transactional migration;
 restore or repair those sources before retrying. Ambiguous targets remain
 read-only. Its `down()` migration is allowed only when the comment table is

@@ -18,7 +18,7 @@ decision in the release issue or operational change record.
 - [ ] Backup checksums, both tar archives, and both PostgreSQL dump catalogs validate
 - [ ] `/api/version` and `/version.json` match the candidate manifest
 - [ ] OIDC login and logout work
-- [ ] ACP create/update, file upload, public/read view, and Item Explorer smoke tests pass
+- [ ] AP create/update, file upload, public/read view, and Item Explorer smoke tests pass
 - [ ] Migration logs contain no failures or schema synchronization
 - [ ] Application rollback to the prior digest was rehearsed when migrations changed
 - [ ] Staging evidence URL/reference is recorded
@@ -39,6 +39,6 @@ decision in the release issue or operational change record.
 - [ ] Compose configuration validates and images are pulled by digest
 - [ ] Health, readiness, Keycloak discovery, and version identity pass
 - [ ] Keycloak user count did not decrease
-- [ ] OIDC and critical ACP smoke tests pass
+- [ ] OIDC and critical AP smoke tests pass
 - [ ] Logs show no critical errors after the observation window
 - [ ] Go/No-Go decision, owner, and completion timestamp are recorded

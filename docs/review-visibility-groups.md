@@ -2,7 +2,7 @@
 
 ## Gemeinsamer Entwurf
 
-Die Umsetzung baut auf dem Kommentarlebenszyklus aus #63 und den ACP-Grants aus
+Die Umsetzung baut auf dem Kommentarlebenszyklus aus #63 und den AP-Grants aus
 #60 auf. Zuerst werden Konfiguration, Sichtbarkeitsprüfung und Aktualisierung
 vereinheitlicht (#64); darauf setzen Gruppenverwaltung und die feste Zuordnung
 von Threads auf (#161). Beide Teile verwenden denselben Prüfpfad für Booklets,
@@ -19,7 +19,7 @@ Management vergibt kein Recht, fremde Kommentare zu bearbeiten.
 | SHARED  | alle Kommentare                                                                   | alle Kommentare        |
 | GROUP   | Kommentare ihrer aktiven Gruppen; Bestandskommentare nach bisheriger Sichtbarkeit | alle Kommentare        |
 
-Die ACP-weite Regel wird zur Anfragezeit angewandt. Ein Wechsel auf SHARED teilt
+Die AP-weite Regel wird zur Anfragezeit angewandt. Ein Wechsel auf SHARED teilt
 auch bereits vorhandene Gruppenkommentare. Die Oberfläche warnt ausdrücklich;
 die API verlangt `confirmExistingComments: true` und die aktuelle `configVersion`.
 Eine veraltete Konfiguration erhält HTTP 409. Ein Moduswechsel schreibt keine
@@ -27,11 +27,11 @@ Kommentare um und dupliziert oder löscht sie nicht.
 
 ## Festgelegte Gruppenregeln
 
-- Gruppen sind ACP-spezifisch und unabhängig von Rollen und Zugangsrechten.
+- Gruppen sind AP-spezifisch und unabhängig von Rollen und Zugangsrechten.
 - Mehrfachmitgliedschaften sind erlaubt. Mitglieder referenzieren stabile
   Nutzer- oder Credential-IDs, keine wiederverwendbaren Nutzernamen.
   Beim Speichern der Gruppen werden bestehende Verweise auf inzwischen entfernte
-  ACP-Mitglieder bereinigt. Neue ungültige Zuweisungen werden weiterhin abgewiesen.
+  AP-Mitglieder bereinigt. Neue ungültige Zuweisungen werden weiterhin abgewiesen.
 - Ein neuer Hauptkommentar im Gruppenmodus gehört genau einer aktiven Gruppe.
   Bei einer einzigen Teilnehmer-Mitgliedschaft erfolgt die Auswahl automatisch.
   Bei mehreren Mitgliedschaften und für Verantwortliche ist die Auswahl explizit.
@@ -55,20 +55,20 @@ Kommentare um und dupliziert oder löscht sie nicht.
 `review_revision`. Maximal 100 Gruppen mit jeweils 2.000 Mitgliedschaften werden
 akzeptiert. `comments.group_id` hält die unveränderliche Thread-Zuordnung.
 
-Konfigurations- und Kommentaränderungen sperren zuerst dieselbe ACP-Konfiguration
+Konfigurations- und Kommentaränderungen sperren zuerst dieselbe AP-Konfiguration
 innerhalb ihrer Transaktion. Dadurch wird eine Mitgliedschaft nicht zwischen
 Schreibberechtigungsprüfung und Speicherung geändert. Ein PostgreSQL-Trigger
 zählt Kommentaränderungen innerhalb derselben Transaktion in der Revision mit.
-Die Gruppenverwaltung prüft Mitgliedschaften gegen die tatsächlichen ACP-Zugänge.
+Die Gruppenverwaltung prüft Mitgliedschaften gegen die tatsächlichen AP-Zugänge.
 Andere Feature-Einstellungen können Review-Modus und Aktivierung nicht überschreiben.
 
-Die interne ACP-Revision wird Teilnehmenden **nicht** offengelegt: Änderungen
+Die interne AP-Revision wird Teilnehmenden **nicht** offengelegt: Änderungen
 fremder Gruppen dürfen nicht einmal über Versionswerte erkennbar sein. Der
 öffentlich verwendete ETag ist deshalb ein SHA-256-Fingerabdruck ausschließlich
 des sichtbaren Snapshots einschließlich sichtbarer Gruppenbezeichnungen.
 Unveränderte Antworten auf `If-None-Match` liefern HTTP 304. Dieser sichtbare
 Fingerabdruck ersetzt die in #64 ursprünglich vorgeschlagene öffentliche monotone
-ACP-Revision, um die strengere Isolationsanforderung aus #161 zu erfüllen.
+AP-Revision, um die strengere Isolationsanforderung aus #161 zu erfüllen.
 
 ## Up- und Downvotes (#65)
 
@@ -91,12 +91,12 @@ Eigene Kommentare zeigen die beiden Zähler ohne Bewertungsaktionen.
 `{ "value": "DOWN" }` setzt oder wechselt die eigene Stimme. `DELETE` auf demselben
 Pfad entfernt sie. Ein erneuter Klick auf die aktive Bewertung entfernt diese.
 Beide Operationen sind idempotent und erfordern dieselben Rechte. Unsichtbare,
-ACP-fremde und gelöschte Kommentare liefern wie nicht vorhandene IDs HTTP 404.
+AP-fremde und gelöschte Kommentare liefern wie nicht vorhandene IDs HTTP 404.
 
 Migration `1789500000000-CommentVotes` ergänzt eine eigene Tabelle mit genau einer
 stabilen Nutzer- oder Credential-ID je Stimme, partiellen Unique-Indizes,
 Wertprüfung und Zeitstempeln. Stimmenänderung und interne Revision erfolgen in
-derselben Transaktion unter der ACP-Konfigurationssperre. Ein unveränderter Vote
+derselben Transaktion unter der AP-Konfigurationssperre. Ein unveränderter Vote
 ändert auch die Revision nicht. Physisches und logisches Löschen eines Kommentars
 entfernt seine Stimmen. Der Migrationsrollback verweigert Datenverlust, solange
 Stimmen existieren.
@@ -110,20 +110,20 @@ Moduswechsel nicht verschiedene Sichtbarkeitsstände in einer Antwort vermischt.
 Manifest, Dateikatalog, Item-Parser und Zeilennummerierung verwenden dabei denselben
 Transaktionsmanager. Review-Lesevorgänge und Bewertungen übernehmen vorhandene
 Zeilennummern und ergänzen fehlende Nummern nur vorläufig in der Antwort. Sie
-persistieren keine Nummern und fordern daher keine zusätzliche ACP-Schreibsperre
+persistieren keine Nummern und fordern daher keine zusätzliche AP-Schreibsperre
 an. Das vermeidet eine umgekehrte Sperrreihenfolge gegenüber dem Speichern im Item
 Explorer. Dessen regulärer Nummerierungsweg bleibt unverändert.
 Datenbankabhängige Cache-Aufrufe bleiben innerhalb der
 jeweiligen Transaktion; nur der reine Datei-Parser teilt seinen Cache. Parallele
 Thread-Anfragen benötigen dadurch keine zusätzlichen Pool-Verbindungen, während
-sie die ACP-Sperre halten. Regressionstests verwenden reale Katalogdienste mit
+sie die AP-Sperre halten. Regressionstests verwenden reale Katalogdienste mit
 Poolgrößen 1, 2 und 10. Die zugänglichen Namen beider Bewertungsbuttons enthalten
 neben der Aktion auch den aktuellen Zählerstand.
 
 ## Oberfläche, API und Exporte
 
 Im Review-Einstieg werden Aktivierung, Sichtbarkeit und Gruppen gemeinsam
-versioniert gespeichert. Mitglieder erscheinen als Nutzerkonto oder ACP-Zugang.
+versioniert gespeichert. Mitglieder erscheinen als Nutzerkonto oder AP-Zugang.
 Verantwortliche filtern die Gesamtübersicht nach Gruppe. Die Übersicht scrollt
 unabhängig vom restlichen Einstieg.
 
@@ -136,7 +136,7 @@ Gruppenwahl. Bearbeitungsentwürfe zu nicht mehr zugänglichen Kommentaren bleib
 zum Kopieren erhalten, ohne den alten Kommentar erneut in die Übersicht einzufügen.
 
 - `GET/PUT /view/acp/:acpId/review/config`: Management-Konfiguration.
-- `GET /view/acp/:acpId/review/members`: verfügbare ACP-Mitglieder, nur Management.
+- `GET /view/acp/:acpId/review/members`: verfügbare AP-Mitglieder, nur Management.
 - `GET /acp/:acpId/review/comments`: sichtbarer Ziel-Snapshot und ETag.
 - `GET /acp/:acpId/review/comments/visible`: sichtbare Gesamtübersicht.
 - `GET /acp/:acpId/review/comments/export/visible.xlsx`: sichtbare Kommentare,

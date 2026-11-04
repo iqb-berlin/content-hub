@@ -1,5 +1,9 @@
 # Integrations and API
 
+This guide uses AP and AP-Index as product terms. API paths, payload fields, scopes and
+role values retain their existing `acp` identifiers; see
+[terminology and technical identifiers](../README.md#terminology-and-technical-identifiers).
+
 ## API Surfaces
 
 The backend exposes three broad API surfaces:
@@ -69,14 +73,14 @@ These endpoints expect the application JWT, not a server API token.
 The `/api/view` surface covers:
 
 - public settings,
-- public ACP listing,
-- ACP start page,
+- public AP listing,
+- AP start page,
 - units and sequences,
 - items and item preferences,
-- ACP index,
+- AP-Index,
 - item explorer state for viewers.
 
-These endpoints rely on ACP-level access logic and can work for:
+These endpoints rely on AP-level access logic and can work for:
 
 - anonymous viewers,
 - authenticated users,
@@ -123,16 +127,16 @@ Example create payload:
 ```
 
 `allowedAcpIds` is optional for admins. If it is omitted, `null`, or an empty
-array, the token is global and can access every ACP permitted by its scopes.
-If ACP IDs are provided, the server API limits list, read, transfer, index and
-file operations to those ACPs.
+array, the token is global and can access every AP permitted by its scopes.
+If AP IDs are provided, the server API limits list, read, transfer, index and
+file operations to those APs.
 
-For audit access, ACP-limited tokens can only read audit entries whose `acp_id`
+For audit access, AP-limited tokens can only read audit entries whose `acp_id`
 is one of their `allowedAcpIds`. Global audit events without an `acp_id` are
 visible only to global tokens with `audit.read`.
 
-ACP managers can manage ACP-limited application tokens from the ACP management
-area. These endpoints always bind the token to the current ACP:
+AP managers can manage AP-limited application tokens from the AP management
+area. These endpoints always bind the token to the current AP:
 
 ```text
 GET   /api/acp/:acpId/application-tokens?limit=50&offset=0
@@ -140,16 +144,16 @@ POST  /api/acp/:acpId/application-tokens
 PATCH /api/acp/:acpId/application-tokens/:tokenId/revoke
 ```
 
-ACP managers cannot create global tokens. They can revoke only tokens that are
-exclusively limited to the ACP they manage.
+AP managers cannot create global tokens. They can revoke only tokens that are
+exclusively limited to the AP they manage.
 
 The create response includes the one-time `token` field. Store it immediately in
 the external application.
 
 Create and revoke actions are written to the audit log as admin security events.
 The audit details include the token ID, name and display prefix, but never the
-clear-text token. Events triggered through the ACP manager endpoints are assigned
-to that ACP and are therefore visible to ACP-limited tokens with `audit.read`.
+clear-text token. Events triggered through the AP manager endpoints are assigned
+to that AP and are therefore visible to AP-limited tokens with `audit.read`.
 
 ## Server API Scopes
 
@@ -165,7 +169,7 @@ Supported scopes:
 - `audit.read`
 
 Each endpoint declares the required scope through the `ServerApiScopes` decorator.
-Scopes are necessary but not sufficient for ACP-limited tokens: the target ACP
+Scopes are necessary but not sufficient for AP-limited tokens: the target AP
 must also be part of the token's `allowedAcpIds`.
 
 ## Main Server API Workflows
@@ -179,7 +183,7 @@ GET /api/server/capabilities
 ```
 
 This endpoint requires a valid server API token but no particular scope and no
-ACP ID. It is intended for integration connection tests and returns:
+AP ID. It is intended for integration connection tests and returns:
 
 ```json
 {
@@ -199,10 +203,10 @@ ACP ID. It is intended for integration connection tests and returns:
 }
 ```
 
-Clients should use this endpoint instead of probing an ACP resource with a
-synthetic or malformed ACP ID.
+Clients should use this endpoint instead of probing an AP resource with a
+synthetic or malformed AP ID.
 
-### List ACPs
+### List APs
 
 Endpoint:
 
@@ -216,10 +220,10 @@ Scope:
 
 Use case:
 
-- discover transferable ACPs and their latest update timestamp.
-- ACP-limited tokens only see their allowed ACPs.
+- discover transferable APs and their latest update timestamp.
+- AP-limited tokens only see their allowed APs.
 
-### Export full ACP transfer payload
+### Export full AP transfer payload
 
 Endpoints:
 
@@ -234,11 +238,11 @@ Scope:
 
 Returned payload includes:
 
-- ACP metadata,
+- AP metadata,
 - current index,
 - file metadata list.
 
-### Read ACP index only
+### Read AP-Index only
 
 Endpoint:
 
@@ -250,7 +254,7 @@ Scope:
 
 - `index.read`
 
-### Update ACP index
+### Update AP-Index
 
 Endpoint:
 
@@ -312,7 +316,7 @@ This workflow is more specialized than a normal upload because it:
 - can create a new snapshot,
 - supports optimistic concurrency and changelog metadata.
 
-### Import or update an ACP
+### Import or update an AP
 
 Endpoints:
 
@@ -345,9 +349,9 @@ Supports filtering by:
 - action,
 - client ID.
 
-Global tokens with `audit.read` can read all server API audit logs. ACP-limited
-tokens with `audit.read` only receive logs explicitly tied to their allowed ACPs.
-Audit entries without `acp_id` are intentionally hidden from ACP-limited tokens.
+Global tokens with `audit.read` can read all server API audit logs. AP-limited
+tokens with `audit.read` only receive logs explicitly tied to their allowed APs.
+Audit entries without `acp_id` are intentionally hidden from AP-limited tokens.
 
 ## Example Token Configuration
 
@@ -368,11 +372,11 @@ Some integration endpoints support `expectedUpdatedAt` so connected systems can 
 
 This is especially useful for:
 
-- ACP import,
+- AP import,
 - index writes,
 - coding-scheme replacement.
 
-If your integration reads, transforms, and writes ACP data, prefer this optimistic
+If your integration reads, transforms, and writes AP data, prefer this optimistic
 concurrency pattern over blind overwrite.
 
 ## Auditability
@@ -380,7 +384,7 @@ concurrency pattern over blind overwrite.
 Server API calls are audited through a dedicated interceptor and audit service. This is
 helpful for tracing:
 
-- which client changed which ACP,
+- which client changed which AP,
 - whether a transfer failed,
 - what action type occurred,
 - which API scopes were exercised in practice.
@@ -388,5 +392,5 @@ helpful for tracing:
 ## Related Documents
 
 - [Access Control](access-control.md)
-- [ACP Workflows](acp-workflows.md)
+- [AP Workflows](acp-workflows.md)
 - [Backend Architecture](../architecture/backend.md)
