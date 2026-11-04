@@ -9,6 +9,7 @@ import {
   ItemExplorerTableFilterContext,
 } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService, ItemExplorerDraftResult } from './item-explorer-draft.service';
 import {
@@ -638,8 +639,12 @@ export class ItemExplorerFacade implements OnDestroy {
   get correctSolutionPrefill() {
     return this.coding.correctSolutionPrefill;
   }
-  showRawDataOverlay = false;
-  allResponseStates: any[] = [];
+  get showRawDataOverlay() {
+    return this.responseStates.showRawDataOverlay;
+  }
+  get allResponseStates() {
+    return this.responseStates.allResponseStates;
+  }
   previewUserFacingMessage = '';
   get selectedPreviewTargetId() {
     return this.coding.selectedPreviewTargetId;
@@ -652,10 +657,18 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   // Response State Confirmation Dialogs
-  showSaveConfirmDialog = false;
-  showDeleteConfirmDialog = false;
-  confirmDialogState: 'idle' | 'saving' | 'deleting' = 'idle';
-  confirmDialogError = '';
+  get showSaveConfirmDialog() {
+    return this.responseStates.showSaveConfirmDialog;
+  }
+  get showDeleteConfirmDialog() {
+    return this.responseStates.showDeleteConfirmDialog;
+  }
+  get confirmDialogState() {
+    return this.responseStates.confirmDialogState;
+  }
+  get confirmDialogError() {
+    return this.responseStates.confirmDialogError;
+  }
 
   get filteredCodingSchemeAsText(): CodingAsText[] {
     return this.coding.filteredCodingSchemeAsText(this.selectedItem, this.definitionContent);
@@ -988,6 +1001,7 @@ export class ItemExplorerFacade implements OnDestroy {
     readonly player: ItemExplorerPlayerService,
     readonly table: ItemExplorerTableService,
     readonly imports: ItemExplorerImportService,
+    readonly responseStates: ItemExplorerResponseStateService,
     @Optional() private readonly diagnostics?: ItemExplorerLoadDiagnostics,
   ) {
     this.draft.flushRequested$.pipe(takeUntil(this.destroy$)).subscribe(() => {
@@ -1003,12 +1017,18 @@ export class ItemExplorerFacade implements OnDestroy {
       this.ensureTableColumnDefaults();
       this.applyFilter(false);
     });
-    this.player.sessionChanges$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      this.confirmDialogState = 'idle';
-      this.confirmDialogError = '';
-      this.showSaveConfirmDialog = false;
-      this.showDeleteConfirmDialog = false;
-    });
+    this.responseStates.connect(() => ({
+      acpId: this.acpId,
+      selectedItem: this.selectedItem,
+      isCorrectSolutionActive: this.isCorrectSolutionActive,
+      previewReady: this.previewCoordinator.status.kind === 'ready',
+    }));
+    this.responseStates.dialogClosed$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.restoreFocusAfterOverlayClose());
+    this.responseStates.loadFailed$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => alert('Fehler beim Laden der gespeicherten Zustände.'));
     this.previewCoordinator.results$
       .pipe(takeUntil(this.destroy$))
       .subscribe((result) => this.applyPreviewResult(result));
@@ -2146,154 +2166,28 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   // --- Response State ---
-  saveCurrentResponseState() {
+  saveCurrentResponseState(): void {
     this.rememberFocusBeforeOverlay();
-    if (this.syntheticPreviewState) {
-      this.confirmDialogError =
-        'Ein vorbereiteter Vorschauzustand kann nicht als Antwortzustand gespeichert werden.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    if (this.isCorrectSolutionActive) {
-      this.confirmDialogError =
-        'Die Musterlösung ist nur eine Vorschau und kann nicht als Player-Eingabe gespeichert werden. Blenden Sie sie zuerst aus.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    if (this.previewCoordinator.status.kind !== 'ready') {
-      this.confirmDialogError =
-        'Der Zustand des ausgewählten Items wird noch geladen. Bitte versuchen Sie es gleich erneut.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    if (!this.selectedItem || !this.currentResponseData) {
-      this.confirmDialogError =
-        'Kein Zustand zum Speichern vorhanden. Bitte füllen Sie zuerst das Formular aus.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    this.confirmDialogError = '';
-    this.showSaveConfirmDialog = true;
+    this.responseStates.saveCurrentResponseState();
   }
 
-  confirmSaveResponseState() {
-    if (this.syntheticPreviewState) {
-      this.confirmDialogError =
-        'Ein vorbereiteter Vorschauzustand kann nicht als Antwortzustand gespeichert werden.';
-      return;
-    }
-    if (
-      !this.selectedItem ||
-      !this.currentResponseData ||
-      this.isCorrectSolutionActive ||
-      !this.player.isAnswerSession ||
-      !this.player.activePlayerSessionId ||
-      this.previewCoordinator.status.kind !== 'ready'
-    ) {
-      this.confirmDialogError =
-        'Der Zustand des ausgewählten Items ist noch nicht vollständig geladen.';
-      return;
-    }
-
-    this.confirmDialogState = 'saving';
-    const responseData = this.currentResponseData;
-    const responseItem = this.selectedItem;
-    const responseSession = this.player.responseSessionToken;
-
-    this.api
-      .saveResponseState(
-        this.acpId,
-        this.selectedItem.itemId,
-        this.selectedItem.unitId,
-        responseData,
-        this.selectedItem.rowKey,
-      )
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          if (
-            this.selectedItem !== responseItem ||
-            this.player.responseSessionToken !== responseSession
-          )
-            return;
-          this.player.markResponseStateSaved(responseData);
-          this.confirmDialogState = 'idle';
-          this.closeSaveConfirmDialog();
-        },
-        error: (err) => {
-          if (
-            this.selectedItem !== responseItem ||
-            this.player.responseSessionToken !== responseSession
-          )
-            return;
-          console.error('Error saving response state:', err);
-          this.confirmDialogState = 'idle';
-          this.confirmDialogError = 'Fehler beim Speichern des Zustands.';
-        },
-      });
+  confirmSaveResponseState(): void {
+    this.responseStates.confirmSaveResponseState();
   }
 
-  resetResponseState() {
+  resetResponseState(): void {
     if (!this.selectedItem) return;
     this.rememberFocusBeforeOverlay();
-    this.confirmDialogError = '';
-    this.showDeleteConfirmDialog = true;
+    this.responseStates.resetResponseState();
   }
 
-  confirmDeleteResponseState() {
-    if (!this.selectedItem) return;
-
-    this.confirmDialogState = 'deleting';
-    const responseItem = this.selectedItem;
-    const responseSession = this.player.responseSessionToken;
-
-    this.api
-      .deleteResponseState(
-        this.acpId,
-        this.selectedItem.itemId,
-        this.selectedItem.unitId,
-        this.selectedItem.rowKey,
-      )
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          if (
-            this.selectedItem !== responseItem ||
-            this.player.responseSessionToken !== responseSession
-          )
-            return;
-          this.player.clearResponseState();
-          this.confirmDialogState = 'idle';
-          this.closeDeleteConfirmDialog();
-        },
-        error: (err) => {
-          if (
-            this.selectedItem !== responseItem ||
-            this.player.responseSessionToken !== responseSession
-          )
-            return;
-          console.error('Error deleting response state:', err);
-          this.confirmDialogState = 'idle';
-          this.confirmDialogError = 'Fehler beim Löschen des Zustands.';
-        },
-      });
+  confirmDeleteResponseState(): void {
+    this.responseStates.confirmDeleteResponseState();
   }
 
-  loadAllResponseStates() {
+  loadAllResponseStates(): void {
     this.rememberFocusBeforeOverlay();
-    this.api
-      .getAllResponseStates(this.acpId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (states) => {
-          this.allResponseStates = states;
-          this.showRawDataOverlay = true;
-        },
-        error: (err) => {
-          console.error('Error loading response states:', err);
-          alert('Fehler beim Laden der gespeicherten Zustände.');
-        },
-      });
+    this.responseStates.loadAllResponseStates();
   }
 
   navigateItem(delta: number) {
@@ -3442,30 +3336,16 @@ export class ItemExplorerFacade implements OnDestroy {
     this.restoreFocusAfterOverlayClose();
   }
 
-  closeSaveConfirmDialog() {
-    if (this.confirmDialogState !== 'idle') {
-      return;
-    }
-    this.showSaveConfirmDialog = false;
-    this.confirmDialogError = '';
-    this.restoreFocusAfterOverlayClose();
+  closeSaveConfirmDialog(): void {
+    this.responseStates.closeSaveConfirmDialog();
   }
 
-  closeDeleteConfirmDialog() {
-    if (this.confirmDialogState !== 'idle') {
-      return;
-    }
-    this.showDeleteConfirmDialog = false;
-    this.confirmDialogError = '';
-    this.restoreFocusAfterOverlayClose();
+  closeDeleteConfirmDialog(): void {
+    this.responseStates.closeDeleteConfirmDialog();
   }
 
-  closeRawDataOverlay() {
-    if (!this.showRawDataOverlay) {
-      return;
-    }
-    this.showRawDataOverlay = false;
-    this.restoreFocusAfterOverlayClose();
+  closeRawDataOverlay(): void {
+    this.responseStates.closeRawDataOverlay();
   }
 
   closeHistoryOverlay() {

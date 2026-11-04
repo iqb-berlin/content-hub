@@ -2,6 +2,7 @@ import { normalizeReducedView } from '../../core/models/item-explorer-reduced-vi
 import { ItemExplorerImportService } from './item-explorer-import.service';
 import { ItemExplorerTableService } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService } from './item-explorer-draft.service';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
@@ -117,6 +118,7 @@ function createFacade(options?: {
     previewLoader as any,
     diagnostics as any,
   );
+  const player = new ItemExplorerPlayerService(voudService as any);
   const component = new ItemExplorerFacade(
     api as any,
     sanitizer as any,
@@ -132,9 +134,10 @@ function createFacade(options?: {
     new ItemExplorerCollectionsService(api as any, new ItemExplorerBrowser()),
     new ItemExplorerDraftService(api as any),
     new ItemExplorerCodingService(voudService as any),
-    new ItemExplorerPlayerService(voudService as any),
+    player,
     new ItemExplorerTableService(),
     new ItemExplorerImportService(api as any),
+    new ItemExplorerResponseStateService(api as any, player),
     diagnostics as any,
   );
   (component.personalData as any).personalDataSessionIdentity =
@@ -152,6 +155,7 @@ function destroyFacade(facade: ItemExplorerFacade): void {
   facade.draft.ngOnDestroy();
   facade.player.ngOnDestroy();
   facade.imports.ngOnDestroy();
+  facade.responseStates.ngOnDestroy();
 }
 
 function registerPlayerDom(component: ItemExplorerFacade, postMessage = vi.fn()) {
@@ -8956,7 +8960,7 @@ describe('response mutation completion belongs to its player session', () => {
           state: { responseData: { answers: 'new saved' } },
         });
         (component.player as any).responseSession.dataParts = { answers: 'new received' };
-        component.confirmDialogError = 'new dialog';
+        component.responseStates.confirmDialogError = 'new dialog';
         if (outcome === 'success') pending.next({});
         else pending.error(new Error('stale error'));
         expect(component.hasResponseState).toBe(true);

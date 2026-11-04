@@ -1,6 +1,7 @@
 import { ItemExplorerImportService } from './item-explorer-import.service';
 import { ItemExplorerTableService } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService } from './item-explorer-draft.service';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
@@ -201,6 +202,7 @@ function createFacade(): ItemExplorerFacade {
   const diagnostics = new ItemExplorerLoadDiagnostics();
   const previewLoader = new ItemExplorerPreviewLoader(api, diagnostics);
   const previewCoordinator = new ItemExplorerPreviewCoordinator(api, previewLoader, diagnostics);
+  const player = new ItemExplorerPlayerService({} as any);
   return new ItemExplorerFacade(
     api,
     { bypassSecurityTrustHtml: (html: string) => html } as any,
@@ -222,9 +224,10 @@ function createFacade(): ItemExplorerFacade {
     new ItemExplorerCollectionsService(api as any, new ItemExplorerBrowser()),
     new ItemExplorerDraftService(api as any),
     new ItemExplorerCodingService({} as any),
-    new ItemExplorerPlayerService({} as any),
+    player,
     new ItemExplorerTableService(),
     new ItemExplorerImportService(api as any),
+    new ItemExplorerResponseStateService(api as any, player),
     diagnostics,
   );
 }
