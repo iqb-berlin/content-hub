@@ -19,6 +19,7 @@ function setup(overrides: Record<string, any> = {}) {
         invalidFiles: 0,
         semanticValid: true,
         semanticIssueCount: 0,
+        semanticIssues: [],
         timestamp: "2026-09-14T12:00:00.000Z",
       },
     }),
@@ -91,6 +92,39 @@ describe("ReviewReadinessService", () => {
       summary: { bookletCount: 1, unitCount: 1 },
     });
   });
+
+  it.each([
+    ["error", "BLOCKED"],
+    ["warning", "WARNING"],
+  ])(
+    "preserves AP-wide %s issues after file validation is separated",
+    async (severity, status) => {
+      const { service, validation } = setup();
+      const response = await validation.autoValidateUploadedFiles();
+      const issue = {
+        severity,
+        message: "AP reference requires attention",
+        path: "assessmentParts[0].scales[0].typeParameters.items[0].id",
+      };
+      Object.assign(response.summary, {
+        semanticValid: severity !== "error",
+        semanticIssueCount: 1,
+        semanticIssues: [issue],
+      });
+
+      const result = await service.check("acp-1");
+
+      expect(result.status).toBe(status);
+      expect(result[severity === "error" ? "blockers" : "warnings"]).toContain(
+        `${issue.message} (${issue.path})`,
+      );
+      expect(result.summary).toMatchObject({ validFiles: 1, invalidFiles: 0 });
+      expect(response.files[0].validationResult).toEqual({
+        valid: true,
+        issues: [],
+      });
+    },
+  );
 
   it("blocks missing referenced units without considering unrelated Unit files", async () => {
     const { service } = setup({
