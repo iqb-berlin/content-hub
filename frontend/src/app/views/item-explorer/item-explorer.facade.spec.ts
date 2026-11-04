@@ -3,6 +3,7 @@ import { ItemExplorerImportService } from './item-explorer-import.service';
 import { ItemExplorerTableService } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
 import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
+import { ItemExplorerHistoryService } from './item-explorer-history.service';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService } from './item-explorer-draft.service';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
@@ -138,6 +139,7 @@ function createFacade(options?: {
     new ItemExplorerTableService(),
     new ItemExplorerImportService(api as any),
     new ItemExplorerResponseStateService(api as any, player),
+    new ItemExplorerHistoryService(api as any, new ItemExplorerBrowser()),
     diagnostics as any,
   );
   (component.personalData as any).personalDataSessionIdentity =
@@ -156,6 +158,7 @@ function destroyFacade(facade: ItemExplorerFacade): void {
   facade.player.ngOnDestroy();
   facade.imports.ngOnDestroy();
   facade.responseStates.ngOnDestroy();
+  facade.history.ngOnDestroy();
 }
 
 function registerPlayerDom(component: ItemExplorerFacade, postMessage = vi.fn()) {
@@ -7096,7 +7099,7 @@ describe('ItemExplorerFacade', () => {
 
   it('closes open overlays with Escape', () => {
     const component = createFacade();
-    component.showHistoryOverlay = true;
+    component.history.showHistoryOverlay = true;
 
     const event = {
       key: 'Escape',
@@ -7119,7 +7122,7 @@ describe('ItemExplorerFacade', () => {
   it('keeps native dialog keyboard events out of the explorer shortcuts', () => {
     const component = createFacade();
     component.canPublishExplorer = true;
-    component.showHistoryOverlay = true;
+    component.history.showHistoryOverlay = true;
     const openSave = vi.spyOn(component, 'openSavePreviewDialog').mockImplementation(() => {});
     const dialog = document.createElement('dialog');
     dialog.setAttribute('open', '');
@@ -7142,7 +7145,7 @@ describe('ItemExplorerFacade', () => {
   it('blocks global shortcuts when a pending native dialog has lost focus', () => {
     const component = createFacade();
     component.canPublishExplorer = true;
-    component.showHistoryOverlay = true;
+    component.history.showHistoryOverlay = true;
     const openSave = vi.spyOn(component, 'openSavePreviewDialog').mockImplementation(() => {});
     const dialog = document.createElement('dialog');
     dialog.setAttribute('open', '');
@@ -7170,7 +7173,7 @@ describe('ItemExplorerFacade', () => {
       dialog.removeAttribute('open');
       component.handleWindowKeydown(new KeyboardEvent('keydown', { key: 's', ctrlKey: true }));
       // The separate history overlay still prevents opening another overlay.
-      component.showHistoryOverlay = false;
+      component.history.showHistoryOverlay = false;
       component.handleWindowKeydown(new KeyboardEvent('keydown', { key: 's', ctrlKey: true }));
       expect(openSave).toHaveBeenCalledOnce();
     } finally {

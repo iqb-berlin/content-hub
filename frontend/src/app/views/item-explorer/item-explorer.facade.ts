@@ -10,6 +10,8 @@ import {
 } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
 import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
+import { ItemExplorerHistoryService } from './item-explorer-history.service';
+import type { ItemExplorerHistoryFilters } from './item-explorer-history';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService, ItemExplorerDraftResult } from './item-explorer-draft.service';
 import {
@@ -565,14 +567,30 @@ export class ItemExplorerFacade implements OnDestroy {
   itemListLoading = false;
 
   // History
-  showHistoryOverlay = false;
-  historyLoading = false;
-  historyError = '';
-  historyEntries: ItemExplorerChangeLogEntry[] = [];
-  historyFilterUser = '';
-  historyFilterType = '';
-  historyFilterFrom = '';
-  historyFilterTo = '';
+  get showHistoryOverlay() {
+    return this.history.showHistoryOverlay;
+  }
+  get historyLoading() {
+    return this.history.historyLoading;
+  }
+  get historyError() {
+    return this.history.historyError;
+  }
+  get historyEntries() {
+    return this.history.historyEntries;
+  }
+  get historyFilterUser() {
+    return this.history.historyFilterUser;
+  }
+  get historyFilterType() {
+    return this.history.historyFilterType;
+  }
+  get historyFilterFrom() {
+    return this.history.historyFilterFrom;
+  }
+  get historyFilterTo() {
+    return this.history.historyFilterTo;
+  }
 
   // Save preview
   get showSavePreviewDialog() {
@@ -971,20 +989,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   get filteredHistoryEntries(): ItemExplorerChangeLogEntry[] {
-    const userNeedle = this.historyFilterUser.trim().toLowerCase();
-    const typeNeedle = this.historyFilterType.trim().toLowerCase();
-    const fromDate = this.historyFilterFrom ? new Date(`${this.historyFilterFrom}T00:00:00`) : null;
-    const toDate = this.historyFilterTo ? new Date(`${this.historyFilterTo}T23:59:59.999`) : null;
-    return this.historyEntries.filter((entry) => {
-      const user = (entry.actorUsername || '').toLowerCase();
-      const type = (entry.changeType || '').toLowerCase();
-      const matchesUser = !userNeedle || user.includes(userNeedle);
-      const matchesType = !typeNeedle || type.includes(typeNeedle);
-      const entryDate = new Date(entry.createdAt);
-      const matchesFrom = !fromDate || entryDate >= fromDate;
-      const matchesTo = !toDate || entryDate <= toDate;
-      return matchesUser && matchesType && matchesFrom && matchesTo;
-    });
+    return this.history.filteredHistoryEntries;
   }
 
   constructor(
@@ -1002,6 +1007,7 @@ export class ItemExplorerFacade implements OnDestroy {
     readonly table: ItemExplorerTableService,
     readonly imports: ItemExplorerImportService,
     readonly responseStates: ItemExplorerResponseStateService,
+    readonly history: ItemExplorerHistoryService,
     @Optional() private readonly diagnostics?: ItemExplorerLoadDiagnostics,
   ) {
     this.draft.flushRequested$.pipe(takeUntil(this.destroy$)).subscribe(() => {
@@ -1240,11 +1246,8 @@ export class ItemExplorerFacade implements OnDestroy {
     this.coding.codingSearchText = value;
   }
 
-  setHistoryFilter(
-    key: 'historyFilterUser' | 'historyFilterType' | 'historyFilterFrom' | 'historyFilterTo',
-    value: string,
-  ): void {
-    this[key] = value;
+  setHistoryFilter(key: keyof ItemExplorerHistoryFilters, value: string): void {
+    this.history.setHistoryFilter(key, value);
   }
 
   setSelectedPreviewTargetId(value: string): void {
@@ -3288,25 +3291,9 @@ export class ItemExplorerFacade implements OnDestroy {
     }
   }
 
-  showHistory() {
+  showHistory(): void {
     this.rememberFocusBeforeOverlay();
-    this.showHistoryOverlay = true;
-    this.historyLoading = true;
-    this.historyError = '';
-    this.api
-      .getItemExplorerChanges(this.acpId, 300)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (entries) => {
-          this.historyEntries = entries || [];
-          this.historyLoading = false;
-        },
-        error: (error) => {
-          console.error('Failed to load history', error);
-          this.historyLoading = false;
-          this.historyError = 'Änderungsverlauf konnte nicht geladen werden.';
-        },
-      });
+    this.history.showHistory(this.acpId);
   }
 
   openCodingOverlay() {
@@ -3348,12 +3335,8 @@ export class ItemExplorerFacade implements OnDestroy {
     this.responseStates.closeRawDataOverlay();
   }
 
-  closeHistoryOverlay() {
-    if (!this.showHistoryOverlay) {
-      return;
-    }
-    this.showHistoryOverlay = false;
-    this.restoreFocusAfterOverlayClose();
+  closeHistoryOverlay(): void {
+    if (this.history.closeHistoryOverlay()) this.restoreFocusAfterOverlayClose();
   }
 
   getItemRowId(item: ReadonlyExplorerItem): string {
@@ -3361,35 +3344,8 @@ export class ItemExplorerFacade implements OnDestroy {
     return `item-explorer-row-${String(rawId).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
   }
 
-  exportHistoryCsv() {
-    if (!this.filteredHistoryEntries.length) {
-      return;
-    }
-
-    const escapeCsv = (value: unknown): string => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    const rows = [
-      ['Zeit', 'Nutzer', 'Rolle', 'Aktion', 'Draft-Version', 'Published-Version', 'Diff'],
-      ...this.filteredHistoryEntries.map((entry) => [
-        new Date(entry.createdAt).toISOString(),
-        entry.actorUsername || '',
-        entry.actorRole || '',
-        entry.changeType || '',
-        entry.draftVersion ?? '',
-        entry.publishedVersion ?? '',
-        JSON.stringify(entry.diff || {}),
-      ]),
-    ];
-
-    const content = rows.map((row) => row.map((cell) => escapeCsv(cell)).join(';')).join('\n');
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `item-explorer-history-${this.acpId}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
+  exportHistoryCsv(): void {
+    this.history.exportHistoryCsv();
   }
 
   private selectFilteredItemAt(index: number, shouldScroll = false) {

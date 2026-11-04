@@ -2,6 +2,7 @@ import { ItemExplorerImportService } from './item-explorer-import.service';
 import { ItemExplorerTableService } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
 import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
+import { ItemExplorerHistoryService } from './item-explorer-history.service';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService } from './item-explorer-draft.service';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
@@ -64,6 +65,7 @@ import { ItemExplorerPreviewCoordinator } from './item-explorer-preview-coordina
     ItemExplorerCodingService,
     ItemExplorerPlayerService,
     ItemExplorerResponseStateService,
+    ItemExplorerHistoryService,
     ItemExplorerTableService,
     ItemExplorerImportService,
     ItemExplorerCollectionsService,

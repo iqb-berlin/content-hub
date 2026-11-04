@@ -2,6 +2,7 @@ import { ItemExplorerImportService } from './item-explorer-import.service';
 import { ItemExplorerTableService } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
 import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
+import { ItemExplorerHistoryService } from './item-explorer-history.service';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService } from './item-explorer-draft.service';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
@@ -10,7 +11,7 @@ import { ItemExplorerCommentsService } from './item-explorer-comments.service';
 import { ItemExplorerBrowser } from './item-explorer-browser.service';
 /// <reference types="vite/client" />
 
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, provideZonelessChangeDetection } from '@angular/core';
@@ -197,8 +198,8 @@ class ItemExplorerShellTemplateHarness implements OnInit {
   }
 }
 
-function createFacade(): ItemExplorerFacade {
-  const api = {} as any;
+function createFacade(apiOverrides: Record<string, unknown> = {}): ItemExplorerFacade {
+  const api = apiOverrides as any;
   const diagnostics = new ItemExplorerLoadDiagnostics();
   const previewLoader = new ItemExplorerPreviewLoader(api, diagnostics);
   const previewCoordinator = new ItemExplorerPreviewCoordinator(api, previewLoader, diagnostics);
@@ -228,6 +229,7 @@ function createFacade(): ItemExplorerFacade {
     new ItemExplorerTableService(),
     new ItemExplorerImportService(api as any),
     new ItemExplorerResponseStateService(api as any, player),
+    new ItemExplorerHistoryService(api as any, new ItemExplorerBrowser()),
     diagnostics,
   );
 }
@@ -330,6 +332,82 @@ describe('ItemExplorer production template composition', () => {
     fixture.destroy();
   });
 
+  it('loads, filters and exports history through its production dialog and restores focus on close', async () => {
+    const response = new Subject<any[]>();
+    const load = vi.fn(() => response);
+    const facade = createFacade({ getItemExplorerChanges: load });
+    vi.spyOn(facade, 'init').mockImplementation(() => undefined);
+    const download = vi
+      .spyOn(ItemExplorerBrowser.prototype, 'download')
+      .mockImplementation(() => {});
+    const rememberFocus = vi.fn();
+    const restoreFocus = vi.fn(() => true);
+    facade.acpId = 'package';
+    facade.registerShellDom({
+      toggleFullscreen: async () => false,
+      isFullscreen: () => false,
+      rememberFocusBeforeOverlay: rememberFocus,
+      restoreFocusAfterOverlayClose: restoreFocus,
+    });
+    const fixture = await renderExplorer(facade);
+    try {
+      const root = fixture.nativeElement as HTMLElement;
+      facade.showHistory();
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+      expect(load).toHaveBeenCalledWith('package', 300);
+      expect(root.querySelector('app-item-explorer-history-dialog')!.textContent).toContain(
+        'Verlauf wird geladen...',
+      );
+      response.next([
+        {
+          id: 'a',
+          actorUsername: 'Reviewer',
+          changeType: 'TAGS_CHANGED',
+          diff: {},
+          createdAt: '2026-11-04T12:00:00Z',
+        },
+        {
+          id: 'b',
+          actorUsername: 'Other',
+          changeType: 'UI_UPDATE',
+          diff: {},
+          createdAt: '2026-11-04T13:00:00Z',
+        },
+      ]);
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+      const dialog = root.querySelector<HTMLElement>('app-item-explorer-history-dialog')!;
+      expect(dialog.querySelectorAll('.state-item')).toHaveLength(2);
+      const filter = dialog.querySelector<HTMLInputElement>(
+        '[placeholder="Nach Nutzer filtern..."]',
+      )!;
+      filter.value = 'review';
+      filter.dispatchEvent(new Event('input', { bubbles: true }));
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(dialog.querySelectorAll('.state-item')).toHaveLength(1);
+      expect(dialog.querySelector('.state-item')!.textContent).toContain('Reviewer');
+      const exportButton = Array.from(dialog.querySelectorAll('button')).find(
+        (button) => button.textContent!.trim() === 'Export CSV',
+      )!;
+      exportButton.click();
+      expect(download).toHaveBeenCalledWith(expect.any(Blob), 'item-explorer-history-package.csv');
+      dialog.querySelector<HTMLButtonElement>('.overlay-header button')!.click();
+      fixture.detectChanges();
+      expect(dialog.querySelector('.overlay-backdrop')).toBeNull();
+      expect(rememberFocus).toHaveBeenCalledOnce();
+      expect(restoreFocus).toHaveBeenCalledOnce();
+    } finally {
+      fixture.destroy();
+      facade.history.ngOnDestroy();
+      facade.responseStates.ngOnDestroy();
+      facade.player.ngOnDestroy();
+      facade.ngOnDestroy();
+      download.mockRestore();
+    }
+  });
+
   it('updates breadcrumbs and fullscreen controls through the rendered toolbar', async () => {
     const facade = createFacade();
     vi.spyOn(facade, 'init').mockImplementation(() => undefined);
@@ -365,6 +443,8 @@ describe('ItemExplorer production template composition', () => {
       facade.personalData.ngOnDestroy();
       facade.collections.ngOnDestroy();
       facade.draft.ngOnDestroy();
+      facade.responseStates.ngOnDestroy();
+      facade.history.ngOnDestroy();
       facade.player.ngOnDestroy();
       facade.ngOnDestroy();
     }
@@ -388,6 +468,8 @@ describe('ItemExplorer production template composition', () => {
       facade.personalData.ngOnDestroy();
       facade.collections.ngOnDestroy();
       facade.draft.ngOnDestroy();
+      facade.responseStates.ngOnDestroy();
+      facade.history.ngOnDestroy();
       facade.player.ngOnDestroy();
       facade.ngOnDestroy();
     }

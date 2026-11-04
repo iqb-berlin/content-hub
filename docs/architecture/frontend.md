@@ -176,7 +176,12 @@ saved-response list. It reads the current route/selection context through a narr
 uses the player session token to reject stale completions. Answer data stays in
 `ItemExplorerPlayerService`; the facade handles focus restoration and UI notifications. Like the
 other Explorer services, the response-state service is provided by the route component and cancels
-its work when that scope is destroyed. History filtering and CSV export remain in the facade.
+its work when that scope is destroyed.
+
+`ItemExplorerHistoryService` owns history entries, filters, loading/error state and CSV downloads.
+Its pure filtering and CSV functions live in `item-explorer-history.ts`; downloads use the shared
+`ItemExplorerBrowser`. Refreshing cancels the previous history request, and destroying the route
+scope cancels pending work. The facade retains dialog focus handling and delegates history actions.
 
 There is no central client-side store such as NgRx at the moment.
 
