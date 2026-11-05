@@ -62,6 +62,64 @@ test('unit navigation renders real ASPECT content and applies display modes', as
   await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();
 });
 
+test('item preview omits player arrows and explorer navigation keeps selection and coding aligned', async ({
+  page,
+}, testInfo) => {
+  await installOidcSession(page, managerId, 'e2e-manager');
+  await page.goto(`/view/${unitAcp}/item-explorer`);
+  const choiceRow = page.locator('#item-explorer-row-journey-choice');
+  await choiceRow.click();
+  const player = page.frameLocator('iframe.player-iframe');
+  await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();
+  await expect(player.locator('aspect-page-nav-button')).toHaveCount(0);
+
+  await page.getByText('Vorschau einstellen ▾', { exact: true }).click();
+  const mode = page.getByRole('combobox', { name: 'Seitendarstellung der Player-Vorschau' });
+  await expect(mode).toHaveValue('separate');
+  await expect(mode.locator('option[value="buttons"]')).toHaveCount(0);
+  for (const value of [
+    'concat-scroll',
+    'concat-scroll-snap',
+    'view-all',
+    'print-ids',
+    'separate',
+  ]) {
+    const reloaded = page.waitForEvent('framenavigated', {
+      predicate: (frame) => frame.parentFrame() === page.mainFrame(),
+    });
+    await mode.selectOption(value);
+    await reloaded;
+    await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();
+    await expect(player.locator('aspect-page-nav-button')).toHaveCount(0);
+    await expect(choiceRow).toHaveAttribute('aria-selected', 'true');
+  }
+
+  await page.getByRole('button', { name: '← Vorheriges Item', exact: true }).click();
+  await expect(page.locator('#item-explorer-row-journey-transport')).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(choiceRow).toHaveAttribute('aria-selected', 'false');
+  await expect(player.getByText('Die Fahrt zum See', { exact: true })).toBeVisible();
+  await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Kodierung', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Kodiervariable.*FAHRT/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Kodiervariable.*WAHL/ })).toHaveCount(0);
+  await page.getByRole('button', { name: /Schließen/ }).click();
+
+  await page.getByRole('button', { name: 'Nächstes Item →', exact: true }).click();
+  await expect(choiceRow).toHaveAttribute('aria-selected', 'true');
+  await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();
+  await expect(player.getByText('Die Fahrt zum See', { exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Kodierung', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Kodiervariable.*WAHL/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Kodiervariable.*FAHRT/ })).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('item-preview-navigation.png'),
+    fullPage: true,
+  });
+});
+
 test('coding draft, publish and reader perspective remain consistent', async ({
   page,
   browser,

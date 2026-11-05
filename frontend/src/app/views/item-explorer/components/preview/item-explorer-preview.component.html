@@ -96,13 +96,15 @@
                 (change)="vm.onPagingModeChange()"
                 [disabled]="!vm.canPreviewSelectedItem"
               >
-                <option value="buttons">Seiten mit Schaltflächen</option>
                 <option value="separate">Einzelseiten</option>
                 <option value="concat-scroll">Fortlaufend scrollen</option>
                 <option value="concat-scroll-snap">Scrollen mit Einrasten</option>
                 <option value="view-all">Alle Seiten (Druckansicht)</option>
                 <option value="print-ids">Alle Seiten mit IDs (Druckansicht)</option>
               </select>
+              <small>
+                Zum Itemwechsel die Itemliste oder „Vorheriges Item“ und „Nächstes Item“ verwenden.
+              </small>
             </div>
             @if (vm.canEditExplorer && vm.itemExplorerConditionalVisibilityEnabled) {
               <div class="preview-target-controls">

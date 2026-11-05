@@ -578,6 +578,13 @@ booklets or task sequences is intentionally outside this feature.
 The Item Explorer and the item detail view both embed the unit player inside an iframe and
 try to focus the currently selected item automatically.
 
+The Item Explorer starts in **Einzelseiten** mode without the player's broad page-navigation
+arrows. Its display-mode selector does not offer **Seiten mit Schaltflächen**, and player-level
+unit-navigation targets are disabled. Switch items through the item list, its keyboard navigation,
+or **Vorheriges Item** / **Nächstes Item** so selection, preview and coding change together.
+Scroll and print display modes remain available. The complete unit view retains its own
+page-navigation controls.
+
 By default, the Item Explorer preview neutralizes conditional visibility logic from the VOUD so
 that managers can inspect all relevant content even when the original unit would hide parts
 of it behind section visibility rules or media dependencies. AP managers can re-enable the

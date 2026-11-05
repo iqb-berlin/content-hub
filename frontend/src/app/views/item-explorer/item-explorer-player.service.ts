@@ -66,13 +66,8 @@ export class ItemExplorerPlayerService implements OnDestroy {
 
   totalPages = 1;
 
-  pagingMode:
-    | 'buttons'
-    | 'separate'
-    | 'concat-scroll'
-    | 'concat-scroll-snap'
-    | 'view-all'
-    | 'print-ids' = 'buttons';
+  pagingMode: 'separate' | 'concat-scroll' | 'concat-scroll-snap' | 'view-all' | 'print-ids' =
+    'separate';
 
   playerHeight = '100%';
 
@@ -501,7 +496,8 @@ export class ItemExplorerPlayerService implements OnDestroy {
         logPolicy: 'disabled',
         directDownloadUrl: GEOGEBRA_PLAYER_RESOURCE_BASE,
         startPage: startPage !== undefined ? startPage.toString() : undefined,
-        enabledNavigationTargets: ['next', 'previous', 'first', 'last', 'end'],
+        // Item selection and coding are coordinated by the Explorer navigation.
+        enabledNavigationTargets: [],
       },
     });
     this.playerDom?.setPrintLabelOverrides(
