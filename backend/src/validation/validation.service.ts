@@ -138,21 +138,6 @@ export class ValidationService {
     progress?: FileProcessingProgressReporter,
     persistResults = true,
   ): Promise<{ files: AcpFile[]; summary: AutoValidationSummary }> {
-    if (!files.length) {
-      return {
-        files: [],
-        summary: {
-          totalFiles: 0,
-          validFiles: 0,
-          invalidFiles: 0,
-          semanticValid: true,
-          semanticIssueCount: 0,
-          semanticIssues: [],
-          timestamp: new Date().toISOString(),
-        },
-      };
-    }
-
     const syntacticAndSchemaResults = new Map<string, ValidationResult>();
 
     await progress?.startPhase("validate-files", files.length, {
@@ -213,7 +198,9 @@ export class ValidationService {
     });
     const validatedFiles = validatedEntries.map((entry) => entry.file);
 
-    if (persistResults) await this.fileRepository.save(validatedFiles);
+    if (persistResults && validatedFiles.length) {
+      await this.fileRepository.save(validatedFiles);
+    }
 
     const validFiles = validatedEntries.filter(
       (entry) => entry.result.valid,

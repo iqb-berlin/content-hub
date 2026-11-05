@@ -81,6 +81,13 @@ describe('FilesComponent AP validation summary', () => {
         {
           provide: ApiService,
           useValue: {
+            getAcpConsistency: vi.fn().mockReturnValue(
+              of({
+                valid: summary.semanticValid,
+                issues: summary.semanticIssues || [],
+                timestamp: summary.timestamp,
+              }),
+            ),
             getFileDownloadUrl: vi.fn().mockReturnValue('/api/acp/acp-1/files/file-1/download'),
             getFiles: vi.fn().mockReturnValue(
               of([
@@ -187,6 +194,7 @@ describe('FilesComponent filtering', () => {
 
   let api: {
     getFiles: ReturnType<typeof vi.fn>;
+    getAcpConsistency: ReturnType<typeof vi.fn>;
     getFilePreview: ReturnType<typeof vi.fn>;
     getFileContentUrl: ReturnType<typeof vi.fn>;
     deleteFile: ReturnType<typeof vi.fn>;
@@ -211,6 +219,9 @@ describe('FilesComponent filtering', () => {
   beforeEach(() => {
     api = {
       getFiles: vi.fn().mockReturnValue(of(seedFiles)),
+      getAcpConsistency: vi
+        .fn()
+        .mockReturnValue(of({ valid: true, issues: [], timestamp: '2026-11-05T12:00:00.000Z' })),
       getFilePreview: vi.fn().mockReturnValue(
         of({
           fileId: 'f-json-error',

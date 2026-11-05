@@ -492,6 +492,11 @@ describe("ValidationService", () => {
     );
 
     it("returns an empty summary when no files are provided", async () => {
+      acpRepo.findOne.mockResolvedValue({
+        id: "acp-1",
+        acpIndex: { assessmentParts: [] },
+      });
+      fileRepo.find.mockResolvedValue([]);
       const result = await service.autoValidateUploadedFiles("acp-1", []);
 
       expect(result.files).toEqual([]);
@@ -504,6 +509,37 @@ describe("ValidationService", () => {
           semanticIssueCount: 0,
         }),
       );
+      expect(fileRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("preserves AP errors after deleting the last file", async () => {
+      const acpIndex = {
+        assessmentParts: [
+          { instruments: [{ testcenterBooklet: [{ id: "booklet-1" }] }] },
+        ],
+      };
+      acpRepo.findOne.mockResolvedValue({ id: "acp-1", acpIndex });
+      fileRepo.find.mockResolvedValue([]);
+      jest
+        .mocked(manifestService.getManifest)
+        .mockResolvedValue(buildReviewManifest(acpIndex, new Map()));
+
+      const result = await service.autoValidateUploadedFiles("acp-1", []);
+
+      expect(result.summary).toMatchObject({
+        totalFiles: 0,
+        validFiles: 0,
+        invalidFiles: 0,
+        semanticValid: false,
+        semanticIssueCount: 1,
+        semanticIssues: [
+          expect.objectContaining({
+            severity: "error",
+            message: "Booklet besitzt weder XML-Definition noch Module.",
+          }),
+        ],
+      });
+      expect(fileRepo.save).not.toHaveBeenCalled();
     });
 
     it("creates file-level errors when uploaded files are missing on disk", async () => {
