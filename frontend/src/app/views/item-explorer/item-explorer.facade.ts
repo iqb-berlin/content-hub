@@ -191,6 +191,21 @@ export class ItemExplorerFacade implements OnDestroy {
   get pagingMode() {
     return this.player.pagingMode;
   }
+  get flowPageNumber() {
+    return this.player.flowPageNumber;
+  }
+  get showFlowPageNavigation() {
+    return this.player.showFlowPageNavigation;
+  }
+  get canNavigateFlowBackward() {
+    return this.player.canNavigateFlowBackward;
+  }
+  get canNavigateFlowForward() {
+    return this.player.canNavigateFlowForward;
+  }
+  navigateFlowPage(delta: -1 | 1): void {
+    this.player.navigateFlowPage(delta);
+  }
   get playerHeight() {
     return this.player.playerHeight;
   }

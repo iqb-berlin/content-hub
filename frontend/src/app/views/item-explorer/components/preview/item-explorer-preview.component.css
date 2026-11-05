@@ -244,6 +244,26 @@
   font-weight: 500;
   color: var(--color-text-secondary);
 }
+.flow-page-nav {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.85rem;
+}
+.flow-page-nav small {
+  flex-basis: 100%;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+.player-iframe.flow-paging-mode {
+  flex: 1 1 0;
+  min-height: 0;
+}
 .action-buttons {
   display: flex;
   flex-wrap: wrap;

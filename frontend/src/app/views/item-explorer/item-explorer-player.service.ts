@@ -86,6 +86,56 @@ export class ItemExplorerPlayerService implements OnDestroy {
   private workingAnswerData: Record<string, any> | null = null;
   private flowStarted = false;
   private pendingFlowPage: number | null = null;
+  private playerPageIds: string[] = [];
+
+  get flowPageNumber(): number {
+    return this.playerPageIds.indexOf(String(this.currentPage - 1)) + 1;
+  }
+
+  get showFlowPageNavigation(): boolean {
+    return (
+      this.itemExplorerConditionalVisibilityEnabled &&
+      this.previewMode === 'flow' &&
+      this.pagingMode === 'separate' &&
+      this.playerFrameReady &&
+      !!this.activePlayerSessionId &&
+      this.playerPageIds.length > 1
+    );
+  }
+
+  get canNavigateFlowBackward(): boolean {
+    return this.canNavigateFlowPage(-1);
+  }
+
+  get canNavigateFlowForward(): boolean {
+    return this.canNavigateFlowPage(1);
+  }
+
+  private canNavigateFlowPage(delta: -1 | 1): boolean {
+    const index = this.flowPageNumber - 1;
+    return (
+      this.showFlowPageNavigation &&
+      this.responseSession.origin !== 'solution' &&
+      this.pendingFlowPage === null &&
+      index >= 0 &&
+      index + delta >= 0 &&
+      index + delta < this.playerPageIds.length
+    );
+  }
+
+  navigateFlowPage(delta: -1 | 1): void {
+    if (this.destroyed || (delta !== -1 && delta !== 1) || !this.canNavigateFlowPage(delta)) return;
+    const target = this.playerPageIds[this.flowPageNumber - 1 + delta];
+    const page = Number(target);
+    if (!Number.isInteger(page) || page < 0) return;
+    this.clearLegacyPageNavigationTimers();
+    this.pendingFlowPage = page;
+    this.sendToPlayer({
+      type: 'vopPageNavigationCommand',
+      sessionId: this.activePlayerSessionId,
+      target,
+    });
+  }
 
   private focusRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -134,7 +184,9 @@ export class ItemExplorerPlayerService implements OnDestroy {
   get hasCurrentResponseState(): boolean {
     const changedAt = this.playerDom?.getLastInteractionTime?.() || 0;
     return (
-      !!this.currentResponseData && (!changedAt || this.responseSession.reportedAt > changedAt)
+      this.pendingFlowPage === null &&
+      !!this.currentResponseData &&
+      (!changedAt || this.responseSession.reportedAt > changedAt)
     );
   }
 
@@ -308,8 +360,17 @@ export class ItemExplorerPlayerService implements OnDestroy {
             this.pendingFlowPage = null;
           }
         }
-        if (playerMessage['playerState']?.validPages !== undefined) {
-          this.totalPages = playerMessage['playerState'].validPages.length || this.totalPages;
+        {
+          const pages = playerMessage['playerState']?.validPages;
+          if (pages && typeof pages === 'object') {
+            this.playerPageIds = Array.isArray(pages)
+              ? pages
+                  .map((page: any) => page?.id ?? page)
+                  .filter((id: unknown) => typeof id === 'string' || typeof id === 'number')
+                  .map(String)
+              : Object.keys(pages);
+            this.totalPages = this.playerPageIds.length || this.totalPages;
+          }
         }
         // Capture response data from unitState.dataParts
         if (
@@ -647,6 +708,8 @@ export class ItemExplorerPlayerService implements OnDestroy {
     initialDataParts: Record<string, any> = {},
   ): void {
     this.responseSession = { id, origin, initialDataParts, dataParts: null, reportedAt: 0 };
+    this.playerPageIds = [];
+    this.pendingFlowPage = null;
     this.sessionChanges$.next();
   }
 

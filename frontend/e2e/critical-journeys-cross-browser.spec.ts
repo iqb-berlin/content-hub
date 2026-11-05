@@ -120,6 +120,86 @@ test('item preview omits player arrows and explorer navigation keeps selection a
   });
 });
 
+test('regular multi-page flow retains answers and captures the selected item context', async ({
+  page,
+}, testInfo) => {
+  await installOidcSession(page, managerId, 'e2e-manager');
+  await page.route(`**/api/view/acp/${unitAcp}`, async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    json.featureConfig = { ...json.featureConfig, enableItemExplorerConditionalVisibility: true };
+    await route.fulfill({ response, json });
+  });
+  await page.goto(`/view/${unitAcp}/item-explorer`);
+  const transportRow = page.locator('#item-explorer-row-journey-transport');
+  await transportRow.click();
+  const player = page.frameLocator('iframe.player-iframe');
+  await expect(player.getByText('Die Fahrt zum See', { exact: true })).toBeVisible();
+  await page.getByText('Vorschau einstellen ▾', { exact: true }).click();
+  const mode = page.locator('#preview-context-mode');
+  await mode.selectOption('flow');
+  await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();
+  await expect(page.locator('#preview-paging-mode')).toHaveValue('separate');
+  await expect(player.locator('aspect-page-nav-button')).toHaveCount(0);
+
+  const previous = page.getByRole('button', { name: '← Vorherige Aufgabenseite', exact: true });
+  const next = page.getByRole('button', { name: 'Nächste Aufgabenseite →', exact: true });
+  const pageInfo = page.getByRole('navigation', {
+    name: 'Seitennavigation im regulären Aufgabenablauf',
+  });
+  await expect(pageInfo).toContainText('Aufgabenseite 1 von 2');
+  await page.locator('.player-container').scrollIntoViewIfNeeded();
+  await expect(previous).toBeInViewport();
+  await expect(next).toBeInViewport();
+  await expect(previous).toBeDisabled();
+  await expect(next).toBeEnabled();
+  await player.getByRole('radio', { name: 'zum See', exact: true }).check();
+  await next.click();
+  await expect(player.getByText('Die Fahrt zum See', { exact: true })).toBeVisible();
+  await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeHidden();
+  await expect(pageInfo).toContainText('Aufgabenseite 2 von 2');
+  await expect(next).toBeDisabled();
+  await expect(transportRow).toHaveAttribute('aria-selected', 'true');
+  await player.getByRole('textbox').fill('Fahrrad');
+
+  await previous.click();
+  await expect(player.getByRole('radio', { name: 'zum See', exact: true })).toBeChecked();
+  await next.click();
+  await expect(player.getByRole('textbox')).toHaveValue('Fahrrad');
+  await expect(mode).toHaveValue('flow');
+  await expect(transportRow).toHaveAttribute('aria-selected', 'true');
+  await expect(player.locator('aspect-page-nav-button')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }).click();
+  await expect(previous).toBeDisabled();
+  await expect(next).toBeDisabled();
+  await page.getByRole('button', { name: 'Musterlösung ausblenden', exact: true }).click();
+  await expect(previous).toBeEnabled();
+  await expect(player.getByRole('textbox')).toHaveValue('Fahrrad');
+  await page
+    .locator('.player-container')
+    .screenshot({ path: testInfo.outputPath('multi-page-flow.png') });
+  await page.getByRole('button', { name: 'Kodierung', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Kodiervariable.*FAHRT/ })).toBeVisible();
+  await page.getByRole('button', { name: /Schließen/ }).click();
+
+  const capture = page.getByRole('button', {
+    name: 'Diese Itemansicht als Kontext übernehmen',
+    exact: true,
+  });
+  await expect(capture).toBeEnabled();
+  await capture.click();
+  await expect(mode).toHaveValue('reference');
+  await expect(pageInfo).toHaveCount(0);
+  await expect(player.getByRole('textbox')).toHaveValue('Fahrrad');
+  await expect(page.getByText(/Übernommener Vorschaukontext\./)).toBeVisible();
+  await expect(transportRow).toHaveAttribute('aria-selected', 'true');
+  await expect(player.locator('aspect-page-nav-button')).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('multi-page-flow-context.png'),
+    fullPage: true,
+  });
+});
+
 test('coding draft, publish and reader perspective remain consistent', async ({
   page,
   browser,

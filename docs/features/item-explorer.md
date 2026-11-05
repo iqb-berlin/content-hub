@@ -585,6 +585,12 @@ or **Vorheriges Item** / **Nächstes Item** so selection, preview and coding cha
 Scroll and print display modes remain available. The complete unit view retains its own
 page-navigation controls.
 
+In **Regulärer Aufgabenablauf**, **Einzelseiten** additionally offers **Vorherige Aufgabenseite**
+and **Nächste Aufgabenseite** below the player. These controls navigate the pages reported by the
+player within the same session, retaining answers and the selected item for context capture.
+They are separate from item navigation and are disabled during a pending page change or a
+correct-solution preview. Context capture waits for the player to confirm the new page.
+
 By default, the Item Explorer preview neutralizes conditional visibility logic from the VOUD so
 that managers can inspect all relevant content even when the original unit would hide parts
 of it behind section visibility rules or media dependencies. AP managers can re-enable the
