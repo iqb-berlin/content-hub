@@ -2,6 +2,8 @@ import { normalizeReducedView } from '../../core/models/item-explorer-reduced-vi
 import { ItemExplorerImportService } from './item-explorer-import.service';
 import { ItemExplorerTableService } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
+import { ItemExplorerHistoryService } from './item-explorer-history.service';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService } from './item-explorer-draft.service';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
@@ -117,6 +119,7 @@ function createFacade(options?: {
     previewLoader as any,
     diagnostics as any,
   );
+  const player = new ItemExplorerPlayerService(voudService as any);
   const component = new ItemExplorerFacade(
     api as any,
     sanitizer as any,
@@ -132,9 +135,11 @@ function createFacade(options?: {
     new ItemExplorerCollectionsService(api as any, new ItemExplorerBrowser()),
     new ItemExplorerDraftService(api as any),
     new ItemExplorerCodingService(voudService as any),
-    new ItemExplorerPlayerService(voudService as any),
+    player,
     new ItemExplorerTableService(),
     new ItemExplorerImportService(api as any),
+    new ItemExplorerResponseStateService(api as any, player),
+    new ItemExplorerHistoryService(api as any, new ItemExplorerBrowser()),
     diagnostics as any,
   );
   (component.personalData as any).personalDataSessionIdentity =
@@ -152,6 +157,8 @@ function destroyFacade(facade: ItemExplorerFacade): void {
   facade.draft.ngOnDestroy();
   facade.player.ngOnDestroy();
   facade.imports.ngOnDestroy();
+  facade.responseStates.ngOnDestroy();
+  facade.history.ngOnDestroy();
 }
 
 function registerPlayerDom(component: ItemExplorerFacade, postMessage = vi.fn()) {
@@ -2906,7 +2913,6 @@ describe('ItemExplorerFacade', () => {
 
     expect(component.itemTags).toEqual({ 'uuid-1': [] });
     expect(component.items[0].tags).toEqual([]);
-    expect((component as any).normalizeTags({ 'uuid-1': [] })).toEqual({ 'uuid-1': [] });
   });
 
   it('ignores stale item-list responses after a newer reload completes', () => {
@@ -3747,6 +3753,7 @@ describe('ItemExplorerFacade', () => {
 
     (component as any).applySharedExplorerEnvelope(envelope);
 
+    expect(component.items[0]).toBe(item);
     expect(component.itemTags['uuid-1::1']).toEqual([]);
     expect(item.tags).toEqual([]);
     expect(item.excluded).toBeUndefined();
@@ -7092,7 +7099,7 @@ describe('ItemExplorerFacade', () => {
 
   it('closes open overlays with Escape', () => {
     const component = createFacade();
-    component.showHistoryOverlay = true;
+    component.history.showHistoryOverlay = true;
 
     const event = {
       key: 'Escape',
@@ -7115,7 +7122,7 @@ describe('ItemExplorerFacade', () => {
   it('keeps native dialog keyboard events out of the explorer shortcuts', () => {
     const component = createFacade();
     component.canPublishExplorer = true;
-    component.showHistoryOverlay = true;
+    component.history.showHistoryOverlay = true;
     const openSave = vi.spyOn(component, 'openSavePreviewDialog').mockImplementation(() => {});
     const dialog = document.createElement('dialog');
     dialog.setAttribute('open', '');
@@ -7138,7 +7145,7 @@ describe('ItemExplorerFacade', () => {
   it('blocks global shortcuts when a pending native dialog has lost focus', () => {
     const component = createFacade();
     component.canPublishExplorer = true;
-    component.showHistoryOverlay = true;
+    component.history.showHistoryOverlay = true;
     const openSave = vi.spyOn(component, 'openSavePreviewDialog').mockImplementation(() => {});
     const dialog = document.createElement('dialog');
     dialog.setAttribute('open', '');
@@ -7166,7 +7173,7 @@ describe('ItemExplorerFacade', () => {
       dialog.removeAttribute('open');
       component.handleWindowKeydown(new KeyboardEvent('keydown', { key: 's', ctrlKey: true }));
       // The separate history overlay still prevents opening another overlay.
-      component.showHistoryOverlay = false;
+      component.history.showHistoryOverlay = false;
       component.handleWindowKeydown(new KeyboardEvent('keydown', { key: 's', ctrlKey: true }));
       expect(openSave).toHaveBeenCalledOnce();
     } finally {
@@ -8956,7 +8963,7 @@ describe('response mutation completion belongs to its player session', () => {
           state: { responseData: { answers: 'new saved' } },
         });
         (component.player as any).responseSession.dataParts = { answers: 'new received' };
-        component.confirmDialogError = 'new dialog';
+        component.responseStates.confirmDialogError = 'new dialog';
         if (outcome === 'success') pending.next({});
         else pending.error(new Error('stale error'));
         expect(component.hasResponseState).toBe(true);

@@ -9,8 +9,18 @@ import {
   ItemExplorerTableFilterContext,
 } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
+import { ItemExplorerHistoryService } from './item-explorer-history.service';
+import type { ItemExplorerHistoryFilters } from './item-explorer-history';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService, ItemExplorerDraftResult } from './item-explorer-draft.service';
+import {
+  getExistingItemStateKey,
+  getItemStateKeys,
+  normalizeTags,
+  projectExplorerItem,
+  resolveItemTags,
+} from './item-explorer-shared-state';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
 import { ItemExplorerPersonalDataService } from './item-explorer-personal-data.service';
 import { ItemExplorerCommentsService } from './item-explorer-comments.service';
@@ -557,14 +567,30 @@ export class ItemExplorerFacade implements OnDestroy {
   itemListLoading = false;
 
   // History
-  showHistoryOverlay = false;
-  historyLoading = false;
-  historyError = '';
-  historyEntries: ItemExplorerChangeLogEntry[] = [];
-  historyFilterUser = '';
-  historyFilterType = '';
-  historyFilterFrom = '';
-  historyFilterTo = '';
+  get showHistoryOverlay() {
+    return this.history.showHistoryOverlay;
+  }
+  get historyLoading() {
+    return this.history.historyLoading;
+  }
+  get historyError() {
+    return this.history.historyError;
+  }
+  get historyEntries() {
+    return this.history.historyEntries;
+  }
+  get historyFilterUser() {
+    return this.history.historyFilterUser;
+  }
+  get historyFilterType() {
+    return this.history.historyFilterType;
+  }
+  get historyFilterFrom() {
+    return this.history.historyFilterFrom;
+  }
+  get historyFilterTo() {
+    return this.history.historyFilterTo;
+  }
 
   // Save preview
   get showSavePreviewDialog() {
@@ -631,8 +657,12 @@ export class ItemExplorerFacade implements OnDestroy {
   get correctSolutionPrefill() {
     return this.coding.correctSolutionPrefill;
   }
-  showRawDataOverlay = false;
-  allResponseStates: any[] = [];
+  get showRawDataOverlay() {
+    return this.responseStates.showRawDataOverlay;
+  }
+  get allResponseStates() {
+    return this.responseStates.allResponseStates;
+  }
   previewUserFacingMessage = '';
   get selectedPreviewTargetId() {
     return this.coding.selectedPreviewTargetId;
@@ -645,10 +675,18 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   // Response State Confirmation Dialogs
-  showSaveConfirmDialog = false;
-  showDeleteConfirmDialog = false;
-  confirmDialogState: 'idle' | 'saving' | 'deleting' = 'idle';
-  confirmDialogError = '';
+  get showSaveConfirmDialog() {
+    return this.responseStates.showSaveConfirmDialog;
+  }
+  get showDeleteConfirmDialog() {
+    return this.responseStates.showDeleteConfirmDialog;
+  }
+  get confirmDialogState() {
+    return this.responseStates.confirmDialogState;
+  }
+  get confirmDialogError() {
+    return this.responseStates.confirmDialogError;
+  }
 
   get filteredCodingSchemeAsText(): CodingAsText[] {
     return this.coding.filteredCodingSchemeAsText(this.selectedItem, this.definitionContent);
@@ -951,20 +989,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   get filteredHistoryEntries(): ItemExplorerChangeLogEntry[] {
-    const userNeedle = this.historyFilterUser.trim().toLowerCase();
-    const typeNeedle = this.historyFilterType.trim().toLowerCase();
-    const fromDate = this.historyFilterFrom ? new Date(`${this.historyFilterFrom}T00:00:00`) : null;
-    const toDate = this.historyFilterTo ? new Date(`${this.historyFilterTo}T23:59:59.999`) : null;
-    return this.historyEntries.filter((entry) => {
-      const user = (entry.actorUsername || '').toLowerCase();
-      const type = (entry.changeType || '').toLowerCase();
-      const matchesUser = !userNeedle || user.includes(userNeedle);
-      const matchesType = !typeNeedle || type.includes(typeNeedle);
-      const entryDate = new Date(entry.createdAt);
-      const matchesFrom = !fromDate || entryDate >= fromDate;
-      const matchesTo = !toDate || entryDate <= toDate;
-      return matchesUser && matchesType && matchesFrom && matchesTo;
-    });
+    return this.history.filteredHistoryEntries;
   }
 
   constructor(
@@ -981,6 +1006,8 @@ export class ItemExplorerFacade implements OnDestroy {
     readonly player: ItemExplorerPlayerService,
     readonly table: ItemExplorerTableService,
     readonly imports: ItemExplorerImportService,
+    readonly responseStates: ItemExplorerResponseStateService,
+    readonly history: ItemExplorerHistoryService,
     @Optional() private readonly diagnostics?: ItemExplorerLoadDiagnostics,
   ) {
     this.draft.flushRequested$.pipe(takeUntil(this.destroy$)).subscribe(() => {
@@ -996,12 +1023,18 @@ export class ItemExplorerFacade implements OnDestroy {
       this.ensureTableColumnDefaults();
       this.applyFilter(false);
     });
-    this.player.sessionChanges$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      this.confirmDialogState = 'idle';
-      this.confirmDialogError = '';
-      this.showSaveConfirmDialog = false;
-      this.showDeleteConfirmDialog = false;
-    });
+    this.responseStates.connect(() => ({
+      acpId: this.acpId,
+      selectedItem: this.selectedItem,
+      isCorrectSolutionActive: this.isCorrectSolutionActive,
+      previewReady: this.previewCoordinator.status.kind === 'ready',
+    }));
+    this.responseStates.dialogClosed$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.restoreFocusAfterOverlayClose());
+    this.responseStates.loadFailed$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => alert('Fehler beim Laden der gespeicherten Zustände.'));
     this.previewCoordinator.results$
       .pipe(takeUntil(this.destroy$))
       .subscribe((result) => this.applyPreviewResult(result));
@@ -1213,11 +1246,8 @@ export class ItemExplorerFacade implements OnDestroy {
     this.coding.codingSearchText = value;
   }
 
-  setHistoryFilter(
-    key: 'historyFilterUser' | 'historyFilterType' | 'historyFilterFrom' | 'historyFilterTo',
-    value: string,
-  ): void {
-    this[key] = value;
+  setHistoryFilter(key: keyof ItemExplorerHistoryFilters, value: string): void {
+    this.history.setHistoryFilter(key, value);
   }
 
   setSelectedPreviewTargetId(value: string): void {
@@ -2139,154 +2169,28 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   // --- Response State ---
-  saveCurrentResponseState() {
+  saveCurrentResponseState(): void {
     this.rememberFocusBeforeOverlay();
-    if (this.syntheticPreviewState) {
-      this.confirmDialogError =
-        'Ein vorbereiteter Vorschauzustand kann nicht als Antwortzustand gespeichert werden.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    if (this.isCorrectSolutionActive) {
-      this.confirmDialogError =
-        'Die Musterlösung ist nur eine Vorschau und kann nicht als Player-Eingabe gespeichert werden. Blenden Sie sie zuerst aus.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    if (this.previewCoordinator.status.kind !== 'ready') {
-      this.confirmDialogError =
-        'Der Zustand des ausgewählten Items wird noch geladen. Bitte versuchen Sie es gleich erneut.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    if (!this.selectedItem || !this.currentResponseData) {
-      this.confirmDialogError =
-        'Kein Zustand zum Speichern vorhanden. Bitte füllen Sie zuerst das Formular aus.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    this.confirmDialogError = '';
-    this.showSaveConfirmDialog = true;
+    this.responseStates.saveCurrentResponseState();
   }
 
-  confirmSaveResponseState() {
-    if (this.syntheticPreviewState) {
-      this.confirmDialogError =
-        'Ein vorbereiteter Vorschauzustand kann nicht als Antwortzustand gespeichert werden.';
-      return;
-    }
-    if (
-      !this.selectedItem ||
-      !this.currentResponseData ||
-      this.isCorrectSolutionActive ||
-      !this.player.isAnswerSession ||
-      !this.player.activePlayerSessionId ||
-      this.previewCoordinator.status.kind !== 'ready'
-    ) {
-      this.confirmDialogError =
-        'Der Zustand des ausgewählten Items ist noch nicht vollständig geladen.';
-      return;
-    }
-
-    this.confirmDialogState = 'saving';
-    const responseData = this.currentResponseData;
-    const responseItem = this.selectedItem;
-    const responseSession = this.player.responseSessionToken;
-
-    this.api
-      .saveResponseState(
-        this.acpId,
-        this.selectedItem.itemId,
-        this.selectedItem.unitId,
-        responseData,
-        this.selectedItem.rowKey,
-      )
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          if (
-            this.selectedItem !== responseItem ||
-            this.player.responseSessionToken !== responseSession
-          )
-            return;
-          this.player.markResponseStateSaved(responseData);
-          this.confirmDialogState = 'idle';
-          this.closeSaveConfirmDialog();
-        },
-        error: (err) => {
-          if (
-            this.selectedItem !== responseItem ||
-            this.player.responseSessionToken !== responseSession
-          )
-            return;
-          console.error('Error saving response state:', err);
-          this.confirmDialogState = 'idle';
-          this.confirmDialogError = 'Fehler beim Speichern des Zustands.';
-        },
-      });
+  confirmSaveResponseState(): void {
+    this.responseStates.confirmSaveResponseState();
   }
 
-  resetResponseState() {
+  resetResponseState(): void {
     if (!this.selectedItem) return;
     this.rememberFocusBeforeOverlay();
-    this.confirmDialogError = '';
-    this.showDeleteConfirmDialog = true;
+    this.responseStates.resetResponseState();
   }
 
-  confirmDeleteResponseState() {
-    if (!this.selectedItem) return;
-
-    this.confirmDialogState = 'deleting';
-    const responseItem = this.selectedItem;
-    const responseSession = this.player.responseSessionToken;
-
-    this.api
-      .deleteResponseState(
-        this.acpId,
-        this.selectedItem.itemId,
-        this.selectedItem.unitId,
-        this.selectedItem.rowKey,
-      )
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          if (
-            this.selectedItem !== responseItem ||
-            this.player.responseSessionToken !== responseSession
-          )
-            return;
-          this.player.clearResponseState();
-          this.confirmDialogState = 'idle';
-          this.closeDeleteConfirmDialog();
-        },
-        error: (err) => {
-          if (
-            this.selectedItem !== responseItem ||
-            this.player.responseSessionToken !== responseSession
-          )
-            return;
-          console.error('Error deleting response state:', err);
-          this.confirmDialogState = 'idle';
-          this.confirmDialogError = 'Fehler beim Löschen des Zustands.';
-        },
-      });
+  confirmDeleteResponseState(): void {
+    this.responseStates.confirmDeleteResponseState();
   }
 
-  loadAllResponseStates() {
+  loadAllResponseStates(): void {
     this.rememberFocusBeforeOverlay();
-    this.api
-      .getAllResponseStates(this.acpId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (states) => {
-          this.allResponseStates = states;
-          this.showRawDataOverlay = true;
-        },
-        error: (err) => {
-          console.error('Error loading response states:', err);
-          alert('Fehler beim Laden der gespeicherten Zustände.');
-        },
-      });
+    this.responseStates.loadAllResponseStates();
   }
 
   navigateItem(delta: number) {
@@ -2549,35 +2453,15 @@ export class ItemExplorerFacade implements OnDestroy {
   private getPrimaryItemStateKey(item?: ExplorerItem | null): string {
     if (!item) return '';
 
-    const resolvedItemId = item.itemId?.startsWith(`${item.unitId}_`)
-      ? item.itemId
-      : `${item.unitId}_${item.itemId}`;
-
-    for (const candidate of [item.rowKey, item.uuid, resolvedItemId, item.itemId]) {
-      const key = String(candidate || '').trim();
-      if (key) {
-        return key;
-      }
-    }
-
-    return '';
+    return getItemStateKeys(item)[0] || '';
   }
 
   private getExistingItemStateKey(item?: ExplorerItem | null): string {
     if (!item) return '';
-
-    const activeState = this.getExplorerStateForCurrentPerspective();
-    const itemProperties = this.isRecord(activeState?.itemProperties)
-      ? (activeState.itemProperties as Record<string, Record<string, unknown>>)
-      : {};
-
-    for (const key of this.getItemStateKeys(item)) {
-      if (this.isRecord(itemProperties[key])) {
-        return key;
-      }
-    }
-
-    return '';
+    return getExistingItemStateKey(
+      item,
+      this.getExplorerStateForCurrentPerspective()?.itemProperties,
+    );
   }
 
   private getMissingPreviewTargetMessage(): string {
@@ -2744,7 +2628,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private saveTags() {
-    const normalizedTags = this.normalizeTags(this.itemTags);
+    const normalizedTags = normalizeTags(this.itemTags);
     this.itemTags = normalizedTags;
     if (!this.canEditExplorer) {
       return;
@@ -3240,7 +3124,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.draft.setPatchSuppressed(true);
     try {
       this.applyUiPreferences((activeState as ItemExplorerSharedState).ui);
-      this.itemTags = this.normalizeTags((activeState as ItemExplorerSharedState).tags);
+      this.itemTags = normalizeTags((activeState as ItemExplorerSharedState).tags);
       this.table.metadataSettings = this.resolveMetadataSettings({
         metadataColumns: (activeState as ItemExplorerSharedState).metadataColumns,
       });
@@ -3287,50 +3171,14 @@ export class ItemExplorerFacade implements OnDestroy {
       return;
     }
 
-    const itemProperties = this.isRecord(activeState.itemProperties)
-      ? (activeState.itemProperties as Record<string, Record<string, unknown>>)
-      : {};
-    const stateTags = this.normalizeTags(activeState.tags);
-
+    const stateTags = normalizeTags(activeState.tags);
     for (const item of this.items) {
-      const keys = this.getItemStateKeys(item);
-      const itemProps = this.getItemPropsForKeys(itemProperties, keys);
-
-      const empiricalDifficultyRaw = itemProps?.['empiricalDifficulty'];
-      if (empiricalDifficultyRaw === undefined || empiricalDifficultyRaw === null) {
-        delete item.empiricalDifficulty;
-      } else {
-        const parsed = Number(empiricalDifficultyRaw);
-        if (Number.isFinite(parsed)) {
-          item.empiricalDifficulty = parsed;
-        } else {
-          delete item.empiricalDifficulty;
-        }
-      }
-
-      item.previewStart = itemProps?.['previewStart'] as PreviewStart | undefined;
-
-      const previewTargetId = String(itemProps?.[this.previewTargetItemPropertyKey] || '').trim();
-      if (previewTargetId) {
-        item.previewTargetId = previewTargetId;
-      } else {
-        delete item.previewTargetId;
-      }
-
-      if (itemProps?.[this.excludedItemPropertyKey] === true) {
-        item.excluded = true;
-      } else {
-        delete item.excluded;
-      }
-
-      const tagsFromState = this.getTagsForKeys(stateTags, keys);
-      if (tagsFromState !== null) {
-        item.tags = tagsFromState;
-      } else if (Array.isArray(itemProps?.['tags'])) {
-        item.tags = this.normalizeTagValues(itemProps['tags']);
-      } else if (!Array.isArray(item.tags)) {
-        item.tags = [];
-      }
+      const projected = projectExplorerItem(item, activeState.itemProperties, stateTags);
+      // Keep row identity: selection and pending player operations refer to this object.
+      delete item.empiricalDifficulty;
+      delete item.previewTargetId;
+      delete item.excluded;
+      Object.assign(item, projected);
     }
 
     this.hydrateItemTagsFromItems();
@@ -3349,54 +3197,6 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private reconcileMeanTaskDifficultyState(): void {
     if (this.table.reconcileMeanTaskDifficultyState(this.items)) this.saveUiPreferences();
-  }
-
-  private getItemStateKeys(item: ExplorerItem): string[] {
-    const keys = new Set<string>();
-    const resolvedItemId = item.itemId?.startsWith(`${item.unitId}_`)
-      ? item.itemId
-      : `${item.unitId}_${item.itemId}`;
-
-    for (const candidate of [item.rowKey, item.uuid, resolvedItemId, item.itemId]) {
-      const key = String(candidate || '').trim();
-      if (key) {
-        keys.add(key);
-      }
-    }
-    return Array.from(keys);
-  }
-
-  private getItemPropsForKeys(
-    itemProperties: Record<string, Record<string, unknown>>,
-    keys: string[],
-  ): Record<string, unknown> | null {
-    const merged: Record<string, unknown> = {};
-    let found = false;
-    for (const key of [...keys].reverse()) {
-      if (this.isRecord(itemProperties[key])) {
-        Object.assign(merged, itemProperties[key]);
-        found = true;
-      }
-    }
-    return found ? merged : null;
-  }
-
-  private getTagsForKeys(tagsMap: Record<string, string[]>, keys: string[]): string[] | null {
-    for (const key of keys) {
-      const tags = tagsMap[key];
-      if (Array.isArray(tags)) {
-        return this.normalizeTagValues(tags);
-      }
-    }
-    return null;
-  }
-
-  private normalizeTagValues(values: unknown[]): string[] {
-    return Array.from(
-      new Set(
-        values.map((value) => String(value || '').trim()).filter((value) => value.length > 0),
-      ),
-    );
   }
 
   hasPendingDraftChanges(): boolean {
@@ -3491,25 +3291,9 @@ export class ItemExplorerFacade implements OnDestroy {
     }
   }
 
-  showHistory() {
+  showHistory(): void {
     this.rememberFocusBeforeOverlay();
-    this.showHistoryOverlay = true;
-    this.historyLoading = true;
-    this.historyError = '';
-    this.api
-      .getItemExplorerChanges(this.acpId, 300)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (entries) => {
-          this.historyEntries = entries || [];
-          this.historyLoading = false;
-        },
-        error: (error) => {
-          console.error('Failed to load history', error);
-          this.historyLoading = false;
-          this.historyError = 'Änderungsverlauf konnte nicht geladen werden.';
-        },
-      });
+    this.history.showHistory(this.acpId);
   }
 
   openCodingOverlay() {
@@ -3539,38 +3323,20 @@ export class ItemExplorerFacade implements OnDestroy {
     this.restoreFocusAfterOverlayClose();
   }
 
-  closeSaveConfirmDialog() {
-    if (this.confirmDialogState !== 'idle') {
-      return;
-    }
-    this.showSaveConfirmDialog = false;
-    this.confirmDialogError = '';
-    this.restoreFocusAfterOverlayClose();
+  closeSaveConfirmDialog(): void {
+    this.responseStates.closeSaveConfirmDialog();
   }
 
-  closeDeleteConfirmDialog() {
-    if (this.confirmDialogState !== 'idle') {
-      return;
-    }
-    this.showDeleteConfirmDialog = false;
-    this.confirmDialogError = '';
-    this.restoreFocusAfterOverlayClose();
+  closeDeleteConfirmDialog(): void {
+    this.responseStates.closeDeleteConfirmDialog();
   }
 
-  closeRawDataOverlay() {
-    if (!this.showRawDataOverlay) {
-      return;
-    }
-    this.showRawDataOverlay = false;
-    this.restoreFocusAfterOverlayClose();
+  closeRawDataOverlay(): void {
+    this.responseStates.closeRawDataOverlay();
   }
 
-  closeHistoryOverlay() {
-    if (!this.showHistoryOverlay) {
-      return;
-    }
-    this.showHistoryOverlay = false;
-    this.restoreFocusAfterOverlayClose();
+  closeHistoryOverlay(): void {
+    if (this.history.closeHistoryOverlay()) this.restoreFocusAfterOverlayClose();
   }
 
   getItemRowId(item: ReadonlyExplorerItem): string {
@@ -3578,35 +3344,8 @@ export class ItemExplorerFacade implements OnDestroy {
     return `item-explorer-row-${String(rawId).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
   }
 
-  exportHistoryCsv() {
-    if (!this.filteredHistoryEntries.length) {
-      return;
-    }
-
-    const escapeCsv = (value: unknown): string => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    const rows = [
-      ['Zeit', 'Nutzer', 'Rolle', 'Aktion', 'Draft-Version', 'Published-Version', 'Diff'],
-      ...this.filteredHistoryEntries.map((entry) => [
-        new Date(entry.createdAt).toISOString(),
-        entry.actorUsername || '',
-        entry.actorRole || '',
-        entry.changeType || '',
-        entry.draftVersion ?? '',
-        entry.publishedVersion ?? '',
-        JSON.stringify(entry.diff || {}),
-      ]),
-    ];
-
-    const content = rows.map((row) => row.map((cell) => escapeCsv(cell)).join(';')).join('\n');
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `item-explorer-history-${this.acpId}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
+  exportHistoryCsv(): void {
+    this.history.exportHistoryCsv();
   }
 
   private selectFilteredItemAt(index: number, shouldScroll = false) {
@@ -3824,21 +3563,9 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private rollbackItemTagsToLatestExplorerState(): void {
     const activeState = this.getExplorerStateForCurrentPerspective();
-    const stateTags = this.normalizeTags(activeState.tags);
-    const itemProperties = this.isRecord(activeState.itemProperties)
-      ? (activeState.itemProperties as Record<string, Record<string, unknown>>)
-      : {};
-
+    const stateTags = normalizeTags(activeState.tags);
     for (const item of this.items) {
-      const keys = this.getItemStateKeys(item);
-      const tagsFromState = this.getTagsForKeys(stateTags, keys);
-      const itemProps = this.getItemPropsForKeys(itemProperties, keys);
-      item.tags =
-        tagsFromState !== null
-          ? [...tagsFromState]
-          : Array.isArray(itemProps?.['tags'])
-            ? this.normalizeTagValues(itemProps['tags'])
-            : [];
+      item.tags = resolveItemTags(item, activeState.itemProperties, stateTags);
     }
     this.itemTags = {};
     this.hydrateItemTagsFromItems();
@@ -3846,31 +3573,6 @@ export class ItemExplorerFacade implements OnDestroy {
       this.itemTags = { ...this.itemTags, ...stateTags };
     }
     this.applyFilter(false);
-  }
-
-  private normalizeTags(rawTags: unknown): Record<string, string[]> {
-    if (!this.isRecord(rawTags)) {
-      return {};
-    }
-
-    const tags: Record<string, string[]> = {};
-    for (const [itemId, values] of Object.entries(rawTags)) {
-      const normalizedItemId = String(itemId || '').trim();
-      if (!normalizedItemId || !Array.isArray(values)) continue;
-
-      const normalizedValues = Array.from(
-        new Set(
-          values.map((value) => String(value || '').trim()).filter((value) => value.length > 0),
-        ),
-      );
-
-      // An explicit empty array is a deletion tombstone. Dropping it would
-      // allow stale tags from the imported item payload to reappear when the
-      // server returns the updated draft state.
-      tags[normalizedItemId] = normalizedValues;
-    }
-
-    return tags;
   }
 
   private syncItemCommentCountSession(): void {

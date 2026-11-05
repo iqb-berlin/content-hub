@@ -166,6 +166,23 @@ model slices and send feature actions back through the facade; table and preview
 their own DOM references. Small registered DOM ports keep fullscreen, focus and scrolling, iframe
 messaging, player-document focus, and resize observation inside the owning UI component.
 
+Shared Explorer row projection, identifier precedence and tag normalization live in pure functions
+in `item-explorer-shared-state.ts`. The facade applies their results to existing row objects so
+selection and pending player operations retain their identity. Explicit empty tag arrays remain
+deletion markers when shared state is applied or an optimistic tag change is rolled back.
+
+`ItemExplorerResponseStateService` owns response save/delete requests, confirmation dialogs and the
+saved-response list. It reads the current route/selection context through a narrow callback and
+uses the player session token to reject stale completions. Answer data stays in
+`ItemExplorerPlayerService`; the facade handles focus restoration and UI notifications. Like the
+other Explorer services, the response-state service is provided by the route component and cancels
+its work when that scope is destroyed.
+
+`ItemExplorerHistoryService` owns history entries, filters, loading/error state and CSV downloads.
+Its pure filtering and CSV functions live in `item-explorer-history.ts`; downloads use the shared
+`ItemExplorerBrowser`. Refreshing cancels the previous history request, and destroying the route
+scope cancels pending work. The facade retains dialog focus handling and delegates history actions.
+
 There is no central client-side store such as NgRx at the moment.
 
 ## Feature-Specific UI Areas
