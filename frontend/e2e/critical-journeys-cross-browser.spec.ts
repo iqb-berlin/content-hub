@@ -148,9 +148,11 @@ test('regular multi-page flow retains answers and captures the selected item con
     name: 'Seitennavigation im regulären Aufgabenablauf',
   });
   await expect(pageInfo).toContainText('Aufgabenseite 1 von 2');
-  await page.locator('.player-container').scrollIntoViewIfNeeded();
+  await page.getByText('Vorschau einstellen ▾', { exact: true }).click();
+  await pageInfo.scrollIntoViewIfNeeded();
   await expect(previous).toBeInViewport();
   await expect(next).toBeInViewport();
+  expect(await page.locator('.player-container').evaluate((element) => element.scrollTop)).toBe(0);
   await expect(previous).toBeDisabled();
   await expect(next).toBeEnabled();
   await player.getByRole('radio', { name: 'zum See', exact: true }).check();
@@ -186,6 +188,7 @@ test('regular multi-page flow retains answers and captures the selected item con
     name: 'Diese Itemansicht als Kontext übernehmen',
     exact: true,
   });
+  await page.getByText('Vorschau einstellen ▾', { exact: true }).click();
   await expect(capture).toBeEnabled();
   await capture.click();
   await expect(mode).toHaveValue('reference');

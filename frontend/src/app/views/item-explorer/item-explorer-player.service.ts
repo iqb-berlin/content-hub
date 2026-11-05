@@ -1,6 +1,6 @@
 import { Injectable, Inject, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
-import { readPreviewDefinition } from '../../core/services/preview-visibility';
+import { isAlwaysVisible, readPreviewDefinition } from '../../core/services/preview-visibility';
 import { collectVoudNodes, findVoudIdentifierMatches } from '../../core/services/voud-nodes';
 import {
   preparePreviewPresentation,
@@ -87,9 +87,18 @@ export class ItemExplorerPlayerService implements OnDestroy {
   private flowStarted = false;
   private pendingFlowPage: number | null = null;
   private playerPageIds: string[] = [];
+  private declaredFlowPageIds: string[] = [];
+
+  private get flowNavigationPageIds(): string[] {
+    return this.declaredFlowPageIds.length ? this.declaredFlowPageIds : this.playerPageIds;
+  }
+
+  get flowPageCount(): number {
+    return this.flowNavigationPageIds.length;
+  }
 
   get flowPageNumber(): number {
-    return this.playerPageIds.indexOf(String(this.currentPage - 1)) + 1;
+    return this.flowNavigationPageIds.indexOf(String(this.currentPage - 1)) + 1;
   }
 
   get showFlowPageNavigation(): boolean {
@@ -99,7 +108,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
       this.pagingMode === 'separate' &&
       this.playerFrameReady &&
       !!this.activePlayerSessionId &&
-      this.playerPageIds.length > 1
+      (this.flowPageCount > 1 || (this.flowPageCount === 1 && this.flowPageNumber === 0))
     );
   }
 
@@ -112,20 +121,28 @@ export class ItemExplorerPlayerService implements OnDestroy {
   }
 
   private canNavigateFlowPage(delta: -1 | 1): boolean {
-    const index = this.flowPageNumber - 1;
     return (
       this.showFlowPageNavigation &&
       this.responseSession.origin !== 'solution' &&
       this.pendingFlowPage === null &&
-      index >= 0 &&
-      index + delta >= 0 &&
-      index + delta < this.playerPageIds.length
+      this.flowPageTarget(delta) !== undefined
+    );
+  }
+
+  private flowPageTarget(delta: -1 | 1): string | undefined {
+    const index = this.flowPageNumber - 1;
+    const pages = this.flowNavigationPageIds;
+    if (index >= 0) return pages[index + delta];
+    // Conditional visibility may hide the current page while later pages remain available.
+    const candidates = delta === 1 ? pages : [...pages].reverse();
+    return candidates.find((id) =>
+      delta === 1 ? Number(id) > this.currentPage - 1 : Number(id) < this.currentPage - 1,
     );
   }
 
   navigateFlowPage(delta: -1 | 1): void {
     if (this.destroyed || (delta !== -1 && delta !== 1) || !this.canNavigateFlowPage(delta)) return;
-    const target = this.playerPageIds[this.flowPageNumber - 1 + delta];
+    const target = this.flowPageTarget(delta);
     const page = Number(target);
     if (!Number.isInteger(page) || page < 0) return;
     this.clearLegacyPageNavigationTimers();
@@ -517,6 +534,13 @@ export class ItemExplorerPlayerService implements OnDestroy {
 
     this.startSessionCounter += 1;
     this.beginResponseSession(sessionId, origin, dataParts);
+    if (regularFlow) {
+      // Visible-page reports can change with the viewport or omit a hidden start page.
+      // Keep the declared task sequence reachable without changing its visibility rules.
+      this.declaredFlowPageIds = (this.previewDefinition?.pages || [])
+        .filter((page) => !isAlwaysVisible(page))
+        .map((_, index) => String(index));
+    }
     if (regularFlow) this.flowStarted = true;
     // Aspect may initially report page 0 before accepting the restored page.
     // Keep that transient notification from resetting a quick solution toggle.
@@ -709,6 +733,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
   ): void {
     this.responseSession = { id, origin, initialDataParts, dataParts: null, reportedAt: 0 };
     this.playerPageIds = [];
+    this.declaredFlowPageIds = [];
     this.pendingFlowPage = null;
     this.sessionChanges$.next();
   }

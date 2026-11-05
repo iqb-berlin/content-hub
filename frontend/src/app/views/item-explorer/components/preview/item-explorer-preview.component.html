@@ -451,9 +451,13 @@
               >
                 ← Vorherige Aufgabenseite
               </button>
-              <span aria-live="polite"
-                >Aufgabenseite {{ vm.flowPageNumber }} von {{ vm.totalPages }}</span
-              >
+              <span aria-live="polite">
+                @if (vm.flowPageNumber > 0) {
+                  Aufgabenseite {{ vm.flowPageNumber }} von {{ vm.flowPageCount }}
+                } @else {
+                  Diese Aufgabenseite ist ausgeblendet.
+                }
+              </span>
               <button
                 type="button"
                 class="btn btn-outline btn-sm"

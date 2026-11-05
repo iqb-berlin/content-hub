@@ -241,7 +241,7 @@ export type ItemExplorerPreviewViewModel = ReadonlyViewModelSlice<
     | 'previewMode'
     | 'setPreviewMode'
     | 'flowPageNumber'
-    | 'totalPages'
+    | 'flowPageCount'
     | 'showFlowPageNavigation'
     | 'canNavigateFlowBackward'
     | 'canNavigateFlowForward'

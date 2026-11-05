@@ -586,10 +586,13 @@ Scroll and print display modes remain available. The complete unit view retains 
 page-navigation controls.
 
 In **Regulärer Aufgabenablauf**, **Einzelseiten** additionally offers **Vorherige Aufgabenseite**
-and **Nächste Aufgabenseite** below the player. These controls navigate the pages reported by the
-player within the same session, retaining answers and the selected item for context capture.
+and **Nächste Aufgabenseite** below the player. These controls navigate the declared task pages
+within the same session, retaining answers and the selected item for context capture.
 They are separate from item navigation and are disabled during a pending page change or a
 correct-solution preview. Context capture waits for the player to confirm the new page.
+The controls also allow leaving a page hidden by conditional visibility, even when only one
+other page remains available. Always-visible stimuli are excluded from this task-page sequence.
+The original visibility rules remain active; navigating to a hidden page does not reveal its content.
 
 By default, the Item Explorer preview neutralizes conditional visibility logic from the VOUD so
 that managers can inspect all relevant content even when the original unit would hide parts

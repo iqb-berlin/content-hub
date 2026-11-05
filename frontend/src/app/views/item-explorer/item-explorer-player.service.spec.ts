@@ -107,6 +107,62 @@ describe('ItemExplorerPlayerService', () => {
     player.ngOnDestroy();
   });
 
+  it('can leave a hidden flow page even when only one other page is valid', () => {
+    vi.useFakeTimers();
+    const { player, dom, request } = createPlayer();
+    player.itemExplorerConditionalVisibilityEnabled = true;
+    player.definitionContent = JSON.stringify({
+      pages: [{ alwaysVisible: true }, {}, {}],
+    });
+    player.changePreviewMode('flow');
+    player.start(request);
+    player.handlePlayerMessage(
+      {
+        type: 'vopStateChangedNotification',
+        sessionId: player.activePlayerSessionId,
+        playerState: { currentPage: '0', validPages: [] },
+      },
+      { ready: true, solutionActive: false },
+    );
+    expect(player.flowPageCount).toBe(2);
+    expect(player.canNavigateFlowForward).toBe(true);
+    player.handlePlayerMessage(
+      {
+        type: 'vopStateChangedNotification',
+        sessionId: player.activePlayerSessionId,
+        playerState: { currentPage: '0', validPages: [{ id: '1' }] },
+      },
+      { ready: true, solutionActive: false },
+    );
+    expect(player.flowPageNumber).toBe(1);
+    expect(player.showFlowPageNavigation).toBe(true);
+    expect(player.canNavigateFlowBackward).toBe(false);
+    expect(player.canNavigateFlowForward).toBe(true);
+    player.navigateFlowPage(1);
+    expect(dom.postMessage).toHaveBeenLastCalledWith({
+      type: 'vopPageNavigationCommand',
+      sessionId: player.activePlayerSessionId,
+      target: '1',
+    });
+    player.handlePlayerMessage(
+      {
+        type: 'vopStateChangedNotification',
+        sessionId: player.activePlayerSessionId,
+        playerState: { currentPage: '1', validPages: [{ id: '0' }] },
+      },
+      { ready: true, solutionActive: false },
+    );
+    expect(player.canNavigateFlowBackward).toBe(true);
+    expect(player.canNavigateFlowForward).toBe(false);
+    player.navigateFlowPage(-1);
+    expect(dom.postMessage).toHaveBeenLastCalledWith({
+      type: 'vopPageNavigationCommand',
+      sessionId: player.activePlayerSessionId,
+      target: '0',
+    });
+    player.ngOnDestroy();
+  });
+
   it('limits host page navigation to paged flow and keeps correct-solution previews read-only', () => {
     vi.useFakeTimers();
     const { player, dom, request } = createPlayer();

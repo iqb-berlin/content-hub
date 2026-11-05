@@ -194,6 +194,9 @@ export class ItemExplorerFacade implements OnDestroy {
   get flowPageNumber() {
     return this.player.flowPageNumber;
   }
+  get flowPageCount() {
+    return this.player.flowPageCount;
+  }
   get showFlowPageNavigation() {
     return this.player.showFlowPageNavigation;
   }
