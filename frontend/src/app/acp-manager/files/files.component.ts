@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { filter, firstValueFrom, map, tap } from 'rxjs';
@@ -10,6 +10,7 @@ import {
   FileUploadResponse,
   UploadValidationSummary,
   UnitFileValidationResult,
+  ValidationResult,
 } from '../../core/models/api.models';
 import { ApiService } from '../../core/services/api.service';
 import { AcpManagerContextComponent } from '../shared/acp-manager-context.component';
@@ -28,6 +29,10 @@ interface UploadConflictEntry {
 type FileValidationState = 'ok' | 'error' | 'unchecked';
 type FileValidationFilter = 'all' | FileValidationState;
 type DeleteDialogMode = 'single' | 'selected' | 'all';
+type AcpValidationSummary = Pick<
+  UploadValidationSummary,
+  'semanticValid' | 'semanticIssueCount' | 'semanticIssues'
+>;
 
 @Component({
   selector: 'app-files',
@@ -175,24 +180,59 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
       </div>
     }
 
-    @if (lastValidationSummary) {
+    @if (consistencyError) {
+      <div class="alert alert-warning">{{ consistencyError }}</div>
+    }
+    @if (apValidationSummary; as apSummary) {
       <div
         class="alert"
-        [class.alert-success]="lastValidationSummary.invalidFiles === 0"
-        [class.alert-warning]="lastValidationSummary.invalidFiles > 0"
+        [class.alert-success]="
+          !lastValidationSummary?.invalidFiles && apSummary.semanticIssueCount === 0
+        "
+        [class.alert-warning]="
+          (lastValidationSummary?.invalidFiles ?? 0) > 0 || apSummary.semanticIssueCount > 0
+        "
       >
-        Auto-Validierung: {{ lastValidationSummary.validFiles }} von
-        {{ lastValidationSummary.totalFiles }} Datei(en) ohne Fehler.
-        @if (lastValidationSummary.invalidFiles > 0) {
-          <span> {{ lastValidationSummary.invalidFiles }} Datei(en) enthalten Fehler.</span>
+        @if (lastValidationSummary) {
+          Auto-Validierung: {{ lastValidationSummary.validFiles }} von
+          {{ lastValidationSummary.totalFiles }} Datei(en) ohne Fehler.
+          @if (lastValidationSummary.invalidFiles > 0) {
+            <span> {{ lastValidationSummary.invalidFiles }} Datei(en) enthalten Fehler.</span>
+          }
         }
         <div style="margin-top:6px">
-          AP-Semantik:
-          {{ lastValidationSummary.semanticValid ? 'OK' : 'Fehler/Warnungen vorhanden' }} ({{
-            lastValidationSummary.semanticIssueCount
+          AP-weite Prüfung:
+          {{
+            apSummary.semanticIssueCount === 0
+              ? 'OK'
+              : apSummary.semanticValid
+                ? 'Warnungen vorhanden'
+                : 'Fehler vorhanden'
           }}
-          Issue(s))
+          ({{ apSummary.semanticIssueCount }} Hinweis(e))
         </div>
+        @if (apSummary.semanticIssues?.length) {
+          <details class="ap-validation-issues">
+            <summary>Hinweise zur AP-weiten Prüfung</summary>
+            @for (issue of apSummary.semanticIssues; track issueTrack(issue, $index)) {
+              <div class="ap-validation-issue">
+                <strong
+                  >{{
+                    issue.severity === 'error'
+                      ? 'Fehler'
+                      : issue.severity === 'warning'
+                        ? 'Warnung'
+                        : 'Hinweis'
+                  }}:</strong
+                >
+                {{ issue.message }}
+                @if (issue.path) {
+                  <code>{{ issue.path }}</code>
+                }
+              </div>
+            }
+          </details>
+        }
       </div>
     }
 
@@ -543,6 +583,14 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
         gap: 4px;
         min-width: 320px;
       }
+      .ap-validation-issues,
+      .ap-validation-issue {
+        margin-top: 8px;
+        overflow-wrap: anywhere;
+      }
+      .ap-validation-issue code {
+        display: block;
+      }
       .file-validation-issue {
         display: flex;
         gap: 6px;
@@ -734,6 +782,9 @@ export class FilesComponent implements OnInit {
   validationResults: UnitFileValidationResult[] = [];
   lastSyncReport: any = null;
   lastValidationSummary: UploadValidationSummary | null = null;
+  consistencyError = '';
+  private consistencyResult: ValidationResult | null = null;
+  private validationVersion = 0;
   lastConflictSummary: { conflicts: number; replaced: number; skipped: number } | null = null;
   selectedPreviewFile: AcpFile | null = null;
   selectedPreview: FilePreviewResponse | null = null;
@@ -752,8 +803,8 @@ export class FilesComponent implements OnInit {
   deleteDialogError = '';
 
   constructor(
-    private route: ActivatedRoute,
-    private api: ApiService,
+    @Inject(ActivatedRoute) private route: ActivatedRoute,
+    @Inject(ApiService) private api: ApiService,
   ) {}
 
   get isBusy(): boolean {
@@ -886,6 +937,32 @@ export class FilesComponent implements OnInit {
   ngOnInit() {
     this.acpId = this.route.parent?.snapshot.paramMap.get('acpId') || '';
     this.load();
+    this.loadAcpConsistency();
+  }
+
+  get apValidationSummary(): AcpValidationSummary | null {
+    if (this.lastValidationSummary) return this.lastValidationSummary;
+    if (!this.consistencyResult) return null;
+    return {
+      semanticValid: this.consistencyResult.valid,
+      semanticIssueCount: this.consistencyResult.issues.length,
+      semanticIssues: this.consistencyResult.issues,
+    };
+  }
+
+  private loadAcpConsistency() {
+    const version = ++this.validationVersion;
+    this.consistencyError = '';
+    this.api.getAcpConsistency(this.acpId).subscribe({
+      next: (result) => {
+        if (version !== this.validationVersion) return;
+        this.consistencyResult = result;
+      },
+      error: () => {
+        if (version !== this.validationVersion) return;
+        this.consistencyError = 'Die AP-weite Prüfung konnte nicht geladen werden.';
+      },
+    });
   }
 
   load() {
@@ -1018,7 +1095,6 @@ export class FilesComponent implements OnInit {
     const selectedFiles = Array.from(input.files);
     this.uploadError = null;
     this.lastSyncReport = null;
-    this.lastValidationSummary = null;
     this.lastConflictSummary = null;
     this.processingJob = null;
     this.processing = false;
@@ -1076,6 +1152,11 @@ export class FilesComponent implements OnInit {
       return;
     }
 
+    this.lastValidationSummary = null;
+    this.consistencyResult = null;
+    this.consistencyError = '';
+    this.validationVersion += 1;
+    this.validating = false;
     this.uploading = true;
     const chunkSize = 50;
     const totalBytes = nonConflictingFiles
@@ -1152,6 +1233,7 @@ export class FilesComponent implements OnInit {
       this.uploadError = this.getUploadErrorMessage(err);
       console.error('Upload Error:', err);
       this.load();
+      this.loadAcpConsistency();
     } finally {
       this.uploading = false;
       this.processing = false;
@@ -1161,16 +1243,21 @@ export class FilesComponent implements OnInit {
   }
 
   validateFiles() {
+    const version = ++this.validationVersion;
     this.validating = true;
+    this.consistencyError = '';
     this.api.validateUnitFiles(this.acpId).subscribe({
       next: ({ unitResults, validationSummary }) => {
+        if (version !== this.validationVersion) return;
         this.validationResults = unitResults;
         this.lastValidationSummary = validationSummary;
         this.load();
         this.validating = false;
       },
       error: () => {
+        if (version !== this.validationVersion) return;
         this.validating = false;
+        this.consistencyError = 'Die Dateiprüfung konnte nicht abgeschlossen werden.';
       },
     });
   }
@@ -1306,8 +1393,8 @@ export class FilesComponent implements OnInit {
         return;
       }
       this.api.deleteFile(this.acpId, this.deleteDialogTarget.id).subscribe({
-        next: () => {
-          this.finishDelete([this.deleteDialogTarget!.id]);
+        next: (response) => {
+          this.finishDelete([this.deleteDialogTarget!.id], response.validationSummary);
         },
         error: (err) => {
           this.deleteDialogBusy = false;
@@ -1324,8 +1411,8 @@ export class FilesComponent implements OnInit {
         return;
       }
       this.api.bulkDeleteFiles(this.acpId, this.deleteDialogSelectedFileIds).subscribe({
-        next: () => {
-          this.finishDelete(this.deleteDialogSelectedFileIds);
+        next: (response) => {
+          this.finishDelete(this.deleteDialogSelectedFileIds, response.validationSummary);
         },
         error: (err) => {
           this.deleteDialogBusy = false;
@@ -1336,10 +1423,13 @@ export class FilesComponent implements OnInit {
     }
 
     this.api.deleteAllFiles(this.acpId).subscribe({
-      next: () => {
+      next: (response) => {
         this.validationResults = [];
         this.clearSelection();
-        this.finishDelete(this.files.map((file) => file.id));
+        this.finishDelete(
+          this.files.map((file) => file.id),
+          response.validationSummary,
+        );
       },
       error: (err) => {
         this.deleteDialogBusy = false;
@@ -1630,7 +1720,16 @@ export class FilesComponent implements OnInit {
     });
   }
 
-  private finishDelete(deletedFileIds: string[]) {
+  private finishDelete(
+    deletedFileIds: string[],
+    validationSummary?: UploadValidationSummary | null,
+  ) {
+    this.validationVersion += 1;
+    this.validating = false;
+    this.validationResults = [];
+    this.lastValidationSummary = validationSummary || null;
+    this.consistencyResult = null;
+    this.consistencyError = '';
     const deletedIds = new Set(deletedFileIds);
     this.deleteDialogBusy = false;
     this.deleteDialogOpen = false;
@@ -1649,6 +1748,7 @@ export class FilesComponent implements OnInit {
     }
 
     this.load();
+    if (!validationSummary) this.loadAcpConsistency();
   }
 
   private syncSelectionWithFiles(files: AcpFile[]) {

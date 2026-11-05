@@ -1,4 +1,5 @@
 import { ReviewManifestService } from "../review/review-manifest.service";
+import { buildReviewManifest } from "../review/review-manifest";
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { ValidationService } from "./validation.service";
@@ -335,7 +336,7 @@ describe("ValidationService", () => {
   });
 
   describe("autoValidateUploadedFiles", () => {
-    it("should run file and semantic validation and persist merged per-file results", async () => {
+    it("keeps missing AP references separate from persisted file results", async () => {
       const readFileMock = fs.readFile as jest.Mock;
       readFileMock.mockResolvedValue(
         Buffer.from(
@@ -380,18 +381,122 @@ describe("ValidationService", () => {
 
       expect(result.summary.totalFiles).toBe(1);
       expect(result.summary.semanticValid).toBe(false);
-      expect(result.files[0].validationResult).toBeDefined();
-      expect(
-        (result.files[0].validationResult as any).issues.some(
-          (i: any) => i.scope === "semantic",
-        ),
-      ).toBe(true);
+      expect(result.summary.validFiles).toBe(1);
+      expect(result.summary.invalidFiles).toBe(0);
+      expect(result.files[0].validationResult).toEqual(
+        expect.objectContaining({ valid: true, issues: [] }),
+      );
       expect(fileRepo.save).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ id: "file-1" })]),
       );
     });
 
+    it.each([true, false])(
+      "does not attribute unrelated Booklet errors to uploaded files (persist: %s)",
+      async (persistResults) => {
+        const acpIndex = {
+          assessmentParts: [
+            {
+              instruments: [
+                {
+                  testcenterBooklet: [{ id: "booklet-1" }, { id: "booklet-2" }],
+                },
+              ],
+            },
+          ],
+        };
+        acpRepo.findOne.mockResolvedValue({ id: "acp-1", acpIndex });
+        const manifest = buildReviewManifest(acpIndex, new Map());
+        expect(manifest.issues).toHaveLength(2);
+        jest.mocked(manifestService.getManifest).mockResolvedValue(manifest);
+
+        const contents = new Map([
+          ["task.voud", Buffer.from('{"pages":[]}')],
+          ["image.png", Buffer.from([137, 80, 78, 71])],
+          ["bad.json", Buffer.from("not json{")],
+          ["empty.txt", Buffer.alloc(0)],
+          [
+            "booklet.xml",
+            Buffer.from(
+              "<Booklet><Metadata><Id>b</Id></Metadata><Units><ProgressEnd/></Units></Booklet>",
+            ),
+          ],
+        ]);
+        const files = [...contents.keys()].map(
+          (originalName) =>
+            ({
+              id: originalName,
+              originalName,
+              filePath: originalName,
+              validationResult: {
+                valid: false,
+                issues: manifest.issues,
+              },
+            }) as unknown as AcpFile,
+        );
+        fileRepo.find.mockResolvedValue(files);
+        jest
+          .mocked(fs.readFile)
+          .mockImplementation(async (path) => contents.get(String(path))!);
+
+        const result = await service.autoValidateUploadedFiles(
+          "acp-1",
+          files,
+          undefined,
+          persistResults,
+        );
+
+        expect(result.summary).toEqual(
+          expect.objectContaining({
+            totalFiles: 5,
+            validFiles: 3,
+            invalidFiles: 2,
+            semanticValid: false,
+            semanticIssueCount: 2,
+            semanticIssues: manifest.issues.map((issue) => ({
+              ...issue,
+              scope: "semantic",
+            })),
+          }),
+        );
+        expect(files[0].validationResult).toEqual(
+          expect.objectContaining({ valid: true, issues: [] }),
+        );
+        expect(files[1].validationResult).toEqual(
+          expect.objectContaining({ valid: true, issues: [] }),
+        );
+        expect(files[2].validationResult).toEqual(
+          expect.objectContaining({
+            valid: false,
+            issues: [expect.objectContaining({ scope: "syntactic" })],
+          }),
+        );
+        expect(files[3].validationResult).toEqual(
+          expect.objectContaining({
+            valid: true,
+            issues: [expect.objectContaining({ severity: "warning" })],
+          }),
+        );
+        expect(files[4].validationResult).toEqual(
+          expect.objectContaining({
+            valid: false,
+            issues: [expect.objectContaining({ scope: "schema" })],
+          }),
+        );
+        if (persistResults) {
+          expect(fileRepo.save).toHaveBeenCalledWith(files);
+        } else {
+          expect(fileRepo.save).not.toHaveBeenCalled();
+        }
+      },
+    );
+
     it("returns an empty summary when no files are provided", async () => {
+      acpRepo.findOne.mockResolvedValue({
+        id: "acp-1",
+        acpIndex: { assessmentParts: [] },
+      });
+      fileRepo.find.mockResolvedValue([]);
       const result = await service.autoValidateUploadedFiles("acp-1", []);
 
       expect(result.files).toEqual([]);
@@ -404,6 +509,37 @@ describe("ValidationService", () => {
           semanticIssueCount: 0,
         }),
       );
+      expect(fileRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("preserves AP errors after deleting the last file", async () => {
+      const acpIndex = {
+        assessmentParts: [
+          { instruments: [{ testcenterBooklet: [{ id: "booklet-1" }] }] },
+        ],
+      };
+      acpRepo.findOne.mockResolvedValue({ id: "acp-1", acpIndex });
+      fileRepo.find.mockResolvedValue([]);
+      jest
+        .mocked(manifestService.getManifest)
+        .mockResolvedValue(buildReviewManifest(acpIndex, new Map()));
+
+      const result = await service.autoValidateUploadedFiles("acp-1", []);
+
+      expect(result.summary).toMatchObject({
+        totalFiles: 0,
+        validFiles: 0,
+        invalidFiles: 0,
+        semanticValid: false,
+        semanticIssueCount: 1,
+        semanticIssues: [
+          expect.objectContaining({
+            severity: "error",
+            message: "Booklet besitzt weder XML-Definition noch Module.",
+          }),
+        ],
+      });
+      expect(fileRepo.save).not.toHaveBeenCalled();
     });
 
     it("creates file-level errors when uploaded files are missing on disk", async () => {

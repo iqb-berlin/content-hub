@@ -344,6 +344,19 @@ describe('ApiService', () => {
       expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/files');
     });
 
+    it('loads AP consistency independently of file validation', () => {
+      const result = {
+        valid: false,
+        issues: [{ severity: 'error', message: 'Booklet fehlt' }],
+        timestamp: '2026-11-05T12:00:00.000Z',
+      };
+      httpClientMock.get.mockReturnValue(of(result));
+
+      service.getAcpConsistency('acp1').subscribe((value) => expect(value).toEqual(result));
+
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/files/consistency');
+    });
+
     it('should delete file', () => {
       httpClientMock.delete.mockReturnValue(of(null));
 

@@ -37,6 +37,7 @@ export interface AutoValidationSummary {
   invalidFiles: number;
   semanticValid: boolean;
   semanticIssueCount: number;
+  semanticIssues: ValidationIssue[];
   timestamp: string;
 }
 
@@ -129,7 +130,7 @@ export class ValidationService {
 
   /**
    * Validate freshly uploaded files automatically and persist per-file results.
-   * Merges syntactic/schema checks with ACP-wide semantic checks.
+   * Keeps file results separate from ACP-wide semantic checks in the summary.
    */
   async autoValidateUploadedFiles(
     acpId: string,
@@ -137,20 +138,6 @@ export class ValidationService {
     progress?: FileProcessingProgressReporter,
     persistResults = true,
   ): Promise<{ files: AcpFile[]; summary: AutoValidationSummary }> {
-    if (!files.length) {
-      return {
-        files: [],
-        summary: {
-          totalFiles: 0,
-          validFiles: 0,
-          invalidFiles: 0,
-          semanticValid: true,
-          semanticIssueCount: 0,
-          timestamp: new Date().toISOString(),
-        },
-      };
-    }
-
     const syntacticAndSchemaResults = new Map<string, ValidationResult>();
 
     await progress?.startPhase("validate-files", files.length, {
@@ -202,21 +189,18 @@ export class ValidationService {
         ],
         timestamp: now,
       };
-      const mergedIssues = [...fileResult.issues, ...semanticIssues];
-      const mergedResult: ValidationResult = {
-        valid: fileResult.valid && semanticResult.valid,
-        issues: mergedIssues,
+      const result: ValidationResult = {
+        ...fileResult,
         timestamp: now,
       };
-      file.validationResult = mergedResult as unknown as Record<
-        string,
-        unknown
-      >;
-      return { file, result: mergedResult };
+      file.validationResult = result as unknown as Record<string, unknown>;
+      return { file, result };
     });
     const validatedFiles = validatedEntries.map((entry) => entry.file);
 
-    if (persistResults) await this.fileRepository.save(validatedFiles);
+    if (persistResults && validatedFiles.length) {
+      await this.fileRepository.save(validatedFiles);
+    }
 
     const validFiles = validatedEntries.filter(
       (entry) => entry.result.valid,
@@ -230,6 +214,7 @@ export class ValidationService {
         invalidFiles: validatedFiles.length - validFiles,
         semanticValid: semanticResult.valid,
         semanticIssueCount: semanticResult.issues.length,
+        semanticIssues,
         timestamp: now,
       },
     };

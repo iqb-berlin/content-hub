@@ -44,7 +44,7 @@ export class ReviewReadinessService {
   ) {}
 
   // Bump when readiness rules or validation dependencies change.
-  private readonly rulesVersion = "review-readiness-v1";
+  private readonly rulesVersion = "review-readiness-v2";
 
   private async fingerprint(acpId: string): Promise<string> {
     const [acp, files] = await Promise.all([
@@ -110,7 +110,11 @@ export class ReviewReadinessService {
       undefined,
       false,
     );
-    for (const issue of this.uniqueIssues(validationRun.files)) {
+    const validationIssues = [
+      ...this.uniqueIssues(validationRun.files),
+      ...validationRun.summary.semanticIssues,
+    ];
+    for (const issue of validationIssues) {
       const text = issue.path
         ? `${issue.message} (${issue.path})`
         : issue.message;
