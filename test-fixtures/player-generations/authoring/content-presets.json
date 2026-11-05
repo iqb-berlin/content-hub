@@ -1,0 +1,422 @@
+{
+  "sourceEditor": "3.1.0",
+  "description": "Own synthetic compound content imported and exported through the original ASPECT editor; obsolete child fields removed by that editor.",
+  "elements": {
+    "cloze": {
+      "isRelevantForPresentationComplete": true,
+      "position": {
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumn": 1,
+        "gridColumnRange": 1,
+        "gridRow": 2,
+        "gridRowRange": 1,
+        "marginLeft": {
+          "value": 0,
+          "unit": "px"
+        },
+        "marginRight": {
+          "value": 0,
+          "unit": "px"
+        },
+        "marginTop": {
+          "value": 0,
+          "unit": "px"
+        },
+        "marginBottom": {
+          "value": 35,
+          "unit": "px"
+        },
+        "zIndex": 0
+      },
+      "dimensions": {
+        "width": 180,
+        "height": 200,
+        "isWidthFixed": false,
+        "isHeightFixed": false,
+        "minWidth": null,
+        "maxWidth": null,
+        "minHeight": null,
+        "maxHeight": null
+      },
+      "styling": {
+        "backgroundColor": "transparent",
+        "fontColor": "#000000",
+        "fontSize": 20,
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "lineHeight": 180
+      },
+      "id": "p0_e1",
+      "alias": "P0_V1",
+      "type": "cloze",
+      "document": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": "left",
+              "indent": null,
+              "indentSize": 20,
+              "hangingIndent": false,
+              "margin": 0
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Wir fahren mit dem "
+              },
+              {
+                "type": "TextField",
+                "attrs": {
+                  "model": {
+                    "isRelevantForPresentationComplete": true,
+                    "dimensions": {
+                      "width": 150,
+                      "height": 30,
+                      "isWidthFixed": true,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 100
+                    },
+                    "id": "p0_e2",
+                    "alias": "P0_V2",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field-simple",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe"
+                  }
+                }
+              },
+              {
+                "type": "text",
+                "text": " zum See."
+              }
+            ]
+          }
+        ]
+      },
+      "columnCount": 1
+    },
+    "likert": {
+      "isRelevantForPresentationComplete": true,
+      "position": {
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumn": 1,
+        "gridColumnRange": 1,
+        "gridRow": 2,
+        "gridRowRange": 1,
+        "marginLeft": {
+          "value": 0,
+          "unit": "px"
+        },
+        "marginRight": {
+          "value": 0,
+          "unit": "px"
+        },
+        "marginTop": {
+          "value": 0,
+          "unit": "px"
+        },
+        "marginBottom": {
+          "value": 35,
+          "unit": "px"
+        },
+        "zIndex": 0
+      },
+      "dimensions": {
+        "width": 250,
+        "height": 200,
+        "isWidthFixed": false,
+        "isHeightFixed": false,
+        "minWidth": null,
+        "maxWidth": null,
+        "minHeight": null,
+        "maxHeight": null
+      },
+      "styling": {
+        "backgroundColor": "white",
+        "fontColor": "#000000",
+        "fontSize": 20,
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "lineHeight": 135,
+        "lineColoring": true,
+        "lineColoringColor": "#c9e0e0",
+        "firstLineColoring": false,
+        "firstLineColoringColor": "#c7f3d0"
+      },
+      "id": "p0_e1",
+      "alias": "P0_V1",
+      "type": "likert",
+      "rows": [
+        {
+          "isRelevantForPresentationComplete": true,
+          "position": {
+            "xPosition": 0,
+            "yPosition": 0,
+            "gridColumn": null,
+            "gridColumnRange": 1,
+            "gridRow": null,
+            "gridRowRange": 1,
+            "marginLeft": {
+              "value": 0,
+              "unit": "px"
+            },
+            "marginRight": {
+              "value": 0,
+              "unit": "px"
+            },
+            "marginTop": {
+              "value": 0,
+              "unit": "px"
+            },
+            "marginBottom": {
+              "value": 0,
+              "unit": "px"
+            },
+            "zIndex": 0
+          },
+          "dimensions": {
+            "width": 180,
+            "height": 50,
+            "isWidthFixed": false,
+            "isHeightFixed": false,
+            "minWidth": null,
+            "maxWidth": null,
+            "minHeight": null,
+            "maxHeight": null
+          },
+          "styling": {},
+          "id": "p0_e2",
+          "alias": "P0_V2",
+          "value": null,
+          "required": false,
+          "requiredWarnMessage": "Eingabe erforderlich",
+          "readOnly": false,
+          "type": "likert-row",
+          "rowLabel": {
+            "text": "Wasser ist sinnvoll",
+            "imgSrc": null,
+            "imgFileName": "",
+            "imgPosition": "above"
+          },
+          "columnCount": 2,
+          "verticalButtonAlignment": "center"
+        }
+      ],
+      "options": [
+        {
+          "text": "Nein",
+          "imgSrc": null,
+          "imgFileName": "",
+          "imgPosition": "above"
+        },
+        {
+          "text": "Ja",
+          "imgSrc": null,
+          "imgFileName": "",
+          "imgPosition": "above"
+        }
+      ],
+      "firstColumnSizeRatio": 5,
+      "label": "Wie gut passt das?",
+      "label2": "Beschriftung Erste Spalte",
+      "stickyHeader": false
+    },
+    "table": {
+      "isRelevantForPresentationComplete": true,
+      "position": {
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumn": 1,
+        "gridColumnRange": 1,
+        "gridRow": 2,
+        "gridRowRange": 1,
+        "marginLeft": {
+          "value": 0,
+          "unit": "px"
+        },
+        "marginRight": {
+          "value": 0,
+          "unit": "px"
+        },
+        "marginTop": {
+          "value": 0,
+          "unit": "px"
+        },
+        "marginBottom": {
+          "value": 30,
+          "unit": "px"
+        },
+        "zIndex": 0
+      },
+      "dimensions": {
+        "width": 250,
+        "height": 200,
+        "isWidthFixed": false,
+        "isHeightFixed": false,
+        "minWidth": null,
+        "maxWidth": null,
+        "minHeight": null,
+        "maxHeight": null
+      },
+      "styling": {
+        "backgroundColor": "transparent",
+        "fontColor": "#000000",
+        "fontSize": 20,
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "borderWidth": 1,
+        "borderColor": "black",
+        "borderStyle": "solid",
+        "borderRadius": 0
+      },
+      "id": "p0_e1",
+      "alias": "P0_V1",
+      "type": "table",
+      "gridColumnSizes": [
+        {
+          "value": 1,
+          "unit": "fr"
+        },
+        {
+          "value": 1,
+          "unit": "fr"
+        }
+      ],
+      "gridRowSizes": [
+        {
+          "value": 1,
+          "unit": "fr"
+        },
+        {
+          "value": 1,
+          "unit": "fr"
+        }
+      ],
+      "elements": [
+        {
+          "isRelevantForPresentationComplete": true,
+          "position": {
+            "xPosition": 0,
+            "yPosition": 0,
+            "gridColumn": null,
+            "gridColumnRange": 1,
+            "gridRow": null,
+            "gridRowRange": 1,
+            "marginLeft": {
+              "value": 0,
+              "unit": "px"
+            },
+            "marginRight": {
+              "value": 0,
+              "unit": "px"
+            },
+            "marginTop": {
+              "value": 0,
+              "unit": "px"
+            },
+            "marginBottom": {
+              "value": 0,
+              "unit": "px"
+            },
+            "zIndex": 0
+          },
+          "dimensions": {
+            "width": 180,
+            "height": 120,
+            "isWidthFixed": false,
+            "isHeightFixed": false,
+            "minWidth": null,
+            "maxWidth": null,
+            "minHeight": null,
+            "maxHeight": null
+          },
+          "styling": {
+            "backgroundColor": "transparent",
+            "fontColor": "#000000",
+            "fontSize": 20,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "lineHeight": 135
+          },
+          "id": "p0_e2",
+          "alias": "P0_V2",
+          "label": "Deine Antwort",
+          "value": null,
+          "required": false,
+          "requiredWarnMessage": "Eingabe erforderlich",
+          "readOnly": false,
+          "inputAssistancePreset": null,
+          "inputAssistanceCustomKeys": "",
+          "inputAssistanceCustomStyle": "medium",
+          "inputAssistancePosition": "floating",
+          "inputAssistanceFloatingStartPosition": "startBottom",
+          "restrictedToInputAssistanceChars": false,
+          "hasArrowKeys": false,
+          "hasBackspaceKey": false,
+          "showSoftwareKeyboard": true,
+          "addInputAssistanceToKeyboard": true,
+          "hideNativeKeyboard": true,
+          "keyStyle": "round",
+          "type": "text-field",
+          "appearance": "outline",
+          "textAlign": "left",
+          "minLength": null,
+          "minLengthWarnMessage": "Eingabe zu kurz",
+          "maxLength": null,
+          "maxLengthWarnMessage": "Eingabe zu lang",
+          "isLimitedToMaxLength": true,
+          "pattern": null,
+          "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+          "clearable": false,
+          "gridRow": 1,
+          "gridColumn": 1
+        }
+      ],
+      "tableEdgesEnabled": false,
+      "headerEnabled": false,
+      "headerRows": [],
+      "stickyHeader": false
+    }
+  }
+}

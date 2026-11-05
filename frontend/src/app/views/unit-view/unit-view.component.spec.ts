@@ -1,4 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of, Subject } from 'rxjs';
@@ -126,6 +128,39 @@ describe('UnitViewComponent', () => {
       },
     ],
   };
+
+  const poolDirectory = resolve(__dirname, '../../../../../test-fixtures/synthetic-aspect');
+  it('lets non-ASPECT players choose their initial page instead of sending a nonexistent page zero', async () => {
+    const { message, postMessage } = await playerFixture(
+      '<fieldset><legend>Erste Seite</legend></fieldset>',
+    );
+    await message({ type: 'vopReadyNotification' });
+    const start = postMessage.mock.calls
+      .map(([value]) => value)
+      .find((value) => value.type === 'vopStartCommand');
+    expect(start).toBeDefined();
+    expect(start.playerConfig).not.toHaveProperty('startPage');
+  });
+
+  const syntheticPool = JSON.parse(readFileSync(resolve(poolDirectory, 'pool.json'), 'utf8')) as {
+    units: {
+      id: string;
+      file: string;
+      expected: { solution: Record<string, string | number>; unsupported: string[] };
+    }[];
+  };
+  for (const unit of syntheticPool.units) {
+    it(`matches the independently specified synthetic pool solution for ${unit.id}`, async () => {
+      const data = JSON.parse(readFileSync(resolve(poolDirectory, unit.file), 'utf8'));
+      const { component } = await playerFixture(JSON.stringify(data.definition), data.codingScheme);
+      expect(
+        Object.fromEntries(
+          component.reviewSolution.prefill.responses.map(({ id, value }) => [id, value]),
+        ),
+      ).toEqual(unit.expected.solution);
+      expect(component.reviewSolution.unavailableVariables).toEqual(unit.expected.unsupported);
+    });
+  }
 
   it('shows aliased manual instructions, custom labels and searchable automatic rules', async () => {
     const { fixture, component } = await playerFixture(undefined, solutionScheme);

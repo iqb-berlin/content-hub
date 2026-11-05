@@ -1,0 +1,5 @@
+{
+  "id": "speed-mono-m1-mono-binary",
+  "name": "speed-mono 1.2.0: Speed Mono: Richtig oder falsch",
+  "definition": "Wasser ist nass.\nvariable_id_value::ANSWER\nvariable_id_time::TIME\nbutton_label_A::Richtig\nbutton_label_B::Falsch\nmessage_no_next::Synthetischer Durchgang abgeschlossen.\nmax_width_px::500"
+}

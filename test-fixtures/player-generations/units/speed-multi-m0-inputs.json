@@ -1,0 +1,18 @@
+{
+  "id": "speed-multi-m0-inputs",
+  "name": "speed-multi 0.6.0-beta: Ausflug an den See",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "1.0.0",
+    "layout": "column",
+    "questions": [
+      {
+        "text": "Wasser ist nass.",
+        "answers": [
+          "Richtig",
+          "Falsch"
+        ]
+      }
+    ]
+  }
+}

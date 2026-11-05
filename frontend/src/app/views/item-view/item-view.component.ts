@@ -1,14 +1,17 @@
 import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { preparePlayerHtml } from '../../core/utils/player-html-compatibility';
+import {
+  normalizePlayerMessage,
+  postPlayerMessage,
+  releasePlayerFrame,
+} from '../../core/utils/player-protocol';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ApiService } from '../../core/services/api.service';
 import { VoudService } from '../../core/services/voud.service';
 import { UnitViewData } from '../../core/models/api.models';
-import {
-  GEOGEBRA_PLAYER_RESOURCE_BASE,
-  rewriteGeoGebraAssetUrls,
-} from '../../core/utils/geogebra-player-html.util';
+import { GEOGEBRA_PLAYER_RESOURCE_BASE } from '../../core/utils/geogebra-player-html.util';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/breadcrumb.component';
 import { MetadataPanelComponent } from '../metadata-panel/metadata-panel.component';
 import { ItemCommentThreadComponent } from '../comment-thread/item-comment-thread.component';
@@ -288,6 +291,7 @@ export class ItemViewComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    releasePlayerFrame(this.playerFrame?.nativeElement?.contentWindow);
     window.removeEventListener('message', this.messageHandler);
     this.stopAutoResize();
     this.clearFocusRetryTimer();
@@ -318,7 +322,9 @@ export class ItemViewComponent implements OnInit, OnDestroy {
     const frameWindow = this.playerFrame?.nativeElement?.contentWindow;
     if (frameWindow && event.source !== frameWindow) return;
 
-    const msg = event.data;
+    const msg = frameWindow
+      ? (normalizePlayerMessage(frameWindow, event.data) as typeof event.data)
+      : event.data;
     if (!msg || typeof msg !== 'object') return;
 
     switch (msg.type) {
@@ -331,10 +337,11 @@ export class ItemViewComponent implements OnInit, OnDestroy {
   }
 
   private sendToPlayer(msg: any) {
-    this.playerFrame?.nativeElement?.contentWindow?.postMessage(msg, '*');
+    postPlayerMessage(this.playerFrame?.nativeElement?.contentWindow, msg);
   }
 
   private currentlyLoadingUnit() {
+    releasePlayerFrame(this.playerFrame?.nativeElement?.contentWindow);
     this.playerFrameReady = false;
     this.definitionContent = null;
     this.highlightApplied = false;
@@ -357,9 +364,10 @@ export class ItemViewComponent implements OnInit, OnDestroy {
 
     fetch(playerDep.downloadUrl)
       .then((res) => res.text())
-      .then((html) => {
+      .then(async (html) => {
+        const prepared = await preparePlayerHtml(html);
         if (token !== this.unitLoadToken) return;
-        this.playerSrcDoc = this.sanitizer.bypassSecurityTrustHtml(rewriteGeoGebraAssetUrls(html));
+        this.playerSrcDoc = this.sanitizer.bypassSecurityTrustHtml(prepared);
       })
       .catch(() => {
         if (token !== this.unitLoadToken) return;

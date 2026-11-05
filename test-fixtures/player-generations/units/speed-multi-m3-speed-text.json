@@ -1,0 +1,26 @@
+{
+  "id": "speed-multi-m3-speed-text",
+  "name": "speed-multi 3.3.0: Speed Multi: Textauswahl",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "2.1.0",
+    "layout": "column",
+    "questionType": "text",
+    "answerType": "text",
+    "instructionText": "Speed Multi: Textauswahl",
+    "questions": [
+      {
+        "text": "Wähle den See.",
+        "answers": [
+          {
+            "text": "See"
+          },
+          {
+            "text": "Bahnhof"
+          }
+        ],
+        "correctAnswer": 0
+      }
+    ]
+  }
+}

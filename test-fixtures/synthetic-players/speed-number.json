@@ -1,0 +1,47 @@
+{
+  "id": "speed-number",
+  "name": "Speed Multi: Zahleneingabe",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "2.1.0",
+    "layout": "row",
+    "questionType": "image",
+    "answerType": "number",
+    "instructionText": "Speed Multi: Zahleneingabe",
+    "questions": [
+      {
+        "text": "Wähle den See.",
+        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+        "answers": [
+          {
+            "text": "See"
+          },
+          {
+            "text": "Bahnhof"
+          }
+        ],
+        "correctAnswer": 12
+      }
+    ]
+  },
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "ANSWER",
+        "alias": "ANSWER",
+        "label": "Speed Multi: Zahleneingabe",
+        "sourceType": "BASE",
+        "codeModel": "MANUAL_ONLY",
+        "manualInstruction": "<p>Synthetisches Beispiel. Die Kodierung bleibt lesbar; dieser Player verwendet ein eigenes Antwortformat.</p>",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Prüfantwort"
+          }
+        ]
+      }
+    ]
+  }
+}

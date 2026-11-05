@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "data": "synthetic",
+  "acpId": "30000000-0000-4000-8000-000000000001",
+  "bookletId": "synthetic-review",
+  "definitionVersion": "4.6.0",
+  "player": {
+    "file": "iqb-player-aspect-3.0.1.html",
+    "version": "3.0.1",
+    "sha256": "54ee0f792c105c933b1c811ded0ee54eefae8502fa690edb18f6dd0b71c803c2",
+    "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/download/editor/3.0.1%2Bplayer/3.0.1/iqb-player-aspect-3.0.1.html"
+  },
+  "units": [
+    {
+      "id": "u1",
+      "name": "Ein Ausflug zum See",
+      "file": "u1.json",
+      "expected": {
+        "scenario": "multiple-pages-and-aliases",
+        "pageCount": 2,
+        "solution": {
+          "FAHRT": "Fahrrad",
+          "WAHL": 2
+        },
+        "unsupported": []
+      }
+    },
+    {
+      "id": "u2",
+      "name": "Kurzantwort und offene Begründung",
+      "file": "u2.json",
+      "expected": {
+        "scenario": "partial-and-manual",
+        "pageCount": 1,
+        "solution": {
+          "FAHRT": "Fahrrad"
+        },
+        "unsupported": [
+          "BEGRUENDUNG"
+        ]
+      }
+    },
+    {
+      "id": "u3",
+      "name": "Offene Antwort manuell bewerten",
+      "file": "u3.json",
+      "expected": {
+        "scenario": "manual-only",
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "BEGRUENDUNG"
+        ]
+      }
+    },
+    {
+      "id": "u4",
+      "name": "Alternative richtige Antworten",
+      "file": "u4.json",
+      "expected": {
+        "scenario": "ambiguous",
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": [
+          "ALTERNATIV"
+        ]
+      }
+    },
+    {
+      "id": "u5",
+      "name": "Kodierung fehlt",
+      "file": "u5.json",
+      "expected": {
+        "scenario": "missing-coding",
+        "pageCount": 1,
+        "solution": {},
+        "unsupported": []
+      }
+    },
+    {
+      "id": "u6",
+      "name": "Klappliste und Schaltflächen",
+      "file": "u6.json",
+      "expected": {
+        "scenario": "dropdown-and-unsupported-toggle",
+        "pageCount": 1,
+        "solution": {
+          "LISTE": 2
+        },
+        "unsupported": [
+          "SCHALTER"
+        ]
+      }
+    }
+  ]
+}

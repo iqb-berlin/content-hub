@@ -1,0 +1,19 @@
+{
+  "id": "speed-multi-m0-text-row",
+  "name": "Speedtest 0.6.0-beta: text, row",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "1.0.0",
+    "layout": "row",
+    "questions": [
+      {
+        "text": "Wasser ist ein Getränk.",
+        "answers": [
+          "Richtig",
+          "Falsch"
+        ]
+      }
+    ],
+    "buttonColor": "#166b8c"
+  }
+}
