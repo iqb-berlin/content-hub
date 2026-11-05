@@ -193,7 +193,14 @@ async function probe(
         )
         .toEqual([unit.probe === 'widget-periodic-table' ? 'PERIODIC_TABLE' : 'MOLECULE_EDITOR']);
       await expect(page.locator('app-verona-widget-host dialog')).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Übernehmen', exact: true })).toBeEnabled();
+      if (unit.probe === 'widget-molecule-editor')
+        await expect(
+          page
+            .frameLocator('app-verona-widget-host iframe')
+            .getByRole('button', { name: 'Speichern', exact: true }),
+        ).toBeVisible();
+      else
+        await expect(page.getByRole('button', { name: 'Übernehmen', exact: true })).toBeEnabled();
       await page.getByRole('button', { name: 'Abbrechen', exact: true }).click();
       await expect(page.locator('app-verona-widget-host dialog')).toHaveCount(0);
       break;

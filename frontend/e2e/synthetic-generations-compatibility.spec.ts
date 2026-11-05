@@ -161,39 +161,88 @@ test('opens the real periodic table as view-only without creating an answer', as
 test('edits in the real molecule editor and returns its state to ASPECT', async ({
   page,
 }, testInfo) => {
-  await page.goto(base + 'aspect-m3-integrated-molecule');
-  const player = page.frameLocator('app-unit-view iframe');
-  const open = player.locator('.widget-container button');
-  await open.click();
-  const widget = page.frameLocator('app-verona-widget-host iframe');
-  const canvas = widget.locator('app-editor-canvas svg');
-  await expect(canvas).toBeVisible();
-  await testInfo.attach('Real molecule editor runtime', {
-    body: await page.screenshot({ fullPage: true }),
-    contentType: 'image/png',
-  });
-  await widget
-    .getByRole('button', { name: /Kohlenstoff|Carbon|^C$/ })
-    .first()
-    .click();
-  await canvas.click({ position: { x: 180, y: 120 } });
-  await page.getByRole('button', { name: 'Übernehmen', exact: true }).click();
-  await expect(player.locator('.state-container')).toBeVisible();
-  await open.click();
-  await expect(widget.locator('app-editor-canvas svg')).toBeVisible();
-  await expect
-    .poll(() =>
-      widget.locator('body').evaluate(() => {
-        const messages = (
-          window as unknown as { compatibilityMessages: { type: string; state?: string }[] }
-        ).compatibilityMessages;
-        return messages.filter((m) => m.type === 'vowStartCommand').at(-1)?.state?.length ?? 0;
-      }),
-    )
-    .toBeGreaterThan(0);
-  await page.getByRole('button', { name: 'Abbrechen', exact: true }).click();
-  await testInfo.attach('Real molecule editor state', {
-    body: await page.screenshot({ fullPage: true }),
-    contentType: 'image/png',
-  });
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+    await page.goto(base + 'aspect-m3-integrated-molecule');
+    const player = page.frameLocator('app-unit-view iframe');
+    const open = player.locator('.widget-container button');
+    await open.click();
+    const widget = page.frameLocator('app-verona-widget-host iframe');
+    const canvas = widget.locator('app-editor-canvas svg');
+    await expect(canvas).toBeVisible();
+    await expect
+      .poll(() =>
+        widget.locator('.toolbar.top button').evaluateAll(
+          (buttons) =>
+            buttons.length > 0 &&
+            buttons.every((button) => {
+              const bounds = button.getBoundingClientRect();
+              const view = button.ownerDocument.defaultView!;
+              return (
+                bounds.left >= -1 &&
+                bounds.top >= -1 &&
+                bounds.right <= view.innerWidth + 1 &&
+                bounds.bottom <= view.innerHeight + 1 &&
+                ((button as HTMLButtonElement).disabled ||
+                  button.contains(
+                    button.ownerDocument.elementFromPoint(
+                      bounds.left + bounds.width / 2,
+                      bounds.top + bounds.height / 2,
+                    ),
+                  ))
+              );
+            }),
+        ),
+      )
+      .toBe(true);
+    await widget
+      .getByRole('button', { name: /Kohlenstoff|Carbon|^C$/ })
+      .first()
+      .click();
+    const position = { x: 140, y: 500 };
+    await canvas.hover({ position });
+    await expect(widget.getByRole('tooltip')).toBeHidden();
+    await canvas.click({ position });
+    await expect(page.getByRole('button', { name: 'Übernehmen', exact: true })).toHaveCount(0);
+    await expect(widget.getByRole('button', { name: 'Speichern', exact: true })).toBeInViewport({
+      ratio: 1,
+    });
+    await widget.getByRole('button', { name: 'Speichern', exact: true }).click();
+    const preview = player.getByRole('img', { name: 'Molekül', exact: true });
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .toBeGreaterThan(0);
+    const returned = await player.locator('body').evaluate(() => {
+      const messages = (
+        window as unknown as { compatibilityMessages: { type: string; state?: string }[] }
+      ).compatibilityMessages;
+      return JSON.parse(messages.filter((m) => m.type === 'vopWidgetReturn').at(-1)!.state!);
+    });
+    expect(Object.values(returned.atoms)).toHaveLength(1);
+    expect(returned.asImage).toMatch(/^data:image\/png;base64,/);
+    await open.click();
+    await expect(widget.locator('app-editor-canvas svg')).toBeVisible();
+    await expect
+      .poll(() =>
+        widget.locator('body').evaluate(() => {
+          const messages = (
+            window as unknown as { compatibilityMessages: { type: string; state?: string }[] }
+          ).compatibilityMessages;
+          const state = messages.filter((m) => m.type === 'vowStartCommand').at(-1)?.state;
+          return state ? Object.values(JSON.parse(state).atoms ?? {}).length : 0;
+        }),
+      )
+      .toBe(1);
+    await expect(widget.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
+    await testInfo.attach(`Real molecule editor runtime ${width}px`, {
+      body: await page.screenshot({ fullPage: true }),
+      contentType: 'image/png',
+    });
+    await page.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+    await testInfo.attach(`Real molecule editor state ${width}px`, {
+      body: await page.screenshot({ fullPage: true }),
+      contentType: 'image/png',
+    });
+  }
 });

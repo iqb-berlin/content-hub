@@ -155,6 +155,7 @@ for (const viewport of [
           await select.click();
           await frame.getByRole('option').first().click();
           await expect(select).not.toContainText('See');
+          await expect(frame.getByRole('listbox')).toBeHidden();
         } else if (kind === 'likert') {
           await frame.getByRole('radio').first().focus();
           await frame.getByRole('radio').first().press('ArrowRight');

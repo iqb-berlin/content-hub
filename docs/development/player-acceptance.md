@@ -67,13 +67,19 @@ liegen in `backend/src/assets/widgets/`. Die Dateien werden beim Backend-Build
 nach `dist/assets/widgets/` kopiert und über `/api/shared-assets/widgets/` angeboten.
 Die Dialoge verwenden die echten `vow*`-Meldungen und geben den Zustand mit
 `vopWidgetReturn` an die ursprüngliche Playersitzung zurück. Fremde Fenster,
-falsche Sitzungen und veraltete Antworten werden verworfen. Abbrechen verändert
-die Antwort nicht; auch ein absichtlich leerer Zustand lässt sich übernehmen.
+falsche Sitzungen und veraltete Antworten werden verworfen. Der Molekül-Editor verwendet seine native Speicherfunktion, die den aktuellen
+Zustand und das Vorschaubild vor der Rückgabe erzeugt; ein äußerer Übernehmen-Knopf
+könnte wegen der verzögerten Zwischenstandsmeldungen Änderungen verlieren.
+Die Einbettung berücksichtigt die Mindesthöhe von 720 Pixeln, damit der native
+Speicherknopf auch auf schmalen Bildschirmen sichtbar bleibt. Die breite obere
+Werkzeugleiste wird bei schmalen Bildschirmen umgebrochen; die Browserprüfung
+kontrolliert die Sichtbarkeit sämtlicher ihrer Schaltflächen.
+Abbrechen verändert die Antwort nicht; auch ein absichtlich leerer Zustand lässt sich übernehmen.
 
 Vier Aufgaben und sechs Integrationsfälle pro Browser prüfen ABI 1/2 sowie
 Periodensystem-Auswahlgrenze, Wiederöffnen, Abbrechen, Leeren, automatisches Schließen,
-reinen Anzeigemodus bei schmalem Bildschirm und Molekülbearbeitung mit Rückgabe und
-Wiederherstellung. Es gibt keine simulierte Ersatzoberfläche.
+reinen Anzeigemodus bei schmalem Bildschirm und Molekülbearbeitung mit Rückgabe, Vorschaubild und Wiederherstellung
+bei 390 und 1440 Pixeln. Es gibt keine simulierte Ersatzoberfläche.
 
 ## Nachweise
 

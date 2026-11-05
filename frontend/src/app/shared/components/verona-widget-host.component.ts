@@ -2,9 +2,9 @@ import { Component, ElementRef, HostListener, Inject, OnDestroy, ViewChild } fro
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { getPlayerFrameSession, PLAYER_FRAME_RELEASED } from '../../core/utils/player-protocol';
 
-const WIDGETS: Record<string, { title: string; file: string }> = {
+const WIDGETS: Record<string, { title: string; file: string; nativeSave?: boolean }> = {
   PERIODIC_TABLE: { title: 'Periodensystem', file: 'periodic-table.html' },
-  MOLECULE_EDITOR: { title: 'Molekül-Editor', file: 'molecule-editor.html' },
+  MOLECULE_EDITOR: { title: 'Molekül-Editor', file: 'molecule-editor.html', nativeSave: true },
 };
 interface WidgetCall {
   player: Window;
@@ -16,6 +16,7 @@ interface WidgetCall {
   parameters: { key: string; value: string }[];
   state?: string;
   started: boolean;
+  nativeSave: boolean;
 }
 
 @Component({
@@ -31,17 +32,27 @@ interface WidgetCall {
         @if (!call.started) {
           <p role="status">Werkzeug wird geladen …</p>
         }
-        <iframe #widgetFrame [src]="call.url" [title]="call.title"></iframe>
+        <iframe
+          #widgetFrame
+          [src]="call.url"
+          [title]="call.title"
+          [class.native-save-frame]="call.nativeSave"
+          (load)="onWidgetLoad()"
+        ></iframe>
         <footer>
           <button type="button" class="btn btn-outline" (click)="finish(false)">Abbrechen</button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            [disabled]="!call.started"
-            (click)="finish(true)"
-          >
-            Übernehmen
-          </button>
+          @if (call.nativeSave) {
+            <p>Die Struktur mit „Speichern“ im Molekül-Editor übernehmen.</p>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-primary"
+              [disabled]="!call.started"
+              (click)="finish(true)"
+            >
+              Übernehmen
+            </button>
+          }
         </footer>
       </dialog>
     }
@@ -81,6 +92,14 @@ interface WidgetCall {
         height: min(72dvh, 720px);
         border: 0;
         display: block;
+      }
+      /* The official molecule canvas has a 720px minimum, including its save control. */
+      iframe.native-save-frame {
+        height: 720px;
+      }
+      footer p {
+        margin: 0;
+        font-size: 0.875rem;
       }
       footer {
         justify-content: flex-end;
@@ -133,6 +152,7 @@ export class VeronaWidgetHostComponent implements OnDestroy {
           `/api/shared-assets/widgets/${widget.file}`,
         ),
         started: false,
+        nativeSave: widget.nativeSave ?? false,
         parameters: Array.isArray(data.parameters)
           ? data.parameters
               .filter(
@@ -171,6 +191,23 @@ export class VeronaWidgetHostComponent implements OnDestroy {
         call.state = data.state;
       if (data.type === 'vowReturnRequested') this.finish(data.saveState !== false);
     }
+  }
+
+  onWidgetLoad(): void {
+    // Only the pinned, same-origin molecule runtime needs the desktop toolbar adapted.
+    if (!this.active?.nativeSave) return;
+    const document = this.frame?.nativeElement.contentDocument;
+    if (!document || document.getElementById('contenthub-widget-layout')) return;
+    const style = document.createElement('style');
+    style.id = 'contenthub-widget-layout';
+    style.textContent = `@media (max-width: 600px) {
+      app-editor-controls .toolbar.top {
+        flex-wrap: wrap; gap: 4px; padding: 4px;
+        max-width: 100%; box-sizing: border-box;
+      }
+      app-editor-controls .toolbar.top .divider { height: 24px; margin: 0 2px; }
+    }`;
+    document.head.append(style);
   }
 
   cancel(event: Event): void {
