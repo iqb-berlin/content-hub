@@ -362,15 +362,21 @@ export class FilesController {
     required: false,
     description: "reject | overwrite | keep-both",
   })
-  @ApiOperation({ summary: "Upload files to AP" })
+  @ApiOperation({
+    summary: "Upload files to AP",
+    description:
+      "Optional multipart field conflictDecisions: JSON array of { fileName, decision: replace | skip }. Decisions apply to individual filenames after ZIP extraction; unresolved conflicts return HTTP 409 without storing the batch. For repeated names within a batch, replace uses the last occurrence and skip omits all occurrences.",
+  })
   async upload(
     @UuidParam("acpId") acpId: string,
     @UploadedFiles() files: Express.Multer.File[],
     @Query("conflictStrategy") conflictStrategy?: string,
+    @Body("conflictDecisions") conflictDecisions?: string,
   ) {
     return {
       files: await this.filesService.uploadMultiple(acpId, files, {
         conflictStrategy,
+        conflictDecisions,
       }),
     };
   }

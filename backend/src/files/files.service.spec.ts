@@ -425,6 +425,127 @@ describe("FilesService", () => {
       expect(fs.unlink).not.toHaveBeenCalledWith(mockFile.filePath);
     });
 
+    it("reports existing and repeated incoming names together before writing", async () => {
+      await expect(
+        service.uploadMultiple(acpId, [
+          incoming,
+          { ...incoming, originalname: "repeated.json" },
+          { ...incoming, originalname: "REPEATED.json" },
+        ]),
+      ).rejects.toMatchObject({
+        response: { conflicts: ["REPEATED.json", "test.json"] },
+      });
+      expect(fs.writeFile).not.toHaveBeenCalled();
+      expect(repo.save).not.toHaveBeenCalled();
+    });
+
+    it("applies different decisions to individual extracted ZIP files", async () => {
+      const skipped = {
+        ...mockFile,
+        id: "skipped",
+        originalName: "skip.json",
+        filePath: "/uploads/acp-1/skip.json",
+      };
+      repo.find.mockResolvedValue([mockFile, skipped]);
+      const JSZip = require("jszip");
+      const zip = new JSZip();
+      zip.file("nested/TEST.json", '{"replacement":true}');
+      zip.file("skip.json", '{"skip":true}');
+      zip.file("new.json", '{"new":true}');
+      const buffer = await zip.generateAsync({ type: "nodebuffer" });
+      const result = await service.uploadMultiple(
+        acpId,
+        [{ originalname: "bundle.zip", buffer } as Express.Multer.File],
+        {
+          conflictDecisions: JSON.stringify([
+            { fileName: "test.json", decision: "replace" },
+            { fileName: "SKIP.json", decision: "skip" },
+          ]),
+        },
+      );
+
+      expect(result.map((file) => file.originalName)).toEqual([
+        "TEST.json",
+        "new.json",
+      ]);
+      expect(repo.remove).toHaveBeenCalledWith([mockFile]);
+      expect(fs.unlink).not.toHaveBeenCalledWith(skipped.filePath);
+      expect(fs.writeFile).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not persist any files when all incoming files are skipped", async () => {
+      await expect(
+        service.uploadMultiple(acpId, [incoming], {
+          conflictDecisions: JSON.stringify([
+            { fileName: "test.json", decision: "skip" },
+          ]),
+        }),
+      ).resolves.toEqual([]);
+      expect(fs.writeFile).not.toHaveBeenCalled();
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(repo.remove).not.toHaveBeenCalled();
+    });
+
+    it("uses the last incoming occurrence only for an explicitly replaced name", async () => {
+      repo.find.mockResolvedValue([]);
+      await service.uploadMultiple(
+        acpId,
+        [incoming, { ...incoming, buffer: Buffer.from("last occurrence") }],
+        {
+          conflictDecisions: JSON.stringify([
+            { fileName: "TEST.json", decision: "replace" },
+          ]),
+        },
+      );
+      expect(fs.writeFile).toHaveBeenCalledTimes(1);
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        Buffer.from("last occurrence"),
+      );
+    });
+
+    it("rechecks unapproved names under the lock even with a replacement decision", async () => {
+      const concurrent = {
+        ...mockFile,
+        id: "concurrent",
+        originalName: "new.json",
+      };
+      repo.find
+        .mockResolvedValueOnce([mockFile])
+        .mockResolvedValueOnce([mockFile, concurrent]);
+
+      await expect(
+        service.uploadMultiple(
+          acpId,
+          [incoming, { ...incoming, originalname: "new.json" }],
+          {
+            conflictDecisions: JSON.stringify([
+              { fileName: "test.json", decision: "replace" },
+            ]),
+          },
+        ),
+      ).rejects.toMatchObject({ response: { conflicts: ["new.json"] } });
+      expect(repo.save).not.toHaveBeenCalled();
+      expect(repo.remove).not.toHaveBeenCalled();
+      expect(fs.unlink).toHaveBeenCalledTimes(2);
+      expect(fs.unlink).not.toHaveBeenCalledWith(mockFile.filePath);
+    });
+
+    it.each([
+      "not json",
+      "{}",
+      "[null]",
+      '[{"fileName":"","decision":"skip"}]',
+      '[{"fileName":"test.json","decision":"overwrite"}]',
+      '[{"fileName":"test.json","decision":"skip"},{"fileName":"TEST.JSON","decision":"replace"}]',
+    ])("rejects invalid conflict decisions: %s", async (conflictDecisions) => {
+      await expect(
+        service.uploadMultiple(acpId, [incoming], { conflictDecisions }),
+      ).rejects.toThrow(BadRequestException);
+      expect(fs.writeFile).not.toHaveBeenCalled();
+      expect(repo.remove).not.toHaveBeenCalled();
+    });
+
     it("should overwrite existing files when strategy is overwrite", async () => {
       const result = await service.uploadMultiple(acpId, [incoming], {
         conflictStrategy: "overwrite",
