@@ -150,9 +150,11 @@ describe("ItemParameterImportPipeline", () => {
     });
   });
 
-  it("imports bista independently per row with at most two decimal places", () => {
+  it("imports bista independently per row with more than two decimal places", () => {
     const result = pipeline.execute({
-      fileBuffer: Buffer.from("item;sub_id;bista\nI1;A;503,25\nI1;B;504.5"),
+      fileBuffer: Buffer.from(
+        "item;sub_id;bista\nI1;A;503,251234\nI1;B;504.567891",
+      ),
       items,
       itemProperties: {},
     });
@@ -166,32 +168,77 @@ describe("ItemParameterImportPipeline", () => {
       "uuid-1::A": {
         itemUuid: "uuid-1",
         subId: "A",
-        bista: 503.25,
+        bista: 503.251234,
       },
       "uuid-1::B": {
         itemUuid: "uuid-1",
         subId: "B",
-        bista: 504.5,
+        bista: 504.567891,
       },
     });
   });
 
-  it("rejects bista values with more than two decimal places", () => {
+  it.each([
+    ["1.234567", 1.234567],
+    ["503,251", 503.251],
+    ["1.23456789012345", 1.23456789012345],
+    ["0,0000000000000001234567", 0.0000000000000001234567],
+    ["-1.234567", -1.234567],
+    ["+1,234567", 1.234567],
+    [" 503.251234 ", 503.251234],
+    ["503.25", 503.25],
+    ["504", 504],
+    ["0", 0],
+  ])("imports bista %s without a decimal-place limit", (rawValue, expected) => {
     const result = pipeline.execute({
-      fileBuffer: Buffer.from("item;bista\nI1;503,251"),
+      fileBuffer: Buffer.from(`item;bista\nI1;${rawValue}`),
       items,
       itemProperties: { "uuid-1": { bista: 500 } },
     });
 
-    expect(result.updated).toBe(0);
-    expect(result.failed).toEqual([
-      {
-        csvRow: "I1",
-        reason: "bista darf höchstens 2 Nachkommastellen haben",
-      },
-    ]);
-    expect(result.nextItemProperties).toEqual({ "uuid-1": { bista: 500 } });
+    expect(result.updated).toBe(1);
+    expect(result.failed).toEqual([]);
+    expect(result.nextItemProperties).toEqual({
+      "uuid-1": { bista: expected },
+    });
   });
+
+  it.each([
+    "invalid",
+    "1.2.3",
+    "1,2,3",
+    "NaN",
+    "Infinity",
+    "-Infinity",
+    "1e309",
+    "0x10",
+    "0X10",
+    "0b10",
+    "0B10",
+    "0o10",
+    "0O10",
+    "1e3",
+    "1E-3",
+    "9".repeat(310),
+  ])(
+    "rejects invalid or non-finite bista %s without overwriting data",
+    (rawValue) => {
+      const result = pipeline.execute({
+        fileBuffer: Buffer.from(`item;bista\nI1;${rawValue}`),
+        items,
+        itemProperties: { "uuid-1": { bista: 500 } },
+      });
+
+      expect(result.updated).toBe(0);
+      expect(result.failed).toEqual([
+        {
+          csvRow: "I1",
+          reason: "Ungültiger Zahlenwert in bista",
+        },
+      ]);
+      expect(result.nextItemProperties).toEqual({ "uuid-1": { bista: 500 } });
+    },
+  );
 
   it("imports text_complexity as text, including numeric-looking content", () => {
     const result = pipeline.execute({
