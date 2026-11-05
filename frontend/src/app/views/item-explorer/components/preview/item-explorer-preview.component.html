@@ -96,13 +96,15 @@
                 (change)="vm.onPagingModeChange()"
                 [disabled]="!vm.canPreviewSelectedItem"
               >
-                <option value="buttons">Seiten mit Schaltflächen</option>
                 <option value="separate">Einzelseiten</option>
                 <option value="concat-scroll">Fortlaufend scrollen</option>
                 <option value="concat-scroll-snap">Scrollen mit Einrasten</option>
                 <option value="view-all">Alle Seiten (Druckansicht)</option>
                 <option value="print-ids">Alle Seiten mit IDs (Druckansicht)</option>
               </select>
+              <small>
+                Zum Itemwechsel die Itemliste oder „Vorheriges Item“ und „Nächstes Item“ verwenden.
+              </small>
             </div>
             @if (vm.canEditExplorer && vm.itemExplorerConditionalVisibilityEnabled) {
               <div class="preview-target-controls">
@@ -433,11 +435,43 @@
             class="player-iframe"
             [title]="'Player-Vorschau für Item ' + vm.selectedItem.itemId"
             [class.view-all-mode]="vm.pagingMode === 'view-all' || vm.pagingMode === 'print-ids'"
+            [class.flow-paging-mode]="vm.showFlowPageNavigation"
             [style.height]="vm.playerHeight"
             sandbox="allow-scripts allow-same-origin allow-downloads"
             (load)="vm.onPlayerLoaded()"
           >
           </iframe>
+          @if (vm.showFlowPageNavigation) {
+            <nav class="flow-page-nav" aria-label="Seitennavigation im regulären Aufgabenablauf">
+              <button
+                type="button"
+                class="btn btn-outline btn-sm"
+                [disabled]="!vm.canNavigateFlowBackward"
+                (click)="vm.navigateFlowPage(-1)"
+              >
+                ← Vorherige Aufgabenseite
+              </button>
+              <span aria-live="polite">
+                @if (vm.flowPageNumber > 0) {
+                  Aufgabenseite {{ vm.flowPageNumber }} von {{ vm.flowPageCount }}
+                } @else {
+                  Diese Aufgabenseite ist ausgeblendet.
+                }
+              </span>
+              <button
+                type="button"
+                class="btn btn-outline btn-sm"
+                [disabled]="!vm.canNavigateFlowForward"
+                (click)="vm.navigateFlowPage(1)"
+              >
+                Nächste Aufgabenseite →
+              </button>
+              <small
+                >Hier wechseln Sie Aufgabenseiten. Die Itemauswahl bleibt für die Kontextübernahme
+                bestehen.</small
+              >
+            </nav>
+          }
         } @else {
           <div class="empty-state">
             <div style="font-size: 2.5rem; margin-bottom: 12px">🎮</div>

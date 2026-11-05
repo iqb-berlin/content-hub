@@ -46,6 +46,159 @@ function createPlayer() {
 describe('ItemExplorerPlayerService', () => {
   afterEach(() => vi.useRealTimers());
 
+  it('navigates the reported flow pages in the same session and waits for page acknowledgement', () => {
+    vi.useFakeTimers();
+    const { player, dom, request } = createPlayer();
+    Object.assign(dom, { isTargetVisible: vi.fn(() => true) });
+    player.itemExplorerConditionalVisibilityEnabled = true;
+    player.changePreviewMode('flow');
+    player.start(request);
+    const sessionId = player.activePlayerSessionId;
+    const dataParts = { elementCodes: '[{"id":"v","value":"answer"}]' };
+    const report = (currentPage: string, reportedSession = sessionId) =>
+      player.handlePlayerMessage(
+        {
+          type: 'vopStateChangedNotification',
+          sessionId: reportedSession,
+          timeStamp: Date.now(),
+          playerState: { currentPage, validPages: [{ id: '0' }, { id: '2' }] },
+          unitState: { dataParts },
+        },
+        { ready: true, solutionActive: false },
+      );
+    report('0');
+    expect(player.showFlowPageNavigation).toBe(true);
+    expect(player.flowPageNumber).toBe(1);
+    expect(player.canNavigateFlowBackward).toBe(false);
+    expect(player.canNavigateFlowForward).toBe(true);
+    player.navigateFlowPage(-1);
+    expect(dom.postMessage).toHaveBeenCalledOnce();
+    player.navigateFlowPage(1);
+    expect(dom.postMessage).toHaveBeenLastCalledWith({
+      type: 'vopPageNavigationCommand',
+      sessionId,
+      target: '2',
+    });
+    expect(player.hasCurrentResponseState).toBe(false);
+    expect(player.canNavigateFlowBackward).toBe(false);
+    expect(player.canNavigateFlowForward).toBe(false);
+    expect(player.capturePreviewContext(request)).toBeNull();
+    player.navigateFlowPage(1);
+    vi.runAllTimers();
+    // Late legacy start-page retries must not return the player to the beginning.
+    expect(dom.postMessage).toHaveBeenCalledTimes(2);
+    report('2', 'retired-session');
+    expect(player.canNavigateFlowBackward).toBe(false);
+    report('2');
+    expect(player.flowPageNumber).toBe(2);
+    expect(player.canNavigateFlowBackward).toBe(true);
+    expect(player.canNavigateFlowForward).toBe(false);
+    expect(player.activePlayerSessionId).toBe(sessionId);
+    expect(player.currentResponseData).toEqual(dataParts);
+    expect(player.capturePreviewContext(request)).toMatchObject({ page: 2, dataParts });
+    player.navigateFlowPage(-1);
+    expect(dom.postMessage).toHaveBeenLastCalledWith({
+      type: 'vopPageNavigationCommand',
+      sessionId,
+      target: '0',
+    });
+    player.beginSelection(true);
+    expect(player.showFlowPageNavigation).toBe(false);
+    player.ngOnDestroy();
+  });
+
+  it('can leave a hidden flow page even when only one other page is valid', () => {
+    vi.useFakeTimers();
+    const { player, dom, request } = createPlayer();
+    player.itemExplorerConditionalVisibilityEnabled = true;
+    player.definitionContent = JSON.stringify({
+      pages: [{ alwaysVisible: true }, {}, {}],
+    });
+    player.changePreviewMode('flow');
+    player.start(request);
+    player.handlePlayerMessage(
+      {
+        type: 'vopStateChangedNotification',
+        sessionId: player.activePlayerSessionId,
+        playerState: { currentPage: '0', validPages: [] },
+      },
+      { ready: true, solutionActive: false },
+    );
+    expect(player.flowPageCount).toBe(2);
+    expect(player.canNavigateFlowForward).toBe(true);
+    player.handlePlayerMessage(
+      {
+        type: 'vopStateChangedNotification',
+        sessionId: player.activePlayerSessionId,
+        playerState: { currentPage: '0', validPages: [{ id: '1' }] },
+      },
+      { ready: true, solutionActive: false },
+    );
+    expect(player.flowPageNumber).toBe(1);
+    expect(player.showFlowPageNavigation).toBe(true);
+    expect(player.canNavigateFlowBackward).toBe(false);
+    expect(player.canNavigateFlowForward).toBe(true);
+    player.navigateFlowPage(1);
+    expect(dom.postMessage).toHaveBeenLastCalledWith({
+      type: 'vopPageNavigationCommand',
+      sessionId: player.activePlayerSessionId,
+      target: '1',
+    });
+    player.handlePlayerMessage(
+      {
+        type: 'vopStateChangedNotification',
+        sessionId: player.activePlayerSessionId,
+        playerState: { currentPage: '1', validPages: [{ id: '0' }] },
+      },
+      { ready: true, solutionActive: false },
+    );
+    expect(player.canNavigateFlowBackward).toBe(true);
+    expect(player.canNavigateFlowForward).toBe(false);
+    player.navigateFlowPage(-1);
+    expect(dom.postMessage).toHaveBeenLastCalledWith({
+      type: 'vopPageNavigationCommand',
+      sessionId: player.activePlayerSessionId,
+      target: '0',
+    });
+    player.ngOnDestroy();
+  });
+
+  it('limits host page navigation to paged flow and keeps correct-solution previews read-only', () => {
+    vi.useFakeTimers();
+    const { player, dom, request } = createPlayer();
+    const report = () =>
+      player.handlePlayerMessage(
+        {
+          type: 'vopStateChangedNotification',
+          sessionId: player.activePlayerSessionId,
+          playerState: { currentPage: '0', validPages: { '0': 'First', '1': 'Second' } },
+        },
+        { ready: true, solutionActive: false },
+      );
+    player.start(request);
+    report();
+    expect(player.showFlowPageNavigation).toBe(false);
+    player.navigateFlowPage(1);
+    expect(dom.postMessage).toHaveBeenCalledOnce();
+    player.itemExplorerConditionalVisibilityEnabled = true;
+    player.changePreviewMode('flow');
+    player.start(request);
+    report();
+    expect(player.canNavigateFlowForward).toBe(true);
+    player.pagingMode = 'concat-scroll';
+    expect(player.showFlowPageNavigation).toBe(false);
+    player.navigateFlowPage(1);
+    expect(dom.postMessage).toHaveBeenCalledTimes(2);
+    player.pagingMode = 'separate';
+    player.start({ ...request, solution: { status: 'available', responses: [], message: '' } });
+    report();
+    expect(player.showFlowPageNavigation).toBe(true);
+    expect(player.canNavigateFlowForward).toBe(false);
+    player.navigateFlowPage(1);
+    expect(dom.postMessage).toHaveBeenCalledTimes(3);
+    player.ngOnDestroy();
+  });
+
   it('accepts responses only from the active, ready session and preserves responses during solution preview', () => {
     vi.useFakeTimers();
     const { player, dom, request } = createPlayer();
