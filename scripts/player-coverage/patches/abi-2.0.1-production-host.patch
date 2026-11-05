@@ -8,3 +8,8 @@
 @@ -16 +17 @@
 -  @Inject('IS_PRODUCTION_MODE') readonly isProductionMode: boolean;
 +  readonly isProductionMode = environment.production;
+--- a/projects/player-component/src/app/player.component.ts
++++ b/projects/player-component/src/app/player.component.ts
+@@ -10 +10 @@
+-    <p>player-component alive!</p>
++    <p></p>

@@ -40,7 +40,7 @@ Der ursprüngliche Wert bleibt als Antwort erhalten.
 
 ABI 2.0.1 initialisiert `isProductionMode` nicht. Dadurch startet das veröffentlichte
 HTML seine interne Demo und übernimmt die Host-Aufgabe nicht. Der Backport setzt
-den Produktionsmodus für den Hostbetrieb. Die ABI-2-Aufgabe verwendet nur
+den Produktionsmodus für den Hostbetrieb und entfernt die interne Debugmeldung. Die ABI-2-Aufgabe verwendet nur
 Eingabeformate, die diese Generation tatsächlich unterstützt.
 
 Die App wendet die Korrekturen ausschließlich beim Rendern an, nach Prüfung von

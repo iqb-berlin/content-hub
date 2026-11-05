@@ -11,6 +11,10 @@ export const PLAYER_HTML_REPAIRS = [
       'class AppComponent {\n        constructor(dialog) {\n            this.dialog = dialog;',
     after:
       'class AppComponent {\n        constructor(dialog) {\n            this.dialog = dialog;\n            this.isProductionMode = true;',
+    additionalChanges: [
+      { before: 'la(1,"player-component alive!")', after: 'la(1,"")' },
+      { before: 'la(1, "player-component alive!")', after: 'la(1, "")' },
+    ],
   },
   {
     id: 'aspect-3-readonly-controls',

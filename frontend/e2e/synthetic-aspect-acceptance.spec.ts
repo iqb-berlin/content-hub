@@ -246,7 +246,7 @@ for (const viewport of [
           await frame.locator('aspect-audio button').filter({ hasText: 'play_arrow' }).click();
           await expect(
             frame.locator('aspect-audio button').filter({ hasText: 'play_arrow' }),
-          ).toBeDisabled({ timeout: 15_000 });
+          ).toBeDisabled({ timeout: 25_000 });
         } else if (kind === 'geometry') {
           await expect(frame.locator('aspect-geometry canvas').first()).toBeVisible({
             timeout: 30_000,

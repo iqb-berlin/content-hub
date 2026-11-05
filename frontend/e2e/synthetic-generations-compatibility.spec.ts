@@ -39,7 +39,28 @@ for (const major of [1, 2]) {
       )
       .toContain('Fahrrad');
     await expect(frame.getByText('Testscript Title', { exact: true })).toHaveCount(0);
-    await expect(frame.getByText(/Scriptfehler/)).toHaveCount(0);
+    await expect(frame.getByText(/Scriptfehler|player-component alive!/)).toHaveCount(0);
+    if (major === 2) {
+      await page.goto(base + 'abi-m2-dynamic');
+      const additional = frame.getByText('Zusatzantwort', { exact: true });
+      await expect(additional).toBeHidden();
+      await frame.locator('mat-checkbox .mat-checkbox-inner-container').first().click();
+      await expect(frame.getByRole('checkbox').first()).toBeChecked();
+      await expect(additional).toBeVisible();
+      await frame.locator('input:not([type]),input[type=text]').first().fill('Wasser');
+      await frame.locator('input[type=number]').fill('2');
+      await frame.getByRole('button', { name: 'Anwenden', exact: true }).click();
+      await frame.getByRole('button', { name: 'Haltepunkt 2', exact: true }).click();
+      const place = frame
+        .locator('player-repeat input:not([type]),player-repeat input[type=text]')
+        .last();
+      await place.fill('See');
+      await expect(place).toHaveValue('See');
+      await frame.locator('mat-checkbox .mat-checkbox-inner-container').first().click();
+      await expect(frame.getByRole('checkbox').first()).not.toBeChecked();
+      await expect(additional).toBeHidden();
+      await expect(frame.getByText(/Scriptfehler|player-component alive!/)).toHaveCount(0);
+    }
     await testInfo.attach(`ABI ${major} in Content Hub`, {
       body: await page.screenshot({ fullPage: true }),
       contentType: 'image/png',

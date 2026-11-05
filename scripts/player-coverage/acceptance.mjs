@@ -223,7 +223,7 @@ export function acceptanceScenarios(readUnit) {
     (e) => {
       const wave = Buffer.from(e.src.split(",")[1], "base64");
       const samples = Buffer.concat(
-        Array.from({ length: 8 }, () => wave.subarray(44)),
+        Array.from({ length: 40 }, () => wave.subarray(44)),
       );
       const header = Buffer.from(wave.subarray(0, 44));
       header.writeUInt32LE(36 + samples.length, 4);

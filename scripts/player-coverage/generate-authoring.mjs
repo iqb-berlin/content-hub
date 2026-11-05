@@ -530,18 +530,27 @@ for (const player of pool.players.filter((p) => p.family !== "aspect")) {
             ),
         )
         .join("\n");
-    const dynamic = json(
+    let dynamic = json(
       resolve(root, "test-fixtures/synthetic-players/abi-dynamic.json"),
     ).definition.replace(
       "iqb-scripted::1.2",
       player.major < 5 ? "iqb-scripted::1.0" : "iqb-scripted::1.2",
     );
+    if (player.major === 2)
+      dynamic = dynamic
+        .replace(/\nnav-button-group::[^\n]*/g, "")
+        .replace("if-else\ntext::Noch keine Zusatzfrage\n", "");
     addUnit(
       player.id + "-dynamic",
       `${player.family} ${player.version}: bedingte und wiederholte Fragen`,
       player.id,
       dynamic,
-      { formats: ["if", "repeat", "navigation"] },
+      {
+        formats:
+          player.major === 2
+            ? ["if", "repeat"]
+            : ["if", "repeat", "navigation"],
+      },
     );
   }
   if (player.family === "abi" && player.major === 1)

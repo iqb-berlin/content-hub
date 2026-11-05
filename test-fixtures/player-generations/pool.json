@@ -46935,8 +46935,7 @@
       "player": "abi-m2",
       "formats": [
         "if",
-        "repeat",
-        "navigation"
+        "repeat"
       ]
     },
     {

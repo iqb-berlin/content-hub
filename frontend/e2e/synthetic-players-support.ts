@@ -29,7 +29,7 @@ export const playerPool = JSON.parse(
 export const playerFrame = (page: Page) => page.frameLocator('app-unit-view iframe');
 
 export async function openFormat(page: Page, unit: FormatUnit): Promise<FrameLocator> {
-  await page.goto(`/view/${playerPool.acpId}/unit/${unit.id}`);
+  await page.goto(`/view/${playerPool.acpId}/unit/${unit.id}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('app-unit-view h1')).toContainText(unit.name);
   return playerFrame(page);
 }

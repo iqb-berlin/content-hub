@@ -32,7 +32,7 @@ npm run e2e:synthetic -- --project=chromium
 Die Suite läuft auch bei `npm run e2e` automatisch mit. `--headed` zeigt den Browser.
 Für einen eigenen **wegwerfbaren** PostgreSQL-Testserver unterstützt der bestehende
 Wrapper `BROWSER_E2E_USE_EXISTING_DATABASE=true` und `BROWSER_E2E_DATABASE_PORT`.
-Dabei wird die Datenbank `contentpool_e2e` vollständig zurückgesetzt. Keine
+Dabei wird die Datenbank `contenthub_e2e` vollständig zurückgesetzt. Keine
 gemeinsame Entwicklungsdatenbank verwenden. Aufgaben-, Upload- und Snapshot-Dateien entstehen in einem frischen temporären
 Laufverzeichnis und werden nach dem Lauf entfernt. Der Downloadcache bleibt erhalten.
 
