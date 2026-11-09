@@ -117,6 +117,35 @@ test('real Aspect switches stimulus A → B → A and blocks synthetic answer sa
   await page.screenshot({ path: info.outputPath('conditional-stimulus.png'), fullPage: true });
 });
 
+test('regular flow can leave a hidden first page for its only visible task page', async ({
+  page,
+}) => {
+  const definition = conditionalVisibilityDefinition();
+  definition.pages = definition.pages.slice(1);
+  definition.pages[1].sections[0].visibilityRules = [];
+  await openPreview(page, { definition });
+  await page.locator(rowA).click();
+  const frame = page.frameLocator('iframe.player-iframe');
+  await expect(frame.getByText('Aufgabe A', { exact: true })).toBeVisible();
+  await page.getByText('Vorschau einstellen ▾', { exact: true }).click();
+  await page.locator('#preview-context-mode').selectOption('flow');
+  const navigation = page.getByRole('navigation', {
+    name: 'Seitennavigation im regulären Aufgabenablauf',
+  });
+  await expect(navigation).toContainText('Aufgabenseite 1 von 2');
+  await expect(frame.getByText('Aufgabe A', { exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Nächste Aufgabenseite →', exact: true }).click();
+  await expect(frame.getByText('Aufgabe B', { exact: true })).toBeVisible();
+  await expect(page.locator(rowA)).toHaveAttribute('aria-selected', 'true');
+  await expect(navigation).toContainText('Aufgabenseite 2 von 2');
+  await page.getByRole('button', { name: '← Vorherige Aufgabenseite', exact: true }).click();
+  await expect(navigation).toContainText('Aufgabenseite 1 von 2');
+  await expect(frame.getByText('Aufgabe A', { exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Nächste Aufgabenseite →', exact: true }).click();
+  await expect(frame.getByText('Aufgabe B', { exact: true })).toBeVisible();
+  await expect(frame.locator('aspect-page-nav-button')).toHaveCount(0);
+});
+
 test('disabled option keeps the existing overview with both stimulus sections', async ({
   page,
 }) => {
