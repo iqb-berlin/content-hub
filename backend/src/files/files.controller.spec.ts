@@ -822,6 +822,23 @@ describe("FilesController", () => {
     });
   });
 
+  it("passes multipart conflict decisions to the upload service", async () => {
+    const decisions = JSON.stringify([
+      { fileName: "unit-1.xml", decision: "skip" },
+    ]);
+    await controller.upload(
+      "acp-1",
+      [{ originalname: "bundle.zip" } as any],
+      undefined,
+      decisions,
+    );
+    expect(filesService.uploadMultiple).toHaveBeenCalledWith(
+      "acp-1",
+      [{ originalname: "bundle.zip" }],
+      { conflictStrategy: undefined, conflictDecisions: decisions },
+    );
+  });
+
   it("returns processing job snapshot", async () => {
     await expect(
       controller.getProcessingJob("acp-1", "job-1"),

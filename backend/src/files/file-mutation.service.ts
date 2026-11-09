@@ -12,9 +12,11 @@ import { ArchiveExpansionService } from "./archive-expansion.service";
 import { FileStorageService } from "./file-storage.service";
 
 export type UploadConflictStrategy = "reject" | "overwrite" | "keep-both";
+type UploadConflictDecision = "replace" | "skip";
 
 export interface UploadMultipleOptions {
   conflictStrategy?: string;
+  conflictDecisions?: string;
   expandArchives?: boolean;
 }
 
@@ -56,6 +58,7 @@ export class FileMutationService {
     const conflictStrategy = this.resolveConflictStrategy(
       options.conflictStrategy,
     );
+    const decisions = this.parseConflictDecisions(options.conflictDecisions);
     if (!files?.length) {
       throw new BadRequestException("At least one file is required");
     }
@@ -68,7 +71,11 @@ export class FileMutationService {
     const filesToPersist = this.resolveIncomingFiles(
       normalizedFiles,
       conflictStrategy,
+      decisions,
     );
+    if (!filesToPersist.length) {
+      return [];
+    }
     if (conflictStrategy === "reject") {
       const existingFiles = await this.fileRepository.find({
         where: { acpId },
@@ -78,6 +85,7 @@ export class FileMutationService {
         filesToPersist,
         this.groupByNormalizedName(existingFiles),
         conflictStrategy,
+        decisions,
       );
     }
 
@@ -114,12 +122,18 @@ export class FileMutationService {
           filesToPersist,
           existingByName,
           conflictStrategy,
+          decisions,
         );
 
-        const replacedFiles =
-          conflictStrategy === "overwrite"
-            ? this.collectOverwriteMatches(filesToPersist, existingByName)
-            : [];
+        const replacedFiles = this.collectOverwriteMatches(
+          filesToPersist.filter(
+            (file) =>
+              conflictStrategy === "overwrite" ||
+              decisions.get(this.normalizeFileName(file.originalname)) ===
+                "replace",
+          ),
+          existingByName,
+        );
         const savedFiles = await repository.save(stagedFiles);
         if (replacedFiles.length) {
           await repository.remove(replacedFiles);
@@ -138,9 +152,9 @@ export class FileMutationService {
   private resolveIncomingFiles(
     files: Express.Multer.File[],
     conflictStrategy: UploadConflictStrategy,
+    decisions: Map<string, UploadConflictDecision>,
   ): Express.Multer.File[] {
-    const byName = new Map<string, Express.Multer.File>();
-    const duplicates = new Set<string>();
+    const byName = new Map<string, Express.Multer.File[]>();
 
     for (const file of files) {
       const name = String(file?.originalname || "").trim();
@@ -148,39 +162,87 @@ export class FileMutationService {
       if (!key) {
         throw new BadRequestException("All files must include a filename");
       }
-      if (byName.has(key)) {
-        duplicates.add(name);
+      if (decisions.get(key) === "skip") {
+        continue;
       }
-      byName.set(key, file);
+      const bucket = byName.get(key) || [];
+      bucket.push(file);
+      byName.set(key, bucket);
     }
 
-    if (conflictStrategy === "reject" && duplicates.size) {
-      this.throwConflict(duplicates);
-    }
-    if (conflictStrategy === "overwrite") {
-      return Array.from(byName.values());
-    }
-    return files;
+    return Array.from(byName.entries()).flatMap(([key, bucket]) =>
+      conflictStrategy === "overwrite" || decisions.get(key) === "replace"
+        ? bucket.slice(-1)
+        : bucket,
+    );
   }
 
   private assertNoRejectedConflicts(
     files: Express.Multer.File[],
     existingByName: Map<string, AcpFile[]>,
     conflictStrategy: UploadConflictStrategy,
+    decisions: Map<string, UploadConflictDecision>,
   ): void {
     if (conflictStrategy !== "reject") {
       return;
     }
 
     const conflicts = new Set<string>();
+    const seen = new Set<string>();
     for (const file of files) {
-      if (existingByName.has(this.normalizeFileName(file.originalname))) {
+      const key = this.normalizeFileName(file.originalname);
+      if (decisions.get(key) === "replace") {
+        continue;
+      }
+      if (existingByName.has(key) || seen.has(key)) {
         conflicts.add(file.originalname);
       }
+      seen.add(key);
     }
     if (conflicts.size) {
       this.throwConflict(conflicts);
     }
+  }
+
+  private parseConflictDecisions(
+    input?: string,
+  ): Map<string, UploadConflictDecision> {
+    const decisions = new Map<string, UploadConflictDecision>();
+    if (input === undefined) {
+      return decisions;
+    }
+    const invalid = () =>
+      new BadRequestException(
+        "conflictDecisions must be a JSON array of unique { fileName, decision: replace | skip } entries",
+      );
+    let entries: unknown;
+    if (typeof input !== "string") {
+      throw invalid();
+    }
+    try {
+      entries = JSON.parse(input);
+    } catch {
+      throw invalid();
+    }
+    if (!Array.isArray(entries)) {
+      throw invalid();
+    }
+    for (const entry of entries) {
+      if (
+        !entry ||
+        typeof entry.fileName !== "string" ||
+        !entry.fileName.trim() ||
+        (entry.decision !== "replace" && entry.decision !== "skip")
+      ) {
+        throw invalid();
+      }
+      const key = this.normalizeFileName(entry.fileName);
+      if (decisions.has(key)) {
+        throw invalid();
+      }
+      decisions.set(key, entry.decision);
+    }
+    return decisions;
   }
 
   private throwConflict(conflicts: Set<string>): never {

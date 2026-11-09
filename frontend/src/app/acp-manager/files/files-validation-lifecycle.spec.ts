@@ -1,3 +1,4 @@
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, Input, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
@@ -71,11 +72,21 @@ async function refresh(fixture: ComponentFixture<FilesComponent>) {
   await fixture.whenStable();
 }
 async function setup(initial: Observable<ValidationResult> = of(consistency('error'))) {
+  if (!HTMLDialogElement.prototype.showModal) {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      value() {
+        this.open = true;
+      },
+    });
+  }
   const task = file('task', 'task.voud');
   const booklet = file('booklet', 'booklet.xml');
   const api = {
     getFiles: vi.fn().mockReturnValue(of([task, booklet])),
     getAcpConsistency: vi.fn().mockReturnValue(initial),
+    uploadFiles: vi.fn().mockReturnValue(of(new HttpResponse({ body: { files: [] } }))),
+    startFileProcessing: vi.fn(),
     getFileDownloadUrl: vi.fn().mockReturnValue('/download'),
     validateUnitFiles: vi
       .fn()
@@ -218,11 +229,16 @@ describe('FilesComponent validation lifecycle', () => {
   it.each(['cancel', 'skip'] as const)(
     'preserves AP messages when an upload is %s',
     async (action) => {
-      const { fixture } = await setup();
+      const { fixture, api } = await setup();
       const component = fixture.componentInstance;
+      api.uploadFiles.mockReturnValueOnce(
+        throwError(
+          () => new HttpErrorResponse({ status: 409, error: { conflicts: ['booklet.xml'] } }),
+        ),
+      );
       const input = { files: [new File(['<Booklet/>'], 'booklet.xml')], value: 'booklet.xml' };
       const upload = component.upload({ target: input } as unknown as Event);
-      expect(component.conflictDialogOpen).toBe(true);
+      await vi.waitFor(() => expect(component.conflictDialogOpen).toBe(true));
       if (action === 'cancel') component.cancelConflictDialog();
       else {
         component.applyDecisionToAll('skip');
@@ -233,8 +249,45 @@ describe('FilesComponent validation lifecycle', () => {
 
       expect(fixture.nativeElement.textContent).toContain(message);
       expect(component.uploading).toBe(false);
+      expect(api.startFileProcessing).not.toHaveBeenCalled();
+      expect(api.uploadFiles).toHaveBeenCalledTimes(action === 'cancel' ? 1 : 2);
     },
   );
+
+  it('invalidates old validation after a confirmed upload and reloads AP errors if processing fails', async () => {
+    const { fixture, api } = await setup(of(consistency()));
+    const component = fixture.componentInstance;
+    component.lastValidationSummary = summary(false);
+    const pendingValidation = new Subject<ValidateUnitsResponse>();
+    const pendingProcessing = new Subject<never>();
+    api.validateUnitFiles.mockReturnValue(pendingValidation);
+    api.uploadFiles.mockReturnValue(
+      of(new HttpResponse({ body: { files: [file('new-booklet', 'booklet.xml')] } })),
+    );
+    api.startFileProcessing.mockReturnValue(pendingProcessing);
+    component.validateFiles();
+    const input = { files: [new File(['<Booklet/>'], 'booklet.xml')], value: 'booklet.xml' };
+    const upload = component.upload({ target: input } as unknown as Event);
+    await vi.waitFor(() => expect(api.startFileProcessing).toHaveBeenCalledTimes(1));
+    pendingValidation.next({ unitResults: [], validationSummary: summary(false) });
+    await refresh(fixture);
+
+    expect(component.lastValidationSummary).toBeNull();
+    expect(component.validating).toBe(false);
+    expect(fixture.nativeElement.textContent).not.toContain('AP-weite Prüfung: OK');
+
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    api.getAcpConsistency.mockReturnValue(of(consistency('error')));
+    pendingProcessing.error(new Error('Processing unavailable'));
+    await upload;
+    await refresh(fixture);
+    log.mockRestore();
+
+    expect(api.getAcpConsistency).toHaveBeenCalledTimes(2);
+    expect(component.uploadError).toBe('Processing unavailable');
+    expect(fixture.nativeElement.textContent).toContain(message);
+    expect(fixture.nativeElement.textContent).not.toContain('AP-weite Prüfung: OK');
+  });
 
   it('reports a failed consistency load without showing an OK status', async () => {
     const { fixture } = await setup(throwError(() => new Error('offline')));
