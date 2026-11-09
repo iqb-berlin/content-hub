@@ -15,7 +15,7 @@ export class ItemExplorerHistoryService implements OnDestroy, ItemExplorerHistor
   private destroyed = false;
   private readonly destroy$ = new ReplaySubject<void>(1);
   private request?: Subscription;
-  private acpId = '';
+  private apId = '';
 
   showHistoryOverlay = false;
   historyLoading = false;
@@ -39,16 +39,16 @@ export class ItemExplorerHistoryService implements OnDestroy, ItemExplorerHistor
     if (!this.destroyed) this[key] = value;
   }
 
-  showHistory(acpId: string): void {
+  showHistory(apId: string): void {
     if (this.destroyed) return;
     this.request?.unsubscribe();
-    if (this.acpId !== acpId) this.historyEntries = [];
-    this.acpId = acpId;
+    if (this.apId !== apId) this.historyEntries = [];
+    this.apId = apId;
     this.showHistoryOverlay = true;
     this.historyLoading = true;
     this.historyError = '';
     this.request = this.api
-      .getItemExplorerChanges(acpId, 300)
+      .getItemExplorerChanges(apId, 300)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (entries) => {
@@ -75,7 +75,7 @@ export class ItemExplorerHistoryService implements OnDestroy, ItemExplorerHistor
     if (!entries.length) return;
     this.browser.download(
       new Blob([buildHistoryCsv(entries)], { type: 'text/csv;charset=utf-8;' }),
-      `item-explorer-history-${this.acpId}.csv`,
+      `item-explorer-history-${this.apId}.csv`,
     );
   }
 

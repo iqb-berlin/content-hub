@@ -1,7 +1,7 @@
 import { expect, Page, test } from '@playwright/test';
 import { installOidcSession } from './oidc-test-session';
 
-const ACP_ID = '10000000-0000-4000-8000-000000000101';
+const AP_ID = '10000000-0000-4000-8000-000000000101';
 const MANAGER_ID = '10000000-0000-4000-8000-000000000002';
 const MANAGER_USERNAME = 'e2e-manager';
 
@@ -21,7 +21,7 @@ async function loginAsManager(page: Page): Promise<void> {
 }
 
 async function openExplorer(page: Page): Promise<void> {
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await expect(page.getByRole('heading', { name: 'Item-Explorer' })).toBeVisible();
   await expect(page.locator('tbody tr')).toHaveCount(6);
 }
@@ -100,7 +100,7 @@ test('loads direct, fallback, partial-credit and legacy response states through 
 
 test('cancels stale selections during a rapid unit switch', async ({ page }) => {
   await loginAsManager(page);
-  await page.route(`**/api/acp/${ACP_ID}/files/unit-view/**`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/files/unit-view/**`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname.endsWith('/unit-view/u1')) {
       await new Promise((resolve) => setTimeout(resolve, 2400));
@@ -144,7 +144,7 @@ test('does not retain unit-view or asset failures and recovers on retry', async 
   await loginAsManager(page);
   let failUnitView = true;
   let firstUnitRequests = 0;
-  await page.route(`**/api/acp/${ACP_ID}/files/unit-view/u1*`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/files/unit-view/u1*`, async (route) => {
     firstUnitRequests += 1;
     if (failUnitView) {
       await new Promise((resolve) => setTimeout(resolve, 2400));
@@ -184,7 +184,7 @@ test('does not retain unit-view or asset failures and recovers on retry', async 
 
   let failAssets = true;
   let failedAssetRequests = 0;
-  await page.route(`**/api/acp/${ACP_ID}/files/*/download*`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/files/*/download*`, async (route) => {
     if (failAssets) {
       failedAssetRequests += 1;
       await route.fulfill({ status: 503, body: 'Synthetic asset failure' });
@@ -302,7 +302,7 @@ test('renders the preview without document overflow on desktop and narrow screen
 });
 
 // Coding, draft/published separation and reader reload are exercised on all
-// browsers in critical-journeys-cross-browser.spec.ts with isolated ACPs.
+// browsers in critical-journeys-cross-browser.spec.ts with isolated APs.
 
 test('edits, saves, reloads and deletes current-session player answers', async ({ page }) => {
   await loginAsManager(page);

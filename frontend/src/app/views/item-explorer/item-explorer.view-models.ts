@@ -263,7 +263,7 @@ export type ItemExplorerPreviewViewModel = ReadonlyViewModelSlice<
     | 'showPlayerPreview'
     | 'showStudioItemComments'
     | 'applyCustomPreviewTarget'
-    | 'acpId'
+    | 'apId'
     | 'canEditExplorer'
     | 'canPreviewSelectedItem'
     | 'canSaveCurrentResponseState'
@@ -326,7 +326,7 @@ export type ItemExplorerPreviewViewModel = ReadonlyViewModelSlice<
 export type ItemExplorerCodingDialogViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
-    | 'acpId'
+    | 'apId'
     | 'closeCodingOverlay'
     | 'codingSearchText'
     | 'codingCommentsEnabled'

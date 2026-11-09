@@ -14,7 +14,7 @@ vi.mock('../comment-thread/item-comment-thread.component', async () => {
     selector: 'app-item-comment-thread',
     standalone: true,
     template: '',
-    inputs: ['acpId', 'targetType', 'bookletId', 'enabled'],
+    inputs: ['apId', 'targetType', 'bookletId', 'enabled'],
   })(ItemCommentThreadStub);
   return { ItemCommentThreadComponent: ItemCommentThreadStub };
 });
@@ -22,7 +22,7 @@ vi.mock('../comment-thread/item-comment-thread.component', async () => {
 vi.mock('../unit-view/unit-view.component', async () => {
   const { Component } = await import('@angular/core');
   class UnitViewStub {
-    acpId = '';
+    apId = '';
     unitId = '';
     bookletId = '';
     embedded = false;
@@ -35,7 +35,7 @@ vi.mock('../unit-view/unit-view.component', async () => {
     template:
       '<div class="unit-review-stub" [attr.data-unit-id]="unitId" [attr.data-booklet-id]="bookletId" [attr.data-review-mode]="reviewMode">{{ unitId }}</div>',
     inputs: [
-      'acpId',
+      'apId',
       'unitId',
       'bookletId',
       'bookletName',
@@ -54,7 +54,7 @@ describe('Booklet navigation', () => {
     'keeps booklet navigation with review permission %s',
     async (canReview) => {
       const routeParamMap = new BehaviorSubject(
-        convertToParamMap({ acpId: 'acp-1', sequenceId: 'booklet-1' }),
+        convertToParamMap({ apId: 'ap-1', sequenceId: 'booklet-1' }),
       );
       const routeQueryParamMap = new BehaviorSubject(convertToParamMap({ kind: 'booklet' }));
       const sequences = {
@@ -102,14 +102,14 @@ describe('Booklet navigation', () => {
               isLoggedIn: false,
               isAdmin: false,
               currentUser$: of(null),
-              hasAcpRole: vi.fn().mockReturnValue(false),
+              hasApRole: vi.fn().mockReturnValue(false),
             },
           },
           {
             provide: ActivatedRoute,
             useValue: {
               snapshot: {
-                paramMap: { get: (key: string) => (key === 'acpId' ? 'acp-1' : 'booklet-1') },
+                paramMap: { get: (key: string) => (key === 'apId' ? 'ap-1' : 'booklet-1') },
                 queryParamMap: { get: () => 'booklet' },
               },
               paramMap: routeParamMap,
@@ -127,7 +127,7 @@ describe('Booklet navigation', () => {
                     ? throwError(() => new Error('offline'))
                     : of({ canReview }),
                 ),
-              getAcpStartPage: vi.fn().mockReturnValue(
+              getApStartPage: vi.fn().mockReturnValue(
                 of({
                   featureConfig: {
                     enableSequenceNavigation: false,
@@ -143,7 +143,7 @@ describe('Booklet navigation', () => {
               ),
               getViewSequence: vi
                 .fn()
-                .mockImplementation((_acpId: string, sequenceId: keyof typeof sequences) =>
+                .mockImplementation((_apId: string, sequenceId: keyof typeof sequences) =>
                   of(sequences[sequenceId]),
                 ),
             },
@@ -160,14 +160,14 @@ describe('Booklet navigation', () => {
       await vi.waitFor(() => expect(component.hasUnits).toBe(true));
       fixture.detectChanges();
       expect(TestBed.inject(ApiService).getViewSequence).toHaveBeenCalledWith(
-        'acp-1',
+        'ap-1',
         'booklet-1',
         'booklet',
       );
       const open = vi.spyOn(window, 'open').mockReturnValue(null);
       component.downloadSequence();
       expect(open).toHaveBeenCalledWith(
-        '/api/acp/acp-1/files?sequenceId=booklet-1&format=zip&kind=booklet',
+        '/api/ap/ap-1/files?sequenceId=booklet-1&format=zip&kind=booklet',
         '_blank',
       );
       open.mockRestore();
@@ -239,7 +239,7 @@ describe('Booklet navigation', () => {
 
   it('filters and switches between test booklets in the same review', async () => {
     const routeParamMap = new BehaviorSubject(
-      convertToParamMap({ acpId: 'acp-1', sequenceId: 'booklet-1' }),
+      convertToParamMap({ apId: 'ap-1', sequenceId: 'booklet-1' }),
     );
     const routeQueryParamMap = new BehaviorSubject(convertToParamMap({ kind: 'booklet' }));
     const sequences = {
@@ -260,7 +260,7 @@ describe('Booklet navigation', () => {
     const api = {
       appendAuthToken: vi.fn((url: string) => url),
       getCapabilities: vi.fn().mockReturnValue(of({ canReview: true })),
-      getAcpStartPage: vi.fn().mockReturnValue(
+      getApStartPage: vi.fn().mockReturnValue(
         of({
           featureConfig: {},
           sequences: [
@@ -271,7 +271,7 @@ describe('Booklet navigation', () => {
       ),
       getViewSequence: vi
         .fn()
-        .mockImplementation((_acpId: string, sequenceId: keyof typeof sequences) =>
+        .mockImplementation((_apId: string, sequenceId: keyof typeof sequences) =>
           of(sequences[sequenceId]),
         ),
     };
@@ -288,14 +288,14 @@ describe('Booklet navigation', () => {
             isLoggedIn: false,
             isAdmin: false,
             currentUser$: of(null),
-            hasAcpRole: vi.fn().mockReturnValue(false),
+            hasApRole: vi.fn().mockReturnValue(false),
           },
         },
         {
           provide: ActivatedRoute,
           useValue: {
             snapshot: {
-              paramMap: { get: (key: string) => (key === 'acpId' ? 'acp-1' : 'booklet-1') },
+              paramMap: { get: (key: string) => (key === 'apId' ? 'ap-1' : 'booklet-1') },
               queryParamMap: { get: () => 'booklet' },
             },
             paramMap: routeParamMap,
@@ -364,13 +364,13 @@ describe('Booklet navigation', () => {
       bookletChoices[0].textContent?.indexOf('Zweites Testheft') ?? -1,
     );
     bookletChoices[0].click();
-    expect(navigate).toHaveBeenCalledWith(['/view', 'acp-1', 'sequence', 'booklet-2'], {
+    expect(navigate).toHaveBeenCalledWith(['/view', 'ap-1', 'sequence', 'booklet-2'], {
       queryParams: { kind: 'booklet' },
     });
 
-    routeParamMap.next(convertToParamMap({ acpId: 'acp-1', sequenceId: 'booklet-2' }));
+    routeParamMap.next(convertToParamMap({ apId: 'ap-1', sequenceId: 'booklet-2' }));
     fixture.detectChanges();
-    expect(api.getViewSequence).toHaveBeenLastCalledWith('acp-1', 'booklet-2', 'booklet');
+    expect(api.getViewSequence).toHaveBeenLastCalledWith('ap-1', 'booklet-2', 'booklet');
     expect(component.sequenceId).toBe('booklet-2');
     expect(component.currentIndex).toBe(0);
     expect(component.currentUnit?.id).toBe('u3');

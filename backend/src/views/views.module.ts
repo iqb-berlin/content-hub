@@ -6,12 +6,12 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ViewsService } from "./views.service";
 import { ViewsController } from "./views.controller";
 import {
-  Acp,
-  AcpAccessConfig,
-  AcpFile,
+  Ap,
+  ApAccessConfig,
+  ApFile,
   AppSettings,
-  AcpUserRole,
-  AcpItemPreference,
+  ApUserRole,
+  ApItemPreference,
 } from "../database/entities";
 import { AuthModule } from "../auth/auth.module";
 import { ItemExplorerModule } from "../item-explorer/item-explorer.module";
@@ -24,12 +24,12 @@ import { ReviewReadinessService } from "../review/review-readiness.service";
   imports: [
     TypeOrmModule.forFeature([
       ReviewReadinessSnapshot,
-      Acp,
-      AcpAccessConfig,
-      AcpFile,
+      Ap,
+      ApAccessConfig,
+      ApFile,
       AppSettings,
-      AcpUserRole,
-      AcpItemPreference,
+      ApUserRole,
+      ApItemPreference,
     ]),
     ReviewManifestModule,
     AuthModule,

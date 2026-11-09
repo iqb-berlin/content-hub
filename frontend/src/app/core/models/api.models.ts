@@ -24,7 +24,7 @@ export interface LoginResponse {
 }
 
 export type ServerApiScope =
-  | 'acp.read'
+  | 'ap.read'
   | 'transfer.read'
   | 'transfer.write'
   | 'index.read'
@@ -38,7 +38,7 @@ export interface ApplicationToken {
   name: string;
   tokenPrefix: string;
   scopes: ServerApiScope[];
-  allowedAcpIds: string[] | null;
+  allowedApIds: string[] | null;
   active: boolean;
   expiresAt: string | null;
   lastUsedAt: string | null;
@@ -60,7 +60,7 @@ export interface CreateApplicationTokenRequest {
   name: string;
   scopes: ServerApiScope[];
   expiresAt?: string | null;
-  allowedAcpIds?: string[] | null;
+  allowedApIds?: string[] | null;
 }
 
 export interface CreatedApplicationToken extends ApplicationToken {
@@ -69,69 +69,69 @@ export interface CreatedApplicationToken extends ApplicationToken {
 
 export interface CredentialLoginResponse {
   accessToken: string;
-  acpId: string;
+  apId: string;
   username: string;
 }
 
-export type AcpRoleName = 'ACP_MANAGER' | 'READ_ONLY';
+export type ApRoleName = 'AP_MANAGER' | 'READ_ONLY';
 
-export interface AcpRole {
-  acpId: string;
-  acpName?: string;
-  role: AcpRoleName;
+export interface ApRole {
+  apId: string;
+  apName?: string;
+  role: ApRoleName;
 }
 
 export interface UserProfile extends User {
-  acpRoles: AcpRole[];
+  apRoles: ApRole[];
 }
 
-export interface CreateAcpRequest {
+export interface CreateApRequest {
   packageId: string;
   name: string;
   description?: string;
 }
 
-export interface UpdateAcpRequest {
+export interface UpdateApRequest {
   name?: string;
   description?: string;
 }
 
-export interface AssignAcpRoleRequest {
+export interface AssignApRoleRequest {
   capabilities?: string[];
   userId: string;
-  role: AcpRoleName;
+  role: ApRoleName;
 }
 
-export interface AssignableAcpUser {
+export interface AssignableApUser {
   id: string;
   username: string;
   displayName?: string | null;
 }
 
-export interface AcpRoleAssignment {
+export interface ApRoleAssignment {
   capabilities?: string[];
   id: string;
-  acpId: string;
+  apId: string;
   userId: string;
-  role: AcpRoleName;
+  role: ApRoleName;
   // Included by the list endpoint; assignment writes return the role alone.
-  user?: AssignableAcpUser;
+  user?: AssignableApUser;
 }
 
-export interface Acp {
+export interface Ap {
   id: string;
   packageId: string;
   name: string;
   description?: string | null;
-  acpIndex: Record<string, unknown>;
+  apIndex: Record<string, unknown>;
   settings: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface AcpFile {
+export interface ApFile {
   id: string;
-  acpId: string;
+  apId: string;
   filePath: string;
   originalName: string;
   fileType?: string;
@@ -152,7 +152,7 @@ export interface IndexSyncReport {
 export type FileUploadConflictStrategy = 'reject' | 'overwrite' | 'keep-both';
 
 export interface FileUploadResponse {
-  files: AcpFile[];
+  files: ApFile[];
 }
 
 export type FileProcessingJobStatus = 'pending' | 'running' | 'completed' | 'failed';
@@ -194,7 +194,7 @@ export interface FileDeletionResponse {
 
 export interface FileProcessingJob {
   id: string;
-  acpId: string;
+  apId: string;
   jobType: FileProcessingJobType;
   status: FileProcessingJobStatus;
   phase: FileProcessingJobPhase;
@@ -371,11 +371,11 @@ export interface ValidationIssue {
   path?: string;
 }
 
-export interface AcpSnapshot {
+export interface ApSnapshot {
   id: string;
-  acpId: string;
+  apId: string;
   versionNumber: number;
-  acpIndexSnapshot: Record<string, any>;
+  apIndexSnapshot: Record<string, any>;
   changelog?: string;
   createdAt: string;
 }
@@ -394,7 +394,7 @@ export type AccessModel = 'PRIVATE' | 'PUBLIC' | 'REGISTERED' | 'CREDENTIALS_LIS
 
 export interface AccessConfig {
   id: string;
-  acpId: string;
+  apId: string;
   accessModel: AccessModel;
   allowRegistered?: boolean;
   featureConfig: FeatureConfig;
@@ -534,7 +534,7 @@ export interface CommentCategory {
 
 export interface Comment {
   id: string;
-  acpId: string;
+  apId: string;
   userId?: string;
   credentialUsername?: string;
   credentialId?: string;
@@ -587,7 +587,7 @@ export interface AppSettings {
   imprintHtml?: string;
   privacyHtml?: string;
   accessibilityHtml?: string;
-  defaultAcpIndex: Record<string, any>;
+  defaultApIndex: Record<string, any>;
   geoGebraBundle?: GeoGebraBundleSettings | null;
 }
 
@@ -600,7 +600,7 @@ export interface GeoGebraBundleSettings {
   uploadedAt: string;
 }
 
-export interface PublicAcp {
+export interface PublicAp {
   id: string;
   name: string;
   description?: string;
@@ -724,7 +724,7 @@ export interface ItemExplorerStateEnvelope {
 
 export interface ItemExplorerChangeLogEntry {
   id: string;
-  acpId: string;
+  apId: string;
   changeType: string;
   beforeState: Record<string, unknown>;
   afterState: Record<string, unknown>;

@@ -1,6 +1,6 @@
-import { AcpCapabilitiesService } from "../auth/capabilities/acp-capabilities.service";
+import { ApCapabilitiesService } from "../auth/capabilities/ap-capabilities.service";
 import { ExplorerReadGuard } from "../auth/capabilities/explorer-access.guard";
-import { hasCapability } from "../auth/capabilities/acp-capabilities";
+import { hasCapability } from "../auth/capabilities/ap-capabilities";
 import {
   BadRequestException,
   Body,
@@ -39,7 +39,7 @@ import {
 } from "class-validator";
 import { Response } from "express";
 import { ViewsService } from "./views.service";
-import { AcpAccessGuard } from "../auth/guards/acp-access.guard";
+import { ApAccessGuard } from "../auth/guards/ap-access.guard";
 import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.service";
 import { ItemCollectionsService } from "../item-collections/item-collections.service";
 import {
@@ -297,7 +297,7 @@ export class ViewsController {
     private readonly viewsService: ViewsService,
     private readonly itemExplorerStateService: ItemExplorerStateService,
     private readonly itemCollectionsService: ItemCollectionsService,
-    private readonly capabilities: AcpCapabilitiesService,
+    private readonly capabilities: ApCapabilitiesService,
   ) {}
 
   @Get("settings")
@@ -308,20 +308,17 @@ export class ViewsController {
     return this.viewsService.getPublicSettings();
   }
 
-  @Get("acp")
+  @Get("ap")
   @ApiOperation({ summary: "List publicly accessible APs" })
-  async getPublicAcps() {
-    return this.viewsService.getPublicAcps();
+  async getPublicAps() {
+    return this.viewsService.getPublicAps();
   }
 
-  @Get("acp/:acpId")
-  @UseGuards(AcpAccessGuard)
+  @Get("ap/:apId")
+  @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "AP start page data" })
-  async getAcpStartPage(
-    @UuidParam("acpId") acpId: string,
-    @Request() req: any,
-  ) {
-    const data = await this.viewsService.getAcpStartPage(acpId);
+  async getApStartPage(@UuidParam("apId") apId: string, @Request() req: any) {
+    const data = await this.viewsService.getApStartPage(apId);
     const grants = await this.capabilities.resolve(req);
     const fc = data?.featureConfig || {};
     return {
@@ -335,113 +332,113 @@ export class ViewsController {
     };
   }
 
-  @Get("acp/:acpId/index")
-  @UseGuards(AcpAccessGuard)
+  @Get("ap/:apId/index")
+  @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "Get AP-Index for read-only view" })
-  async getAcpIndex(@UuidParam("acpId") acpId: string) {
-    return this.viewsService.getAcpIndex(acpId);
+  async getApIndex(@UuidParam("apId") apId: string) {
+    return this.viewsService.getApIndex(apId);
   }
 
-  @Get("acp/:acpId/index/export")
-  @UseGuards(AcpAccessGuard)
+  @Get("ap/:apId/index/export")
+  @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "Export AP-Index JSON for read-only view" })
-  async exportAcpIndex(
-    @UuidParam("acpId") acpId: string,
+  async exportApIndex(
+    @UuidParam("apId") apId: string,
     @Request() req: any,
     @Res() res: Response,
   ) {
-    if (!(await this.canUseFeature(acpId, req, "allowIndexDownload"))) {
+    if (!(await this.canUseFeature(apId, req, "allowIndexDownload"))) {
       throw new ForbiddenException("Index download is not enabled for this AP");
     }
 
-    const index = await this.viewsService.getAcpIndex(acpId);
+    const index = await this.viewsService.getApIndex(apId);
     res.setHeader("Content-Type", "application/json");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="acp-index-${acpId}.json"`,
+      `attachment; filename="ap-index-${apId}.json"`,
     );
     res.json(index || {});
   }
 
-  @Get("acp/:acpId/units")
-  @UseGuards(AcpAccessGuard)
+  @Get("ap/:apId/units")
+  @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "List all units in an AP" })
-  async getUnits(@UuidParam("acpId") acpId: string) {
-    const data = await this.viewsService.getAcpStartPage(acpId);
+  async getUnits(@UuidParam("apId") apId: string) {
+    const data = await this.viewsService.getApStartPage(apId);
     return data?.units || [];
   }
 
-  @Get("acp/:acpId/units/:unitId")
-  @UseGuards(AcpAccessGuard)
+  @Get("ap/:apId/units/:unitId")
+  @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "Get unit view data" })
   async getUnit(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Param("unitId") unitId: string,
     @Request() req: any,
   ) {
-    if (!(await this.canUseFeature(acpId, req, "enableUnitView", true))) {
+    if (!(await this.canUseFeature(apId, req, "enableUnitView", true))) {
       throw new ForbiddenException("Unit view is not enabled for this AP");
     }
 
-    return this.viewsService.getUnitViewData(acpId, unitId);
+    return this.viewsService.getUnitViewData(apId, unitId);
   }
 
-  @Get("acp/:acpId/items")
+  @Get("ap/:apId/items")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Get item list for an AP" })
   @ApiOkResponse({ type: SimpleItemListEntryDto, isArray: true })
-  async getItems(@UuidParam("acpId") acpId: string, @Request() req: any) {
-    if (!(await this.canUseFeature(acpId, req, "enableItemList", true))) {
+  async getItems(@UuidParam("apId") apId: string, @Request() req: any) {
+    if (!(await this.canUseFeature(apId, req, "enableItemList", true))) {
       throw new ForbiddenException("Item list is not enabled for this AP");
     }
 
     const canEdit = hasCapability(
-      req?.acpCapabilities || [],
+      req?.apCapabilities || [],
       "item-explorer:edit",
     );
-    return this.viewsService.getItemList(acpId, canEdit);
+    return this.viewsService.getItemList(apId, canEdit);
   }
 
-  @Get("acp/:acpId/item-explorer/state")
+  @Get("ap/:apId/item-explorer/state")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Get shared Item Explorer state for AP" })
   async getItemExplorerState(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
   ) {
     const canEdit = hasCapability(
-      req?.acpCapabilities || [],
+      req?.apCapabilities || [],
       "item-explorer:edit",
     );
-    return this.itemExplorerStateService.getStateForViewer(acpId, canEdit);
+    return this.itemExplorerStateService.getStateForViewer(apId, canEdit);
   }
 
-  @Get("acp/:acpId/items/preferences")
+  @Get("ap/:apId/items/preferences")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Get persisted user preferences for item views" })
   async getItemPreferences(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
     @Query("viewId") viewId?: string,
   ) {
     const normalizedViewId = this.normalizePreferenceViewId(viewId);
-    if (!(await this.isPreferencePersistenceEnabled(acpId, normalizedViewId))) {
+    if (!(await this.isPreferencePersistenceEnabled(apId, normalizedViewId))) {
       return { ui: {}, tags: {}, rowData: {} };
     }
 
     return this.viewsService.getItemPreferences(
-      acpId,
+      apId,
       resolveStablePreferenceIdentity(req?.user),
       normalizedViewId,
     );
   }
 
-  @Put("acp/:acpId/items/preferences")
+  @Put("ap/:apId/items/preferences")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Save persisted user preferences for item views" })
   @ApiBody({ type: SaveItemPreferencesDto })
   async saveItemPreferences(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: SaveItemPreferencesDto,
     @Request() req: any,
   ) {
@@ -451,12 +448,12 @@ export class ViewsController {
         "Item Explorer preferences must be saved through their dedicated endpoints",
       );
     }
-    if (!(await this.isPreferencePersistenceEnabled(acpId, normalizedViewId))) {
+    if (!(await this.isPreferencePersistenceEnabled(apId, normalizedViewId))) {
       return { ui: {}, tags: {}, rowData: {} };
     }
 
     return this.viewsService.saveItemPreferences(
-      acpId,
+      apId,
       resolveStablePreferenceIdentity(req?.user),
       {
         ui: dto.ui,
@@ -467,56 +464,56 @@ export class ViewsController {
     );
   }
 
-  @Patch("acp/:acpId/items/preferences/row-data")
+  @Patch("ap/:apId/items/preferences/row-data")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Patch personal working data for one item row" })
   @ApiBody({ type: PatchPersonalItemRowDto })
   async patchPersonalItemRow(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: PatchPersonalItemRowDto,
     @Request() req: any,
   ) {
-    if (!(await this.isPersonalItemDataEnabled(acpId))) {
+    if (!(await this.isPersonalItemDataEnabled(apId))) {
       throw new ForbiddenException(
         "Personal item data is not enabled for this AP",
       );
     }
 
     return this.viewsService.patchPersonalItemPreferenceRow(
-      acpId,
+      apId,
       resolveStablePreferenceIdentity(req?.user),
       dto.rowKey,
       dto.rowData ?? null,
       "item-explorer",
-      hasCapability(req?.acpCapabilities || [], "item-explorer:edit") &&
+      hasCapability(req?.apCapabilities || [], "item-explorer:edit") &&
         dto.perspective === "editor",
     );
   }
 
-  @Post("acp/:acpId/items/preferences/export.xlsx")
+  @Post("ap/:apId/items/preferences/export.xlsx")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Export personal Item Explorer working data" })
   @ApiBody({ type: ExportPersonalItemDataDto })
   async exportPersonalItemDataXlsx(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: ExportPersonalItemDataDto,
     @Request() req: any,
     @Res() res: Response,
   ) {
-    if (!(await this.canUseFeature(acpId, req, "enableItemList", true))) {
+    if (!(await this.canUseFeature(apId, req, "enableItemList", true))) {
       throw new ForbiddenException("Item list is not enabled for this AP");
     }
-    if (!(await this.isPersonalItemDataEnabled(acpId))) {
+    if (!(await this.isPersonalItemDataEnabled(apId))) {
       throw new ForbiddenException(
         "Personal item data is not enabled for this AP",
       );
     }
 
     const canEditExplorerState =
-      hasCapability(req?.acpCapabilities || [], "item-explorer:edit") &&
+      hasCapability(req?.apCapabilities || [], "item-explorer:edit") &&
       dto.perspective === "editor";
     const buffer = await this.viewsService.exportPersonalItemDataXlsx(
-      acpId,
+      apId,
       resolveStablePreferenceIdentity(req?.user),
       dto.rowKeys,
       canEditExplorerState,
@@ -525,7 +522,7 @@ export class ViewsController {
 
     if (req.reviewerColumnPolicy)
       await this.itemExplorerStateService.assertColumnPolicyCurrent(
-        acpId,
+        apId,
         req.reviewerColumnPolicy,
       );
     res.setHeader(
@@ -534,29 +531,29 @@ export class ViewsController {
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="personal-item-data-${acpId}.xlsx"`,
+      `attachment; filename="personal-item-data-${apId}.xlsx"`,
     );
     res.send(buffer);
   }
 
-  @Post("acp/:acpId/items/preferences/export-all.csv")
+  @Post("ap/:apId/items/preferences/export-all.csv")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({
     summary: "Export all participants' Item Explorer working data",
   })
   @ApiBody({ type: ExportAllPersonalItemDataDto })
   async exportAllPersonalItemDataCsv(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: ExportAllPersonalItemDataDto,
     @Request() req: any,
     @Res() res: Response,
   ) {
-    if (req?.acpAccessLevel !== "MANAGER" && req?.acpAccessLevel !== "ADMIN") {
+    if (req?.apAccessLevel !== "MANAGER" && req?.apAccessLevel !== "ADMIN") {
       throw new ForbiddenException(
         "Only AP managers can export all participants' item data",
       );
     }
-    if (!(await this.isPersonalItemDataEnabled(acpId))) {
+    if (!(await this.isPersonalItemDataEnabled(apId))) {
       throw new ForbiddenException(
         "Personal item data is not enabled for this AP",
       );
@@ -564,72 +561,72 @@ export class ViewsController {
 
     let rowKeys: string[] | undefined;
     if (dto.collectionId !== undefined) {
-      await this.assertItemCollectionsEnabled(acpId, req);
+      await this.assertItemCollectionsEnabled(apId, req);
       rowKeys =
         await this.itemCollectionsService.getAccessibleCollectionRowKeys(
-          acpId,
+          apId,
           this.requireCollectionIdentity(req),
           dto.collectionId,
         );
     }
     const buffer = await this.viewsService.exportAllPersonalItemDataCsv(
-      acpId,
+      apId,
       dto.perspective === "editor",
       rowKeys,
     );
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="all-participant-item-data-${acpId}${dto.collectionId ? `-collection-${dto.collectionId}` : ""}.csv"`,
+      `attachment; filename="all-participant-item-data-${apId}${dto.collectionId ? `-collection-${dto.collectionId}` : ""}.csv"`,
     );
     res.send(buffer);
   }
 
-  @Get("acp/:acpId/items/collections")
+  @Get("ap/:apId/items/collections")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "List the caller's personal item collections" })
   async getItemCollections(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Query("perspective") perspective: "editor" | "read-only" | undefined,
     @Request() req: any,
   ) {
-    await this.assertItemCollectionsEnabled(acpId, req);
+    await this.assertItemCollectionsEnabled(apId, req);
     return this.itemCollectionsService.getItemCollections(
-      acpId,
+      apId,
       this.requireCollectionIdentity(req),
       this.isEditorPerspective(req, perspective),
     );
   }
 
-  @Post("acp/:acpId/items/collections")
+  @Post("ap/:apId/items/collections")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Create a personal item collection" })
   async createItemCollection(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: CreateItemCollectionDto,
     @Request() req: any,
   ) {
-    await this.assertItemCollectionsEnabled(acpId, req);
+    await this.assertItemCollectionsEnabled(apId, req);
     return this.itemCollectionsService.createItemCollection(
-      acpId,
+      apId,
       this.requireCollectionIdentity(req),
       dto.name,
       this.isEditorPerspective(req, dto.perspective),
     );
   }
 
-  @Patch("acp/:acpId/items/collections/:collectionId")
+  @Patch("ap/:apId/items/collections/:collectionId")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Update a personal item collection" })
   async updateItemCollection(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("collectionId") collectionId: string,
     @Body() dto: UpdateItemCollectionDto,
     @Request() req: any,
   ) {
-    await this.assertItemCollectionsEnabled(acpId, req);
+    await this.assertItemCollectionsEnabled(apId, req);
     return this.itemCollectionsService.updateItemCollection(
-      acpId,
+      apId,
       this.requireCollectionIdentity(req),
       collectionId,
       dto,
@@ -637,41 +634,41 @@ export class ViewsController {
     );
   }
 
-  @Post("acp/:acpId/items/collections/:collectionId/copy")
+  @Post("ap/:apId/items/collections/:collectionId/copy")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({
     summary: "Copy an available item collection as a private list",
   })
   async copyItemCollection(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("collectionId") collectionId: string,
     @Body() dto: CreateItemCollectionDto,
     @Request() req: any,
   ) {
-    await this.assertItemCollectionsEnabled(acpId, req);
+    await this.assertItemCollectionsEnabled(apId, req);
     return this.itemCollectionsService.copyItemCollection(
-      acpId,
+      apId,
       this.requireCollectionIdentity(req),
       collectionId,
       this.isEditorPerspective(req, dto.perspective),
     );
   }
 
-  @Patch("acp/:acpId/items/collections/:collectionId/rows")
+  @Patch("ap/:apId/items/collections/:collectionId/rows")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({
     summary: "Add, remove, or clear personal item collection rows",
   })
   @ApiOkResponse({ type: ItemCollectionRowsMutationResultDto })
   async mutateItemCollectionRows(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("collectionId") collectionId: string,
     @Body() dto: MutateItemCollectionRowsDto,
     @Request() req: any,
   ) {
-    await this.assertItemCollectionsEnabled(acpId, req);
+    await this.assertItemCollectionsEnabled(apId, req);
     return this.itemCollectionsService.mutateItemCollectionRows(
-      acpId,
+      apId,
       this.requireCollectionIdentity(req),
       collectionId,
       dto,
@@ -679,19 +676,19 @@ export class ViewsController {
     );
   }
 
-  @Put("acp/:acpId/items/collections/active")
+  @Put("ap/:apId/items/collections/active")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({
     summary: "Persist the active personal item collection and list view mode",
   })
   async activateItemCollection(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: ActivateItemCollectionDto,
     @Request() req: any,
   ) {
-    await this.assertItemCollectionsEnabled(acpId, req);
+    await this.assertItemCollectionsEnabled(apId, req);
     return this.itemCollectionsService.activateItemCollection(
-      acpId,
+      apId,
       this.requireCollectionIdentity(req),
       dto.collectionId || null,
       this.isEditorPerspective(req, dto.perspective),
@@ -699,37 +696,37 @@ export class ViewsController {
     );
   }
 
-  @Delete("acp/:acpId/items/collections/:collectionId")
+  @Delete("ap/:apId/items/collections/:collectionId")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Delete a personal item collection" })
   async deleteItemCollection(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("collectionId") collectionId: string,
     @Query("perspective") perspective: "editor" | "read-only" | undefined,
     @Request() req: any,
   ) {
-    await this.assertItemCollectionsEnabled(acpId, req);
+    await this.assertItemCollectionsEnabled(apId, req);
     return this.itemCollectionsService.deleteItemCollection(
-      acpId,
+      apId,
       this.requireCollectionIdentity(req),
       collectionId,
       this.isEditorPerspective(req, perspective),
     );
   }
 
-  @Post("acp/:acpId/items/collections/:collectionId/export.csv")
+  @Post("ap/:apId/items/collections/:collectionId/export.csv")
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Export one personal item collection as CSV" })
   async exportItemCollectionCsv(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("collectionId") collectionId: string,
     @Query("perspective") perspective: "editor" | "read-only" | undefined,
     @Request() req: any,
     @Res() res: Response,
   ) {
-    await this.assertItemCollectionsEnabled(acpId, req);
+    await this.assertItemCollectionsEnabled(apId, req);
     const buffer = await this.itemCollectionsService.exportItemCollectionCsv(
-      acpId,
+      apId,
       this.requireCollectionIdentity(req),
       collectionId,
       this.isEditorPerspective(req, perspective),
@@ -737,7 +734,7 @@ export class ViewsController {
     );
     if (req.reviewerColumnPolicy)
       await this.itemExplorerStateService.assertColumnPolicyCurrent(
-        acpId,
+        apId,
         req.reviewerColumnPolicy,
       );
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
@@ -748,32 +745,32 @@ export class ViewsController {
     res.send(buffer);
   }
 
-  @Get("acp/:acpId/sequences")
-  @UseGuards(AcpAccessGuard)
+  @Get("ap/:apId/sequences")
+  @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "List task sequences for an AP" })
-  async getSequences(@UuidParam("acpId") acpId: string, @Request() req: any) {
+  async getSequences(@UuidParam("apId") apId: string, @Request() req: any) {
     if (
-      !(await this.canUseFeature(acpId, req, "enableSequenceNavigation", true))
+      !(await this.canUseFeature(apId, req, "enableSequenceNavigation", true))
     ) {
       throw new ForbiddenException(
         "Task sequences are not enabled for this AP",
       );
     }
 
-    const data = await this.viewsService.getAcpStartPage(acpId);
+    const data = await this.viewsService.getApStartPage(apId);
     return data?.sequences || [];
   }
 
-  @Get("acp/:acpId/sequences/:sequenceId")
-  @UseGuards(AcpAccessGuard)
+  @Get("ap/:apId/sequences/:sequenceId")
+  @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "Get task sequence with ordered units" })
   async getSequence(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Param("sequenceId") sequenceId: string,
     @Request() req: any,
   ) {
     if (
-      !(await this.canUseFeature(acpId, req, "enableSequenceNavigation", true))
+      !(await this.canUseFeature(apId, req, "enableSequenceNavigation", true))
     ) {
       throw new ForbiddenException(
         "Task sequences are not enabled for this AP",
@@ -781,21 +778,21 @@ export class ViewsController {
     }
 
     if (req?.query?.kind === "booklet")
-      return this.viewsService.getTaskSequence(acpId, sequenceId, "booklet");
-    return this.viewsService.getTaskSequence(acpId, sequenceId);
+      return this.viewsService.getTaskSequence(apId, sequenceId, "booklet");
+    return this.viewsService.getTaskSequence(apId, sequenceId);
   }
 
   private async canUseFeature(
-    acpId: string,
+    apId: string,
     req: any,
     featureKey: string,
     defaultWhenUnset = false,
   ): Promise<boolean> {
-    if (req?.acpAccessLevel === "MANAGER" || req?.acpAccessLevel === "ADMIN") {
+    if (req?.apAccessLevel === "MANAGER" || req?.apAccessLevel === "ADMIN") {
       return true;
     }
 
-    const data = await this.viewsService.getAcpStartPage(acpId);
+    const data = await this.viewsService.getApStartPage(apId);
     const featureConfig = (data?.featureConfig || {}) as Record<
       string,
       unknown
@@ -820,10 +817,10 @@ export class ViewsController {
   }
 
   private async isPreferencePersistenceEnabled(
-    acpId: string,
+    apId: string,
     viewId?: string,
   ): Promise<boolean> {
-    const data = await this.viewsService.getAcpStartPage(acpId);
+    const data = await this.viewsService.getApStartPage(apId);
     const featureConfig = (data?.featureConfig || {}) as Record<
       string,
       unknown
@@ -835,8 +832,8 @@ export class ViewsController {
     );
   }
 
-  private async isPersonalItemDataEnabled(acpId: string): Promise<boolean> {
-    const data = await this.viewsService.getAcpStartPage(acpId);
+  private async isPersonalItemDataEnabled(apId: string): Promise<boolean> {
+    const data = await this.viewsService.getApStartPage(apId);
     const featureConfig = (data?.featureConfig || {}) as Record<
       string,
       unknown
@@ -845,18 +842,18 @@ export class ViewsController {
   }
 
   private async assertItemCollectionsEnabled(
-    acpId: string,
+    apId: string,
     req?: any,
   ): Promise<void> {
-    const data = await this.viewsService.getAcpStartPage(acpId);
+    const data = await this.viewsService.getApStartPage(apId);
     const featureConfig = (data?.featureConfig || {}) as Record<
       string,
       unknown
     >;
     const isManager =
       req?.user?.isAppAdmin ||
-      req?.acpAccessLevel === "MANAGER" ||
-      req?.acpAccessLevel === "ADMIN";
+      req?.apAccessLevel === "MANAGER" ||
+      req?.apAccessLevel === "ADMIN";
     if (!isManager && featureConfig.enableItemList === false) {
       throw new ForbiddenException("Item list is not enabled for this AP");
     }
@@ -879,7 +876,7 @@ export class ViewsController {
     perspective?: "editor" | "read-only",
   ): boolean {
     return (
-      hasCapability(req?.acpCapabilities || [], "item-explorer:edit") &&
+      hasCapability(req?.apCapabilities || [], "item-explorer:edit") &&
       perspective === "editor"
     );
   }

@@ -77,10 +77,10 @@ describe("ServerApiAuthGuard", () => {
       headers: { "x-server-token": "  token-a  " },
     };
 
-    reflector.getAllAndOverride.mockReturnValue(["acp.read"]);
+    reflector.getAllAndOverride.mockReturnValue(["ap.read"]);
     authService.validateToken.mockResolvedValue({
       id: "client-a",
-      scopes: ["acp.read"],
+      scopes: ["ap.read"],
     });
     authService.hasScopes.mockReturnValue(true);
 
@@ -88,8 +88,8 @@ describe("ServerApiAuthGuard", () => {
     expect(authService.validateToken).toHaveBeenCalledWith("token-a");
     expect(req.serverApiClient).toEqual({
       id: "client-a",
-      scopes: ["acp.read"],
-      allowedAcpIds: null,
+      scopes: ["ap.read"],
+      allowedApIds: null,
     });
   });
 

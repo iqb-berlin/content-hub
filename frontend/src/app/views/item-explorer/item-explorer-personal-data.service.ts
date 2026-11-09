@@ -19,7 +19,7 @@ export class ItemExplorerPersonalDataService implements OnDestroy {
   private readonly destroy$ = new ReplaySubject<void>(1);
   private readonly dataChanged = new Subject<void>();
   readonly dataChanged$ = this.dataChanged.asObservable();
-  private acpId = '';
+  private apId = '';
   private identity: string | null = null;
   private perspective: ItemExplorerPerspective = 'read-only';
   private hasExplorerEditPermission = false;
@@ -54,13 +54,13 @@ export class ItemExplorerPersonalDataService implements OnDestroy {
   }
 
   configure(context: {
-    acpId: string;
+    apId: string;
     identity: string | null;
     perspective: ItemExplorerPerspective;
     canExportAll: boolean;
     perspectiveSwitchBusy: boolean;
   }): void {
-    this.acpId = context.acpId;
+    this.apId = context.apId;
     this.identity = context.identity;
     this.perspective = context.perspective;
     this.hasExplorerEditPermission = context.canExportAll;
@@ -137,7 +137,7 @@ export class ItemExplorerPersonalDataService implements OnDestroy {
     this.personalDataLoadState = 'loading';
     this.personalDataError = '';
     this.api
-      .getViewItemPreferences(this.acpId, this.personalPreferenceViewId)
+      .getViewItemPreferences(this.apId, this.personalPreferenceViewId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (preferences) => {
@@ -257,11 +257,11 @@ export class ItemExplorerPersonalDataService implements OnDestroy {
 
       const blob = await firstValueFrom(
         this.api
-          .exportViewPersonalItemDataXlsx(this.acpId, rowKeys, this.perspective)
+          .exportViewPersonalItemDataXlsx(this.apId, rowKeys, this.perspective)
           .pipe(takeUntil(this.destroy$)),
       );
       if (this.destroyed || sessionVersion !== this.personalDataSessionVersion) return;
-      this.browser.download(blob, `personal-item-data-${this.acpId}.xlsx`);
+      this.browser.download(blob, `personal-item-data-${this.apId}.xlsx`);
     } catch (error) {
       if (this.destroyed || sessionVersion !== this.personalDataSessionVersion) return;
       console.error('Failed to export personal item working data', error);
@@ -288,14 +288,14 @@ export class ItemExplorerPersonalDataService implements OnDestroy {
     try {
       const blob = await firstValueFrom(
         this.api
-          .exportAllViewPersonalItemDataCsv(this.acpId, this.perspective, collection?.id)
+          .exportAllViewPersonalItemDataCsv(this.apId, this.perspective, collection?.id)
           .pipe(takeUntil(this.destroy$)),
       );
       if (this.destroyed || sessionVersion !== this.personalDataSessionVersion) return;
       const collectionSuffix = collection
         ? `-collection-${collection.name.replace(/[^a-zA-Z0-9äöüÄÖÜß_-]+/g, '-').slice(0, 80)}-${collection.id}`
         : '';
-      this.browser.download(blob, `all-participant-item-data-${this.acpId}${collectionSuffix}.csv`);
+      this.browser.download(blob, `all-participant-item-data-${this.apId}${collectionSuffix}.csv`);
     } catch (error) {
       if (this.destroyed || sessionVersion !== this.personalDataSessionVersion) return;
       const response = error as { status?: number; error?: unknown };
@@ -415,7 +415,7 @@ export class ItemExplorerPersonalDataService implements OnDestroy {
     this.personalSaveInFlight = true;
     this.personalDataSaveState = 'saving';
     this.api
-      .patchViewItemPreferenceRow(this.acpId, rowKey, update.rowData, update.perspective)
+      .patchViewItemPreferenceRow(this.apId, rowKey, update.rowData, update.perspective)
       .pipe(
         finalize(() => {
           if (
@@ -602,7 +602,7 @@ export class ItemExplorerPersonalDataService implements OnDestroy {
   }
 
   private personalPendingStorageKey(): string {
-    return `ch_item_explorer_pending_personal:${this.acpId}`;
+    return `ch_item_explorer_pending_personal:${this.apId}`;
   }
 
   private resolvePersonalItemDataSessionIdentity(): string | null {

@@ -2,7 +2,7 @@ import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import * as fs from "fs/promises";
 import { createHash } from "crypto";
 import { performance } from "perf_hooks";
-import type { AcpFile } from "../database/entities";
+import type { ApFile } from "../database/entities";
 import {
   buildItemRowKey,
   parseItemRowKeyParts,
@@ -26,7 +26,7 @@ import {
 } from "./unit-file-parsing";
 
 export interface ItemListParseContext {
-  allFiles: AcpFile[];
+  allFiles: ApFile[];
   itemProps: Record<string, Record<string, unknown>>;
   itemPropertiesSignature?: string;
   normalizedFeatureConfig: Record<string, unknown>;
@@ -62,11 +62,11 @@ export class ItemListParser {
   }
 
   async parse(
-    acpId: string,
+    apId: string,
     context: ItemListParseContext,
     strictSourceReads = false,
   ): Promise<ItemListParseResult> {
-    const cacheIdentity = this.buildCacheKey(acpId, context);
+    const cacheIdentity = this.buildCacheKey(apId, context);
     if (strictSourceReads) {
       const parsed = await this.parseContext(context, true);
       return {
@@ -92,8 +92,8 @@ export class ItemListParser {
     };
   }
 
-  invalidate(acpId: string): void {
-    this.cache.deleteWhere((key) => key.startsWith(`${acpId}:`));
+  invalidate(apId: string): void {
+    this.cache.deleteWhere((key) => key.startsWith(`${apId}:`));
   }
 
   private async parseContext(
@@ -471,8 +471,8 @@ export class ItemListParser {
     };
   }
 
-  private buildCacheKey(acpId: string, context: ItemListParseContext): string {
-    return `${acpId}:${this.hashCanonicalValue({
+  private buildCacheKey(apId: string, context: ItemListParseContext): string {
+    return `${apId}:${this.hashCanonicalValue({
       files: context.sourceFileSignature,
       itemProperties: context.itemPropertiesSignature
         ? { version: context.itemPropertiesSignature }

@@ -2,11 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { EntityManager, Repository } from "typeorm";
 import { performance } from "perf_hooks";
-import { AcpFile } from "../database/entities";
+import { ApFile } from "../database/entities";
 import { AsyncCacheStatus, AsyncLruCache } from "./async-lru-cache";
 
 export interface FileCatalogSnapshot {
-  files: AcpFile[];
+  files: ApFile[];
   signature: string;
 }
 
@@ -21,33 +21,29 @@ export class FileCatalogCache {
   private readonly cache = new AsyncLruCache<string, FileCatalogSnapshot>(100);
 
   constructor(
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
   ) {}
 
   get size(): number {
     return this.cache.size;
   }
 
-  async get(
-    acpId: string,
-    manager?: EntityManager,
-  ): Promise<FileCatalogResult> {
+  async get(apId: string, manager?: EntityManager): Promise<FileCatalogResult> {
     // Keep in-flight database reads local to the transaction that owns them.
     if (manager)
-      return new FileCatalogCache(manager.getRepository(AcpFile)).get(acpId);
+      return new FileCatalogCache(manager.getRepository(ApFile)).get(apId);
     const totalStartedAt = performance.now();
     const signatureStartedAt = performance.now();
-    const revision = await this.loadRevision(acpId);
+    const revision = await this.loadRevision(apId);
     const fileSignatureMs = performance.now() - signatureStartedAt;
-    const cacheKey = `${acpId}:${revision.signature}`;
+    const cacheKey = `${apId}:${revision.signature}`;
 
     this.cache.deleteWhere(
-      (key) => key.startsWith(`${acpId}:`) && key !== cacheKey,
+      (key) => key.startsWith(`${apId}:`) && key !== cacheKey,
     );
     const { value, status } = await this.cache.getOrLoad(cacheKey, async () => {
-      const files =
-        revision.files || (await this.loadFileCatalogRecords(acpId));
+      const files = revision.files || (await this.loadFileCatalogRecords(apId));
       return {
         files: structuredClone(files),
         signature: revision.signature,
@@ -63,15 +59,15 @@ export class FileCatalogCache {
     };
   }
 
-  invalidate(acpId: string): void {
-    this.cache.deleteWhere((key) => key.startsWith(`${acpId}:`));
+  invalidate(apId: string): void {
+    this.cache.deleteWhere((key) => key.startsWith(`${apId}:`));
   }
 
   private async loadRevision(
-    acpId: string,
-  ): Promise<{ signature: string; files?: AcpFile[] }> {
+    apId: string,
+  ): Promise<{ signature: string; files?: ApFile[] }> {
     if (typeof this.fileRepository.query !== "function") {
-      const files = await this.loadFileCatalogRecords(acpId);
+      const files = await this.loadFileCatalogRecords(apId);
       return {
         signature: buildSourceFileSignature(files),
         files,
@@ -102,19 +98,19 @@ export class FileCatalogCache {
         FROM acp_files
         WHERE acp_id = $1
       `,
-      [acpId],
+      [apId],
     )) as Array<{ count?: string; hash?: string }>;
     return {
       signature: `${rows[0]?.count || "0"}:${rows[0]?.hash || ""}`,
     };
   }
 
-  private loadFileCatalogRecords(acpId: string): Promise<AcpFile[]> {
+  private loadFileCatalogRecords(apId: string): Promise<ApFile[]> {
     return this.fileRepository.find({
-      where: { acpId },
+      where: { apId },
       select: {
         id: true,
-        acpId: true,
+        apId: true,
         filePath: true,
         originalName: true,
         fileType: true,
@@ -126,7 +122,7 @@ export class FileCatalogCache {
   }
 }
 
-export function buildSourceFileSignature(files: AcpFile[]): string {
+export function buildSourceFileSignature(files: ApFile[]): string {
   return JSON.stringify(
     files
       .map((file) => [

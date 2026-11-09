@@ -8,13 +8,13 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeepPartial, EntityManager, Repository } from "typeorm";
 import {
-  Acp,
-  AcpAccessConfig,
-  AcpItemExplorerChangeLog,
-  AcpItemExplorerState,
+  Ap,
+  ApAccessConfig,
+  ApItemExplorerChangeLog,
+  ApItemExplorerState,
   ItemExplorerDraftStatus,
 } from "../database/entities";
-import { normalizeFeatureConfig } from "../acp/feature-config.utils";
+import { normalizeFeatureConfig } from "../ap/feature-config.utils";
 import { parseItemRowKeyParts } from "../items/item-row-key.util";
 
 export interface ExplorerActor {
@@ -99,26 +99,26 @@ export class ItemExplorerStateService {
   private readonly maxViewerStateCacheEntries = 100;
 
   constructor(
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
-    @InjectRepository(AcpAccessConfig)
-    private readonly accessConfigRepository: Repository<AcpAccessConfig>,
-    @InjectRepository(AcpItemExplorerState)
-    private readonly stateRepository: Repository<AcpItemExplorerState>,
-    @InjectRepository(AcpItemExplorerChangeLog)
-    private readonly changeLogRepository: Repository<AcpItemExplorerChangeLog>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
+    @InjectRepository(ApAccessConfig)
+    private readonly accessConfigRepository: Repository<ApAccessConfig>,
+    @InjectRepository(ApItemExplorerState)
+    private readonly stateRepository: Repository<ApItemExplorerState>,
+    @InjectRepository(ApItemExplorerChangeLog)
+    private readonly changeLogRepository: Repository<ApItemExplorerChangeLog>,
   ) {}
 
   async getStateForViewer(
-    acpId: string,
+    apId: string,
     canEdit: boolean,
   ): Promise<ExplorerStateEnvelope> {
-    const state = await this.getCachedViewerState(acpId);
+    const state = await this.getCachedViewerState(apId);
     return structuredClone(this.toViewerEnvelope(state, canEdit));
   }
 
-  async getPublishedColumnPolicy(acpId: string): Promise<ReviewerColumnPolicy> {
-    const state = await this.getCachedViewerState(acpId);
+  async getPublishedColumnPolicy(apId: string): Promise<ReviewerColumnPolicy> {
+    const state = await this.getCachedViewerState(apId);
     return new ReviewerColumnPolicy(
       state.publishedState.metadataColumns,
       state.publishedVersion,
@@ -126,11 +126,11 @@ export class ItemExplorerStateService {
   }
 
   async assertColumnPolicyCurrent(
-    acpId: string,
+    apId: string,
     policy?: ReviewerColumnPolicy,
   ): Promise<void> {
     if (policy?.publishedVersion === undefined) return;
-    const version = await this.getStateVersionForViewer(acpId, false);
+    const version = await this.getStateVersionForViewer(apId, false);
     if (version !== policy.publishedVersion) {
       throw new ConflictException(
         "Die veröffentlichte Spaltenfreigabe wurde geändert. Bitte neu laden.",
@@ -139,10 +139,10 @@ export class ItemExplorerStateService {
   }
 
   async getItemListStateProjection(
-    acpId: string,
+    apId: string,
     canEdit: boolean,
   ): Promise<ItemListStateProjection> {
-    const state = await this.getCachedViewerState(acpId);
+    const state = await this.getCachedViewerState(apId);
     return structuredClone({
       activeItemProperties: canEdit
         ? state.draftState.itemProperties
@@ -154,12 +154,12 @@ export class ItemExplorerStateService {
   }
 
   private async getCachedViewerState(
-    acpId: string,
+    apId: string,
   ): Promise<ViewerStateCacheEntry> {
-    const cached = this.viewerStateCache.get(acpId);
+    const cached = this.viewerStateCache.get(apId);
     if (cached) {
       const version = await this.stateRepository.findOne({
-        where: { acpId },
+        where: { apId },
         select: {
           version: true,
           publishedVersion: true,
@@ -170,16 +170,16 @@ export class ItemExplorerStateService {
         version.version === cached.version &&
         version.publishedVersion === cached.publishedVersion
       ) {
-        this.viewerStateCache.delete(acpId);
-        this.viewerStateCache.set(acpId, cached);
+        this.viewerStateCache.delete(apId);
+        this.viewerStateCache.set(apId, cached);
         return cached;
       }
-      this.viewerStateCache.delete(acpId);
+      this.viewerStateCache.delete(apId);
     }
 
-    const record = await this.ensureStateRecord(acpId);
+    const record = await this.ensureStateRecord(apId);
     const entry = this.toViewerStateCacheEntry(record);
-    this.viewerStateCache.set(acpId, entry);
+    this.viewerStateCache.set(apId, entry);
     while (this.viewerStateCache.size > this.maxViewerStateCacheEntries) {
       const oldestKey = this.viewerStateCache.keys().next().value as
         | string
@@ -191,11 +191,11 @@ export class ItemExplorerStateService {
   }
 
   async getStateVersionForViewer(
-    acpId: string,
+    apId: string,
     canEdit: boolean,
   ): Promise<number> {
     const record = await this.stateRepository.findOne({
-      where: { acpId },
+      where: { apId },
       select: {
         version: true,
         publishedVersion: true,
@@ -204,25 +204,25 @@ export class ItemExplorerStateService {
     if (record) {
       return canEdit ? record.version : record.publishedVersion;
     }
-    const initialized = await this.ensureStateRecord(acpId);
+    const initialized = await this.ensureStateRecord(apId);
     return canEdit ? initialized.version : initialized.publishedVersion;
   }
 
-  async getCleanPublishedState(acpId: string): Promise<ExplorerStateEnvelope> {
-    const state = await this.getStateForViewer(acpId, false);
+  async getCleanPublishedState(apId: string): Promise<ExplorerStateEnvelope> {
+    const state = await this.getStateForViewer(apId, false);
     this.assertCleanState(state.status);
     return state;
   }
 
   async runWithLockedCleanState<T>(
-    acpId: string,
+    apId: string,
     operation: (
       state: ExplorerStateEnvelope,
       manager: EntityManager,
     ) => Promise<T>,
     expectedPublishedVersion?: number,
   ): Promise<T> {
-    return this.withLockedState(acpId, async ({ manager }, record) => {
+    return this.withLockedState(apId, async ({ manager }, record) => {
       this.assertCleanState(record.status);
       if (
         expectedPublishedVersion !== undefined &&
@@ -237,7 +237,7 @@ export class ItemExplorerStateService {
   }
 
   async patchDraft(
-    acpId: string,
+    apId: string,
     patch: ExplorerDraftPatch,
     options: {
       actor?: ExplorerActor;
@@ -246,7 +246,7 @@ export class ItemExplorerStateService {
     } = {},
   ): Promise<ExplorerStateEnvelope> {
     return this.withLockedState(
-      acpId,
+      apId,
       async ({ stateRepository, changeLogRepository }, record) => {
         this.assertVersion(record, options.baseVersion);
 
@@ -262,7 +262,7 @@ export class ItemExplorerStateService {
 
         await this.logChange(
           {
-            acpId,
+            apId,
             changeType: options.changeType || "PATCH_DRAFT",
             before,
             after,
@@ -279,15 +279,15 @@ export class ItemExplorerStateService {
   }
 
   async saveDraft(
-    acpId: string,
+    apId: string,
     options: { actor?: ExplorerActor; baseVersion?: number } = {},
   ): Promise<ExplorerStateEnvelope> {
     return this.withLockedState(
-      acpId,
+      apId,
       async (
         {
           stateRepository,
-          acpRepository,
+          apRepository,
           accessConfigRepository,
           changeLogRepository,
         },
@@ -300,8 +300,8 @@ export class ItemExplorerStateService {
         );
         const nextPublished = this.normalizeStatePayload(record.draftState);
 
-        await this.applyPublishedStateToDomain(acpId, nextPublished, {
-          acpRepository,
+        await this.applyPublishedStateToDomain(apId, nextPublished, {
+          apRepository,
           accessConfigRepository,
         });
 
@@ -318,7 +318,7 @@ export class ItemExplorerStateService {
 
         await this.logChange(
           {
-            acpId,
+            apId,
             changeType: "SAVE_DRAFT",
             before: beforePublished,
             after: nextPublished,
@@ -335,7 +335,7 @@ export class ItemExplorerStateService {
   }
 
   async publishItemPropertiesImmediately(
-    acpId: string,
+    apId: string,
     itemProperties: Record<string, Record<string, unknown>>,
     options: {
       actor?: ExplorerActor;
@@ -344,11 +344,11 @@ export class ItemExplorerStateService {
     },
   ): Promise<ExplorerStateEnvelope> {
     return this.withLockedState(
-      acpId,
+      apId,
       async (
         {
           stateRepository,
-          acpRepository,
+          apRepository,
           accessConfigRepository,
           changeLogRepository,
         },
@@ -367,8 +367,8 @@ export class ItemExplorerStateService {
           itemProperties: this.normalizeItemProperties(itemProperties),
         };
 
-        await this.applyPublishedStateToDomain(acpId, nextPublished, {
-          acpRepository,
+        await this.applyPublishedStateToDomain(apId, nextPublished, {
+          apRepository,
           accessConfigRepository,
         });
 
@@ -385,7 +385,7 @@ export class ItemExplorerStateService {
 
         await this.logChange(
           {
-            acpId,
+            apId,
             changeType: options.changeType,
             before,
             after: nextPublished,
@@ -402,7 +402,7 @@ export class ItemExplorerStateService {
   }
 
   async publishTagsImmediately(
-    acpId: string,
+    apId: string,
     tags: Record<string, string[]>,
     options: {
       actor?: ExplorerActor;
@@ -414,11 +414,11 @@ export class ItemExplorerStateService {
     state: ExplorerStateEnvelope;
   }> {
     return this.withLockedState(
-      acpId,
+      apId,
       async (
         {
           stateRepository,
-          acpRepository,
+          apRepository,
           accessConfigRepository,
           changeLogRepository,
         },
@@ -462,8 +462,8 @@ export class ItemExplorerStateService {
           itemProperties: this.normalizeItemProperties(itemProperties),
         };
 
-        await this.applyPublishedStateToDomain(acpId, nextPublished, {
-          acpRepository,
+        await this.applyPublishedStateToDomain(apId, nextPublished, {
+          apRepository,
           accessConfigRepository,
         });
 
@@ -480,7 +480,7 @@ export class ItemExplorerStateService {
 
         await this.logChange(
           {
-            acpId,
+            apId,
             changeType: options.changeType || "REPLACE_ITEM_TAGS",
             before,
             after: nextPublished,
@@ -500,11 +500,11 @@ export class ItemExplorerStateService {
   }
 
   async discardDraft(
-    acpId: string,
+    apId: string,
     options: { actor?: ExplorerActor; baseVersion?: number } = {},
   ): Promise<ExplorerStateEnvelope> {
     return this.withLockedState(
-      acpId,
+      apId,
       async ({ stateRepository, changeLogRepository }, record) => {
         this.assertVersion(record, options.baseVersion);
 
@@ -519,7 +519,7 @@ export class ItemExplorerStateService {
 
         await this.logChange(
           {
-            acpId,
+            apId,
             changeType: "DISCARD_DRAFT",
             before,
             after: published,
@@ -536,18 +536,18 @@ export class ItemExplorerStateService {
   }
 
   async listChanges(
-    acpId: string,
+    apId: string,
     limit = 100,
-  ): Promise<AcpItemExplorerChangeLog[]> {
+  ): Promise<ApItemExplorerChangeLog[]> {
     const safeLimit = Math.max(1, Math.min(limit, 500));
     return this.changeLogRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { createdAt: "DESC" },
       take: safeLimit,
     });
   }
 
-  resolveActor(user: any, acpId: string): ExplorerActor {
+  resolveActor(user: any, apId: string): ExplorerActor {
     const username =
       typeof user?.username === "string"
         ? user.username
@@ -560,12 +560,10 @@ export class ItemExplorerStateService {
       role = "APP_ADMIN";
     } else if (user?.type === "credential") {
       role = "CREDENTIAL";
-    } else if (Array.isArray(user?.acpRoles)) {
-      const acpRole = user.acpRoles.find(
-        (entry: any) => entry?.acpId === acpId,
-      );
-      if (acpRole?.role === "ACP_MANAGER") {
-        role = "ACP_MANAGER";
+    } else if (Array.isArray(user?.apRoles)) {
+      const apRole = user.apRoles.find((entry: any) => entry?.apId === apId);
+      if (apRole?.role === "AP_MANAGER") {
+        role = "AP_MANAGER";
       }
     }
 
@@ -578,30 +576,30 @@ export class ItemExplorerStateService {
   }
 
   private async withLockedState<T>(
-    acpId: string,
+    apId: string,
     operation: (
       repositories: {
         manager: EntityManager;
-        stateRepository: Repository<AcpItemExplorerState>;
-        acpRepository: Repository<Acp>;
-        accessConfigRepository: Repository<AcpAccessConfig>;
-        changeLogRepository: Repository<AcpItemExplorerChangeLog>;
+        stateRepository: Repository<ApItemExplorerState>;
+        apRepository: Repository<Ap>;
+        accessConfigRepository: Repository<ApAccessConfig>;
+        changeLogRepository: Repository<ApItemExplorerChangeLog>;
       },
-      record: AcpItemExplorerState,
+      record: ApItemExplorerState,
     ) => Promise<T>,
   ): Promise<T> {
-    await this.ensureStateRecord(acpId);
+    await this.ensureStateRecord(apId);
 
     return this.stateRepository.manager.transaction(async (manager) => {
       const repositories = {
         manager,
-        stateRepository: manager.getRepository(AcpItemExplorerState),
-        acpRepository: manager.getRepository(Acp),
-        accessConfigRepository: manager.getRepository(AcpAccessConfig),
-        changeLogRepository: manager.getRepository(AcpItemExplorerChangeLog),
+        stateRepository: manager.getRepository(ApItemExplorerState),
+        apRepository: manager.getRepository(Ap),
+        accessConfigRepository: manager.getRepository(ApAccessConfig),
+        changeLogRepository: manager.getRepository(ApItemExplorerChangeLog),
       };
       const record = await repositories.stateRepository.findOne({
-        where: { acpId },
+        where: { apId },
         lock: { mode: "pessimistic_write" },
       });
       if (!record) {
@@ -620,61 +618,59 @@ export class ItemExplorerStateService {
     }
   }
 
-  private async ensureStateRecord(
-    acpId: string,
-  ): Promise<AcpItemExplorerState> {
-    const record = await this.stateRepository.findOne({ where: { acpId } });
+  private async ensureStateRecord(apId: string): Promise<ApItemExplorerState> {
+    const record = await this.stateRepository.findOne({ where: { apId } });
     if (record) {
       return record;
     }
 
     return this.stateRepository.manager.transaction(async (manager) => {
-      const stateRepository = manager.getRepository(AcpItemExplorerState);
-      const acpRepository = manager.getRepository(Acp);
-      const accessConfigRepository = manager.getRepository(AcpAccessConfig);
+      const stateRepository = manager.getRepository(ApItemExplorerState);
+      const apRepository = manager.getRepository(Ap);
+      const accessConfigRepository = manager.getRepository(ApAccessConfig);
 
-      // Serialize first-time initialization on the ACP row. The Item Explorer
+      // Serialize first-time initialization on the AP row. The Item Explorer
       // loads its item list and shared state concurrently, so both requests may
       // observe a missing state before either one inserts it.
-      const acp = await acpRepository.findOne({
-        where: { id: acpId },
+      const ap = await apRepository.findOne({
+        where: { id: apId },
         lock: { mode: "pessimistic_write" },
       });
-      if (!acp) {
+      if (!ap) {
         throw new NotFoundException("AP not found");
       }
 
       const concurrentlyCreated = await stateRepository.findOne({
-        where: { acpId },
+        where: { apId },
       });
       if (concurrentlyCreated) {
         return concurrentlyCreated;
       }
 
       const accessConfig = await accessConfigRepository.findOne({
-        where: { acpId },
+        where: { apId },
       });
       const defaultState = this.buildDefaultState(
-        acp,
+        ap,
         accessConfig || undefined,
       );
 
       const newRecord = stateRepository.create({
-        acpId,
+        apId,
         publishedState: defaultState as unknown as Record<string, unknown>,
         draftState: defaultState as unknown as Record<string, unknown>,
         status: "CLEAN",
         version: 1,
         publishedVersion: 1,
-      } as DeepPartial<AcpItemExplorerState>);
+      } as DeepPartial<ApItemExplorerState>);
 
       return stateRepository.save(newRecord);
     });
   }
 
   private buildDefaultState(
-    acp: Acp,
-    accessConfig?: AcpAccessConfig,
+    ap: Ap,
+    accessConfig?: ApAccessConfig,
   ): ExplorerSharedStatePayload {
     const normalizedFeatureConfig = normalizeFeatureConfig(
       accessConfig?.featureConfig || {},
@@ -702,7 +698,7 @@ export class ItemExplorerStateService {
       ...this.withTableColumnLayout(rawMetadataColumns.layout),
     };
 
-    const itemProperties = this.normalizeItemProperties(acp.itemProperties);
+    const itemProperties = this.normalizeItemProperties(ap.itemProperties);
     const tags: Record<string, string[]> = {};
     for (const [itemKey, value] of Object.entries(itemProperties)) {
       const rawTags = Array.isArray(value.tags) ? value.tags : [];
@@ -722,28 +718,28 @@ export class ItemExplorerStateService {
   }
 
   private async applyPublishedStateToDomain(
-    acpId: string,
+    apId: string,
     state: ExplorerSharedStatePayload,
     repositories: {
-      acpRepository: Repository<Acp>;
-      accessConfigRepository: Repository<AcpAccessConfig>;
+      apRepository: Repository<Ap>;
+      accessConfigRepository: Repository<ApAccessConfig>;
     } = {
-      acpRepository: this.acpRepository,
+      apRepository: this.apRepository,
       accessConfigRepository: this.accessConfigRepository,
     },
   ): Promise<void> {
-    const acp = await repositories.acpRepository.findOne({
-      where: { id: acpId },
+    const ap = await repositories.apRepository.findOne({
+      where: { id: apId },
     });
-    if (!acp) {
+    if (!ap) {
       throw new NotFoundException("AP not found");
     }
 
-    acp.itemProperties = this.normalizeItemProperties(state.itemProperties);
-    await repositories.acpRepository.save(acp);
+    ap.itemProperties = this.normalizeItemProperties(state.itemProperties);
+    await repositories.apRepository.save(ap);
 
     const config = await repositories.accessConfigRepository.findOne({
-      where: { acpId },
+      where: { apId },
     });
     if (!config) {
       return;
@@ -800,7 +796,7 @@ export class ItemExplorerStateService {
   }
 
   private toEnvelope(
-    record: AcpItemExplorerState,
+    record: ApItemExplorerState,
     canEdit: boolean,
   ): ExplorerStateEnvelope {
     return this.toViewerEnvelope(this.toViewerStateCacheEntry(record), canEdit);
@@ -826,7 +822,7 @@ export class ItemExplorerStateService {
   }
 
   private toViewerStateCacheEntry(
-    record: AcpItemExplorerState,
+    record: ApItemExplorerState,
   ): ViewerStateCacheEntry {
     return {
       status: record.status,
@@ -981,7 +977,7 @@ export class ItemExplorerStateService {
 
   private async logChange(
     params: {
-      acpId: string;
+      apId: string;
       changeType: string;
       before: ExplorerSharedStatePayload;
       after: ExplorerSharedStatePayload;
@@ -997,7 +993,7 @@ export class ItemExplorerStateService {
       : null;
 
     const entry = repository.create({
-      acpId: params.acpId,
+      apId: params.apId,
       changeType: params.changeType,
       beforeState: params.before as unknown as Record<string, unknown>,
       afterState: params.after as unknown as Record<string, unknown>,
@@ -1007,7 +1003,7 @@ export class ItemExplorerStateService {
       actorUserId,
       actorUsername: params.actor?.username || null,
       actorRole: params.actor?.role || null,
-    } as DeepPartial<AcpItemExplorerChangeLog>);
+    } as DeepPartial<ApItemExplorerChangeLog>);
 
     await repository.save(entry);
   }
@@ -1038,7 +1034,7 @@ export class ItemExplorerStateService {
   }
 
   private assertVersion(
-    record: AcpItemExplorerState,
+    record: ApItemExplorerState,
     baseVersion?: number,
   ): void {
     if (
@@ -1054,10 +1050,7 @@ export class ItemExplorerStateService {
     }
   }
 
-  private applyActor(
-    record: AcpItemExplorerState,
-    actor?: ExplorerActor,
-  ): void {
+  private applyActor(record: ApItemExplorerState, actor?: ExplorerActor): void {
     record.updatedByUserId = this.isUuid(actor?.userId)
       ? actor?.userId || null
       : null;

@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PendingPersonalSessionStorageService } from './pending-personal-session-storage.service';
 
-function createJwt(sub: string, type = 'user', acpId = ''): string {
+function createJwt(sub: string, type = 'user', apId = ''): string {
   const payload = btoa(
     JSON.stringify({
       sub,
       type,
-      acpId,
+      apId,
       exp: Math.floor(Date.now() / 1000) + 3600,
     }),
   )
@@ -17,6 +17,15 @@ function createJwt(sub: string, type = 'user', acpId = ''): string {
 }
 
 describe('PendingPersonalSessionStorageService', () => {
+  it('retains the same pending-edit identity across old and new credential claims', () => {
+    const service = new PendingPersonalSessionStorageService();
+    const token = (claims: Record<string, unknown>) =>
+      `header.${btoa(JSON.stringify({ sub: 'credential', type: 'credential', ...claims }))}.signature`;
+    const old = token({ acpId: 'package' });
+    const current = token({ apId: 'package' });
+    expect(service.resolveIdentityFromToken(old)).toBe(service.resolveIdentityFromToken(current));
+    expect(service.resolveIdentityFromToken(token({ acpId: 'package', apId: 'other' }))).toBeNull();
+  });
   beforeEach(() => {
     sessionStorage.clear();
     vi.restoreAllMocks();
@@ -49,8 +58,8 @@ describe('PendingPersonalSessionStorageService', () => {
     const userAIdentity = service.resolveIdentityFromToken(createJwt('user-a'));
     const userBToken = createJwt('user-b');
     const userBIdentity = service.resolveIdentityFromToken(userBToken);
-    const userAKey = 'ch_item_explorer_pending_personal:acp-a';
-    const userBKey = 'ch_item_explorer_pending_personal:acp-b';
+    const userAKey = 'ch_item_explorer_pending_personal:ap-a';
+    const userBKey = 'ch_item_explorer_pending_personal:ap-b';
     service.set(userAKey, JSON.stringify({ identity: userAIdentity, updates: [] }));
     service.set(userBKey, JSON.stringify({ identity: userBIdentity, updates: [] }));
 
@@ -64,7 +73,7 @@ describe('PendingPersonalSessionStorageService', () => {
     const service = new PendingPersonalSessionStorageService();
     const localUserToken = createJwt('user-a', 'user');
     const oidcUserToken = createJwt('user-a', 'oidc');
-    const snapshotKey = 'ch_item_explorer_pending_personal:acp-a';
+    const snapshotKey = 'ch_item_explorer_pending_personal:ap-a';
     service.set(
       snapshotKey,
       JSON.stringify({
@@ -85,7 +94,7 @@ describe('PendingPersonalSessionStorageService', () => {
     const service = new PendingPersonalSessionStorageService();
     const localUserToken = createJwt('user-a', 'user');
     const oidcUserToken = createJwt('user-b', 'oidc');
-    const snapshotKey = 'ch_item_explorer_pending_personal:acp-a';
+    const snapshotKey = 'ch_item_explorer_pending_personal:ap-a';
     service.set(
       snapshotKey,
       JSON.stringify({
@@ -99,12 +108,12 @@ describe('PendingPersonalSessionStorageService', () => {
     expect(service.get(snapshotKey)).toBeNull();
   });
 
-  it('keeps credential identities separated by ACP', () => {
+  it('keeps credential identities separated by AP', () => {
     const service = new PendingPersonalSessionStorageService();
 
     expect(
-      service.resolveIdentityFromToken(createJwt('credential-1', 'credential', 'acp-a')),
-    ).not.toBe(service.resolveIdentityFromToken(createJwt('credential-1', 'credential', 'acp-b')));
+      service.resolveIdentityFromToken(createJwt('credential-1', 'credential', 'ap-a')),
+    ).not.toBe(service.resolveIdentityFromToken(createJwt('credential-1', 'credential', 'ap-b')));
   });
   it('does not resurrect a removed snapshot when browser deletion fails', () => {
     sessionStorage.setItem('pending', 'stale');
@@ -123,7 +132,7 @@ describe('PendingPersonalSessionStorageService', () => {
 
   it('removes another identity from memory even when browser enumeration fails', () => {
     const service = new PendingPersonalSessionStorageService();
-    const key = 'ch_item_explorer_pending_personal:acp-a';
+    const key = 'ch_item_explorer_pending_personal:ap-a';
     service.set(
       key,
       JSON.stringify({ identity: service.resolveIdentityFromToken(createJwt('a')) }),
@@ -137,7 +146,7 @@ describe('PendingPersonalSessionStorageService', () => {
   });
 
   it.each(['{broken', '{}', '{"identity":42}', ''])('removes corrupt snapshots: %s', (raw) => {
-    const key = 'ch_item_explorer_pending_personal:acp-a';
+    const key = 'ch_item_explorer_pending_personal:ap-a';
     sessionStorage.setItem(key, raw);
     const service = new PendingPersonalSessionStorageService();
     service.activateIdentityFromToken(createJwt('user-a'));
@@ -148,7 +157,7 @@ describe('PendingPersonalSessionStorageService', () => {
     'ignores invalid identity tokens without deleting recoverable changes: %s',
     (token) => {
       const service = new PendingPersonalSessionStorageService();
-      const key = 'ch_item_explorer_pending_personal:acp-a';
+      const key = 'ch_item_explorer_pending_personal:ap-a';
       service.set(key, 'recoverable');
       expect(service.resolveIdentityFromToken(token)).toBeNull();
       service.activateIdentityFromToken(token);

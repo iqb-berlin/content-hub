@@ -17,7 +17,7 @@ describe('AuthService OIDC and Crypto Paths', () => {
     username: 'julian',
     displayName: 'Julian',
     isAppAdmin: false,
-    acpRoles: [],
+    apRoles: [],
   };
 
   const oidcConfig: OidcConfig = {
@@ -273,13 +273,13 @@ describe('AuthService OIDC and Crypto Paths', () => {
     expect(logoutSpy).toHaveBeenCalled();
   });
 
-  it('syncOidcRoles refreshes app token and normalizes missing acpRoles', async () => {
+  it('syncOidcRoles refreshes app token and normalizes missing apRoles', async () => {
     httpClientMock.post.mockReturnValueOnce(
       of({
         accessToken: 'new-jwt',
         user: {
           ...profile,
-          acpRoles: undefined,
+          apRoles: undefined,
         },
       } as LoginResponse),
     );
@@ -287,7 +287,7 @@ describe('AuthService OIDC and Crypto Paths', () => {
     const result = await firstValueFrom(service.syncOidcRoles('id-token'));
 
     expect(localStorage.getItem('ch_token')).toBe('new-jwt');
-    expect(result.acpRoles).toEqual([]);
+    expect(result.apRoles).toEqual([]);
   });
 
   it('handles OIDC logout branch and clears local/session state without broadcast', () => {

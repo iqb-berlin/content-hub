@@ -194,7 +194,7 @@ class ItemExplorerShellTemplateHarness implements OnInit {
   }
 
   ngOnInit(): void {
-    this.facade.init(this.route.snapshot.paramMap.get('acpId') || '');
+    this.facade.init(this.route.snapshot.paramMap.get('apId') || '');
   }
 }
 
@@ -208,7 +208,7 @@ function createFacade(apiOverrides: Record<string, unknown> = {}): ItemExplorerF
     api,
     { bypassSecurityTrustHtml: (html: string) => html } as any,
     {
-      hasAcpRole: () => false,
+      hasApRole: () => false,
       isAdmin: false,
       isLoggedIn: false,
       currentUser$: { subscribe: () => ({ unsubscribe: vi.fn() }) },
@@ -244,7 +244,7 @@ async function renderExplorer(facade: ItemExplorerFacade) {
       { provide: ItemExplorerFacade, useValue: facade },
       {
         provide: ActivatedRoute,
-        useValue: { snapshot: { paramMap: { get: () => 'acp-42' } } },
+        useValue: { snapshot: { paramMap: { get: () => 'ap-42' } } },
       },
     ],
   }).compileComponents();
@@ -290,7 +290,7 @@ describe('ItemExplorer production template composition', () => {
     ).componentInstance as ItemExplorerPreviewTemplateHarness;
     expect(table.vm).toBe(facade.tableViewModel);
     expect(preview.vm).toBe(facade.previewViewModel);
-    expect(init).toHaveBeenCalledWith('acp-42');
+    expect(init).toHaveBeenCalledWith('ap-42');
   }, 15_000);
   it('removes optional regions from the DOM but keeps loading and personal save errors reachable', async () => {
     const facade = createFacade();
@@ -342,7 +342,7 @@ describe('ItemExplorer production template composition', () => {
       .mockImplementation(() => {});
     const rememberFocus = vi.fn();
     const restoreFocus = vi.fn(() => true);
-    facade.acpId = 'package';
+    facade.apId = 'package';
     facade.registerShellDom({
       toggleFullscreen: async () => false,
       isFullscreen: () => false,

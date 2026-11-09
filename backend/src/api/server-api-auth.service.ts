@@ -1,3 +1,4 @@
+import { normalizeApScope } from "../common/ap-contract";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -13,7 +14,7 @@ export interface ServerApiClient {
   id: string;
   token: string;
   scopes: string[];
-  allowedAcpIds?: string[] | null;
+  allowedApIds?: string[] | null;
 }
 
 @Injectable()
@@ -66,7 +67,7 @@ export class ServerApiAuthService {
         return {
           id: client.id,
           scopes: [...client.scopes],
-          allowedAcpIds: client.allowedAcpIds || null,
+          allowedApIds: client.allowedApIds || null,
         };
       }
     }
@@ -109,18 +110,20 @@ export class ServerApiAuthService {
     return {
       id: applicationToken.name,
       scopes: Array.isArray(applicationToken.scopes)
-        ? [...applicationToken.scopes]
+        ? applicationToken.scopes.map(normalizeApScope)
         : [],
-      allowedAcpIds: Array.isArray(applicationToken.allowedAcpIds)
-        ? [...applicationToken.allowedAcpIds]
+      allowedApIds: Array.isArray(applicationToken.allowedApIds)
+        ? [...applicationToken.allowedApIds]
         : null,
     };
   }
 
   hasScopes(clientScopes: string[], requiredScopes: string[]): boolean {
     if (!requiredScopes.length) return true;
-    const normalized = new Set(clientScopes);
-    return requiredScopes.every((scope) => normalized.has(scope));
+    const normalized = new Set(clientScopes.map(normalizeApScope));
+    return requiredScopes.every((scope) =>
+      normalized.has(normalizeApScope(scope)),
+    );
   }
 
   private loadClients(): ServerApiClient[] {
@@ -139,7 +142,7 @@ export class ServerApiAuthService {
           id: "legacy",
           token: legacyToken,
           scopes: [...ALL_SERVER_API_SCOPES],
-          allowedAcpIds: null,
+          allowedApIds: null,
         },
       ];
     }
@@ -246,7 +249,9 @@ export class ServerApiAuthService {
         const scopes = Array.from(
           new Set<string>(
             scopesInput
-              .map((scope: unknown) => String(scope || "").trim())
+              .map((scope: unknown) =>
+                normalizeApScope(String(scope || "").trim()),
+              )
               .filter((scope: string) => scope.length > 0),
           ),
         );
@@ -259,7 +264,7 @@ export class ServerApiAuthService {
           id,
           token,
           scopes: scopes.length ? scopes : [...ALL_SERVER_API_SCOPES],
-          allowedAcpIds: null,
+          allowedApIds: null,
         });
       }
 

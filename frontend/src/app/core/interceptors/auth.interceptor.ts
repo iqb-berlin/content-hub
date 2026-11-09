@@ -9,7 +9,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const access = inject(AccessService);
 
-  return forwardRequest(req, next, auth, access);
+  const request = req.url.startsWith('/api/')
+    ? req.clone({ setHeaders: { 'X-Content-Hub-Terminology': 'ap' } })
+    : req;
+  return forwardRequest(request, next, auth, access);
 };
 
 function isInlineAuthError(url: string): boolean {

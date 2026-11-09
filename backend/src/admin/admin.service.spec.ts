@@ -6,12 +6,12 @@ import * as os from "os";
 import * as path from "path";
 import { AdminService } from "./admin.service";
 import {
-  Acp,
+  Ap,
   AppSettings,
   ApplicationToken,
   ServerApiAuditLog,
 } from "../database/entities";
-import { DEFAULT_ACP_INDEX_VERSION } from "../acp/acp-index.utils";
+import { DEFAULT_AP_INDEX_VERSION } from "../ap/ap-index.utils";
 import {
   GEOGEBRA_PLAYER_DEPLOY_SCRIPT_PATH,
   getGeoGebraBundleCurrentDir,
@@ -37,7 +37,7 @@ describe("AdminService", () => {
     create: jest.Mock;
     save: jest.Mock;
   };
-  let acpRepository: {
+  let apRepository: {
     find: jest.Mock;
   };
   let tempStoragePath: string;
@@ -59,7 +59,7 @@ describe("AdminService", () => {
       create: jest.fn().mockImplementation((dto) => dto),
       save: jest.fn().mockImplementation(async (entity) => entity),
     };
-    acpRepository = {
+    apRepository = {
       find: jest.fn().mockResolvedValue([]),
     };
     applicationTokenRepository = {
@@ -101,7 +101,7 @@ describe("AdminService", () => {
           provide: getRepositoryToken(ServerApiAuditLog),
           useValue: auditRepository,
         },
-        { provide: getRepositoryToken(Acp), useValue: acpRepository },
+        { provide: getRepositoryToken(Ap), useValue: apRepository },
       ],
     }).compile();
 
@@ -121,8 +121,8 @@ describe("AdminService", () => {
     expect(repo.create).toHaveBeenCalledWith({
       theme: {},
       language: "de",
-      defaultAcpIndex: {
-        version: DEFAULT_ACP_INDEX_VERSION,
+      defaultApIndex: {
+        version: DEFAULT_AP_INDEX_VERSION,
         assessmentParts: [],
       },
       geoGebraBundle: null,
@@ -136,7 +136,7 @@ describe("AdminService", () => {
       id: "settings-1",
       theme: {},
       language: "de",
-      defaultAcpIndex: {},
+      defaultApIndex: {},
       geoGebraBundle: {
         sourceFileName: "GeoGebra.itcr.zip",
         deployScriptUrl: "/assets/GeoGebra/GeoGebra/deployggb.js",
@@ -158,7 +158,7 @@ describe("AdminService", () => {
     );
   });
 
-  it("updates theme and default ACP index settings", async () => {
+  it("updates theme and default AP index settings", async () => {
     const existing = {
       id: "settings-1",
       theme: {},
@@ -168,7 +168,7 @@ describe("AdminService", () => {
       imprintHtml: undefined,
       privacyHtml: undefined,
       accessibilityHtml: undefined,
-      defaultAcpIndex: {},
+      defaultApIndex: {},
       geoGebraBundle: null,
       updatedAt: new Date(),
     } as AppSettings;
@@ -179,7 +179,7 @@ describe("AdminService", () => {
       language: "en",
       logoUrl: "https://example.org/logo.svg",
       theme: { "--color-primary": "#123456" },
-      defaultAcpIndex: { quality: "standard" },
+      defaultApIndex: { quality: "standard" },
       landingPageHtml: "<p>Landing</p>",
       imprintHtml: "<p>Imprint</p>",
       privacyHtml: "<p>Privacy</p>",
@@ -191,12 +191,12 @@ describe("AdminService", () => {
         language: "en",
         logoUrl: "https://example.org/logo.svg",
         theme: { "--color-primary": "#123456" },
-        defaultAcpIndex: { quality: "standard" },
+        defaultApIndex: { quality: "standard" },
       }),
     );
 
     expect(updated.language).toBe("en");
-    expect(updated.defaultAcpIndex).toEqual({ quality: "standard" });
+    expect(updated.defaultApIndex).toEqual({ quality: "standard" });
   });
 
   it("lists application tokens without exposing token hashes", async () => {
@@ -207,7 +207,7 @@ describe("AdminService", () => {
           name: "Studio",
           tokenHash: "hidden",
           tokenPrefix: "ch_abc...",
-          scopes: ["acp.read"],
+          scopes: ["ap.read"],
           active: true,
           expiresAt: null,
           lastUsedAt: null,
@@ -238,8 +238,8 @@ describe("AdminService", () => {
           id: "token-1",
           name: "Studio",
           tokenPrefix: "ch_abc...",
-          scopes: ["acp.read"],
-          allowedAcpIds: null,
+          scopes: ["ap.read"],
+          allowedApIds: null,
         }),
       ],
       total: 1,
@@ -255,7 +255,7 @@ describe("AdminService", () => {
     const result = await service.createApplicationToken(
       {
         name: " Studio ",
-        scopes: ["acp.read", "files.read", "files.read"],
+        scopes: ["ap.read", "files.read", "files.read"],
         expiresAt: "2099-01-01T00:00:00.000Z",
       },
       "user-1",
@@ -263,15 +263,15 @@ describe("AdminService", () => {
 
     expect(result.token).toMatch(/^ch_/);
     expect(result.name).toBe("Studio");
-    expect(result.scopes).toEqual(["acp.read", "files.read"]);
+    expect(result.scopes).toEqual(["ap.read", "files.read"]);
     expect(result).not.toHaveProperty("tokenHash");
     expect(applicationTokenRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Studio",
         tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
         tokenPrefix: expect.stringMatching(/^ch_/),
-        scopes: ["acp.read", "files.read"],
-        allowedAcpIds: null,
+        scopes: ["ap.read", "files.read"],
+        allowedApIds: null,
         active: true,
         createdByUserId: "user-1",
         revokedAt: null,
@@ -290,67 +290,67 @@ describe("AdminService", () => {
           tokenId: "token-1",
           name: "Studio",
           tokenPrefix: expect.stringMatching(/^ch_/),
-          scopes: ["acp.read", "files.read"],
-          allowedAcpIds: null,
+          scopes: ["ap.read", "files.read"],
+          allowedApIds: null,
           expiresAt: "2099-01-01T00:00:00.000Z",
         }),
       }),
     );
   });
 
-  it("creates ACP-limited tokens only within the manager constraints", async () => {
-    const acpId = "11111111-1111-4111-8111-111111111111";
+  it("creates AP-limited tokens only within the manager constraints", async () => {
+    const apId = "11111111-1111-4111-8111-111111111111";
     applicationTokenRepository.findOne.mockResolvedValue(null);
-    acpRepository.find.mockResolvedValue([{ id: acpId }]);
+    apRepository.find.mockResolvedValue([{ id: apId }]);
 
     const result = await service.createApplicationToken(
       {
-        name: "ACP Studio",
-        scopes: ["acp.read"],
-        allowedAcpIds: [acpId],
+        name: "AP Studio",
+        scopes: ["ap.read"],
+        allowedApIds: [apId],
       },
       "manager-1",
       {
-        allowedAcpIds: [acpId],
-        auditAcpId: acpId,
-        auditPath: `/api/acp/${acpId}/application-tokens`,
+        allowedApIds: [apId],
+        auditApId: apId,
+        auditPath: `/api/ap/${apId}/application-tokens`,
       },
     );
 
-    expect(result.allowedAcpIds).toEqual([acpId]);
+    expect(result.allowedApIds).toEqual([apId]);
     expect(applicationTokenRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ allowedAcpIds: [acpId] }),
+      expect.objectContaining({ allowedApIds: [apId] }),
     );
     expect(auditRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: `/api/acp/${acpId}/application-tokens`,
-        acpId,
-        details: expect.objectContaining({ allowedAcpIds: [acpId] }),
+        path: `/api/ap/${apId}/application-tokens`,
+        apId,
+        details: expect.objectContaining({ allowedApIds: [apId] }),
       }),
     );
   });
 
-  it("rejects global or out-of-scope tokens created by ACP managers", async () => {
-    const managedAcpId = "11111111-1111-4111-8111-111111111111";
-    const otherAcpId = "22222222-2222-4222-8222-222222222222";
+  it("rejects global or out-of-scope tokens created by AP managers", async () => {
+    const managedApId = "11111111-1111-4111-8111-111111111111";
+    const otherApId = "22222222-2222-4222-8222-222222222222";
 
     await expect(
       service.createApplicationToken(
-        { name: "Global", scopes: ["acp.read"] },
+        { name: "Global", scopes: ["ap.read"] },
         "manager-1",
-        { allowedAcpIds: [managedAcpId] },
+        { allowedApIds: [managedApId] },
       ),
     ).rejects.toThrow(ForbiddenException);
 
     await expect(
       service.createApplicationToken(
         {
-          name: "Other ACP",
-          scopes: ["acp.read"],
-          allowedAcpIds: [otherAcpId],
+          name: "Other AP",
+          scopes: ["ap.read"],
+          allowedApIds: [otherApId],
         },
         "manager-1",
-        { allowedAcpIds: [managedAcpId] },
+        { allowedApIds: [managedApId] },
       ),
     ).rejects.toThrow(ForbiddenException);
 
@@ -367,7 +367,7 @@ describe("AdminService", () => {
       service.createApplicationToken(
         {
           name: "Studio",
-          scopes: ["acp.read"],
+          scopes: ["ap.read"],
         },
         "user-1",
       ),
@@ -383,7 +383,7 @@ describe("AdminService", () => {
     await expect(
       service.createApplicationToken({
         name: "Studio",
-        scopes: ["acp.read"],
+        scopes: ["ap.read"],
       }),
     ).rejects.toThrow("already exists");
 
@@ -406,7 +406,7 @@ describe("AdminService", () => {
     await expect(
       service.createApplicationToken({
         name: "Studio",
-        scopes: ["acp.read"],
+        scopes: ["ap.read"],
       }),
     ).rejects.toThrow(ConflictException);
   });
@@ -422,7 +422,7 @@ describe("AdminService", () => {
     await expect(
       service.createApplicationToken({
         name: "Studio",
-        scopes: ["acp.read"],
+        scopes: ["ap.read"],
       }),
     ).rejects.toThrow(ConflictException);
   });
@@ -432,7 +432,7 @@ describe("AdminService", () => {
       id: "token-1",
       name: "Studio",
       tokenPrefix: "ch_abc...",
-      scopes: ["acp.read"],
+      scopes: ["ap.read"],
       active: true,
       expiresAt: null,
       lastUsedAt: null,
@@ -480,13 +480,13 @@ describe("AdminService", () => {
     );
   });
 
-  it("allows ACP managers to revoke only tokens exclusive to their ACP", async () => {
-    const managedAcpId = "11111111-1111-4111-8111-111111111111";
+  it("allows AP managers to revoke only tokens exclusive to their AP", async () => {
+    const managedApId = "11111111-1111-4111-8111-111111111111";
     const tokenBase = {
       id: "token-1",
       name: "Studio",
       tokenPrefix: "ch_abc...",
-      scopes: ["acp.read"],
+      scopes: ["ap.read"],
       active: true,
       expiresAt: null,
       lastUsedAt: null,
@@ -498,17 +498,17 @@ describe("AdminService", () => {
     } as ApplicationToken;
 
     applicationTokenRepository.findOne
-      .mockResolvedValueOnce({ ...tokenBase, allowedAcpIds: null })
+      .mockResolvedValueOnce({ ...tokenBase, allowedApIds: null })
       .mockResolvedValueOnce({
         ...tokenBase,
-        allowedAcpIds: [managedAcpId, "22222222-2222-4222-8222-222222222222"],
+        allowedApIds: [managedApId, "22222222-2222-4222-8222-222222222222"],
       })
-      .mockResolvedValueOnce({ ...tokenBase, allowedAcpIds: [managedAcpId] });
+      .mockResolvedValueOnce({ ...tokenBase, allowedApIds: [managedApId] });
 
     const constraints = {
-      allowedAcpIds: [managedAcpId],
-      requireExclusiveAcp: true,
-      auditAcpId: managedAcpId,
+      allowedApIds: [managedApId],
+      requireExclusiveAp: true,
+      auditApId: managedApId,
     };
     await expect(
       service.revokeApplicationToken("token-1", "manager-1", constraints),
@@ -522,11 +522,11 @@ describe("AdminService", () => {
       expect.objectContaining({
         id: "token-1",
         active: false,
-        allowedAcpIds: [managedAcpId],
+        allowedApIds: [managedApId],
       }),
     );
     expect(auditRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ acpId: managedAcpId }),
+      expect.objectContaining({ apId: managedApId }),
     );
   });
 
@@ -538,7 +538,7 @@ describe("AdminService", () => {
       id: "token-1",
       name: "Studio",
       tokenPrefix: "ch_abc...",
-      scopes: ["acp.read"],
+      scopes: ["ap.read"],
       active: true,
       expiresAt: null,
       lastUsedAt: null,
@@ -585,7 +585,7 @@ describe("AdminService", () => {
       id: "settings-1",
       theme: {},
       language: "de",
-      defaultAcpIndex: {},
+      defaultApIndex: {},
       geoGebraBundle: null,
       updatedAt: new Date(),
     } as AppSettings;
@@ -652,7 +652,7 @@ describe("AdminService", () => {
       id: "settings-1",
       theme: {},
       language: "de",
-      defaultAcpIndex: {},
+      defaultApIndex: {},
       geoGebraBundle: {
         sourceFileName: "GeoGebra.itcr.zip",
         deployScriptUrl: GEOGEBRA_PLAYER_DEPLOY_SCRIPT_PATH,

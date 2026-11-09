@@ -31,25 +31,25 @@ describe("ReviewCommentsController", () => {
           authorLabel: req.user?.username || "Unbekannt",
           isManager: Boolean(
             req.user?.isAppAdmin ||
-            req.acpAccessLevel === "MANAGER" ||
-            req.acpAccessLevel === "ADMIN",
+            req.apAccessLevel === "MANAGER" ||
+            req.apAccessLevel === "ADMIN",
           ),
         };
       }),
       isManagerRequest: jest.fn(
-        (req) => req.acpAccessLevel === "MANAGER" || req.user?.isAppAdmin,
+        (req) => req.apAccessLevel === "MANAGER" || req.user?.isAppAdmin,
       ),
     };
     controller = new ReviewCommentsController(commentsService, reviewPolicy);
   });
 
   it("resolves stable OIDC and credential actors for item thread operations", async () => {
-    await controller.getItemThread("acp-1", " unit-1 ", " item-1 ", {
+    await controller.getItemThread("ap-1", " unit-1 ", " item-1 ", {
       user: { type: "oidc", sub: "user-1", username: "kuerzel" },
-      acpAccessLevel: "READ_ONLY",
+      apAccessLevel: "READ_ONLY",
     });
     expect(commentsService.getItemThread).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "unit-1",
       "item-1",
       {
@@ -62,7 +62,7 @@ describe("ReviewCommentsController", () => {
     );
 
     await controller.createItemComment(
-      "acp-1",
+      "ap-1",
       {
         unitId: "unit-1",
         itemId: "item-1",
@@ -75,11 +75,11 @@ describe("ReviewCommentsController", () => {
           sub: "credential-1",
           username: "reader",
         },
-        acpAccessLevel: "CREDENTIAL",
+        apAccessLevel: "CREDENTIAL",
       },
     );
     expect(commentsService.createItemComment).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.objectContaining({
         unitId: "unit-1",
         itemId: "item-1",
@@ -96,16 +96,16 @@ describe("ReviewCommentsController", () => {
   it("delegates versioned update and delete operations", async () => {
     const req = {
       user: { type: "oidc", sub: "user-1", username: "u1" },
-      acpAccessLevel: "MANAGER",
+      apAccessLevel: "MANAGER",
     };
     await controller.updateComment(
-      "acp-1",
+      "ap-1",
       "00000000-0000-4000-8000-000000000001",
       { commentText: "Neu", version: 2 },
       req,
     );
     expect(commentsService.updateOwnComment).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "00000000-0000-4000-8000-000000000001",
       "Neu",
       2,
@@ -115,20 +115,20 @@ describe("ReviewCommentsController", () => {
 
     await expect(
       controller.deleteComment(
-        "acp-1",
+        "ap-1",
         "00000000-0000-4000-8000-000000000001",
         "invalid",
         req,
       ),
     ).rejects.toThrow(BadRequestException);
     await controller.deleteComment(
-      "acp-1",
+      "ap-1",
       "00000000-0000-4000-8000-000000000001",
       "2",
       req,
     );
     expect(commentsService.deleteOwnComment).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "00000000-0000-4000-8000-000000000001",
       2,
       expect.objectContaining({ userId: "user-1" }),
@@ -138,17 +138,17 @@ describe("ReviewCommentsController", () => {
   it("normalizes booklet and coding targets for the shared lifecycle", async () => {
     const req = {
       user: { type: "oidc", sub: "user-1", username: "u1" },
-      acpAccessLevel: "READ_ONLY",
+      apAccessLevel: "READ_ONLY",
     };
     await controller.getItemThread(
-      "acp-1",
+      "ap-1",
       " unit-1 ",
       " item-1 ",
       req,
       "CODING",
     );
     expect(commentsService.getReviewThread).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {
         targetType: "CODING",
         unitId: "unit-1",
@@ -158,7 +158,7 @@ describe("ReviewCommentsController", () => {
     );
 
     await controller.createItemComment(
-      "acp-1",
+      "ap-1",
       {
         targetType: "BOOKLET" as any,
         bookletId: " booklet-1 ",
@@ -167,7 +167,7 @@ describe("ReviewCommentsController", () => {
       req,
     );
     expect(commentsService.createReviewComment).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.objectContaining({
         targetType: "BOOKLET",
         bookletId: "booklet-1",
@@ -179,7 +179,7 @@ describe("ReviewCommentsController", () => {
 
   it("rejects missing item targets before service access", async () => {
     await expect(
-      controller.getItemThread("acp-1", "", "item-1", {
+      controller.getItemThread("ap-1", "", "item-1", {
         user: { type: "oidc", sub: "user-1", username: "u1" },
       }),
     ).rejects.toThrow(BadRequestException);
@@ -189,16 +189,16 @@ describe("ReviewCommentsController", () => {
   it("keeps manager personal exports separate from the protected all export", async () => {
     const managerRequest = {
       user: { type: "oidc", sub: "manager-1", username: "manager" },
-      acpAccessLevel: "MANAGER",
+      apAccessLevel: "MANAGER",
     };
     const response = () => ({
       setHeader: jest.fn(),
       send: jest.fn(),
     });
 
-    await controller.exportMineXlsx("acp-1", managerRequest, response() as any);
+    await controller.exportMineXlsx("ap-1", managerRequest, response() as any);
     expect(commentsService.exportReviewCommentsXlsx).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.objectContaining({
         userId: "manager-1",
         credentialId: undefined,
@@ -206,16 +206,16 @@ describe("ReviewCommentsController", () => {
       }),
     );
 
-    await controller.exportAllXlsx("acp-1", managerRequest, response() as any);
+    await controller.exportAllXlsx("ap-1", managerRequest, response() as any);
     expect(commentsService.exportReviewCommentsXlsx).toHaveBeenLastCalledWith(
-      "acp-1",
+      "ap-1",
       undefined,
     );
 
     await expect(
       controller.exportAllXlsx(
-        "acp-1",
-        { ...managerRequest, acpAccessLevel: "READ_ONLY" },
+        "ap-1",
+        { ...managerRequest, apAccessLevel: "READ_ONLY" },
         response() as any,
       ),
     ).rejects.toThrow(ForbiddenException);

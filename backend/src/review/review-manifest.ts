@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import {
   getAssessmentParts,
   getIndexUnits,
-  toRuntimeAcpIndex,
-} from "../acp/acp-index.utils";
+  toRuntimeApIndex,
+} from "../ap/ap-index.utils";
 import {
   BookletStructureError,
   NavigationNode,
@@ -60,7 +60,7 @@ export function buildReviewManifest(
   rawIndex: unknown,
   definitions: Map<string, string>,
 ): ReviewManifest {
-  const index = toRuntimeAcpIndex(rawIndex as any);
+  const index = toRuntimeApIndex(rawIndex as any);
   const result: ReviewManifest = {
     booklets: [],
     units: getIndexUnits(index).map((unit: any) => ({

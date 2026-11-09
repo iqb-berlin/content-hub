@@ -110,11 +110,11 @@ export class AuthService {
     return this.currentUserSubject.value?.isAppAdmin ?? false;
   }
 
-  get hasManagedAcps(): boolean {
+  get hasManagedAps(): boolean {
     const user = this.currentUserSubject.value;
     if (!user) return false;
     if (user.isAppAdmin) return true;
-    return (user.acpRoles || []).some((role) => role.role === 'ACP_MANAGER');
+    return (user.apRoles || []).some((role) => role.role === 'AP_MANAGER');
   }
 
   get isOidcUser(): boolean {
@@ -291,12 +291,12 @@ export class AuthService {
   }
 
   credentialLogin(
-    acpId: string,
+    apId: string,
     username: string,
     password: string,
   ): Observable<CredentialLoginResponse> {
     return this.http
-      .post<CredentialLoginResponse>(`${this.API}/credential-login`, { acpId, username, password })
+      .post<CredentialLoginResponse>(`${this.API}/credential-login`, { apId, username, password })
       .pipe(
         tap((res) => {
           this.switchToCredentialSession();
@@ -401,11 +401,11 @@ export class AuthService {
     );
   }
 
-  hasAcpRole(acpId: string, role: string): boolean {
+  hasApRole(apId: string, role: string): boolean {
     const user = this.currentUserSubject.value;
     if (!user) return false;
     if (user.isAppAdmin) return true;
-    return (user.acpRoles || []).some((r) => r.acpId === acpId && r.role === role);
+    return (user.apRoles || []).some((r) => r.apId === apId && r.role === role);
   }
 
   private async redirectToOidcAuthorization(
@@ -665,7 +665,7 @@ export class AuthService {
   private normalizeUserProfile(user: LoginResponse['user']): UserProfile {
     return {
       ...(user as UserProfile),
-      acpRoles: (user as UserProfile).acpRoles || [],
+      apRoles: (user as UserProfile).apRoles || [],
     };
   }
 

@@ -138,7 +138,7 @@ describe('ItemExplorer presentational components', () => {
     expect(collectionsTemplate).toContain('[error]="removeConfirmationError"');
   });
 
-  it('binds ACP coding flags to general and manual instructions', () => {
+  it('binds AP coding flags to general and manual instructions', () => {
     expect(codingTemplate).toContain('vm.shouldShowGeneralCodingInstruction(coding)');
     expect(codingTemplate).toContain('vm.shouldShowAutomaticCodingRules(code)');
     expect(codingTemplate).toContain('Allgemeiner Kodierungshinweis:');

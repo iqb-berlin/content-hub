@@ -22,7 +22,7 @@ AP-Codepfaden. Dies ist keine vollstaendige Code- oder Laufzeitpruefung.
 | Syntaktische und semantische Validierung | Umgesetzt | Validierung von Inhalten und Referenzen; keine Zusage aller alten Scale-Regeln; [Workflows](../features/acp-workflows.md) |
 | Versionierte Registry mit packageId + version | Anders umgesetzt | Zentrales AP-Aggregat und Snapshots; [Datenmodell](../architecture/data-model.md) |
 | Versionsvergleich | Anders umgesetzt | Snapshot-Vergleiche statt vorausgesetzter Gleichheit mit dem alten AP-Diff; [Workflows](../features/acp-workflows.md) |
-| Viewer/Reviewer/Maintainer/Publisher/Admin | Anders umgesetzt | APP_ADMIN, ACP_MANAGER, READ_ONLY und AP-Zugangsdaten; [Zugriff](../features/access-control.md) |
+| Viewer/Reviewer/Maintainer/Publisher/Admin | Anders umgesetzt | APP_ADMIN, AP_MANAGER, READ_ONLY und AP-Zugangsdaten; [Zugriff](../features/access-control.md) |
 | OIDC als spaeterer Ausbau | Umgesetzt | Keycloak/OIDC ist Teil der Architektur; [Zugriff](../features/access-control.md) |
 | Review-Tasks OPEN / IN_PROGRESS / DONE | Offen | Kommentare und Betrachtungsablaeufe belegen keine formale Aufgabenverwaltung |
 | Erzwungene AP-Transitionen und Release-Pruefung | Offen | Statuswerte im AP-Index belegen keine Transition-Matrix mit Publisher-Pruefung |

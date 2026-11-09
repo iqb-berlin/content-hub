@@ -4,7 +4,7 @@ import { ServerApiScope } from "./server-api-scopes";
 export interface AuthenticatedServerApiClient {
   id: string;
   scopes: string[];
-  allowedAcpIds: string[] | null;
+  allowedApIds: string[] | null;
 }
 
 export interface ServerApiRequest extends Request {
@@ -19,5 +19,5 @@ export interface ServerApiCapabilities {
   clientId: string;
   scopes: string[];
   capabilities: Record<ServerApiScope, boolean>;
-  allowedAcpIds: string[] | null;
+  allowedApIds: string[] | null;
 }

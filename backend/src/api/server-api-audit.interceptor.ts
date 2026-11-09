@@ -36,7 +36,7 @@ export class ServerApiAuditInterceptor implements NestInterceptor {
 
     const req = context.switchToHttp().getRequest<ServerApiRequest>();
     const res = context.switchToHttp().getResponse<Response>();
-    const acpId = this.firstParam(req.params?.acpId);
+    const apId = this.firstParam(req.params?.apId);
     const fileId = this.firstParam(req.params?.fileId);
 
     const baseEntry = {
@@ -44,8 +44,8 @@ export class ServerApiAuditInterceptor implements NestInterceptor {
       action: auditMeta.action,
       method: req?.method || "UNKNOWN",
       path: req?.originalUrl || req?.url || "",
-      acpId,
-      resourceId: fileId || acpId,
+      apId,
+      resourceId: fileId || apId,
       details: {
         resourceType: auditMeta.resourceType,
         query: req?.query || {},

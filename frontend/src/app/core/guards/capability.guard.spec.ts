@@ -16,7 +16,7 @@ describe('Explorer route access', () => {
       ],
     });
     const result = TestBed.runInInjectionContext(() =>
-      explorerCapabilityGuard({ paramMap: { get: () => 'acp' } } as any),
+      explorerCapabilityGuard({ paramMap: { get: () => 'ap' } } as any),
     );
     expect(await firstValueFrom(result as any)).toBe(canViewExplorer ? true : redirect);
     TestBed.resetTestingModule();
@@ -30,7 +30,7 @@ describe('Explorer route access', () => {
       ],
     });
     const result = TestBed.runInInjectionContext(() =>
-      explorerCapabilityGuard({ paramMap: { get: () => 'acp' } } as any),
+      explorerCapabilityGuard({ paramMap: { get: () => 'ap' } } as any),
     );
     expect(await firstValueFrom(result as any)).toBe(redirect);
     TestBed.resetTestingModule();
@@ -48,10 +48,10 @@ describe('Review management route access', () => {
       ],
     });
     const result = TestBed.runInInjectionContext(() =>
-      reviewManageGuard({ paramMap: { get: () => 'acp' } } as any),
+      reviewManageGuard({ paramMap: { get: () => 'ap' } } as any),
     );
     expect(await firstValueFrom(result as any)).toBe(canManageReview ? true : redirect);
-    expect(api.getCapabilities).toHaveBeenCalledWith('acp');
+    expect(api.getCapabilities).toHaveBeenCalledWith('ap');
     TestBed.resetTestingModule();
   });
 
@@ -64,7 +64,7 @@ describe('Review management route access', () => {
       ],
     });
     const result = TestBed.runInInjectionContext(() =>
-      reviewManageGuard({ paramMap: { get: () => 'acp' } } as any),
+      reviewManageGuard({ paramMap: { get: () => 'ap' } } as any),
     );
     expect(await firstValueFrom(result as any)).toBe(redirect);
     TestBed.resetTestingModule();

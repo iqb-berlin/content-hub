@@ -20,5 +20,5 @@ export class ServerApiCapabilitiesDto implements ServerApiCapabilities {
     items: { type: "string", format: "uuid" },
     nullable: true,
   })
-  allowedAcpIds!: string[] | null;
+  allowedApIds!: string[] | null;
 }

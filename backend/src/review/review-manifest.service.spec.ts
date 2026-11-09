@@ -10,14 +10,14 @@ describe("ReviewManifestService", () => {
     join(__dirname, "fixtures/review-booklet.xml"),
     "utf8",
   );
-  const acps = { findOne: jest.fn() };
+  const aps = { findOne: jest.fn() };
   const files = { find: jest.fn() };
-  const service = new ReviewManifestService(acps as any, files as any);
+  const service = new ReviewManifestService(aps as any, files as any);
 
   beforeEach(() => {
     jest.resetAllMocks();
-    acps.findOne.mockResolvedValue({
-      acpIndex: {
+    aps.findOne.mockResolvedValue({
+      apIndex: {
         assessmentParts: [
           {
             units: [{ id: "intro" }, { id: "task-1" }, { id: "task-2" }],
@@ -35,10 +35,10 @@ describe("ReviewManifestService", () => {
     jest.mocked(readFile).mockResolvedValue(xml);
   });
 
-  it("loads only referenced files within the requested ACP and resolves navigation", async () => {
-    const result = await service.getManifest("acp-1");
-    expect(acps.findOne).toHaveBeenCalledWith({ where: { id: "acp-1" } });
-    expect(files.find).toHaveBeenCalledWith({ where: { acpId: "acp-1" } });
+  it("loads only referenced files within the requested AP and resolves navigation", async () => {
+    const result = await service.getManifest("ap-1");
+    expect(aps.findOne).toHaveBeenCalledWith({ where: { id: "ap-1" } });
+    expect(files.find).toHaveBeenCalledWith({ where: { apId: "ap-1" } });
     expect(readFile).toHaveBeenCalledTimes(1);
     expect(readFile).toHaveBeenCalledWith("/storage/booklet.xml", "utf8");
     expect(result.booklets[0].units.map((unit) => unit.id)).toEqual([
@@ -52,7 +52,7 @@ describe("ReviewManifestService", () => {
 
   it("reports unreadable definitions rather than inventing navigation", async () => {
     jest.mocked(readFile).mockRejectedValue(new Error("ENOENT"));
-    const result = await service.getManifest("acp-1");
+    const result = await service.getManifest("ap-1");
     expect(result.booklets).toEqual([]);
     expect(result.issues[0]).toEqual(
       expect.objectContaining({
@@ -62,8 +62,8 @@ describe("ReviewManifestService", () => {
     );
   });
 
-  it("rejects unknown ACPs", async () => {
-    acps.findOne.mockResolvedValue(null);
+  it("rejects unknown APs", async () => {
+    aps.findOne.mockResolvedValue(null);
     await expect(service.getManifest("missing")).rejects.toThrow(
       "AP nicht gefunden",
     );

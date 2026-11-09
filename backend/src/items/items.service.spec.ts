@@ -5,7 +5,7 @@ import { ItemParameterImportPipeline } from "./item-parameter-import.pipeline";
 
 describe("ItemsService", () => {
   let service: ItemsService;
-  let acpRepository: { findOne: jest.Mock; save: jest.Mock };
+  let apRepository: { findOne: jest.Mock; save: jest.Mock };
   let accessConfigRepository: {
     findOne: jest.Mock;
     create: jest.Mock;
@@ -14,7 +14,7 @@ describe("ItemsService", () => {
   let unitParserService: { getItemListFromFiles: jest.Mock };
 
   beforeEach(() => {
-    acpRepository = {
+    apRepository = {
       findOne: jest.fn(),
       save: jest.fn().mockImplementation(async (value) => value),
     };
@@ -30,23 +30,23 @@ describe("ItemsService", () => {
     };
 
     service = new ItemsService(
-      acpRepository as any,
+      apRepository as any,
       accessConfigRepository as any,
       unitParserService as any,
       new ItemParameterImportPipeline(),
     );
   });
 
-  it("returns an empty item list when ACP does not exist", async () => {
-    acpRepository.findOne.mockResolvedValue(null);
+  it("returns an empty item list when AP does not exist", async () => {
+    apRepository.findOne.mockResolvedValue(null);
 
-    await expect(service.getItems("acp-1")).resolves.toEqual([]);
+    await expect(service.getItems("ap-1")).resolves.toEqual([]);
   });
 
   it("extracts items and applies prefixes, fallback names and item properties", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      acpIndex: {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
         assessmentParts: [
           {
             units: [
@@ -82,7 +82,7 @@ describe("ItemsService", () => {
       },
     });
 
-    const items = await service.getItems("acp-1");
+    const items = await service.getItems("ap-1");
 
     expect(items).toEqual([
       {
@@ -109,9 +109,9 @@ describe("ItemsService", () => {
   });
 
   it("resolves explicit VOMD UUID properties and partial-credit rows in the item list", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      acpIndex: {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
         assessmentParts: [
           {
             units: [
@@ -170,7 +170,7 @@ describe("ItemsService", () => {
       ],
     });
 
-    const items = await service.getItems("acp-1");
+    const items = await service.getItems("ap-1");
 
     expect(items).toHaveLength(2);
     expect(items).toEqual([
@@ -201,10 +201,10 @@ describe("ItemsService", () => {
         { itemId: "item-2" } as any,
       ]);
 
-    await expect(service.getItem("acp-1", "item-2")).resolves.toEqual({
+    await expect(service.getItem("ap-1", "item-2")).resolves.toEqual({
       itemId: "item-2",
     });
-    await expect(service.getItem("acp-1", "missing")).resolves.toBeNull();
+    await expect(service.getItem("ap-1", "missing")).resolves.toBeNull();
   });
 
   it("filters and sorts items", async () => {
@@ -217,7 +217,7 @@ describe("ItemsService", () => {
       ]);
 
     const filtered = await service.getFilteredItems(
-      "acp-1",
+      "ap-1",
       "u-",
       "itemId",
       "desc",
@@ -225,7 +225,7 @@ describe("ItemsService", () => {
     expect(filtered.map((i) => i.itemId)).toEqual(["b-2", "a-1"]);
 
     const sortedAsc = await service.getFilteredItems(
-      "acp-1",
+      "ap-1",
       undefined,
       "name",
       "asc",
@@ -233,26 +233,23 @@ describe("ItemsService", () => {
     expect(sortedAsc.map((i) => i.name)).toEqual(["Alpha", "Beta", "Other"]);
   });
 
-  it("rejects empirical difficulty upload for missing ACP", async () => {
-    acpRepository.findOne.mockResolvedValue(null);
+  it("rejects empirical difficulty upload for missing AP", async () => {
+    apRepository.findOne.mockResolvedValue(null);
 
     await expect(
-      service.uploadEmpiricalDifficulties(
-        "acp-1",
-        Buffer.from("item;est\na;1"),
-      ),
+      service.uploadEmpiricalDifficulties("ap-1", Buffer.from("item;est\na;1")),
     ).rejects.toThrow(NotFoundException);
   });
 
   it("returns no updates when CSV has no data rows", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({ items: [] });
 
     const result = await service.uploadEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;est"),
     );
 
@@ -265,28 +262,28 @@ describe("ItemsService", () => {
   });
 
   it("rejects a CSV without a supported item parameter column", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: { "uuid-1": { infit: 1.05 } },
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({ items: [] });
 
     await expect(
-      service.uploadItemParameters("acp-1", Buffer.from("item")),
+      service.uploadItemParameters("ap-1", Buffer.from("item")),
     ).rejects.toThrow(/at least one supported item parameter column/);
-    expect(acpRepository.save).not.toHaveBeenCalled();
+    expect(apRepository.save).not.toHaveBeenCalled();
   });
 
   it("does not persist a position-only import before warning confirmation", async () => {
-    const acp = {
-      id: "acp-1",
+    const ap = {
+      id: "ap-1",
       itemProperties: {
         "uuid-1": {
           bookletOccurrences: [{ booklet: "OLD", position: 4 }],
         },
       },
     };
-    acpRepository.findOne.mockResolvedValue(acp);
+    apRepository.findOne.mockResolvedValue(ap);
     unitParserService.getItemListFromFiles.mockResolvedValue({
       items: [
         {
@@ -299,20 +296,20 @@ describe("ItemsService", () => {
     });
     const csv = Buffer.from("item;est;position\nI1;0.5;4");
 
-    const preview = await service.uploadItemParameters("acp-1", csv);
+    const preview = await service.uploadItemParameters("ap-1", csv);
     expect(preview.requiresConfirmation).toBe(true);
-    expect(acpRepository.save).not.toHaveBeenCalled();
-    expect(acp.itemProperties).toEqual({
+    expect(apRepository.save).not.toHaveBeenCalled();
+    expect(ap.itemProperties).toEqual({
       "uuid-1": {
         bookletOccurrences: [{ booklet: "OLD", position: 4 }],
       },
     });
 
-    const confirmed = await service.uploadItemParameters("acp-1", csv, {
+    const confirmed = await service.uploadItemParameters("ap-1", csv, {
       confirmWarnings: true,
     });
     expect(confirmed.requiresConfirmation).toBe(false);
-    expect(acpRepository.save).toHaveBeenCalledWith(
+    expect(apRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({
         itemProperties: {
           "uuid-1": {
@@ -325,28 +322,28 @@ describe("ItemsService", () => {
   });
 
   it("validates required CSV headers", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({ items: [] });
 
     await expect(
       service.uploadEmpiricalDifficulties(
-        "acp-1",
+        "ap-1",
         Buffer.from("wrong;headers\na;1"),
       ),
     ).rejects.toThrow(BadRequestException);
   });
 
   it("updates matched empirical difficulties and collects unmatched rows", async () => {
-    const acp = {
-      id: "acp-1",
+    const ap = {
+      id: "ap-1",
       itemProperties: {
         existing: { unchanged: true },
       },
     };
-    acpRepository.findOne.mockResolvedValue(acp);
+    apRepository.findOne.mockResolvedValue(ap);
 
     unitParserService.getItemListFromFiles.mockResolvedValue({
       items: [
@@ -368,7 +365,7 @@ describe("ItemsService", () => {
     ].join("\n");
 
     const result = await service.uploadEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       Buffer.from(csv),
     );
 
@@ -391,7 +388,7 @@ describe("ItemsService", () => {
       "uuid-1": { empiricalDifficulty: 0.75 },
     });
 
-    expect(acpRepository.save).toHaveBeenCalledWith(
+    expect(apRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({
         itemProperties: {
           existing: { unchanged: true },
@@ -402,8 +399,8 @@ describe("ItemsService", () => {
   });
 
   it("throws a bad request when one item appears multiple times in CSV", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({
@@ -420,13 +417,13 @@ describe("ItemsService", () => {
     const csv = ["item;est", "I1;0.2", "I1;0.3"].join("\n");
 
     await expect(
-      service.uploadEmpiricalDifficulties("acp-1", Buffer.from(csv)),
+      service.uploadEmpiricalDifficulties("ap-1", Buffer.from(csv)),
     ).rejects.toThrow(BadRequestException);
   });
 
   it("imports wide item parameters and groups multiple booklet occurrences", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: { "uuid-1": { tags: ["keep"] } },
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({
@@ -445,10 +442,7 @@ describe("ItemsService", () => {
       "I1;;0,25;1,05;0,42;0,73;anspruchsvoll;iii;35;12;B2;8",
       "I1;;0.25;1.05;0.42;0.73;anspruchsvoll;III;35;12;B1;3",
     ].join("\n");
-    const result = await service.uploadItemParameters(
-      "acp-1",
-      Buffer.from(csv),
-    );
+    const result = await service.uploadItemParameters("ap-1", Buffer.from(csv));
 
     expect(result.updated).toBe(1);
     expect(result.failed).toEqual([]);
@@ -494,11 +488,11 @@ describe("ItemsService", () => {
   it.each([true, false])(
     "retains bista precision in grouped imports with persist=%s",
     async (persist) => {
-      const acp = {
-        id: "acp-1",
+      const ap = {
+        id: "ap-1",
         itemProperties: { "uuid-1": { bista: 500, tags: ["keep"] } },
       };
-      acpRepository.findOne.mockResolvedValue(acp);
+      apRepository.findOne.mockResolvedValue(ap);
       unitParserService.getItemListFromFiles.mockResolvedValue({
         items: [
           {
@@ -511,7 +505,7 @@ describe("ItemsService", () => {
       });
 
       const result = await service.uploadItemParameters(
-        "acp-1",
+        "ap-1",
         Buffer.from("item;bista;booklet\nI1;1.234567;B1\nI1;1,234567;B2"),
         { persist },
       );
@@ -529,13 +523,13 @@ describe("ItemsService", () => {
         },
       });
       if (persist) {
-        expect(acpRepository.save).toHaveBeenCalledWith({
-          id: "acp-1",
+        expect(apRepository.save).toHaveBeenCalledWith({
+          id: "ap-1",
           itemProperties: result.nextItemProperties,
         });
       } else {
-        expect(acpRepository.save).not.toHaveBeenCalled();
-        expect(acp.itemProperties).toEqual({
+        expect(apRepository.save).not.toHaveBeenCalled();
+        expect(ap.itemProperties).toEqual({
           "uuid-1": { bista: 500, tags: ["keep"] },
         });
       }
@@ -543,8 +537,8 @@ describe("ItemsService", () => {
   );
 
   it("reports clearing booklet occurrences as an explicit field update", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {
         "uuid-1": {
           bookletOccurrences: [{ booklet: "B1", position: 3 }],
@@ -563,7 +557,7 @@ describe("ItemsService", () => {
     });
 
     const result = await service.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;booklet;position\nI1;;"),
     );
 
@@ -579,8 +573,8 @@ describe("ItemsService", () => {
   });
 
   it("persists a booklet without a position and retains a known matching position", async () => {
-    const acp = {
-      id: "acp-1",
+    const ap = {
+      id: "ap-1",
       itemProperties: {
         "uuid-1": {
           bookletOccurrences: [
@@ -590,7 +584,7 @@ describe("ItemsService", () => {
         },
       },
     };
-    acpRepository.findOne.mockResolvedValue(acp);
+    apRepository.findOne.mockResolvedValue(ap);
     unitParserService.getItemListFromFiles.mockResolvedValue({
       items: [
         {
@@ -603,7 +597,7 @@ describe("ItemsService", () => {
     });
 
     const result = await service.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;booklet\nI1;B1\nI1;B2"),
     );
 
@@ -616,14 +610,14 @@ describe("ItemsService", () => {
         ],
       },
     });
-    expect(acpRepository.save).toHaveBeenCalledWith(
+    expect(apRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({ itemProperties: result.nextItemProperties }),
     );
   });
 
   it("rejects conflicting scalar values and duplicate booklet occurrences", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({
@@ -639,22 +633,22 @@ describe("ItemsService", () => {
 
     await expect(
       service.uploadItemParameters(
-        "acp-1",
+        "ap-1",
         Buffer.from("item;infit;booklet;position\nI1;1.0;B1;1\nI1;1.1;B2;2"),
       ),
     ).rejects.toThrow(/unterschiedliche Werte/);
 
     await expect(
       service.uploadItemParameters(
-        "acp-1",
+        "ap-1",
         Buffer.from("item;infit;booklet;position\nI1;1.0;B1;1\nI1;1.0;B1;1"),
       ),
     ).rejects.toThrow(/mehrfach vor/);
   });
 
   it("rejects inconsistent stimulus times within one unit", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({
@@ -666,15 +660,15 @@ describe("ItemsService", () => {
 
     await expect(
       service.uploadItemParameters(
-        "acp-1",
+        "ap-1",
         Buffer.from("item;stimulus_time_s\nI1;10\nI2;12"),
       ),
     ).rejects.toThrow(/unterschiedliche Stimuluszeiten/);
   });
 
   it("accepts one stimulus time with blank repetitions in the same unit", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({
@@ -685,7 +679,7 @@ describe("ItemsService", () => {
     });
 
     const result = await service.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;stimulus_time_s\nI1;10\nI2;"),
     );
 
@@ -696,8 +690,8 @@ describe("ItemsService", () => {
   });
 
   it("accepts one item time with blank partial-credit repetitions", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({
@@ -707,7 +701,7 @@ describe("ItemsService", () => {
     });
 
     const result = await service.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;sub_id;item_time_s\nI1;A;20\nI1;B;"),
     );
 
@@ -719,8 +713,8 @@ describe("ItemsService", () => {
   });
 
   it("canonicalizes item time by UUID and stimulus time across the complete unit", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {
         "uuid-1": { stimulusTimeSeconds: 5 },
         "uuid-1::A": {
@@ -746,7 +740,7 @@ describe("ItemsService", () => {
     });
 
     const result = await service.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;sub_id;item_time_s;stimulus_time_s\nI1;A;20;12"),
     );
 
@@ -759,8 +753,8 @@ describe("ItemsService", () => {
   });
 
   it("imports multiple partial-credit rows for the same item by second-column Sub-ID", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({
@@ -776,7 +770,7 @@ describe("ItemsService", () => {
 
     const csv = ["item;category;est", "I1;1;0.2", 'I1;"2";0.8'].join("\n");
     const result = await service.uploadEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       Buffer.from(csv),
     );
 
@@ -810,8 +804,8 @@ describe("ItemsService", () => {
   });
 
   it("applies a standard difficulty to existing partial-credit rows without discarding their properties", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {
         "uuid-1": { tags: ["base"], empiricalDifficulty: 0.1 },
         "uuid-1::1": {
@@ -842,7 +836,7 @@ describe("ItemsService", () => {
     });
 
     const result = await service.uploadEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;est\nI1;0.5"),
     );
 
@@ -875,8 +869,8 @@ describe("ItemsService", () => {
   });
 
   it("removes a hidden standard difficulty when importing partial-credit rows", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {
         "uuid-1": { tags: ["base"], empiricalDifficulty: 0.5 },
       },
@@ -893,7 +887,7 @@ describe("ItemsService", () => {
     });
 
     const result = await service.uploadEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;level;est\nI1;1;0.2\nI1;2;0.8"),
     );
 
@@ -913,8 +907,8 @@ describe("ItemsService", () => {
   });
 
   it("rejects mixing standard and partial-credit rows for one item", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({
@@ -930,17 +924,17 @@ describe("ItemsService", () => {
 
     await expect(
       service.uploadEmpiricalDifficulties(
-        "acp-1",
+        "ap-1",
         Buffer.from("item;level;est\nI1;;0.5\nI1;1;0.2"),
       ),
     ).rejects.toThrow(/sowohl mit als auch ohne Sub-ID/);
 
-    expect(acpRepository.save).not.toHaveBeenCalled();
+    expect(apRepository.save).not.toHaveBeenCalled();
   });
 
   it("does not let an invalid row poison standard/partial mode detection", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {},
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({
@@ -955,7 +949,7 @@ describe("ItemsService", () => {
     });
 
     const result = await service.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;sub_id;infit\nI1;A;invalid\nI1;;1.0"),
     );
 
@@ -966,7 +960,7 @@ describe("ItemsService", () => {
         nextItemProperties: { "uuid-1": { infit: 1 } },
       }),
     );
-    expect(acpRepository.save).toHaveBeenCalledWith(
+    expect(apRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({
         itemProperties: { "uuid-1": { infit: 1 } },
       }),
@@ -974,8 +968,8 @@ describe("ItemsService", () => {
   });
 
   it("supports dry-run upload mode without persistence", async () => {
-    const acp = { id: "acp-1", itemProperties: {} };
-    acpRepository.findOne.mockResolvedValue(acp);
+    const ap = { id: "ap-1", itemProperties: {} };
+    apRepository.findOne.mockResolvedValue(ap);
     unitParserService.getItemListFromFiles.mockResolvedValue({
       items: [
         {
@@ -988,17 +982,17 @@ describe("ItemsService", () => {
     });
 
     await service.uploadEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       Buffer.from("item;est\nI1;0.2"),
       { persist: false },
     );
 
-    expect(acpRepository.save).not.toHaveBeenCalled();
+    expect(apRepository.save).not.toHaveBeenCalled();
   });
 
   it("enables the empirical difficulty filter when it is not configured yet", async () => {
     accessConfigRepository.findOne.mockResolvedValue({
-      acpId: "acp-1",
+      apId: "ap-1",
       accessModel: AccessModel.PUBLIC,
       allowRegistered: false,
       featureConfig: {
@@ -1007,7 +1001,7 @@ describe("ItemsService", () => {
     });
 
     await expect(
-      service.ensureShowOnlyItemsWithEmpiricalDifficulty("acp-1"),
+      service.ensureShowOnlyItemsWithEmpiricalDifficulty("ap-1"),
     ).resolves.toBe(true);
 
     expect(accessConfigRepository.save).toHaveBeenCalledWith(
@@ -1022,7 +1016,7 @@ describe("ItemsService", () => {
 
   it("preserves an explicit opt-out for the empirical difficulty filter", async () => {
     accessConfigRepository.findOne.mockResolvedValue({
-      acpId: "acp-1",
+      apId: "ap-1",
       accessModel: AccessModel.PUBLIC,
       allowRegistered: false,
       featureConfig: {
@@ -1031,7 +1025,7 @@ describe("ItemsService", () => {
     });
 
     await expect(
-      service.ensureShowOnlyItemsWithEmpiricalDifficulty("acp-1"),
+      service.ensureShowOnlyItemsWithEmpiricalDifficulty("ap-1"),
     ).resolves.toBe(false);
 
     expect(accessConfigRepository.save).toHaveBeenCalledWith(
@@ -1048,12 +1042,12 @@ describe("ItemsService", () => {
     accessConfigRepository.findOne.mockResolvedValue(null);
 
     await expect(
-      service.ensureShowOnlyItemsWithEmpiricalDifficulty("acp-1"),
+      service.ensureShowOnlyItemsWithEmpiricalDifficulty("ap-1"),
     ).resolves.toBe(true);
 
     expect(accessConfigRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        acpId: "acp-1",
+        apId: "ap-1",
         accessModel: AccessModel.PRIVATE,
         allowRegistered: false,
         featureConfig: expect.objectContaining({
@@ -1064,25 +1058,25 @@ describe("ItemsService", () => {
     expect(accessConfigRepository.save).toHaveBeenCalled();
   });
 
-  it("rejects clearing empirical difficulties for missing ACP", async () => {
-    acpRepository.findOne.mockResolvedValue(null);
+  it("rejects clearing empirical difficulties for missing AP", async () => {
+    apRepository.findOne.mockResolvedValue(null);
 
-    await expect(service.clearEmpiricalDifficulties("acp-1")).rejects.toThrow(
+    await expect(service.clearEmpiricalDifficulties("ap-1")).rejects.toThrow(
       NotFoundException,
     );
   });
 
   it("clears empirical difficulties and persists when changed", async () => {
-    const acp = {
-      id: "acp-1",
+    const ap = {
+      id: "ap-1",
       itemProperties: {
         itemA: { empiricalDifficulty: 0.4, tags: ["x"] },
         itemB: { tags: ["y"] },
       },
     };
-    acpRepository.findOne.mockResolvedValue(acp);
+    apRepository.findOne.mockResolvedValue(ap);
 
-    const result = await service.clearEmpiricalDifficulties("acp-1");
+    const result = await service.clearEmpiricalDifficulties("ap-1");
 
     expect(result).toEqual({
       success: true,
@@ -1091,7 +1085,7 @@ describe("ItemsService", () => {
         itemB: { tags: ["y"] },
       },
     });
-    expect(acpRepository.save).toHaveBeenCalledWith(
+    expect(apRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({
         itemProperties: {
           itemA: { tags: ["x"] },
@@ -1102,26 +1096,26 @@ describe("ItemsService", () => {
   });
 
   it("supports dry-run clear mode without persistence", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {
         itemA: { empiricalDifficulty: 0.4 },
       },
     });
 
-    await service.clearEmpiricalDifficulties("acp-1", { persist: false });
+    await service.clearEmpiricalDifficulties("ap-1", { persist: false });
 
-    expect(acpRepository.save).not.toHaveBeenCalled();
+    expect(apRepository.save).not.toHaveBeenCalled();
   });
 
-  it("returns normalized item tag map and throws when ACP is missing", async () => {
-    acpRepository.findOne.mockResolvedValueOnce(null);
-    await expect(service.getItemTags("acp-1")).rejects.toThrow(
+  it("returns normalized item tag map and throws when AP is missing", async () => {
+    apRepository.findOne.mockResolvedValueOnce(null);
+    await expect(service.getItemTags("ap-1")).rejects.toThrow(
       NotFoundException,
     );
 
-    acpRepository.findOne.mockResolvedValueOnce({
-      id: "acp-1",
+    apRepository.findOne.mockResolvedValueOnce({
+      id: "ap-1",
       itemProperties: {
         itemA: { tags: ["tag-a", " tag-a ", "tag-b", ""] },
         itemB: { tags: [] },
@@ -1130,40 +1124,40 @@ describe("ItemsService", () => {
       },
     });
 
-    await expect(service.getItemTags("acp-1")).resolves.toEqual({
+    await expect(service.getItemTags("ap-1")).resolves.toEqual({
       itemA: ["tag-a", "tag-b"],
       itemB: [],
       "uuid-1::1": [],
     });
   });
 
-  it("checks tag feature switch in ACP access config", async () => {
+  it("checks tag feature switch in AP access config", async () => {
     accessConfigRepository.findOne.mockResolvedValueOnce({
       featureConfig: { enableItemListTags: true },
     });
-    await expect(service.canUseItemTags("acp-1")).resolves.toBe(true);
+    await expect(service.canUseItemTags("ap-1")).resolves.toBe(true);
 
     accessConfigRepository.findOne.mockResolvedValueOnce({
       featureConfig: { enableItemListTags: 0 },
     });
-    await expect(service.canUseItemTags("acp-1")).resolves.toBe(false);
+    await expect(service.canUseItemTags("ap-1")).resolves.toBe(false);
 
     accessConfigRepository.findOne.mockResolvedValueOnce(null);
-    await expect(service.canUseItemTags("acp-1")).resolves.toBe(false);
+    await expect(service.canUseItemTags("ap-1")).resolves.toBe(false);
   });
 
   it("checks the item-list feature switch with the public default", async () => {
     accessConfigRepository.findOne.mockResolvedValueOnce({
       featureConfig: { enableItemList: false },
     });
-    await expect(service.canUseItemList("acp-1")).resolves.toBe(false);
+    await expect(service.canUseItemList("ap-1")).resolves.toBe(false);
 
     accessConfigRepository.findOne.mockResolvedValueOnce({
       featureConfig: { enableItemList: true },
     });
-    await expect(service.canUseItemList("acp-1")).resolves.toBe(true);
+    await expect(service.canUseItemList("ap-1")).resolves.toBe(true);
 
     accessConfigRepository.findOne.mockResolvedValueOnce(null);
-    await expect(service.canUseItemList("acp-1")).resolves.toBe(true);
+    await expect(service.canUseItemList("ap-1")).resolves.toBe(true);
   });
 });

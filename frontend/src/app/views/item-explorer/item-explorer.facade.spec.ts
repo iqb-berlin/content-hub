@@ -18,12 +18,12 @@ import { PendingPersonalSessionStorageService } from '../../core/services/pendin
 import { ItemExplorerPreviewLoader } from './item-explorer-preview-loader.service';
 import { ItemExplorerPreviewCoordinator } from './item-explorer-preview-coordinator.service';
 
-function createJwt(sub: string, type = 'user', acpId = ''): string {
+function createJwt(sub: string, type = 'user', apId = ''): string {
   const payload = btoa(
     JSON.stringify({
       sub,
       type,
-      acpId,
+      apId,
       exp: Math.floor(Date.now() / 1000) + 3600,
     }),
   )
@@ -99,7 +99,7 @@ function createFacade(options?: {
   const authOverrides = options?.authService || {};
   const defaultToken = authOverrides['isLoggedIn'] === true ? createJwt('test-user') : null;
   const authService = {
-    hasAcpRole: () => false,
+    hasApRole: () => false,
     isAdmin: false,
     isLoggedIn: false,
     currentUser$: of(null),
@@ -235,7 +235,7 @@ describe('ItemExplorerFacade role initialization', () => {
   it('does not lock an OIDC manager into read-only while the profile is still loading', () => {
     const component = createFacade({
       authService: {
-        hasAcpRole: () => false,
+        hasApRole: () => false,
         isAdmin: false,
         isLoggedIn: true,
         isOidcUser: true,
@@ -253,7 +253,7 @@ describe('ItemExplorerFacade role initialization', () => {
   it.each([false, true])('uses the server edit grant for credential sessions (%s)', (canEdit) => {
     const component = createFacade({
       authService: {
-        hasAcpRole: () => false,
+        hasApRole: () => false,
         isAdmin: false,
         isLoggedIn: true,
         isOidcUser: false,
@@ -298,7 +298,7 @@ describe('ItemExplorerFacade automatic comment refresh', () => {
       api: { getItemCommentCounts: getCounts },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.comments.itemCommentsEnabled = true;
     (component as any).syncItemCommentCountSession();
   });
@@ -389,7 +389,7 @@ describe('ItemExplorerFacade comment counts', () => {
           }),
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.comments.itemCommentsEnabled = true;
     component.items = [item('prefixed', 'unit-1_item-1')];
     component.refreshItemComments(false);
@@ -407,7 +407,7 @@ describe('ItemExplorerFacade comment counts', () => {
   it('keeps canonical thread updates separate before the catalog arrives', () => {
     const response = new Subject<any>();
     const component = createFacade({ api: { getItemCommentCounts: () => response } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.comments.itemCommentsEnabled = true;
     component.items = [item('prefixed', 'unit-1_item-1')];
     component.refreshItemComments(false);
@@ -449,7 +449,7 @@ describe('ItemExplorerFacade comment counts', () => {
     (threadItemId) => {
       const response = new Subject<any>();
       const component = createFacade({ api: { getItemCommentCounts: () => response } });
-      component.acpId = 'acp-1';
+      component.apId = 'ap-1';
       component.comments.itemCommentsEnabled = true;
       component.refreshItemComments(false);
       component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'item-1', count: 0 });
@@ -464,7 +464,7 @@ describe('ItemExplorerFacade comment counts', () => {
   it('preserves an unchanged positive thread count against an older batch', () => {
     const response = new Subject<any>();
     const component = createFacade({ api: { getItemCommentCounts: () => response } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.comments.itemCommentsEnabled = true;
     component.comments.itemCommentCounts = { 'unit-1\u0000item-1': 1 };
     component.refreshItemComments(false);
@@ -476,7 +476,7 @@ describe('ItemExplorerFacade comment counts', () => {
   it('keeps colliding item counts separate when merging a delayed batch', () => {
     const response = new Subject<any>();
     const component = createFacade({ api: { getItemCommentCounts: () => response } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.comments.itemCommentsEnabled = true;
     component.items = [item('raw', 'item-1'), item('prefixed', 'unit-1_item-1')];
     component.refreshItemComments(false);
@@ -518,12 +518,12 @@ describe('ItemExplorerFacade comment counts', () => {
       }),
     );
     const component = createFacade({ api: { getItemCommentCounts } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.comments.itemCommentsEnabled = true;
 
     component.refreshItemComments();
 
-    expect(getItemCommentCounts).toHaveBeenCalledWith('acp-1');
+    expect(getItemCommentCounts).toHaveBeenCalledWith('ap-1');
     expect(component.comments.itemCommentRefreshToken).toBe(1);
     expect(component.comments.itemCommentCounts).toEqual({ 'unit-1\u0000item-1': 2 });
   });
@@ -544,7 +544,7 @@ describe('ItemExplorerFacade comment counts', () => {
     const component = createFacade({
       api: { getItemCommentCounts: vi.fn().mockReturnValue(response) },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.comments.itemCommentsEnabled = true;
     component.refreshItemComments(false);
 
@@ -560,7 +560,7 @@ describe('ItemExplorerFacade comment counts', () => {
         getItemCommentCounts: vi.fn().mockReturnValue(throwError(() => new Error('offline'))),
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.comments.itemCommentsEnabled = true;
     component.items = [item('row-a', 'item-1')];
     component.columnFilters['comments'] = 'with';
@@ -587,7 +587,7 @@ describe('ItemExplorerFacade comment counts', () => {
         getToken: () => token,
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.comments.itemCommentsEnabled = true;
 
     (component as any).syncItemCommentCountSession();
@@ -736,7 +736,7 @@ function createExplorerEnvelope(
     canPublish,
     updatedAt: '2026-04-22T10:00:00.000Z',
     updatedByUsername: 'alice',
-    updatedByRole: 'ACP_MANAGER',
+    updatedByRole: 'AP_MANAGER',
     activeState: {
       ui: { filterText: draftFilterText },
       tags: {},
@@ -770,11 +770,11 @@ describe('ItemExplorerFacade', () => {
     const startPage$ = new Subject<any>();
     const component = createFacade({
       api: {
-        getAcpStartPage: () => startPage$,
+        getApStartPage: () => startPage$,
         getItemExplorerState: () => new Subject(),
       },
     });
-    component.init('acp-1');
+    component.init('ap-1');
     startPage$.next({
       featureConfig: {
         showStudioItemComments: true,
@@ -853,7 +853,7 @@ describe('ItemExplorerFacade', () => {
         getResponseStateWithFallback: () => of(null),
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     (component as any).reducedView = normalizeReducedView({
       enabled: true,
       showExplorerItemPanel: false,
@@ -922,19 +922,19 @@ describe('ItemExplorerFacade', () => {
     const explorerState$ = new Subject<any>();
     const itemList$ = new Subject<any>();
     const currentUser$ = new Subject<unknown>();
-    const getAcpStartPage = vi.fn(() => startPage$);
+    const getApStartPage = vi.fn(() => startPage$);
     const getItemExplorerState = vi.fn(() => explorerState$);
     const getFileItemList = vi.fn(() => itemList$);
     const component = createFacade({
-      api: { getAcpStartPage, getItemExplorerState, getFileItemList },
+      api: { getApStartPage, getItemExplorerState, getFileItemList },
       authService: { currentUser$ },
     });
 
     component.init('');
-    component.init('acp-ignored');
+    component.init('ap-ignored');
 
-    expect(getAcpStartPage).toHaveBeenCalledOnce();
-    expect(getAcpStartPage).toHaveBeenCalledWith('');
+    expect(getApStartPage).toHaveBeenCalledOnce();
+    expect(getApStartPage).toHaveBeenCalledWith('');
     expect(getFileItemList).not.toHaveBeenCalled();
 
     startPage$.next({ featureConfig: { enableItemListTags: true, showStudioItemComments: true } });
@@ -969,15 +969,15 @@ describe('ItemExplorerFacade', () => {
 
   it('shows a visible error and skips dependent loads when feature configuration fails', () => {
     const error = new Error('configuration unavailable');
-    const getAcpStartPage = vi.fn(() => throwError(() => error));
+    const getApStartPage = vi.fn(() => throwError(() => error));
     const getItemExplorerState = vi.fn();
     const getFileItemList = vi.fn();
     const component = createFacade({
-      api: { getAcpStartPage, getItemExplorerState, getFileItemList },
+      api: { getApStartPage, getItemExplorerState, getFileItemList },
     });
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    component.init('acp-1');
+    component.init('ap-1');
 
     expect(consoleError).toHaveBeenCalledWith(
       'Failed to load Item Explorer feature configuration',
@@ -1016,12 +1016,12 @@ describe('ItemExplorerFacade', () => {
           getFileItemList,
         },
       });
-      component.acpId = 'acp-1';
+      component.apId = 'ap-1';
       component.draft.latestExplorerState = null;
       component.hasExplorerEditPermission = false;
       component.viewPerspective = perspective;
       expect(await (component as any).reloadSharedExplorerStateAndItems()).toBe(true);
-      expect(getFileItemList).toHaveBeenCalledExactlyOnceWith('acp-1', { perspective: expected });
+      expect(getFileItemList).toHaveBeenCalledExactlyOnceWith('ap-1', { perspective: expected });
       expect(component.itemListError).toBe('');
     },
   );
@@ -1072,7 +1072,7 @@ describe('ItemExplorerFacade', () => {
         }),
       );
     const component = createFacade({ api: { getItemExplorerState, getFileItemList } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
 
     const reloaded = await (component as any).reloadSharedExplorerStateAndItems();
 
@@ -1093,7 +1093,7 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     component.setPersonalItemNote('uuid::1', 'Später speichern');
@@ -1102,7 +1102,7 @@ describe('ItemExplorerFacade', () => {
 
     expect(patchViewItemPreferenceRow).not.toHaveBeenCalled();
     expect((component.personalData as any).pendingPersonalRowUpdates.size).toBe(0);
-    expect(sessionStorage.getItem('ch_item_explorer_pending_personal:acp-1')).toContain(
+    expect(sessionStorage.getItem('ch_item_explorer_pending_personal:ap-1')).toContain(
       'Später speichern',
     );
   });
@@ -1123,7 +1123,7 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     component.personalData.personalItemTags = [{ label: 'Prüfen', color: '#ff0000' }];
@@ -1136,7 +1136,7 @@ describe('ItemExplorerFacade', () => {
     component.flushPersonalItemDataSave();
 
     expect(patchViewItemPreferenceRow).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       'uuid-1::2',
       {
         category: 'II',
@@ -1160,7 +1160,7 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow, exportViewPersonalItemDataXlsx },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     component.items = [
@@ -1193,13 +1193,13 @@ describe('ItemExplorerFacade', () => {
     await component.exportPersonalItemDataXlsx();
 
     expect(patchViewItemPreferenceRow).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       'uuid-1::1',
       { note: 'Noch zu speichern' },
       'read-only',
     );
     expect(exportViewPersonalItemDataXlsx).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       ['uuid-2::1', 'uuid-1::1'],
       'read-only',
     );
@@ -1215,7 +1215,7 @@ describe('ItemExplorerFacade', () => {
     click.mockRestore();
   });
 
-  it('exports all participants personal data only for ACP managers', async () => {
+  it('exports all participants personal data only for AP managers', async () => {
     const exportAllViewPersonalItemDataCsv = vi.fn().mockReturnValue(of(new Blob(['csv'])));
     const createObjectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:all-export');
     const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
@@ -1223,7 +1223,7 @@ describe('ItemExplorerFacade', () => {
       .spyOn(HTMLAnchorElement.prototype, 'click')
       .mockImplementation(() => undefined);
     const component = createFacade({ api: { exportAllViewPersonalItemDataCsv } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.hasExplorerEditPermission = true;
     component.viewPerspective = 'editor';
@@ -1231,7 +1231,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.canExportAllPersonalItemData).toBe(true);
     await component.exportAllPersonalItemDataCsv();
 
-    expect(exportAllViewPersonalItemDataCsv).toHaveBeenCalledWith('acp-1', 'editor', undefined);
+    expect(exportAllViewPersonalItemDataCsv).toHaveBeenCalledWith('ap-1', 'editor', undefined);
     expect(createObjectUrl).toHaveBeenCalled();
     expect(click).toHaveBeenCalled();
     expect(revokeObjectUrl).toHaveBeenCalledWith('blob:all-export');
@@ -1260,7 +1260,7 @@ describe('ItemExplorerFacade', () => {
     });
     const component = createFacade({ api: { exportAllViewPersonalItemDataCsv } });
     Object.assign(component, {
-      acpId: 'acp-1',
+      apId: 'ap-1',
       hasExplorerEditPermission: true,
       viewPerspective: 'editor',
     });
@@ -1279,7 +1279,7 @@ describe('ItemExplorerFacade', () => {
       ],
     });
     await component.exportAllPersonalItemDataCsv('collection');
-    expect(exportAllViewPersonalItemDataCsv).toHaveBeenCalledWith('acp-1', 'editor', 'shared-1');
+    expect(exportAllViewPersonalItemDataCsv).toHaveBeenCalledWith('ap-1', 'editor', 'shared-1');
     expect(filename).toContain('collection-Auswahl-A-shared-1.csv');
     component.collections.activeCollectionId = 'removed';
     await component.exportAllPersonalItemDataCsv('collection');
@@ -1299,7 +1299,7 @@ describe('ItemExplorerFacade', () => {
           .mockReturnValue(throwError(() => ({ status: 404 }))),
       },
     });
-    Object.assign(component, { acpId: 'acp-1', hasExplorerEditPermission: true });
+    Object.assign(component, { apId: 'ap-1', hasExplorerEditPermission: true });
     Object.assign(component.personalData, { enablePersonalItemData: true });
     Object.assign(component.collections, {
       enableItemCollections: true,
@@ -1328,7 +1328,7 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     component.hasExplorerEditPermission = true;
@@ -1338,7 +1338,7 @@ describe('ItemExplorerFacade', () => {
     component.flushPersonalItemDataSave();
 
     expect(patchViewItemPreferenceRow).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       'uuid-1',
       { note: 'Draft-Notiz' },
       'editor',
@@ -1351,7 +1351,7 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     component.hasExplorerEditPermission = true;
@@ -1362,7 +1362,7 @@ describe('ItemExplorerFacade', () => {
     component.flushPersonalItemDataSave();
 
     expect(patchViewItemPreferenceRow).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       'uuid-draft',
       { note: 'Draft-Notiz' },
       'editor',
@@ -1442,7 +1442,7 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow: patch },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     try {
@@ -1453,13 +1453,13 @@ describe('ItemExplorerFacade', () => {
       expect(patch).toHaveBeenCalledTimes(1);
       first.next({});
       first.complete();
-      expect(patch).toHaveBeenNthCalledWith(2, 'acp-1', 'row-1', { note: 'latest' }, 'read-only');
+      expect(patch).toHaveBeenNthCalledWith(2, 'ap-1', 'row-1', { note: 'latest' }, 'read-only');
       const leaving = component.canDeactivate();
       second.error(new Error('offline'));
       await expect(leaving).resolves.toBe(false);
       expect(component.personalData.personalItemData['row-1'].note).toBe('latest');
       const retriedNavigation = component.canDeactivate();
-      expect(patch).toHaveBeenNthCalledWith(3, 'acp-1', 'row-1', { note: 'latest' }, 'read-only');
+      expect(patch).toHaveBeenNthCalledWith(3, 'ap-1', 'row-1', { note: 'latest' }, 'read-only');
       retry.next({});
       retry.complete();
       await expect(retriedNavigation).resolves.toBe(true);
@@ -1479,7 +1479,7 @@ describe('ItemExplorerFacade', () => {
       api: { patchViewItemPreferenceRow: patch, getViewItemPreferences: () => of({ rowData: {} }) },
       authService: { isLoggedIn: true, getToken: () => token },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     try {
@@ -1539,7 +1539,7 @@ describe('ItemExplorerFacade', () => {
       },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     component.setPersonalItemNote('uuid::1', 'Ungespeicherter Stand');
@@ -1554,7 +1554,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.personalData.personalItemData).toEqual({
       'uuid::1': { note: 'Gespeicherter Stand' },
     });
-    expect(getViewItemPreferences).toHaveBeenCalledWith('acp-1', 'item-explorer');
+    expect(getViewItemPreferences).toHaveBeenCalledWith('ap-1', 'item-explorer');
     expect(component.canDeactivate()).toBe(true);
   });
 
@@ -1616,7 +1616,7 @@ describe('ItemExplorerFacade', () => {
         getToken: () => token,
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     component.hasExplorerEditPermission = true;
@@ -1638,7 +1638,7 @@ describe('ItemExplorerFacade', () => {
     component.viewPerspective = 'editor';
     component.flushPersonalItemDataSave();
     expect(patchViewItemPreferenceRow).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       'uuid::1',
       { note: 'Noch nicht gespeichert' },
       'read-only',
@@ -1667,7 +1667,7 @@ describe('ItemExplorerFacade', () => {
         },
         pendingPersonalSessionStorage: pendingStorage,
       });
-      firstComponent.acpId = 'acp-1';
+      firstComponent.apId = 'ap-1';
       firstComponent.personalData.enablePersonalItemData = true;
       firstComponent.personalData.personalDataLoadState = 'loaded';
       firstComponent.setPersonalItemNote('uuid::1', 'Fallback-Notiz');
@@ -1693,7 +1693,7 @@ describe('ItemExplorerFacade', () => {
         },
         pendingPersonalSessionStorage: pendingStorage,
       });
-      secondComponent.acpId = 'acp-1';
+      secondComponent.apId = 'ap-1';
       secondComponent.personalData.enablePersonalItemData = true;
       (secondComponent as any).syncPersonalItemDataSession();
 
@@ -1733,7 +1733,7 @@ describe('ItemExplorerFacade', () => {
         getToken: () => token,
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.personalData.enablePersonalItemData = true;
     component.personalData.personalDataLoadState = 'loaded';
     component.setPersonalItemNote('uuid::1', 'Nur A');
@@ -1745,7 +1745,7 @@ describe('ItemExplorerFacade', () => {
 
     expect(component.personalData.personalItemData).toEqual({ 'uuid::1': { note: 'Nur B' } });
     expect((component.personalData as any).pendingPersonalRowUpdates.size).toBe(0);
-    expect(sessionStorage.getItem('ch_item_explorer_pending_personal:acp-1')).toBeNull();
+    expect(sessionStorage.getItem('ch_item_explorer_pending_personal:ap-1')).toBeNull();
     destroyFacade(component);
   });
 
@@ -2271,7 +2271,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.filteredItems.map((item) => item.rowNumber)).toEqual([3, 8]);
   });
 
-  it('treats reference-number visibility as an opt-in ACP setting', () => {
+  it('treats reference-number visibility as an opt-in AP setting', () => {
     const component = createFacade();
 
     expect((component as any).resolveMetadataSettings({}).referenceNumberVisible).toBe(false);
@@ -2923,7 +2923,7 @@ describe('ItemExplorerFacade', () => {
       .mockReturnValueOnce(firstLoad.asObservable())
       .mockReturnValueOnce(secondLoad.asObservable());
     const component = createFacade({ api: { getFileItemList } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
 
     component.reloadItems();
     component.reloadItems();
@@ -2981,7 +2981,7 @@ describe('ItemExplorerFacade', () => {
     const component = createFacade({
       api: { getFileItemList: vi.fn(() => itemList$) },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
 
     try {
       component.reloadItems();
@@ -3001,10 +3001,10 @@ describe('ItemExplorerFacade', () => {
     }
   });
 
-  it('lets ACP managers recalculate the numbering and reloads the rows', () => {
+  it('lets AP managers recalculate the numbering and reloads the rows', () => {
     const recalculateItemRowNumbers = vi.fn(() => of({ renumberedCount: 1 }));
     const component = createFacade({ api: { recalculateItemRowNumbers } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     (component as any).explorerEditingAllowed = true;
     component.draft.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
     const reloadItems = vi.spyOn(component, 'reloadItems').mockImplementation(() => undefined);
@@ -3012,7 +3012,7 @@ describe('ItemExplorerFacade', () => {
     component.openRenumberDialog();
     component.confirmRenumber();
 
-    expect(recalculateItemRowNumbers).toHaveBeenCalledWith('acp-1');
+    expect(recalculateItemRowNumbers).toHaveBeenCalledWith('ap-1');
     expect(component.showRenumberDialog).toBe(false);
     expect(component.numberingSuccessMessage).toBe(
       'Eine Referenznummer im vollständigen Itembestand wurde neu vergeben. 0 Zeilen werden aktuell angezeigt.',
@@ -3025,7 +3025,7 @@ describe('ItemExplorerFacade', () => {
       throwError(() => ({ status: 409, error: { message: 'Source files changed' } })),
     );
     const component = createFacade({ api: { recalculateItemRowNumbers } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.draft.latestExplorerState = createExplorerEnvelope({ status: 'CLEAN' });
     component.showRenumberDialog = true;
     const reloadSharedExplorerStateAndItems = vi
@@ -3045,7 +3045,7 @@ describe('ItemExplorerFacade', () => {
         getItemExplorerState: vi.fn(() => of(createExplorerEnvelope({ status: 'DIRTY' }))),
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     (component as any).explorerEditingAllowed = true;
     component.draft.explorerVersion = 3;
     (component as any).draft.pendingDraftPatch = { tags: { 'row-1': ['QA'] } };
@@ -3079,7 +3079,7 @@ describe('ItemExplorerFacade', () => {
       .mockReturnValueOnce(firstPatch$)
       .mockReturnValueOnce(secondPatch$);
     const component = createFacade({ api: { patchItemExplorerDraft, saveItemExplorerDraft } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     (component as any).explorerEditingAllowed = true;
     component.canPublishExplorer = true;
     component.draft.explorerVersion = 3;
@@ -3088,7 +3088,7 @@ describe('ItemExplorerFacade', () => {
     component.setFilterText('lokale Suche');
     (component as any).queueDraftPatch('UI_STATE_CHANGED', { ui: { sortField: 'itemId' } }, true);
     expect(patchItemExplorerDraft).toHaveBeenCalledTimes(1);
-    expect(patchItemExplorerDraft).toHaveBeenLastCalledWith('acp-1', {
+    expect(patchItemExplorerDraft).toHaveBeenLastCalledWith('ap-1', {
       changeType: 'UI_STATE_CHANGED',
       patch: { ui: { sortField: 'itemId' } },
       baseVersion: 3,
@@ -3136,7 +3136,7 @@ describe('ItemExplorerFacade', () => {
     await vi.waitFor(() => expect(patchItemExplorerDraft).toHaveBeenCalledTimes(2));
     expect(saveItemExplorerDraft).not.toHaveBeenCalled();
     expect(component.filterText).toBe('aktualisierte lokale Suche');
-    expect(patchItemExplorerDraft).toHaveBeenLastCalledWith('acp-1', {
+    expect(patchItemExplorerDraft).toHaveBeenLastCalledWith('ap-1', {
       changeType: 'PREVIEW_TARGET_CHANGED',
       patch: {
         ui: { sortField: 'unitLabel' },
@@ -3154,7 +3154,7 @@ describe('ItemExplorerFacade', () => {
     secondPatch$.next(secondEnvelope);
     secondPatch$.complete();
 
-    await vi.waitFor(() => expect(saveItemExplorerDraft).toHaveBeenCalledWith('acp-1', 5));
+    await vi.waitFor(() => expect(saveItemExplorerDraft).toHaveBeenCalledWith('ap-1', 5));
     await expect(savePromise).resolves.toBe(true);
     expect(component.draft.explorerVersion).toBe(6);
     expect(component.filterText).toBe('aktualisierte lokale Suche');
@@ -3175,7 +3175,7 @@ describe('ItemExplorerFacade', () => {
         ),
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     (component as any).explorerEditingAllowed = true;
     component.draft.explorerVersion = 3;
     component.draft.latestExplorerState = envelope;
@@ -3329,7 +3329,7 @@ describe('ItemExplorerFacade', () => {
       previewLoader,
       diagnostics,
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.player.unit = { id: 'UNIT_1', dependencies: [] };
     component.player.playerSrcDoc = '<html>cached player</html>';
     component.player.definitionContent = '{"pages":[]}';
@@ -3361,7 +3361,7 @@ describe('ItemExplorerFacade', () => {
       api: { getResponseStateWithFallback },
       previewLoader,
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.player.unit = { id: 'UNIT_1', dependencies: [] };
     component.player.playerSrcDoc = '<html>cached player</html>';
     component.player.definitionContent = '{"pages":[]}';
@@ -3447,7 +3447,7 @@ describe('ItemExplorerFacade', () => {
     const unitRequests = new Map<string, Subject<any>>();
     const responseRequests = new Map<string, Subject<any>>();
     const previewLoader = {
-      load: vi.fn((_acpId: string, _perspective: string, unitId: string) => {
+      load: vi.fn((_apId: string, _perspective: string, unitId: string) => {
         const request = new Subject<any>();
         unitRequests.set(unitId, request);
         return request;
@@ -3456,7 +3456,7 @@ describe('ItemExplorerFacade', () => {
     };
     const component = createFacade({
       api: {
-        getResponseStateWithFallback: vi.fn((_acpId: string, itemId: string) => {
+        getResponseStateWithFallback: vi.fn((_apId: string, itemId: string) => {
           const request = new Subject<any>();
           responseRequests.set(itemId, request);
           return request;
@@ -3464,7 +3464,7 @@ describe('ItemExplorerFacade', () => {
       },
       previewLoader,
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     const firstItem = {
       itemId: 'ITEM_1',
       uuid: 'uuid-1',
@@ -3545,7 +3545,7 @@ describe('ItemExplorerFacade', () => {
       },
       previewLoader,
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     const previewableItem = {
       itemId: 'ITEM_1',
       uuid: 'uuid-1',
@@ -3598,7 +3598,7 @@ describe('ItemExplorerFacade', () => {
         clear: vi.fn(),
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     const item = {
       itemId: 'ITEM_1',
       uuid: 'uuid-1',
@@ -3629,7 +3629,7 @@ describe('ItemExplorerFacade', () => {
       api: { getResponseStateWithFallback: vi.fn(() => responseState$) },
       previewLoader: { load: vi.fn(), clear: vi.fn() },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.player.unit = { id: 'UNIT_1', dependencies: [] };
     component.player.playerSrcDoc = '<html>cached player</html>';
     component.player.definitionContent = '{"pages":[]}';
@@ -3769,7 +3769,7 @@ describe('ItemExplorerFacade', () => {
     expect(ui).not.toHaveProperty('isFullscreen');
   });
 
-  it('hides items without empirical difficulty when the ACP filter is enabled', () => {
+  it('hides items without empirical difficulty when the AP filter is enabled', () => {
     const component = createFacade();
     component.table.showOnlyItemsWithEmpiricalDifficulty = true;
     component.table.hasEmpiricalDifficulty = true;
@@ -5269,7 +5269,7 @@ describe('ItemExplorerFacade', () => {
     expect(playerDom.focus).toHaveBeenCalledWith(expect.any(Array), expect.any(Array), true);
   });
 
-  it('keeps player focus without the highlight class when the ACP flag disables it', () => {
+  it('keeps player focus without the highlight class when the AP flag disables it', () => {
     const component = createFacade();
     component.player.playerFocusHighlightEnabled = false;
     component.selectedItem = {
@@ -5786,7 +5786,7 @@ describe('ItemExplorerFacade', () => {
     }
   });
 
-  it('keeps conditional visibility when the ACP flag is enabled', () => {
+  it('keeps conditional visibility when the AP flag is enabled', () => {
     vi.useFakeTimers();
     const stripConditionalVisibility = vi.fn().mockReturnValue('sanitized-definition');
     const component = createFacade({
@@ -5892,7 +5892,7 @@ describe('ItemExplorerFacade', () => {
         getFileItemList,
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.table.filterText = 'lokale Suche';
 
     (component as any).applySharedExplorerEnvelope(envelope);
@@ -5907,8 +5907,8 @@ describe('ItemExplorerFacade', () => {
     expect(component.isReadOnlyPreview).toBe(true);
     expect(component.canEditExplorer).toBe(false);
     expect(component.filterText).toBe('lokale Suche');
-    expect(getItemExplorerState).toHaveBeenCalledWith('acp-1', 'read-only');
-    expect(getFileItemList).toHaveBeenCalledWith('acp-1', {
+    expect(getItemExplorerState).toHaveBeenCalledWith('ap-1', 'read-only');
+    expect(getFileItemList).toHaveBeenCalledWith('ap-1', {
       perspective: 'read-only',
     });
   });
@@ -5925,7 +5925,7 @@ describe('ItemExplorerFacade', () => {
         getFileItemList,
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.table.filterText = 'lokale Suche';
 
     (component as any).applySharedExplorerEnvelope(envelope);
@@ -5937,7 +5937,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.isReadOnlyPreview).toBe(false);
     expect(component.canEditExplorer).toBe(true);
     expect(component.filterText).toBe('lokale Suche');
-    expect(getFileItemList).toHaveBeenLastCalledWith('acp-1', {
+    expect(getFileItemList).toHaveBeenLastCalledWith('ap-1', {
       perspective: 'editor',
     });
   });
@@ -5983,7 +5983,7 @@ describe('ItemExplorerFacade', () => {
         ),
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.hasExplorerEditPermission = true;
     component.viewPerspective = 'read-only';
     component.items = [
@@ -6040,7 +6040,7 @@ describe('ItemExplorerFacade', () => {
         getFileItemList: vi.fn(() => of({ columns: [], items: [] })),
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     (component as any).applySharedExplorerEnvelope(envelope);
     const saved = component.saveExplorerDraft(true);
     await Promise.resolve();
@@ -6057,7 +6057,7 @@ describe('ItemExplorerFacade', () => {
     expect(await saved).toBe(false);
     await vi.waitFor(() => expect(patchItemExplorerDraft).toHaveBeenCalledOnce());
     expect(patchItemExplorerDraft).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       expect.objectContaining({
         baseVersion: 4,
         patch: { ui: { filterText: 'new edit' } },
@@ -6096,7 +6096,7 @@ describe('ItemExplorerFacade', () => {
         getFileItemList: vi.fn(() => of({ columns: [], items: [] })),
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     (component as any).applySharedExplorerEnvelope(envelope);
     component.draft.queueDraftPatch('UI_UPDATE', { ui: { sortField: 'itemId' } });
     const flush = component.draft.flushDraftPatch();
@@ -6112,7 +6112,7 @@ describe('ItemExplorerFacade', () => {
     destroyFacade(component);
   });
 
-  it('hides player target diagnostics when the ACP flag is disabled', () => {
+  it('hides player target diagnostics when the AP flag is disabled', () => {
     const component = createFacade();
 
     (component as any).explorerEditingAllowed = true;
@@ -6656,7 +6656,7 @@ describe('ItemExplorerFacade', () => {
       canPublish: true,
       updatedAt: '2026-04-21T15:00:00.000Z',
       updatedByUsername: 'alice',
-      updatedByRole: 'ACP_MANAGER',
+      updatedByRole: 'AP_MANAGER',
       activeState: state,
       publishedState: state,
       draftState: state,
@@ -6685,7 +6685,7 @@ describe('ItemExplorerFacade', () => {
       previewTargetId: 'VAR_BAD',
       metadata: {},
     } as any;
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.items = [item];
     component.table.filteredItems = [item];
     component.selectedItem = item;
@@ -6791,7 +6791,7 @@ describe('ItemExplorerFacade', () => {
         appendAuthToken: (url: string) => url,
       },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
 
     component.selectedItem = {
       itemId: 'ITEM_9',
@@ -6815,8 +6815,8 @@ describe('ItemExplorerFacade', () => {
     component.coding.customPreviewTargetDraft = 'BASE_A';
     component.applyCustomPreviewTarget();
 
-    expect(getResponseStateWithFallback).toHaveBeenCalledWith('acp-1', 'ITEM_9', 'UNIT_9', []);
-    expect(getFileUnitView).toHaveBeenCalledWith('acp-1', 'UNIT_9', {
+    expect(getResponseStateWithFallback).toHaveBeenCalledWith('ap-1', 'ITEM_9', 'UNIT_9', []);
+    expect(getFileUnitView).toHaveBeenCalledWith('ap-1', 'UNIT_9', {
       perspective: 'read-only',
     });
   });
@@ -6844,7 +6844,7 @@ describe('ItemExplorerFacade', () => {
       },
       previewLoader,
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     const item = {
       itemId: 'ITEM_9',
       uuid: 'uuid-9',
@@ -6867,7 +6867,7 @@ describe('ItemExplorerFacade', () => {
 
     component.coding.customPreviewTargetDraft = 'BASE_A';
     component.applyCustomPreviewTarget();
-    expect(previewLoader.load).toHaveBeenCalledWith('acp-1', 'read-only', 'UNIT_9');
+    expect(previewLoader.load).toHaveBeenCalledWith('ap-1', 'read-only', 'UNIT_9');
     expect(component.loadingUnit).toBe(true);
 
     component.resetPreviewTargetSelection();
@@ -6887,7 +6887,7 @@ describe('ItemExplorerFacade', () => {
       api: { getResponseStateWithFallback },
       previewLoader,
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     const item = {
       itemId: 'ITEM_9',
       uuid: 'uuid-9',
@@ -7371,7 +7371,7 @@ describe('ItemExplorerFacade', () => {
       itemTimeSeconds: 10,
       stimulusTimeSeconds: 5,
     };
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.items = [item];
     component.collections.itemCollections = [
       {
@@ -7390,7 +7390,7 @@ describe('ItemExplorerFacade', () => {
 
     await component.toggleItemInActiveCollection(item);
 
-    expect(mutateItemCollectionRows).toHaveBeenCalledWith('acp-1', 'collection-1', {
+    expect(mutateItemCollectionRows).toHaveBeenCalledWith('ap-1', 'collection-1', {
       baseVersion: 1,
       addRowKeys: ['uuid-1'],
       perspective: 'read-only',
@@ -7462,7 +7462,7 @@ describe('ItemExplorerFacade', () => {
       api: { mutateItemCollectionRows },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.collections.itemCollections = [
       {
         id: 'collection-1',
@@ -7483,7 +7483,7 @@ describe('ItemExplorerFacade', () => {
     expect(component.collections.collectionError).toContain('konnte nicht gespeichert werden');
 
     await expect(component.clearActiveCollection()).resolves.toBe(true);
-    expect(mutateItemCollectionRows).toHaveBeenLastCalledWith('acp-1', 'collection-1', {
+    expect(mutateItemCollectionRows).toHaveBeenLastCalledWith('ap-1', 'collection-1', {
       baseVersion: 1,
       clear: true,
       perspective: 'read-only',
@@ -7513,7 +7513,7 @@ describe('ItemExplorerFacade', () => {
       api: { activateItemCollection },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.items = [
       {
         itemId: 'VISIBLE',
@@ -7554,7 +7554,7 @@ describe('ItemExplorerFacade', () => {
     await component.setCollectionViewMode('active');
 
     expect(activateItemCollection).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       'collection-1',
       'read-only',
       'active',
@@ -7620,7 +7620,7 @@ describe('ItemExplorerFacade', () => {
       api: { getItemCollections, updateItemCollection },
       authService: { isLoggedIn: true },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.collections.enableItemCollections = true;
     component.collections.itemCollections = [
       { ...freshCollection, name: 'Lokale Auswahl', version: 1 },
@@ -7630,7 +7630,7 @@ describe('ItemExplorerFacade', () => {
 
     await component.renameActiveCollection('Geändert');
 
-    expect(getItemCollections).toHaveBeenCalledWith('acp-1', 'read-only');
+    expect(getItemCollections).toHaveBeenCalledWith('ap-1', 'read-only');
     expect(component.activeItemCollection?.name).toBe('Server-Auswahl');
     expect(component.collections.collectionLoadState).toBe('loaded');
     expect(component.collections.collectionError).toBe(
@@ -8036,7 +8036,7 @@ describe('ItemExplorerFacade', () => {
     const component = createFacade({
       api: { uploadItemParameters, getFileItemList },
     });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.draft.explorerVersion = 7;
     component.table.showOnlyItemsWithEmpiricalDifficulty = false;
     const file = new File(['item;est\nI1;-0.4'], 'parameters.csv', { type: 'text/csv' });
@@ -8044,7 +8044,7 @@ describe('ItemExplorerFacade', () => {
 
     await component.onCsvFileSelected({ target: input } as unknown as Event);
 
-    expect(uploadItemParameters).toHaveBeenCalledWith('acp-1', file, {
+    expect(uploadItemParameters).toHaveBeenCalledWith('ap-1', file, {
       draft: true,
       baseVersion: 7,
     });
@@ -8136,7 +8136,7 @@ describe('ItemExplorerFacade', () => {
       .fn()
       .mockReturnValue(of({ items: [], columns: [], unitMetadata: {}, codingSchemes: {} }));
     const component = createFacade({ api: { uploadItemParameters, getFileItemList } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.draft.explorerVersion = 7;
     const file = new File(['item;est;position\nI1;0.5;4'], 'parameters.csv', {
       type: 'text/csv',
@@ -8152,7 +8152,7 @@ describe('ItemExplorerFacade', () => {
 
     await component.confirmItemParameterUploadWarnings();
 
-    expect(uploadItemParameters).toHaveBeenLastCalledWith('acp-1', file, {
+    expect(uploadItemParameters).toHaveBeenLastCalledWith('ap-1', file, {
       draft: true,
       baseVersion: 7,
       confirmWarnings: true,
@@ -8224,7 +8224,7 @@ describe('ItemExplorerFacade', () => {
       )
       .mockReturnValueOnce(throwError(() => ({ status: 409 })));
     const component = createFacade({ api: { uploadItemParameters } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.draft.explorerVersion = 7;
     vi.spyOn(component as any, 'reloadSharedExplorerStateAndItems').mockReturnValue(reload);
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -8270,7 +8270,7 @@ describe('ItemExplorerFacade', () => {
       )
       .mockReturnValueOnce(throwError(() => ({ status: 409 })));
     const component = createFacade({ api: { uploadItemParameters } });
-    component.acpId = 'acp-1';
+    component.apId = 'ap-1';
     component.draft.explorerVersion = 7;
     vi.spyOn(component as any, 'reloadSharedExplorerStateAndItems').mockResolvedValue(false);
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -8430,7 +8430,7 @@ describe('ItemExplorer draft coordination', () => {
     const component = createFacade({
       api: { patchItemExplorerDraft: () => patch, saveItemExplorerDraft },
     });
-    component.acpId = 'a';
+    component.apId = 'a';
     (component as any).explorerEditingAllowed = true;
     component.canPublishExplorer = true;
     let finishReload!: (loaded: boolean) => void;
@@ -8466,7 +8466,7 @@ describe('ItemExplorer draft coordination', () => {
   it('waits for conflict reload before finishing discard, and reloads once for shared flush results', async () => {
     const patch = new Subject<any>();
     const component = createFacade({ api: { patchItemExplorerDraft: () => patch } });
-    component.acpId = 'a';
+    component.apId = 'a';
     (component as any).explorerEditingAllowed = true;
     component.canPublishExplorer = true;
     let finishReload!: (loaded: boolean) => void;
@@ -8499,7 +8499,7 @@ describe('ItemExplorer draft coordination', () => {
   it('does not update a discard dialog after its provider scope has been destroyed', async () => {
     const response = new Subject<any>();
     const component = createFacade({ api: { discardItemExplorerDraft: () => response } });
-    component.acpId = 'a';
+    component.apId = 'a';
     component.canPublishExplorer = true;
     const pending = component.confirmDiscardDraftDialog();
     destroyFacade(component);

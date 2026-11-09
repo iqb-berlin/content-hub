@@ -4,6 +4,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from "typeorm";
+import { apActionStorage, apAuditDetailsStorage } from "../ap-storage";
 
 @Entity("server_api_audit_logs")
 export class ServerApiAuditLog {
@@ -13,7 +14,7 @@ export class ServerApiAuditLog {
   @Column({ name: "client_id" })
   clientId!: string;
 
-  @Column({ name: "action" })
+  @Column({ name: "action", transformer: apActionStorage })
   action!: string;
 
   @Column({ name: "method" })
@@ -23,7 +24,7 @@ export class ServerApiAuditLog {
   path!: string;
 
   @Column({ name: "acp_id", nullable: true })
-  acpId?: string;
+  apId?: string;
 
   @Column({ name: "resource_id", nullable: true })
   resourceId?: string;
@@ -34,7 +35,12 @@ export class ServerApiAuditLog {
   @Column({ name: "status_code", type: "int", nullable: true })
   statusCode?: number;
 
-  @Column({ name: "details", type: "jsonb", default: {} })
+  @Column({
+    name: "details",
+    type: "jsonb",
+    default: {},
+    transformer: apAuditDetailsStorage,
+  })
   details!: Record<string, unknown>;
 
   @CreateDateColumn({ name: "created_at" })

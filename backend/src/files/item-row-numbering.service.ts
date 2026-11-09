@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { EntityManager, In, Repository } from "typeorm";
 import * as crypto from "crypto";
-import { Acp, AcpItemRowNumber } from "../database/entities";
+import { Ap, ApItemRowNumber } from "../database/entities";
 
 export interface NumberableItemRow {
   rowKey: string;
@@ -28,17 +28,17 @@ export class ItemRowNumberingService {
   });
 
   constructor(
-    @InjectRepository(AcpItemRowNumber)
-    private readonly rowNumberRepository: Repository<AcpItemRowNumber>,
+    @InjectRepository(ApItemRowNumber)
+    private readonly rowNumberRepository: Repository<ApItemRowNumber>,
   ) {}
 
-  async getRevision(acpId: string): Promise<string> {
-    return this.getRevisionFromRepository(this.rowNumberRepository, acpId);
+  async getRevision(apId: string): Promise<string> {
+    return this.getRevisionFromRepository(this.rowNumberRepository, apId);
   }
 
   private async getRevisionFromRepository(
-    repository: Repository<AcpItemRowNumber>,
-    acpId: string,
+    repository: Repository<ApItemRowNumber>,
+    apId: string,
   ): Promise<string> {
     if (typeof repository.query === "function") {
       const rows = (await repository.query(
@@ -57,13 +57,13 @@ export class ItemRowNumberingService {
           FROM acp_item_row_numbers
           WHERE acp_id = $1
         `,
-        [acpId],
+        [apId],
       )) as Array<{ count?: string; hash?: string }>;
       return `${rows[0]?.count || "0"}:${rows[0]?.hash || ""}`;
     }
 
     const persisted = await repository.find({
-      where: { acpId },
+      where: { apId },
     });
     const revisionSource = persisted
       .map((entry) => `${entry.rowKeyHash}:${entry.rowNumber}`)
@@ -76,21 +76,21 @@ export class ItemRowNumberingService {
   }
 
   async assignNumbers(
-    acpId: string,
+    apId: string,
     rows: NumberableItemRow[],
   ): Promise<Map<string, number>> {
-    return (await this.assignNumbersInternal(acpId, rows, false)).numbers;
+    return (await this.assignNumbersInternal(apId, rows, false)).numbers;
   }
 
   async assignNumbersWithRevision(
-    acpId: string,
+    apId: string,
     rows: NumberableItemRow[],
   ): Promise<ItemRowNumberAssignmentResult> {
-    return this.assignNumbersInternal(acpId, rows, true);
+    return this.assignNumbersInternal(apId, rows, true);
   }
 
   private async assignNumbersInternal(
-    acpId: string,
+    apId: string,
     rows: NumberableItemRow[],
     includeRevision: boolean,
   ): Promise<ItemRowNumberAssignmentResult> {
@@ -101,17 +101,17 @@ export class ItemRowNumberingService {
 
     const numbersWithoutLock = await this.findAssignedNumbers(
       this.rowNumberRepository,
-      acpId,
+      apId,
       normalizedRows,
     );
     if (normalizedRows.every((row) => numbersWithoutLock.has(row.rowKey))) {
       return { numbers: numbersWithoutLock };
     }
 
-    return this.withAcpLock(acpId, async (repository) => {
+    return this.withApLock(apId, async (repository) => {
       const numbers = await this.findAssignedNumbers(
         repository,
-        acpId,
+        apId,
         normalizedRows,
       );
       const missingRows = normalizedRows
@@ -119,13 +119,12 @@ export class ItemRowNumberingService {
         .sort((left, right) => this.compareRows(left, right));
 
       if (missingRows.length) {
-        let nextNumber =
-          (await repository.maximum("rowNumber", { acpId })) || 0;
+        let nextNumber = (await repository.maximum("rowNumber", { apId })) || 0;
         const created = missingRows.map((row) => {
           nextNumber += 1;
           numbers.set(row.rowKey, nextNumber);
           return repository.create({
-            acpId,
+            apId,
             rowKey: row.rowKey,
             rowKeyHash: this.hashRowKey(row.rowKey),
             rowNumber: nextNumber,
@@ -138,7 +137,7 @@ export class ItemRowNumberingService {
       if (includeRevision) {
         result.revision = await this.getRevisionFromRepository(
           repository,
-          acpId,
+          apId,
         );
       }
       return result;
@@ -146,7 +145,7 @@ export class ItemRowNumberingService {
   }
 
   async assignProvisionalNumbers(
-    acpId: string,
+    apId: string,
     rows: NumberableItemRow[],
   ): Promise<Map<string, number>> {
     const normalizedRows = this.normalizeRows(rows);
@@ -156,7 +155,7 @@ export class ItemRowNumberingService {
 
     const numbers = await this.findAssignedNumbers(
       this.rowNumberRepository,
-      acpId,
+      apId,
       normalizedRows,
     );
     const missingRows = normalizedRows
@@ -167,7 +166,7 @@ export class ItemRowNumberingService {
     }
 
     let nextNumber =
-      (await this.rowNumberRepository.maximum("rowNumber", { acpId })) || 0;
+      (await this.rowNumberRepository.maximum("rowNumber", { apId })) || 0;
     for (const row of missingRows) {
       nextNumber += 1;
       numbers.set(row.rowKey, nextNumber);
@@ -176,7 +175,7 @@ export class ItemRowNumberingService {
   }
 
   async recalculateNumbers(
-    acpId: string,
+    apId: string,
     rows: NumberableItemRow[],
     transactionManager?: EntityManager,
     validateBeforeReplace?: (manager: EntityManager) => Promise<void>,
@@ -185,17 +184,17 @@ export class ItemRowNumberingService {
       this.compareRows(left, right),
     );
 
-    return this.withAcpLock(
-      acpId,
+    return this.withApLock(
+      apId,
       async (repository) => {
         await validateBeforeReplace?.(repository.manager);
-        await repository.delete({ acpId });
+        await repository.delete({ apId });
         const numbers = new Map<string, number>();
         const created = normalizedRows.map((row, index) => {
           const rowNumber = index + 1;
           numbers.set(row.rowKey, rowNumber);
           return repository.create({
-            acpId,
+            apId,
             rowKey: row.rowKey,
             rowKeyHash: this.hashRowKey(row.rowKey),
             rowNumber,
@@ -210,22 +209,22 @@ export class ItemRowNumberingService {
     );
   }
 
-  private async withAcpLock<T>(
-    acpId: string,
-    work: (repository: Repository<AcpItemRowNumber>) => Promise<T>,
+  private async withApLock<T>(
+    apId: string,
+    work: (repository: Repository<ApItemRowNumber>) => Promise<T>,
     transactionManager?: EntityManager,
   ): Promise<T> {
     const runWithManager = async (manager: EntityManager) => {
-      const acp = await manager
-        .getRepository(Acp)
-        .createQueryBuilder("acp")
+      const ap = await manager
+        .getRepository(Ap)
+        .createQueryBuilder("ap")
         .setLock("pessimistic_write")
-        .where("acp.id = :acpId", { acpId })
+        .where("ap.id = :apId", { apId })
         .getOne();
-      if (!acp) {
+      if (!ap) {
         throw new NotFoundException("AP not found");
       }
-      return work(manager.getRepository(AcpItemRowNumber));
+      return work(manager.getRepository(ApItemRowNumber));
     };
 
     return transactionManager
@@ -250,13 +249,13 @@ export class ItemRowNumberingService {
   }
 
   private async findAssignedNumbers(
-    repository: Repository<AcpItemRowNumber>,
-    acpId: string,
+    repository: Repository<ApItemRowNumber>,
+    apId: string,
     rows: NumberableItemRow[],
   ): Promise<Map<string, number>> {
     const hashes = rows.map((row) => this.hashRowKey(row.rowKey));
     const persisted = await repository.find({
-      where: { acpId, rowKeyHash: In(hashes) },
+      where: { apId, rowKeyHash: In(hashes) },
     });
     const persistedByHash = new Map(
       persisted.map((entry) => [entry.rowKeyHash, entry] as const),

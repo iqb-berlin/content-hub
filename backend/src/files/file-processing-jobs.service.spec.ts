@@ -2,7 +2,7 @@ import { Logger } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { lastValueFrom } from "rxjs";
-import { AcpFile, AcpFileProcessingJob } from "../database/entities";
+import { ApFile, ApFileProcessingJob } from "../database/entities";
 import { ValidationService } from "../validation/validation.service";
 import { FileProcessingJobsService } from "./file-processing-jobs.service";
 import { FilesService } from "./files.service";
@@ -13,15 +13,15 @@ describe("FileProcessingJobsService background failures", () => {
     "reports a failed status write through the %s job stream",
     async (kind) => {
       const failure = new Error("database unavailable");
-      const job = Object.assign(new AcpFileProcessingJob(), {
+      const job = Object.assign(new ApFileProcessingJob(), {
         id: "job-1",
-        acpId: "acp-1",
+        apId: "ap-1",
         createdAt: new Date(),
         updatedAt: new Date(),
       });
       const repository = {
         findOne: jest.fn().mockResolvedValue(job).mockResolvedValueOnce(null),
-        create: jest.fn((input: Partial<AcpFileProcessingJob>) =>
+        create: jest.fn((input: Partial<ApFileProcessingJob>) =>
           Object.assign(job, input),
         ),
         save: jest.fn().mockResolvedValueOnce(job).mockRejectedValue(failure),
@@ -30,11 +30,11 @@ describe("FileProcessingJobsService background failures", () => {
         providers: [
           FileProcessingJobsService,
           {
-            provide: getRepositoryToken(AcpFileProcessingJob),
+            provide: getRepositoryToken(ApFileProcessingJob),
             useValue: repository,
           },
           {
-            provide: getRepositoryToken(AcpFile),
+            provide: getRepositoryToken(ApFile),
             useValue: { find: jest.fn().mockResolvedValue([{ id: "file-1" }]) },
           },
           { provide: FilesService, useValue: {} },
@@ -49,8 +49,8 @@ describe("FileProcessingJobsService background failures", () => {
         const service = module.get(FileProcessingJobsService);
         const snapshot =
           kind === "upload"
-            ? await service.createAndStartJob("acp-1", ["file-1"])
-            : await service.createAndStartDownloadJob("acp-1", ["file-1"]);
+            ? await service.createAndStartJob("ap-1", ["file-1"])
+            : await service.createAndStartDownloadJob("ap-1", ["file-1"]);
         expect(snapshot.id).toBe("job-1");
         await expect(lastValueFrom(service.streamJob("job-1"))).rejects.toBe(
           failure,

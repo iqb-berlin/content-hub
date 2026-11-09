@@ -30,7 +30,7 @@ export interface BookletSelectionItem {
             }
           </div>
           <a
-            [routerLink]="['/view', acpId, 'sequence', booklet.id]"
+            [routerLink]="['/view', apId, 'sequence', booklet.id]"
             [queryParams]="{ kind: 'booklet' }"
             >{{ actionLabel }}</a
           >
@@ -134,7 +134,7 @@ export interface BookletSelectionItem {
   ],
 })
 export class BookletSelectionComponent {
-  @Input({ required: true }) acpId = '';
+  @Input({ required: true }) apId = '';
   @Input() booklets: BookletSelectionItem[] = [];
   @Input() actionLabel = 'Prüfansicht öffnen';
 

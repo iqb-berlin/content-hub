@@ -8,7 +8,7 @@ const services: ItemExplorerHistoryService[] = [];
 function entry(id: string, actorUsername = 'Reviewer'): ItemExplorerChangeLogEntry {
   return {
     id,
-    acpId: 'package',
+    apId: 'package',
     changeType: 'TAGS_CHANGED',
     beforeState: {},
     afterState: {},
@@ -22,7 +22,7 @@ function createService() {
   const response = new Subject<ItemExplorerChangeLogEntry[]>();
   const api = {
     getItemExplorerChanges: vi.fn(
-      (_acpId: string, _limit: number): Observable<ItemExplorerChangeLogEntry[]> => response,
+      (_apId: string, _limit: number): Observable<ItemExplorerChangeLogEntry[]> => response,
     ),
   };
   const browser = { download: vi.fn<(blob: Blob, filename: string) => void>() };

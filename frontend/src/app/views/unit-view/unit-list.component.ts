@@ -32,7 +32,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/bre
               </td>
               <td>{{ unit.name }}</td>
               <td>
-                <a [routerLink]="['/view', acpId, 'unit', unit.id]" class="btn btn-sm btn-primary"
+                <a [routerLink]="['/view', apId, 'unit', unit.id]" class="btn btn-sm btn-primary"
                   >Ansehen</a
                 >
               </td>
@@ -52,7 +52,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/bre
   ],
 })
 export class UnitListComponent implements OnInit {
-  acpId = '';
+  apId = '';
   units: any[] = [];
   breadcrumbs: BreadcrumbItem[] = [];
 
@@ -62,12 +62,12 @@ export class UnitListComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.acpId = this.route.snapshot.paramMap.get('acpId') || '';
+    this.apId = this.route.snapshot.paramMap.get('apId') || '';
     this.breadcrumbs = [
       { label: 'Content Hub', route: ['/'] },
-      { label: 'AP', route: ['/view', this.acpId] },
+      { label: 'AP', route: ['/view', this.apId] },
       { label: 'Aufgaben' },
     ];
-    this.api.getViewUnits(this.acpId).subscribe((u) => (this.units = u));
+    this.api.getViewUnits(this.apId).subscribe((u) => (this.units = u));
   }
 }

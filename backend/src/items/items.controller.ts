@@ -40,7 +40,7 @@ type ItemParameterImportKind = "item-parameters" | "empirical-difficulty";
 type ItemParameterImportTarget = "draft" | "published";
 
 interface ItemParameterImportCommand {
-  acpId: string;
+  apId: string;
   fileBuffer: Buffer;
   kind: ItemParameterImportKind;
   target: ItemParameterImportTarget;
@@ -60,7 +60,7 @@ class SaveItemTagsDto {
 }
 
 @ApiTags("Items")
-@Controller("acp/:acpId/items")
+@Controller("ap/:apId/items")
 export class ItemsController {
   constructor(
     private readonly itemsService: ItemsService,
@@ -77,30 +77,30 @@ export class ItemsController {
   @ApiQuery({ name: "sortBy", required: false })
   @ApiQuery({ name: "sortDir", required: false, enum: ["asc", "desc"] })
   async getItems(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Query("filter") filter?: string,
     @Query("sortBy") sortBy?: string,
     @Query("sortDir") sortDir?: "asc" | "desc",
     @Request() req?: any,
   ) {
-    await this.assertCanReadItemList(acpId, req);
-    return this.itemsService.getFilteredItems(acpId, filter, sortBy, sortDir);
+    await this.assertCanReadItemList(apId, req);
+    return this.itemsService.getFilteredItems(apId, filter, sortBy, sortDir);
   }
 
   @Get("tags")
   @UseGuards(JwtAuthGuard, ExplorerReadGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get persisted item tags for an AP" })
-  async getItemTags(@UuidParam("acpId") acpId: string, @Request() req: any) {
-    const isManager = req.user?.isAppAdmin || req.acpAccessLevel === "MANAGER";
+  async getItemTags(@UuidParam("apId") apId: string, @Request() req: any) {
+    const isManager = req.user?.isAppAdmin || req.apAccessLevel === "MANAGER";
     if (
-      !req.acpCapabilities?.includes("item-explorer:edit") &&
+      !req.apCapabilities?.includes("item-explorer:edit") &&
       !isManager &&
-      !(await this.itemsService.canUseItemTags(acpId))
+      !(await this.itemsService.canUseItemTags(apId))
     ) {
       throw new ForbiddenException("Item tags are not enabled for this AP");
     }
-    return this.itemsService.getItemTags(acpId);
+    return this.itemsService.getItemTags(apId);
   }
 
   @Put("tags")
@@ -108,21 +108,21 @@ export class ItemsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Persist item tags for an AP" })
   async saveItemTags(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: SaveItemTagsDto,
     @Request() req: any,
   ) {
-    const isManager = req.user?.isAppAdmin || req.acpAccessLevel === "MANAGER";
+    const isManager = req.user?.isAppAdmin || req.apAccessLevel === "MANAGER";
     if (
-      !req.acpCapabilities?.includes("item-explorer:edit") &&
+      !req.apCapabilities?.includes("item-explorer:edit") &&
       !isManager &&
-      !(await this.itemsService.canUseItemTags(acpId))
+      !(await this.itemsService.canUseItemTags(apId))
     ) {
       throw new ForbiddenException("Item tags are not enabled for this AP");
     }
-    const actor = this.itemExplorerStateService.resolveActor(req?.user, acpId);
+    const actor = this.itemExplorerStateService.resolveActor(req?.user, apId);
     const result = await this.itemExplorerStateService.publishTagsImmediately(
-      acpId,
+      apId,
       dto.tags || {},
       {
         actor,
@@ -136,12 +136,12 @@ export class ItemsController {
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Get a single item by ID" })
   async getItem(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Param("itemId") itemId: string,
     @Request() req?: any,
   ) {
-    await this.assertCanReadItemList(acpId, req);
-    return this.itemsService.getItem(acpId, itemId);
+    await this.assertCanReadItemList(apId, req);
+    return this.itemsService.getItem(apId, itemId);
   }
 
   @Post("upload-item-parameters")
@@ -161,7 +161,7 @@ export class ItemsController {
   })
   @UseInterceptors(FileInterceptor("file"))
   async uploadItemParameters(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UploadedFile() file: Express.Multer.File,
     @Query("draft") draft?: string,
     @Query("baseVersion") baseVersion?: string,
@@ -172,7 +172,7 @@ export class ItemsController {
       throw new BadRequestException("A CSV file is required");
     }
     return this.runItemParameterImport({
-      acpId,
+      apId,
       fileBuffer: file.buffer,
       kind: "item-parameters",
       target: draft === "true" ? "draft" : "published",
@@ -202,7 +202,7 @@ export class ItemsController {
   })
   @UseInterceptors(FileInterceptor("file"))
   async uploadEmpiricalDifficulties(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UploadedFile() file: Express.Multer.File,
     @Query("draft") draft?: string,
     @Query("baseVersion") baseVersion?: string,
@@ -210,7 +210,7 @@ export class ItemsController {
     @Query("confirmWarnings") confirmWarnings?: string,
   ) {
     return this.runItemParameterImport({
-      acpId,
+      apId,
       fileBuffer: file.buffer,
       kind: "empirical-difficulty",
       target: draft === "true" ? "draft" : "published",
@@ -225,7 +225,7 @@ export class ItemsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Clear all empirical difficulties for an AP" })
   async clearEmpiricalDifficulties(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Query("draft") draft?: string,
     @Query("baseVersion") baseVersion?: string,
     @Request() req?: any,
@@ -235,10 +235,10 @@ export class ItemsController {
 
     if (!draftMode) {
       const currentState =
-        await this.itemExplorerStateService.getStateForViewer(acpId, true);
+        await this.itemExplorerStateService.getStateForViewer(apId, true);
       this.assertCleanExplorerStateForDirectWrite(currentState.status);
       const clearResult = await this.itemsService.clearEmpiricalDifficulties(
-        acpId,
+        apId,
         {
           persist: false,
           itemPropertiesOverride: currentState.publishedState.itemProperties,
@@ -250,10 +250,10 @@ export class ItemsController {
       ) {
         const actor = this.itemExplorerStateService.resolveActor(
           req?.user,
-          acpId,
+          apId,
         );
         await this.itemExplorerStateService.publishItemPropertiesImmediately(
-          acpId,
+          apId,
           clearResult.nextItemProperties as Record<
             string,
             Record<string, unknown>
@@ -269,20 +269,20 @@ export class ItemsController {
     }
 
     const currentState = await this.itemExplorerStateService.getStateForViewer(
-      acpId,
+      apId,
       true,
     );
     const clearResult = await this.itemsService.clearEmpiricalDifficulties(
-      acpId,
+      apId,
       {
         persist: false,
         itemPropertiesOverride: currentState.draftState.itemProperties,
       },
     );
 
-    const actor = this.itemExplorerStateService.resolveActor(req?.user, acpId);
+    const actor = this.itemExplorerStateService.resolveActor(req?.user, apId);
     const explorerState = await this.itemExplorerStateService.patchDraft(
-      acpId,
+      apId,
       {
         itemProperties: clearResult.nextItemProperties as Record<
           string,
@@ -311,10 +311,10 @@ export class ItemsController {
     summary: "Get all response states for an AP (Manager only)",
   })
   async getAllResponseStates(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() _req: any,
   ) {
-    return this.stateService.getAllStatesForAcp(acpId, true);
+    return this.stateService.getAllStatesForAp(apId, true);
   }
 
   // Response State Endpoints
@@ -324,7 +324,7 @@ export class ItemsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Save response state for an item (Manager only)" })
   async saveResponseState(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Param("itemId") itemId: string,
     @Body()
     body: {
@@ -335,7 +335,7 @@ export class ItemsController {
     @Request() _req: any,
   ) {
     return this.stateService.saveResponseState(
-      acpId,
+      apId,
       itemId,
       body.unitId,
       body.responseData,
@@ -348,7 +348,7 @@ export class ItemsController {
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Get response state for an item" })
   async getResponseState(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Param("itemId") itemId: string,
     @Query("unitId") unitId?: string,
     @Query("rowKey") rowKey?: string,
@@ -357,7 +357,7 @@ export class ItemsController {
       throw new BadRequestException('Query parameter "unitId" is required.');
     }
     const state = await this.stateService.getResponseState(
-      acpId,
+      apId,
       itemId,
       unitId,
       rowKey,
@@ -372,7 +372,7 @@ export class ItemsController {
       "Get response state for an item with fallback to previous items in same unit",
   })
   async getResponseStateWithFallback(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Param("itemId") itemId: string,
     @Body()
     body: {
@@ -382,7 +382,7 @@ export class ItemsController {
     },
   ) {
     return this.stateService.getResponseStateWithFallback(
-      acpId,
+      apId,
       itemId,
       body.unitId,
       body.itemList,
@@ -395,7 +395,7 @@ export class ItemsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Delete response state for an item (Manager only)" })
   async deleteResponseState(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Param("itemId") itemId: string,
     @Query("unitId") unitId: string | undefined,
     @Request() _req: any,
@@ -405,7 +405,7 @@ export class ItemsController {
       throw new BadRequestException('Query parameter "unitId" is required.');
     }
     return this.stateService.deleteResponseState(
-      acpId,
+      apId,
       itemId,
       unitId,
       true,
@@ -415,7 +415,7 @@ export class ItemsController {
 
   private async runItemParameterImport(command: ItemParameterImportCommand) {
     const currentState = await this.itemExplorerStateService.getStateForViewer(
-      command.acpId,
+      command.apId,
       true,
     );
     if (command.target === "published") {
@@ -429,7 +429,7 @@ export class ItemsController {
     const uploadResult =
       command.kind === "empirical-difficulty"
         ? await this.itemsService.uploadEmpiricalDifficulties(
-            command.acpId,
+            command.apId,
             command.fileBuffer,
             {
               persist: false,
@@ -438,7 +438,7 @@ export class ItemsController {
             },
           )
         : await this.itemsService.uploadItemParameters(
-            command.acpId,
+            command.apId,
             command.fileBuffer,
             {
               persist: false,
@@ -461,7 +461,7 @@ export class ItemsController {
         : this.hasImportedEmpiricalDifficulty(uploadResult.successes);
     const actor = this.itemExplorerStateService.resolveActor(
       command.user,
-      command.acpId,
+      command.apId,
     );
     const changeType =
       command.kind === "empirical-difficulty"
@@ -471,7 +471,7 @@ export class ItemsController {
     if (command.target === "published") {
       if (uploadResult.updated > 0) {
         await this.itemExplorerStateService.publishItemPropertiesImmediately(
-          command.acpId,
+          command.apId,
           uploadResult.nextItemProperties,
           {
             actor,
@@ -482,7 +482,7 @@ export class ItemsController {
       }
       const showOnlyItemsWithEmpiricalDifficulty = importedEmpiricalDifficulty
         ? await this.itemsService.ensureShowOnlyItemsWithEmpiricalDifficulty(
-            command.acpId,
+            command.apId,
           )
         : undefined;
       return {
@@ -503,7 +503,7 @@ export class ItemsController {
     }
 
     const explorerState = await this.itemExplorerStateService.patchDraft(
-      command.acpId,
+      command.apId,
       { itemProperties: uploadResult.nextItemProperties },
       {
         actor,
@@ -513,7 +513,7 @@ export class ItemsController {
     );
     const showOnlyItemsWithEmpiricalDifficulty = importedEmpiricalDifficulty
       ? await this.itemsService.ensureShowOnlyItemsWithEmpiricalDifficulty(
-          command.acpId,
+          command.apId,
         )
       : undefined;
 
@@ -541,17 +541,17 @@ export class ItemsController {
     }
   }
 
-  private async assertCanReadItemList(acpId: string, req?: any): Promise<void> {
+  private async assertCanReadItemList(apId: string, req?: any): Promise<void> {
     const isManager =
       req?.user?.isAppAdmin ||
-      req?.acpAccessLevel === "MANAGER" ||
-      req?.acpAccessLevel === "ADMIN";
+      req?.apAccessLevel === "MANAGER" ||
+      req?.apAccessLevel === "ADMIN";
     if (
-      !req?.acpCapabilities?.some((c: string) =>
+      !req?.apCapabilities?.some((c: string) =>
         c.startsWith("item-explorer:"),
       ) &&
       !isManager &&
-      !(await this.itemsService.canUseItemList(acpId))
+      !(await this.itemsService.canUseItemList(apId))
     ) {
       throw new ForbiddenException("Item list is not enabled for this AP");
     }

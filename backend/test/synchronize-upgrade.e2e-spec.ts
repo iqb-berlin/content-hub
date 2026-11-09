@@ -10,7 +10,7 @@ describe("0.5.0 upgrade through synchronize", () => {
   let db: DataSource | undefined;
   let options: DataSourceOptions;
   const database = `synchronize_e2e_${randomUUID().replace(/-/g, "")}`;
-  const acpId = randomUUID();
+  const apId = randomUUID();
   const userId = randomUUID();
   let commentId: string;
 
@@ -50,7 +50,7 @@ describe("0.5.0 upgrade through synchronize", () => {
     await db.runMigrations();
     await db.query(
       `INSERT INTO acp(id, package_id, name, acp_index) VALUES ($1,'upgrade-test','Upgrade test',$2)`,
-      [acpId, { units: [{ id: "U", items: [{ id: "I" }] }] }],
+      [apId, { units: [{ id: "U", items: [{ id: "I" }] }] }],
     );
     await db.query(
       `INSERT INTO users(id, username) VALUES ($1,'existing-manager')`,
@@ -58,12 +58,12 @@ describe("0.5.0 upgrade through synchronize", () => {
     );
     await db.query(
       `INSERT INTO acp_user_roles(user_id, acp_id, role) VALUES ($1,$2,'ACP_MANAGER')`,
-      [userId, acpId],
+      [userId, apId],
     );
     const [config] = await db.query(
       `INSERT INTO acp_access_configs(acp_id, access_model, feature_config) VALUES ($1,'PRIVATE',$2) RETURNING id`,
       [
-        acpId,
+        apId,
         {
           enableCommenting: true,
           enableItemList: true,
@@ -77,7 +77,7 @@ describe("0.5.0 upgrade through synchronize", () => {
     );
     const [comment] = await db.query(
       `INSERT INTO comments(acp_id,user_id,target_type,target_id,comment_text) VALUES ($1,$2,'ITEM','U_I','Existing comment') RETURNING id`,
-      [acpId, userId],
+      [apId, userId],
     );
     commentId = comment.id;
     await db.destroy();

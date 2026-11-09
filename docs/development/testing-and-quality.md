@@ -83,8 +83,8 @@ paths as modules are cleaned up. Do not add broad disable directives to admit
 new violations; any necessary exception must be local and explain the reason.
 The existing required CI lint jobs enforce these scopes without additional jobs.
 
-AP credential persistence and import belong to `AcpCredentialsService`.
-`AcpService` delegates its existing public methods, preserving callers while
+AP credential persistence and import belong to `ApCredentialsService`.
+`ApService` delegates its existing public methods, preserving callers while
 separating credential transactions and password hashing from package management.
 
 ### Coverage and behavior regression gates
@@ -101,7 +101,7 @@ not replace browser, database, or migration checks.
 
 ### AP API contracts
 
-`backend/src/acp/acp-http-contract.spec.ts` exercises actual HTTP routing, the
+`backend/src/ap/ap-http-contract.spec.ts` exercises actual HTTP routing, the
 validation pipe, response serialization, and the role guard for AP management.
 Authentication, AP access and capability resolution, and persistence are mocked
 in this suite; service, authentication,

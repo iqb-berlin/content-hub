@@ -4,7 +4,7 @@ import { ApiProperty } from "@nestjs/swagger";
 export class CredentialLoginDto {
   @ApiProperty({ description: "AP ID to access" })
   @IsUUID("all")
-  acpId!: string;
+  apId!: string;
 
   @ApiProperty({ example: "reviewer1" })
   @IsString()
