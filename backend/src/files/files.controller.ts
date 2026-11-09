@@ -1,3 +1,4 @@
+import { ApResponseEnvelopes } from "../common/ap-contract.metadata";
 import {
   BadRequestException,
   Body,
@@ -284,6 +285,7 @@ export class FilesController {
   @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Stream file processing job progress" })
+  @ApResponseEnvelopes("data")
   async streamProcessingJob(
     @UuidParam("apId") apId: string,
     @UuidParam("jobId") jobId: string,

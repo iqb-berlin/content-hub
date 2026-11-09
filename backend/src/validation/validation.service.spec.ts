@@ -73,6 +73,24 @@ describe("ValidationService", () => {
   });
 
   describe("validateFile", () => {
+    it.each([
+      ["ap-index.json", "[]"],
+      ["acp-index.json", "[]"],
+      ["uploaded-acp-index.json", "{}"],
+      ["ACP-INDEX.JSON", "{}"],
+    ])(
+      "keeps schema checks for current and legacy index filename %s",
+      async (originalName, payload) => {
+        const result = await service.validateFile(
+          { originalName } as ApFile,
+          Buffer.from(payload),
+        );
+        expect(result.valid).toBe(false);
+        expect(result.issues.some((issue) => issue.scope === "schema")).toBe(
+          true,
+        );
+      },
+    );
     it("should validate valid JSON file", async () => {
       const file = { originalName: "data.json" } as ApFile;
       const buffer = Buffer.from('{"key": "value"}');

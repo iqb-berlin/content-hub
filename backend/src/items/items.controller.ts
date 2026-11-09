@@ -1,4 +1,8 @@
 import {
+  ApResponseEnvelopes,
+  RawApResponse,
+} from "../common/ap-contract.metadata";
+import {
   ExplorerReadGuard,
   ExplorerEditGuard,
 } from "../auth/capabilities/explorer-access.guard";
@@ -91,6 +95,7 @@ export class ItemsController {
   @UseGuards(JwtAuthGuard, ExplorerReadGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get persisted item tags for an AP" })
+  @RawApResponse()
   async getItemTags(@UuidParam("apId") apId: string, @Request() req: any) {
     const isManager = req.user?.isAppAdmin || req.apAccessLevel === "MANAGER";
     if (
@@ -107,6 +112,7 @@ export class ItemsController {
   @UseGuards(JwtAuthGuard, ExplorerEditGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Persist item tags for an AP" })
+  @RawApResponse()
   async saveItemTags(
     @UuidParam("apId") apId: string,
     @Body() dto: SaveItemTagsDto,
@@ -160,6 +166,7 @@ export class ItemsController {
     },
   })
   @UseInterceptors(FileInterceptor("file"))
+  @ApResponseEnvelopes("explorerState")
   async uploadItemParameters(
     @UuidParam("apId") apId: string,
     @UploadedFile() file: Express.Multer.File,
@@ -201,6 +208,7 @@ export class ItemsController {
     },
   })
   @UseInterceptors(FileInterceptor("file"))
+  @ApResponseEnvelopes("explorerState")
   async uploadEmpiricalDifficulties(
     @UuidParam("apId") apId: string,
     @UploadedFile() file: Express.Multer.File,
@@ -224,6 +232,7 @@ export class ItemsController {
   @UseGuards(JwtAuthGuard, ExplorerEditGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Clear all empirical difficulties for an AP" })
+  @ApResponseEnvelopes("explorerState")
   async clearEmpiricalDifficulties(
     @UuidParam("apId") apId: string,
     @Query("draft") draft?: string,
@@ -371,6 +380,7 @@ export class ItemsController {
     summary:
       "Get response state for an item with fallback to previous items in same unit",
   })
+  @ApResponseEnvelopes("state")
   async getResponseStateWithFallback(
     @UuidParam("apId") apId: string,
     @Param("itemId") itemId: string,

@@ -1,4 +1,5 @@
 import { ApCapabilitiesService } from "../auth/capabilities/ap-capabilities.service";
+import { ApResponseEnvelopes } from "../common/ap-contract.metadata";
 import { ExplorerReadGuard } from "../auth/capabilities/explorer-access.guard";
 import { hasCapability } from "../auth/capabilities/ap-capabilities";
 import {
@@ -371,6 +372,7 @@ export class ViewsController {
   @Get("ap/:apId/units/:unitId")
   @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "Get unit view data" })
+  @ApResponseEnvelopes("dependencies")
   async getUnit(
     @UuidParam("apId") apId: string,
     @Param("unitId") unitId: string,

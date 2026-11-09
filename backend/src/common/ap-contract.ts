@@ -33,7 +33,6 @@ const ENVELOPES = new Set([
   "accessConfigs",
   "accessConfig",
   "tokens",
-  "items",
   "results",
   "details",
   "query",
@@ -56,7 +55,11 @@ export function legacyApAction(action: string): string {
 }
 
 /** Legacy aliases never take precedence over a conflicting canonical value. */
-export function translateApContract(value: unknown, legacy = false): unknown {
+export function translateApContract(
+  value: unknown,
+  legacy = false,
+  responseEnvelopes: readonly string[] = [],
+): unknown {
   if (Array.isArray(value))
     return value.map((entry) => translateApContract(entry, legacy));
   if (
@@ -84,9 +87,10 @@ export function translateApContract(value: unknown, legacy = false): unknown {
         `Conflicting ${key} and ${canonical} values`,
       );
     }
-    let mapped = ENVELOPES.has(canonical)
-      ? translateApContract(entry, legacy)
-      : entry;
+    let mapped =
+      ENVELOPES.has(canonical) || responseEnvelopes.includes(canonical)
+        ? translateApContract(entry, legacy)
+        : entry;
     if (
       ["role", "actorRole", "updatedByRole"].includes(canonical) &&
       typeof entry === "string"
@@ -104,7 +108,7 @@ export function translateApContract(value: unknown, legacy = false): unknown {
       mapped = legacy ? legacyApAction(entry) : normalizeApAction(entry);
     }
     if (canonical === "downloadUrl" && legacy && typeof entry === "string") {
-      mapped = entry.replace(/^\/api\/server\/ap\//, "/api/server/acp/");
+      mapped = entry.replace(/^(\/api(?:\/(?:server|view))?)\/ap\//, "$1/acp/");
     }
     if (canonical === "scopes" && Array.isArray(entry)) {
       mapped = entry.map((scope) =>
@@ -147,7 +151,7 @@ export function translateApContract(value: unknown, legacy = false): unknown {
 
 /** Raw AP-Index endpoints carry user-owned JSON, not an application envelope. */
 export function isRawApIndexPath(path: string): boolean {
-  return /^\/api\/(?:view\/)?ap\/[^/]+\/index(?:\/(?:import|export))?\/?$/.test(
+  return /^\/api\/(?:view\/)?ap\/[^/]+\/index(?:\/(?:import|export))?\/?$/i.test(
     path,
   );
 }

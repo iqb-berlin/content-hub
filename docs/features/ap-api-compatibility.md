@@ -2,7 +2,8 @@
 
 Code, type names, DTOs, services and current browser routes use **AP**. The backend
 accepts existing ACP integrations through an explicit application-boundary adapter.
-This change is implemented locally; it is not a claim about a deployed release.
+Availability of the new contract depends on the deployed release; deploy both
+components together before switching clients to AP.
 
 ## Paths and response selection
 
@@ -46,7 +47,16 @@ working with `acp.read`; no token reissue is required for this naming transition
 Only known application envelope fields are translated. AP-Index JSON, settings,
 definitions, response data, metadata and original file bytes are not recursively
 renamed. Raw management/view index endpoints preserve the submitted index content.
-The external `acp-index` schema identifier and URL remain valid.
+The external `acp-index` schema identifier and URL remain valid. Schema validation
+continues recognizing both `ap-index` and legacy `acp-index` filenames, including
+malformed payloads that have no identifying package fields.
+
+Dictionary responses (such as item tags) preserve every caller-owned key. Unit
+item content stays opaque. Structured envelopes for token pages, response states
+and server-sent job events are declared on their handlers so that nested contract
+fields are translated without traversing arbitrary content. Legacy dependency
+and transfer download links retain their existing paths and original file bytes.
+The aliases retain the case-insensitive path behavior of the existing router.
 
 ### Migrating a transfer client
 

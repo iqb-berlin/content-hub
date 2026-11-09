@@ -1,3 +1,4 @@
+import { ApResponseEnvelopes } from "../common/ap-contract.metadata";
 import {
   Body,
   Controller,
@@ -94,6 +95,7 @@ export class AdminController {
 
   @Get("application-tokens")
   @ApiOperation({ summary: "List application tokens" })
+  @ApResponseEnvelopes("items")
   async listApplicationTokens(
     @Query("limit") limit?: string,
     @Query("offset") offset?: string,

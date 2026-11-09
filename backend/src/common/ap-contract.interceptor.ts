@@ -6,18 +6,25 @@ import {
   NestInterceptor,
 } from "@nestjs/common";
 import { catchError, map, Observable, throwError } from "rxjs";
+import { Reflector } from "@nestjs/core";
+import { AP_RESPONSE_ENVELOPES } from "./ap-contract.metadata";
 import { ApCompatibilityRequest } from "./ap-compatibility.middleware";
 import { isRawApIndexPath, translateApContract } from "./ap-contract";
 
 @Injectable()
 export class ApContractInterceptor implements NestInterceptor {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<ApCompatibilityRequest>();
-    if (isRawApIndexPath(req.path)) return next.handle();
+    const envelopes = this.reflector.getAllAndOverride<
+      readonly string[] | false
+    >(AP_RESPONSE_ENVELOPES, [context.getHandler(), context.getClass()]);
+    if (envelopes === false || isRawApIndexPath(req.path)) return next.handle();
     return next.handle().pipe(
       map((result) =>
         req.apTerminology === "acp"
-          ? translateApContract(result, true)
+          ? translateApContract(result, true, envelopes)
           : result,
       ),
       catchError((error: unknown) => {

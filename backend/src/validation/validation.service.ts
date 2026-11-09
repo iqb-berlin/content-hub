@@ -686,7 +686,8 @@ export class ValidationService {
   }
 
   private looksLikeApIndex(fileName: string, payload: unknown): boolean {
-    if (fileName.toLowerCase().includes("ap-index")) {
+    // Existing integrations still upload indexes exported under the ACP name.
+    if (/(?:ap|acp)-index/i.test(fileName)) {
       return true;
     }
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {

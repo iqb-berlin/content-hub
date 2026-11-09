@@ -1,3 +1,4 @@
+import { ApResponseEnvelopes } from "../common/ap-contract.metadata";
 import { ApCapabilitiesService } from "../auth/capabilities/ap-capabilities.service";
 import { UpdateCapabilitiesDto } from "./dto/ap.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -277,6 +278,7 @@ export class ApController {
   @UseGuards(RolesGuard)
   @Roles("AP_MANAGER")
   @ApiOperation({ summary: "List application tokens limited to this AP" })
+  @ApResponseEnvelopes("items")
   async listApplicationTokens(
     @UuidParam("id") id: string,
     @Query("limit") limit?: string,

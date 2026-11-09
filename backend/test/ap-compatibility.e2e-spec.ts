@@ -3,15 +3,21 @@ import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
+import { mkdtemp, rm, writeFile } from "fs/promises";
+import { tmpdir } from "os";
+import { join } from "path";
 import * as request from "supertest";
 import {
   AccessModel,
   Ap,
   ApAccessConfig,
   ApCredential,
+  ApFile,
+  ApFileProcessingJob,
   ApRole,
   ApUserRole,
+  ItemResponseState,
   User,
 } from "../src/database/entities";
 import { AdminService } from "../src/admin/admin.service";
@@ -24,6 +30,9 @@ describe("AP API and legacy integration compatibility", () => {
   let managerToken: string;
   let integrationToken: string;
   let adminToken: string;
+  let fixtureDirectory: string;
+  let fixtureFile: ApFile;
+  const fixtureBytes = Buffer.from([0, 65, 67, 80, 255, 65, 80, 0]);
   const apId = randomUUID();
   const otherId = randomUUID();
   const managerId = randomUUID();
@@ -79,6 +88,17 @@ describe("AP API and legacy integration compatibility", () => {
       packageId: `other-${apId}`,
       name: "Other package",
     });
+    fixtureDirectory = await mkdtemp(join(tmpdir(), "ap-contract-review-"));
+    const filePath = join(fixtureDirectory, "compat-resource.bin");
+    await writeFile(filePath, fixtureBytes);
+    fixtureFile = await db.getRepository(ApFile).save({
+      apId,
+      filePath,
+      originalName: "compat-resource.bin",
+      fileType: "application/octet-stream",
+      fileSize: fixtureBytes.length,
+      checksum: createHash("sha256").update(fixtureBytes).digest("hex"),
+    });
     await app
       .get<Repository<ApUserRole>>(getRepositoryToken(ApUserRole))
       .save({ userId: managerId, apId, role: ApRole.AP_MANAGER });
@@ -107,6 +127,7 @@ describe("AP API and legacy integration compatibility", () => {
           "transfer.read",
           "index.read",
           "index.write",
+          "files.read",
         ]),
         JSON.stringify([apId]),
       ],
@@ -114,6 +135,7 @@ describe("AP API and legacy integration compatibility", () => {
   });
   afterAll(async () => {
     if (app) await app.close();
+    if (fixtureDirectory) await rm(fixtureDirectory, { recursive: true });
   });
 
   it("exposes canonical fields and retains the old management response", async () => {
@@ -220,6 +242,24 @@ describe("AP API and legacy integration compatibility", () => {
       .expect(200);
     expect(current.body.capabilities["ap.read"]).toBe(true);
     expect(current.body.allowedApIds).toEqual([apId]);
+  });
+
+  it("keeps missing-scope messages compatible with the selected API contract", async () => {
+    const token = await app.get(AdminService).createApplicationToken({
+      name: `wrong-scope-${apId}`,
+      scopes: ["files.read"],
+      allowedApIds: [apId],
+    });
+    for (const [prefix, scope] of [
+      ["ap", "ap.read"],
+      ["acp", "acp.read"],
+    ]) {
+      const result = await request(app.getHttpServer())
+        .get(`/api/server/${prefix}`)
+        .set("X-Server-Token", token.token)
+        .expect(403);
+      expect(result.body.message).toBe(`Missing required scopes: ${scope}`);
+    }
   });
 
   it("normalizes old transfer payload fields before strict validation", async () => {
@@ -348,6 +388,176 @@ describe("AP API and legacy integration compatibility", () => {
       .get(`/api/view/ap/${apId}`)
       .auth(jwt.sign({ ...payload, apId: otherId }), { type: "bearer" })
       .expect(403);
+  });
+
+  it("preserves legacy package IDs inside fallback response envelopes", async () => {
+    const responseData = {
+      apId: "user-value",
+      acpId: "other-user-value",
+      role: "AP_MANAGER",
+    };
+    await db.getRepository(ItemResponseState).save({
+      apId,
+      itemId: "compat-item",
+      unitId: "compat-unit",
+      rowKey: "compat-row",
+      responseData,
+    });
+    for (const [prefix, field] of [
+      ["ap", "apId"],
+      ["acp", "acpId"],
+    ]) {
+      const result = await request(app.getHttpServer())
+        .post(
+          `/api/${prefix}/${apId}/items/compat-item/response-state/with-fallback`,
+        )
+        .auth(adminToken, { type: "bearer" })
+        .send({
+          unitId: "compat-unit",
+          rowKey: "compat-row",
+          itemList: [
+            {
+              itemId: "compat-item",
+              unitId: "compat-unit",
+              rowKey: "compat-row",
+            },
+          ],
+        })
+        .expect(201);
+      expect(result.body.state[field]).toBe(apId);
+      expect(result.body.state.responseData).toEqual(responseData);
+    }
+  });
+
+  it("preserves legacy IDs inside real server-sent job events", async () => {
+    const job = await db.getRepository(ApFileProcessingJob).save({
+      apId,
+      jobType: "archive-download",
+      status: "completed",
+      phase: "completed",
+      phaseLabel: "Ready",
+    });
+    for (const [prefix, field] of [
+      ["ap", "apId"],
+      ["acp", "acpId"],
+    ]) {
+      const result = await request(app.getHttpServer())
+        .get(`/api/${prefix}/${apId}/files/jobs/${job.id}/events`)
+        .auth(adminToken, { type: "bearer" })
+        .expect(200);
+      const data = result.text.match(/^data:\s*(.*)$/m);
+      expect(data).not.toBeNull();
+      expect(JSON.parse(data![1])[field]).toBe(apId);
+    }
+  });
+
+  it("keeps arbitrary tag-map keys unchanged on both API families", async () => {
+    const tags = {
+      apId: ["canonical-looking row"],
+      acpId: ["legacy-looking row"],
+    };
+    for (const prefix of ["ap", "acp"]) {
+      const saved = await request(app.getHttpServer())
+        .put(`/api/${prefix}/${apId}/items/tags`)
+        .auth(adminToken, { type: "bearer" })
+        .send({ tags })
+        .expect(200);
+      expect(saved.body).toEqual(tags);
+      const result = await request(app.getHttpServer())
+        .get(`/api/${prefix}/${apId}/items/tags`)
+        .auth(adminToken, { type: "bearer" })
+        .expect(200);
+      expect(result.body).toEqual(tags);
+    }
+  });
+
+  it("does not translate user-owned unit item fields for legacy consumers", async () => {
+    const items = [
+      {
+        id: "custom-item",
+        apId: "custom AP field",
+        acpId: "custom ACP field",
+        role: "AP_MANAGER",
+        scopes: ["ap.read"],
+      },
+    ];
+    await request(app.getHttpServer())
+      .put(`/api/ap/${apId}/index`)
+      .auth(adminToken, { type: "bearer" })
+      .send({
+        ...index,
+        assessmentParts: [
+          {
+            id: "part",
+            units: [
+              {
+                id: "custom-unit",
+                items,
+                dependencies: [
+                  { id: fixtureFile.originalName, type: "RESOURCE" },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+      .expect(200);
+    for (const prefix of ["ap", "acp"]) {
+      const result = await request(app.getHttpServer())
+        .get(`/api/view/${prefix}/${apId}/units/custom-unit`)
+        .auth(adminToken, { type: "bearer" })
+        .expect(200);
+      expect(result.body.items).toEqual(items);
+      expect(result.body.dependencies[0].downloadUrl).toBe(
+        `/api/${prefix}/${apId}/files/${fixtureFile.id}/download`,
+      );
+    }
+  });
+
+  it("retains legacy transfer download URLs and original file bytes", async () => {
+    for (const [prefix, field] of [
+      ["ap", "apIndex"],
+      ["acp", "acpIndex"],
+    ]) {
+      const result = await request(app.getHttpServer())
+        .get(`/api/server/${prefix}/${apId}/export`)
+        .set("X-Server-Token", integrationToken)
+        .expect(200);
+      expect(result.body[field]).toBeDefined();
+      const url = result.body.files.find(
+        (file: { id: string }) => file.id === fixtureFile.id,
+      ).downloadUrl;
+      expect(url).toBe(
+        `/api/server/${prefix}/${apId}/files/${fixtureFile.id}/download`,
+      );
+      const downloaded = await request(app.getHttpServer())
+        .get(url)
+        .set("X-Server-Token", integrationToken)
+        .expect(200);
+      expect(downloaded.body).toEqual(fixtureBytes);
+    }
+  });
+
+  it("keeps Express case-insensitive path compatibility and opaque raw indexes", async () => {
+    const raw = { ...index, apId: "custom AP", acpId: "custom ACP" };
+    await request(app.getHttpServer())
+      .put(`/api/AP/${apId}/INDEX`)
+      .auth(adminToken, { type: "bearer" })
+      .send(raw)
+      .expect(200);
+    const old = await request(app.getHttpServer())
+      .get(`/API/AcP/${apId}/INDEX`)
+      .auth(adminToken, { type: "bearer" })
+      .expect(200);
+    expect(old.body.apId).toBe("custom AP");
+    expect(old.body.acpId).toBe("custom ACP");
+    const exported = await request(app.getHttpServer())
+      .get(`/api/AcP/${apId}/index/EXPORT/`)
+      .auth(adminToken, { type: "bearer" })
+      .expect(200);
+    expect(exported.headers["content-disposition"]).toContain(
+      `acp-index-${apId}.json`,
+    );
   });
 
   it("retains the existing physical package schema and stored manager enum", async () => {

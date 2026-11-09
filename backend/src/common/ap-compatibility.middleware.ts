@@ -15,10 +15,10 @@ export class ApCompatibilityMiddleware implements NestMiddleware {
     const searchParams = new URLSearchParams(search);
     let queryChanged = false;
     const canonicalPath = pathname.replace(
-      /^(\/api(?:\/(?:server|view))?)\/acp(?=\/|$)/,
+      /^(\/api(?:\/(?:server|view))?)\/acp(?=\/|$)/i,
       "$1/ap",
     );
-    const canonicalRoute = /^(\/api(?:\/(?:server|view))?)\/ap(?:\/|$)/.test(
+    const canonicalRoute = /^(\/api(?:\/(?:server|view))?)\/ap(?:\/|$)/i.test(
       pathname,
     );
     req.apTerminology =
@@ -28,7 +28,7 @@ export class ApCompatibilityMiddleware implements NestMiddleware {
     if (
       req.apTerminology === "acp" &&
       isRawApIndexPath(canonicalPath) &&
-      canonicalPath.endsWith("/export")
+      /\/export\/?$/i.test(canonicalPath)
     ) {
       const setHeader = res.setHeader.bind(res);
       res.setHeader = (name, value) =>
