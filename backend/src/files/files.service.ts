@@ -774,7 +774,7 @@ export class FilesService {
       (parsed.unitProfiles || []).flatMap((profile: any) =>
         Array.isArray(profile?.entries) ? profile.entries : [],
       ),
-    ).slice(0, STRUCTURED_PREVIEW_MAX_COLUMNS);
+    );
 
     const items = (parsed.items || [])
       .slice(0, STRUCTURED_PREVIEW_MAX_ITEMS)
