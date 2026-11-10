@@ -66,15 +66,15 @@ App admins can:
 
 ### AP-level roles
 
-- `ACP_MANAGER`
+- `AP_MANAGER`
 - `READ_ONLY`
 
-`ACP_MANAGER` allows write access to manager functionality for a specific AP.
+`AP_MANAGER` allows write access to manager functionality for a specific AP.
 `READ_ONLY` grants authenticated access to that AP without management rights.
 
 ### Management API validation
 
-Role assignment accepts only `ACP_MANAGER` and `READ_ONLY`, with a UUID target
+Role assignment accepts only `AP_MANAGER` and `READ_ONLY`, with a UUID target
 user ID. Access updates accept `PRIVATE`, `PUBLIC`, `CREDENTIALS_LIST`, and the
 legacy `REGISTERED` model. If supplied, `allowRegistered` must be a JSON boolean:
 strings, numbers, and `null` are rejected with HTTP 400 before persistence.
@@ -124,7 +124,7 @@ username/password list through the AP access settings.
 
 ### Backend authority
 
-The backend is the final authority. `AcpAccessGuard` can grant access when:
+The backend is the final authority. `ApAccessGuard` can grant access when:
 
 1. the current user is an app admin,
 2. the current user holds an AP role,
@@ -139,14 +139,14 @@ Angular guards guide the user into the right flow:
 
 - `adminGuard`
 - `authGuard`
-- `acpManagerGuard`
-- `acpViewGuard`
+- `apManagerGuard`
+- `apViewGuard`
 
 They improve UX, but they do not replace backend authorization.
 
 ## Feature Flags
 
-Feature flags are stored in `AcpAccessConfig.featureConfig` and mainly affect non-manager viewers.
+Feature flags are stored in `ApAccessConfig.featureConfig` and mainly affect non-manager viewers.
 
 Important supported flags include:
 
@@ -219,7 +219,7 @@ credential tokens can never be used for admin-only configuration areas.
 | Anonymous visitor | Yes | No | No | No |
 | Credential viewer | Only linked AP | No | No | No |
 | OIDC user with `READ_ONLY` | Yes | Yes for assigned AP | No | No |
-| OIDC user with `ACP_MANAGER` | Yes | Yes for assigned AP | Yes for assigned AP | No |
+| OIDC user with `AP_MANAGER` | Yes | Yes for assigned AP | Yes for assigned AP | No |
 | OIDC app admin | Yes | Yes | Yes | Yes |
 
 ## Access UX on the Frontend

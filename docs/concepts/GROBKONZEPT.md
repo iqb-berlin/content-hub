@@ -27,7 +27,7 @@ Nachweis eines formal geprueften und signierten AP-Releases.
 | Nutzergruppe | Verantwortung und Zugang |
 | --- | --- |
 | App-Administration | Benutzer, globale Einstellungen und AP-Verwaltung |
-| ACP_MANAGER | Inhalte und Konfiguration zugewiesener APs bearbeiten |
+| AP_MANAGER | Inhalte und Konfiguration zugewiesener APs bearbeiten |
 | READ_ONLY | Zugewiesene APs im erlaubten Funktionsumfang betrachten |
 | AP-Zugangsdaten-Nutzer | Auf das zugeordnete AP begrenzter Betrachtungszugang |
 | Anonyme Besucher | Oeffentliche APs im freigeschalteten Umfang betrachten |

@@ -4,10 +4,10 @@ import { join } from 'node:path';
 import { createOidcAppToken, installOidcSession } from './oidc-test-session';
 import { conditionalVisibilityDefinition } from './fixtures/conditional-visibility';
 
-const acpId = '10000000-0000-4000-8000-000000000201';
+const apId = '10000000-0000-4000-8000-000000000201';
 const managerId = '10000000-0000-4000-8000-000000000002';
-const configUrl = `/api/view/acp/${acpId}/review/config`;
-const reviewUrl = `/view/${acpId}/sequence/review-navigation?kind=booklet`;
+const configUrl = `/api/view/ap/${apId}/review/config`;
+const reviewUrl = `/view/${apId}/sequence/review-navigation?kind=booklet`;
 
 // Deterministic Verona contract fixture. Configuration, authorization and persistence
 // use the real API; only booklet content and the player are substituted.
@@ -47,13 +47,13 @@ const playerHtml = `<!doctype html><html><body><main id="view">Warte auf Start</
 
 async function installContent(page: Page) {
   await installOidcSession(page, managerId, 'e2e-manager');
-  await page.route(`**/api/view/acp/${acpId}`, async (route) => {
+  await page.route(`**/api/view/ap/${apId}`, async (route) => {
     const response = await route.fetch();
     const data = await response.json();
     data.featureConfig = { ...data.featureConfig, showMetadata: true, enableCommenting: false };
     await route.fulfill({ json: data });
   });
-  await page.route(`**/api/view/acp/${acpId}/sequences/review-navigation?*`, (route) =>
+  await page.route(`**/api/view/ap/${apId}/sequences/review-navigation?*`, (route) =>
     route.fulfill({
       json: {
         id: 'review-navigation',
@@ -65,7 +65,7 @@ async function installContent(page: Page) {
       },
     }),
   );
-  await page.route(`**/api/view/acp/${acpId}/units/review-u*`, (route) => {
+  await page.route(`**/api/view/ap/${apId}/units/review-u*`, (route) => {
     const id = new URL(route.request().url()).pathname.split('/').at(-1)!;
     return route.fulfill({
       json: {
@@ -94,7 +94,7 @@ async function installContent(page: Page) {
           },
         });
   });
-  await page.route(`**/api/acp/${acpId}/files/review-metadata/preview`, (route) =>
+  await page.route(`**/api/ap/${apId}/files/review-metadata/preview`, (route) =>
     route.fulfill({
       json: {
         structuredData: {
@@ -153,7 +153,7 @@ test('shows readable coding and a reversible partial solution in the booklet rev
       },
     ],
   };
-  await page.route(`**/api/view/acp/${acpId}/units/review-u*`, (route) =>
+  await page.route(`**/api/view/ap/${apId}/units/review-u*`, (route) =>
     route.fulfill({
       json: {
         id: 'review-u1',
@@ -323,7 +323,7 @@ for (const mode of ['move', 'copy', 'conflict'] as const) {
     const scheme = {
       variableCodings: [variable('A', 'X'), variable('B', mode === 'move' ? 'Y' : 'X')],
     };
-    await page.route(`**/api/view/acp/${acpId}/units/review-u*`, (route) =>
+    await page.route(`**/api/view/ap/${apId}/units/review-u*`, (route) =>
       route.fulfill({
         json: {
           id: 'review-u1',
@@ -455,7 +455,7 @@ test('persists hiding the metadata tab across reload and task changes and can re
   const initial = await initialResponse.json();
   await installContent(page);
   try {
-    await page.goto(`/view/${acpId}/review/manage`);
+    await page.goto(`/view/${apId}/review/manage`);
     const setting = page.getByRole('checkbox', {
       name: 'Reiter „Metadaten“ ausblenden',
       exact: true,
@@ -489,11 +489,11 @@ test('persists hiding the metadata tab across reload and task changes and can re
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Metadaten', exact: true })).toHaveCount(0);
 
-    await page.goto(`/view/${acpId}/unit/review-u1`);
+    await page.goto(`/view/${apId}/unit/review-u1`);
     await page.getByRole('button', { name: 'Zusatzdaten anzeigen', exact: true }).click();
     await expect(page.locator('.meta-dl')).toContainText('Deutsch');
 
-    await page.goto(`/view/${acpId}/review/manage`);
+    await page.goto(`/view/${apId}/review/manage`);
     await setting.uncheck();
     await expect(developerSetting).toBeEnabled();
     const shown = page.waitForResponse(
@@ -524,7 +524,7 @@ test('persists the visibility choice and limits hiding to review metadata', asyn
   const initial = await initialResponse.json();
   await installContent(page);
   try {
-    await page.goto(`/view/${acpId}/review/manage`);
+    await page.goto(`/view/${apId}/review/manage`);
     const setting = page.getByRole('checkbox', {
       name: 'Namen und Kürzel der Aufgabenentwickler/innen ausblenden',
     });
@@ -545,11 +545,11 @@ test('persists the visibility choice and limits hiding to review metadata', asyn
       fullPage: true,
     });
 
-    await page.goto(`/view/${acpId}/unit/review-u1`);
+    await page.goto(`/view/${apId}/unit/review-u1`);
     await page.getByRole('button', { name: 'Zusatzdaten anzeigen', exact: true }).click();
     await expect(page.locator('.meta-dl')).toContainText('Elsa Mignon (EM)');
 
-    await page.goto(`/view/${acpId}/review/manage`);
+    await page.goto(`/view/${apId}/review/manage`);
     await setting.uncheck();
     const shown = page.waitForResponse(
       (response) => response.url().endsWith(configUrl) && response.request().method() === 'PUT',

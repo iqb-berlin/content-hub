@@ -1,11 +1,18 @@
 import { APP_INTERCEPTOR } from "@nestjs/core";
 import { ReviewerColumnsInterceptor } from "./item-explorer/reviewer-columns.interceptor";
-import { Module } from "@nestjs/common";
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from "@nestjs/common";
+import { ApCompatibilityMiddleware } from "./common/ap-compatibility.middleware";
+import { ApContractInterceptor } from "./common/ap-contract.interceptor";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
-import { AcpModule } from "./acp/acp.module";
+import { ApModule } from "./ap/ap.module";
 import { FilesModule } from "./files/files.module";
 import { SnapshotsModule } from "./snapshots/snapshots.module";
 import { ViewsModule } from "./views/views.module";
@@ -20,6 +27,7 @@ import { createApplicationDataSource } from "./database/database-compatibility";
 
 @Module({
   providers: [
+    { provide: APP_INTERCEPTOR, useClass: ApContractInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ReviewerColumnsInterceptor },
   ],
   imports: [
@@ -58,7 +66,7 @@ import { createApplicationDataSource } from "./database/database-compatibility";
     }),
     AuthModule,
     UsersModule,
-    AcpModule,
+    ApModule,
     FilesModule,
     SnapshotsModule,
     ViewsModule,
@@ -71,4 +79,10 @@ import { createApplicationDataSource } from "./database/database-compatibility";
     ItemExplorerModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(ApCompatibilityMiddleware)
+      .forRoutes({ path: "{*path}", method: RequestMethod.ALL });
+  }
+}

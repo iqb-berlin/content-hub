@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { User, AcpUserRole, AcpRole } from "../database/entities";
+import { User, ApUserRole, ApRole } from "../database/entities";
 import { CreateUserDto, UpdateUserDto } from "./dto/user.dto";
 
 @Injectable()
@@ -14,8 +14,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(AcpUserRole)
-    private readonly acpUserRoleRepository: Repository<AcpUserRole>,
+    @InjectRepository(ApUserRole)
+    private readonly apUserRoleRepository: Repository<ApUserRole>,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -88,17 +88,17 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // Ensure at least one ACP manager remains per ACP.
-    const managerRoles = await this.acpUserRoleRepository.find({
-      where: { userId: id, role: AcpRole.ACP_MANAGER },
+    // Ensure at least one AP manager remains per AP.
+    const managerRoles = await this.apUserRoleRepository.find({
+      where: { userId: id, role: ApRole.AP_MANAGER },
     });
     for (const managerRole of managerRoles) {
-      const managerCount = await this.acpUserRoleRepository.count({
-        where: { acpId: managerRole.acpId, role: AcpRole.ACP_MANAGER },
+      const managerCount = await this.apUserRoleRepository.count({
+        where: { apId: managerRole.apId, role: ApRole.AP_MANAGER },
       });
       if (managerCount <= 1) {
         throw new BadRequestException(
-          `Cannot delete user because AP ${managerRole.acpId} would have no ACP_MANAGER`,
+          `Cannot delete user because AP ${managerRole.apId} would have no AP_MANAGER`,
         );
       }
     }

@@ -1,3 +1,4 @@
+import { ApResponseEnvelopes } from "../common/ap-contract.metadata";
 import {
   Body,
   Controller,
@@ -69,7 +70,7 @@ class CreateApplicationTokenDto {
   @IsOptional()
   @IsArray()
   @IsUUID("all", { each: true })
-  allowedAcpIds?: string[] | null;
+  allowedApIds?: string[] | null;
 }
 
 @ApiTags("Administration")
@@ -94,15 +95,16 @@ export class AdminController {
 
   @Get("application-tokens")
   @ApiOperation({ summary: "List application tokens" })
+  @ApResponseEnvelopes("items")
   async listApplicationTokens(
     @Query("limit") limit?: string,
     @Query("offset") offset?: string,
-    @Query("allowedAcpId") allowedAcpId?: string,
+    @Query("allowedApId") allowedApId?: string,
   ) {
     return this.adminService.listApplicationTokens({
       limit: limit === undefined ? undefined : Number.parseInt(limit, 10),
       offset: offset === undefined ? undefined : Number.parseInt(offset, 10),
-      allowedAcpId,
+      allowedApId,
     });
   }
 

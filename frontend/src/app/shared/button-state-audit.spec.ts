@@ -61,7 +61,7 @@ describe('stateful button audit', () => {
         !/class="[^"]*\bbtn-state\b/.test(block) || !/\[attr\.aria-expanded\]=/.test(block),
     );
 
-    // Native disclosures (such as the ACP index details) need no state button.
+    // Native disclosures (such as the AP index details) need no state button.
     expect(disclosures.length).toBeGreaterThan(0);
     expect(invalid.map(location)).toEqual([]);
   });
@@ -77,7 +77,7 @@ describe('stateful button audit', () => {
   });
 
   it.each([
-    ['../acp-manager/files/file-preview-panel.component.ts', 'Vorschauformat', 3],
+    ['../ap-manager/files/file-preview-panel.component.ts', 'Vorschauformat', 3],
     ['../views/unit-view/unit-view.component.ts', 'Zusatzdaten', 4],
   ])('keeps %s as a native button group with exclusive pressed state', (file, label, count) => {
     const source = productionSources[file];

@@ -31,7 +31,7 @@ export interface PreviewResponseStateItem {
 }
 
 export interface ItemExplorerPreviewRequest {
-  acpId: string;
+  apId: string;
   perspective: ItemExplorerPerspective;
   item: ExplorerItem;
   itemList: PreviewResponseStateItem[];
@@ -129,7 +129,7 @@ export class ItemExplorerPreviewCoordinator implements OnDestroy {
     );
     const assets$ = request.reuseUnit
       ? of(null)
-      : this.loader.load(request.acpId, request.perspective, request.item.unitId);
+      : this.loader.load(request.apId, request.perspective, request.item.unitId);
 
     return forkJoin({ assets: assets$, responseState: responseState$ }).pipe(
       map(({ assets, responseState }) => {
@@ -165,16 +165,10 @@ export class ItemExplorerPreviewCoordinator implements OnDestroy {
   }
 
   private createResponseStateRequest(request: ItemExplorerPreviewRequest): Observable<any> {
-    const { acpId, item, itemList } = request;
+    const { apId, item, itemList } = request;
     return item.rowKey
-      ? this.api.getResponseStateWithFallback(
-          acpId,
-          item.itemId,
-          item.unitId,
-          itemList,
-          item.rowKey,
-        )
-      : this.api.getResponseStateWithFallback(acpId, item.itemId, item.unitId, itemList);
+      ? this.api.getResponseStateWithFallback(apId, item.itemId, item.unitId, itemList, item.rowKey)
+      : this.api.getResponseStateWithFallback(apId, item.itemId, item.unitId, itemList);
   }
 
   private resolveCompletedStatus(result: ItemExplorerPreviewResult): PreviewStatus {

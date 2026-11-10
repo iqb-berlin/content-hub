@@ -45,9 +45,9 @@ Key pieces:
 - `AuthController` exposes `/auth/credential-login`, `/auth/oidc-config`,
   `/auth/oidc-callback`, `/auth/profile`, and logout endpoints.
 - `JwtAuthGuard` protects authenticated routes.
-- `RolesGuard` enforces `APP_ADMIN` and `ACP_MANAGER` style role checks.
+- `RolesGuard` enforces `APP_ADMIN` and `AP_MANAGER` style role checks.
 - `OidcAuthGuard` is used on admin endpoints to require OIDC-backed sessions.
-- `AcpAccessGuard` makes AP-specific access decisions and supports optional auth.
+- `ApAccessGuard` makes AP-specific access decisions and supports optional auth.
 
 ### Users module
 
@@ -126,7 +126,7 @@ This module powers the read-only browser experience under `/api/view`. It serves
 - unit, item, sequence, and index views,
 - persisted item preferences for non-manager viewers.
 
-This module depends heavily on `AcpAccessGuard` and AP feature flags.
+This module depends heavily on `ApAccessGuard` and AP feature flags.
 
 ### Items module
 
@@ -182,7 +182,7 @@ The backend has two overlapping authorization systems:
 ### Global user roles
 
 - `APP_ADMIN`
-- `ACP_MANAGER`
+- `AP_MANAGER`
 - `READ_ONLY`
 
 `APP_ADMIN` is global. AP roles are attached per AP.
@@ -201,7 +201,7 @@ In current application behavior, newly created APs start with `PRIVATE`. The
 with AP roles, while the persisted base configuration is typically `PRIVATE`, `PUBLIC`,
 or `CREDENTIALS_LIST`.
 
-The `AcpAccessGuard` considers:
+The `ApAccessGuard` considers:
 
 1. app-admin status,
 2. credential-token AP match,

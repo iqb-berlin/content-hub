@@ -6,12 +6,12 @@ function createComponent(options?: { startPageData?: Record<string, unknown> }) 
   const route = {
     snapshot: {
       paramMap: {
-        get: (key: string) => (key === 'acpId' ? 'acp-1' : 'item-1'),
+        get: (key: string) => (key === 'apId' ? 'ap-1' : 'item-1'),
       },
     },
   };
   const api = {
-    getAcpStartPage: vi.fn().mockReturnValue(of(options?.startPageData || { featureConfig: {} })),
+    getApStartPage: vi.fn().mockReturnValue(of(options?.startPageData || { featureConfig: {} })),
     getViewItems: vi.fn().mockReturnValue(of([])),
     getViewUnit: vi.fn().mockReturnValue(of(null)),
     createComment: vi.fn().mockReturnValue(of({})),
@@ -39,7 +39,7 @@ function createComponent(options?: { startPageData?: Record<string, unknown> }) 
 }
 
 describe('ItemViewComponent', () => {
-  it('keeps player highlighting disabled when the ACP flag is missing', () => {
+  it('keeps player highlighting disabled when the AP flag is missing', () => {
     const component = createComponent();
 
     component.ngOnInit();
@@ -47,7 +47,7 @@ describe('ItemViewComponent', () => {
     expect(component.playerFocusHighlightEnabled).toBe(false);
   });
 
-  it('disables player highlighting when the ACP flag is set to false', () => {
+  it('disables player highlighting when the AP flag is set to false', () => {
     const component = createComponent({
       startPageData: {
         featureConfig: {

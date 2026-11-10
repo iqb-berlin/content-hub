@@ -18,7 +18,7 @@ neu eingegangene Kommentare hinzukommen.
 
 Migration `1789600000000-ReviewReadinessSnapshots` ergänzt die Tabelle
 `review_readiness_snapshots` (ein Ergebnis pro AP, Löschung zusammen mit dem AP).
-`POST /api/view/acp/:acpId/review/readiness` prüft und speichert;
+`POST /api/view/ap/:apId/review/readiness` prüft und speichert;
 `GET` liefert das letzte Ergebnis mit aktuell berechnetem `stale`-Kennzeichen.
 Beide Endpunkte benötigen `review:manage`.
 

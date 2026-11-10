@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { CommentsService } from "./comments.service";
-import { Acp, Comment, CommentTargetType } from "../database/entities";
+import { Ap, Comment, CommentTargetType } from "../database/entities";
 import { ReviewPolicyService } from "./review-policy.service";
 
 describe("CommentsService", () => {
@@ -26,7 +26,7 @@ describe("CommentsService", () => {
   let accessConfigRepository: { findOne: jest.Mock };
   let unitParserService: { getItemListFromFiles: jest.Mock };
   let fileCatalogCache: { get: jest.Mock };
-  let acpRepository: { findOne: jest.Mock };
+  let apRepository: { findOne: jest.Mock };
   let reviewManifestService: { getManifest: jest.Mock };
 
   beforeEach(() => {
@@ -66,9 +66,9 @@ describe("CommentsService", () => {
     fileCatalogCache = {
       get: jest.fn().mockResolvedValue({ signature: "files-v1" }),
     };
-    acpRepository = {
+    apRepository = {
       findOne: jest.fn().mockResolvedValue({
-        acpIndex: null,
+        apIndex: null,
         updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       }),
     };
@@ -85,8 +85,8 @@ describe("CommentsService", () => {
       getRepository: (entity: any) =>
         entity === Comment
           ? commentRepository
-          : entity === Acp
-            ? acpRepository
+          : entity === Ap
+            ? apRepository
             : accessConfigRepository,
       transaction: async (fn: any): Promise<any> => fn(manager),
     };
@@ -96,35 +96,35 @@ describe("CommentsService", () => {
       new ReviewPolicyService(accessConfigRepository as any),
       unitParserService as any,
       fileCatalogCache as any,
-      acpRepository as any,
+      apRepository as any,
       reviewManifestService as any,
     );
   });
 
-  it("queries comments by ACP, user and credential", async () => {
+  it("queries comments by AP, user and credential", async () => {
     commentRepository.find.mockResolvedValue([{ id: "c-1" }]);
 
-    await expect(service.findByAcp("acp-1")).resolves.toEqual([{ id: "c-1" }]);
-    await expect(service.findByUser("acp-1", "u-1")).resolves.toEqual([
+    await expect(service.findByAp("ap-1")).resolves.toEqual([{ id: "c-1" }]);
+    await expect(service.findByUser("ap-1", "u-1")).resolves.toEqual([
       { id: "c-1" },
     ]);
     await expect(
-      service.findByCredential("acp-1", "credential-1"),
+      service.findByCredential("ap-1", "credential-1"),
     ).resolves.toEqual([{ id: "c-1" }]);
 
     expect(commentRepository.find).toHaveBeenNthCalledWith(1, {
-      where: expect.objectContaining({ acpId: "acp-1" }),
+      where: expect.objectContaining({ apId: "ap-1" }),
       relations: ["user"],
       order: { createdAt: "DESC" },
     });
     expect(commentRepository.find).toHaveBeenNthCalledWith(2, {
-      where: expect.objectContaining({ acpId: "acp-1", userId: "u-1" }),
+      where: expect.objectContaining({ apId: "ap-1", userId: "u-1" }),
       relations: ["user"],
       order: { createdAt: "DESC" },
     });
     expect(commentRepository.find).toHaveBeenNthCalledWith(3, {
       where: expect.objectContaining({
-        acpId: "acp-1",
+        apId: "ap-1",
         credentialId: "credential-1",
       }),
       relations: ["user"],
@@ -134,7 +134,7 @@ describe("CommentsService", () => {
 
   it("creates comments", async () => {
     const created = await service.create({
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "u-1",
       targetType: CommentTargetType.ITEM,
       targetId: "item-1",
@@ -144,7 +144,7 @@ describe("CommentsService", () => {
     expect(commentRepository.create).toHaveBeenCalled();
     expect(created).toEqual(
       expect.objectContaining({
-        acpId: "acp-1",
+        apId: "ap-1",
         commentText: "hello",
       }),
     );
@@ -153,7 +153,7 @@ describe("CommentsService", () => {
   it("rejects blank comment text without relying on controller validation", async () => {
     await expect(
       service.create({
-        acpId: "acp-1",
+        apId: "ap-1",
         targetType: CommentTargetType.ITEM,
         targetId: "unit-1_item-1",
         commentText: "   ",
@@ -162,15 +162,15 @@ describe("CommentsService", () => {
     expect(commentRepository.save).not.toHaveBeenCalled();
   });
 
-  it("deletes only unresolved legacy task-sequence comments by ACP", async () => {
+  it("deletes only unresolved legacy task-sequence comments by AP", async () => {
     deleteQueryBuilder.execute.mockResolvedValueOnce({ affected: 4 });
     commentRepository.count.mockResolvedValueOnce(7);
-    await expect(
-      service.deleteUnreferencedLegacyByAcp("acp-1"),
-    ).resolves.toEqual({ deletedCount: 4, retainedCount: 7 });
+    await expect(service.deleteUnreferencedLegacyByAp("ap-1")).resolves.toEqual(
+      { deletedCount: 4, retainedCount: 7 },
+    );
 
-    expect(deleteQueryBuilder.where).toHaveBeenCalledWith('"acp_id" = :acpId', {
-      acpId: "acp-1",
+    expect(deleteQueryBuilder.where).toHaveBeenCalledWith('"acp_id" = :apId', {
+      apId: "ap-1",
     });
     expect(deleteQueryBuilder.andWhere).toHaveBeenCalledWith(
       '"target_type" = :legacyTargetType',
@@ -188,14 +188,14 @@ describe("CommentsService", () => {
 
     deleteQueryBuilder.execute.mockResolvedValueOnce({ affected: undefined });
     commentRepository.count.mockResolvedValueOnce(2);
-    await expect(
-      service.deleteUnreferencedLegacyByAcp("acp-2"),
-    ).resolves.toEqual({ deletedCount: 0, retainedCount: 2 });
+    await expect(service.deleteUnreferencedLegacyByAp("ap-2")).resolves.toEqual(
+      { deletedCount: 0, retainedCount: 2 },
+    );
     expect(commentRepository.count).toHaveBeenNthCalledWith(1, {
-      where: { acpId: "acp-1" },
+      where: { apId: "ap-1" },
     });
     expect(commentRepository.count).toHaveBeenNthCalledWith(2, {
-      where: { acpId: "acp-2" },
+      where: { apId: "ap-2" },
     });
   });
 
@@ -232,9 +232,9 @@ describe("CommentsService", () => {
         },
       ]);
 
-    const all = await service.exportComments("acp-1");
-    const user = await service.exportComments("acp-1", "u-1");
-    const unknownAuthor = await service.exportComments("acp-1");
+    const all = await service.exportComments("ap-1");
+    const user = await service.exportComments("ap-1", "u-1");
+    const unknownAuthor = await service.exportComments("ap-1");
 
     expect(all[0].author).toBe("Display Name");
     expect(user[0].author).toBe("user-b");
@@ -243,7 +243,7 @@ describe("CommentsService", () => {
     expect(commentRepository.find).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
-        where: expect.objectContaining({ acpId: "acp-1", userId: "u-1" }),
+        where: expect.objectContaining({ apId: "ap-1", userId: "u-1" }),
       }),
     );
   });
@@ -281,10 +281,10 @@ describe("CommentsService", () => {
       commentRepository.find.mockResolvedValue([comment]);
       const actor = { userId: "user-1", authorLabel: "ME", isManager: false };
       expect(
-        (await service.getItemThread("acp-1", "unit-1", "item-1", actor))
+        (await service.getItemThread("ap-1", "unit-1", "item-1", actor))
           .comments[0].authorLabel,
       ).toBe(expected);
-      expect((await service.exportComments("acp-1"))[0].author).toBe(expected);
+      expect((await service.exportComments("ap-1"))[0].author).toBe(expected);
     },
   );
 
@@ -302,7 +302,7 @@ describe("CommentsService", () => {
     ]);
 
     const result = await service.exportCommentsByCredential(
-      "acp-1",
+      "ap-1",
       "credential-1",
     );
 
@@ -330,9 +330,9 @@ describe("CommentsService", () => {
       },
     ] as any);
 
-    const byUser = await service.exportCommentsXlsx("acp-1", "u-1");
+    const byUser = await service.exportCommentsXlsx("ap-1", "u-1");
     const byCredential = await service.exportCommentsXlsxByCredential(
-      "acp-1",
+      "ap-1",
       "credential-1",
     );
 
@@ -347,14 +347,14 @@ describe("CommentsService", () => {
       featureConfig: { enableReview: true, enableCommenting: false },
     });
     await expect(
-      service.isCommentingEnabled("acp-1", CommentTargetType.ITEM),
+      service.isCommentingEnabled("ap-1", CommentTargetType.ITEM),
     ).resolves.toBe(false);
 
     accessConfigRepository.findOne.mockResolvedValue({
       featureConfig: { enableReview: true, enableCommenting: true },
     });
     await expect(
-      service.isCommentingEnabled("acp-1", CommentTargetType.ITEM),
+      service.isCommentingEnabled("ap-1", CommentTargetType.ITEM),
     ).resolves.toBe(true);
 
     accessConfigRepository.findOne.mockResolvedValue({
@@ -365,10 +365,10 @@ describe("CommentsService", () => {
       },
     });
     await expect(
-      service.isCommentingEnabled("acp-1", CommentTargetType.UNIT),
+      service.isCommentingEnabled("ap-1", CommentTargetType.UNIT),
     ).resolves.toBe(true);
     await expect(
-      service.isCommentingEnabled("acp-1", CommentTargetType.ITEM),
+      service.isCommentingEnabled("ap-1", CommentTargetType.ITEM),
     ).resolves.toBe(false);
   });
 
@@ -376,7 +376,7 @@ describe("CommentsService", () => {
     const createdAt = new Date("2026-01-01T10:00:00.000Z");
     const root = {
       id: "root",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "other",
       targetType: CommentTargetType.ITEM,
       targetId: "unit-1_item-1",
@@ -411,7 +411,7 @@ describe("CommentsService", () => {
     const actor = { userId: "me", authorLabel: "ME", isManager: false };
 
     const shared = await service.getItemThread(
-      "acp-1",
+      "ap-1",
       "unit-1",
       "item-1",
       actor,
@@ -432,7 +432,7 @@ describe("CommentsService", () => {
       },
     });
     const privateSnapshot = await service.getItemThread(
-      "acp-1",
+      "ap-1",
       "unit-1",
       "item-1",
       actor,
@@ -466,7 +466,7 @@ describe("CommentsService", () => {
       });
       const comment = {
         id: "legacy",
-        acpId: "acp-1",
+        apId: "ap-1",
         userId: "me",
         targetType: CommentTargetType.ITEM,
         targetId,
@@ -489,9 +489,9 @@ describe("CommentsService", () => {
           : [];
       });
       const actor = { userId: "me", authorLabel: "ME", isManager: false };
-      const counts = await service.getItemCommentCounts("acp-1", actor);
+      const counts = await service.getItemCommentCounts("ap-1", actor);
       const thread = await service.getItemThread(
-        "acp-1",
+        "ap-1",
         "unit-1",
         "item-1",
         actor,
@@ -512,7 +512,7 @@ describe("CommentsService", () => {
     commentRepository.find.mockResolvedValue([
       {
         id: "own",
-        acpId: "acp-1",
+        apId: "ap-1",
         userId: "me",
         targetType: CommentTargetType.ITEM,
         targetId: "unit-1_item-1",
@@ -522,7 +522,7 @@ describe("CommentsService", () => {
       },
       {
         id: "hidden",
-        acpId: "acp-1",
+        apId: "ap-1",
         userId: "other",
         targetType: CommentTargetType.ITEM,
         targetId: "unit-1_item-1",
@@ -532,7 +532,7 @@ describe("CommentsService", () => {
       },
       {
         id: "legacy",
-        acpId: "acp-1",
+        apId: "ap-1",
         userId: "me",
         targetType: CommentTargetType.ITEM,
         targetId: "unit-1_item-2",
@@ -550,7 +550,7 @@ describe("CommentsService", () => {
       },
     });
 
-    const snapshot = await service.getItemCommentCounts("acp-1", {
+    const snapshot = await service.getItemCommentCounts("ap-1", {
       userId: "me",
       authorLabel: "ME",
       isManager: false,
@@ -564,7 +564,7 @@ describe("CommentsService", () => {
     expect(commentRepository.find).toHaveBeenCalledWith({
       where: expect.arrayContaining([
         expect.objectContaining({
-          acpId: "acp-1",
+          apId: "ap-1",
           targetType: CommentTargetType.ITEM,
         }),
       ]),
@@ -573,7 +573,7 @@ describe("CommentsService", () => {
 
   it("applies combined filters to both CSV and XLSX without exporting other comments", async () => {
     const base = {
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "manager",
       targetType: CommentTargetType.UNIT,
       targetId: "unit-1",
@@ -612,15 +612,15 @@ describe("CommentsService", () => {
         targetType: CommentTargetType.UNIT,
       },
     };
-    const csv = (
-      await service.exportReviewCommentsCsv("acp-1", actor)
-    ).toString("utf8");
+    const csv = (await service.exportReviewCommentsCsv("ap-1", actor)).toString(
+      "utf8",
+    );
     expect(csv).toContain("Bitte PRÜFEN");
     expect(csv).not.toContain("Andere");
     const ExcelJS = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(
-      (await service.exportReviewCommentsXlsx("acp-1", actor)) as any,
+      (await service.exportReviewCommentsXlsx("ap-1", actor)) as any,
     );
     const sheet = workbook.getWorksheet("Kommentare")!;
     expect(sheet.rowCount).toBe(2);
@@ -632,7 +632,7 @@ describe("CommentsService", () => {
     commentRepository.find.mockResolvedValue([
       {
         id: "mine",
-        acpId: "acp-1",
+        apId: "ap-1",
         userId: "manager",
         targetType: CommentTargetType.ITEM,
         targetId: "unit-1_item-1",
@@ -646,7 +646,7 @@ describe("CommentsService", () => {
       },
     ]);
 
-    const csv = await service.exportReviewCommentsCsv("acp-1", {
+    const csv = await service.exportReviewCommentsCsv("ap-1", {
       userId: "manager",
     });
 
@@ -657,7 +657,7 @@ describe("CommentsService", () => {
     );
     expect(csv.toString("utf8")).toContain('"\'=2+2"');
     expect(csv.toString("utf8").startsWith("\uFEFF")).toBe(true);
-    await expect(service.exportReviewCommentsXlsx("acp-1", {})).rejects.toThrow(
+    await expect(service.exportReviewCommentsXlsx("ap-1", {})).rejects.toThrow(
       ForbiddenException,
     );
   });
@@ -719,7 +719,7 @@ describe("CommentsService", () => {
       const date = new Date("2026-01-01T10:00:00.000Z");
       const root = {
         id: "root",
-        acpId: "acp-1",
+        apId: "ap-1",
         userId: "other",
         groupId: scenario.foreignGroup ? "foreign" : "group",
         deletedAt: scenario.deleted ? date : null,
@@ -728,7 +728,7 @@ describe("CommentsService", () => {
       };
       const replies = ["reply-1", "reply-2"].map((id) => ({
         id,
-        acpId: "acp-1",
+        apId: "ap-1",
         userId: "me",
         groupId: "group",
         parentCommentId: "root",
@@ -763,7 +763,7 @@ describe("CommentsService", () => {
         : { userId: "me", visible: scenario.visible };
       const csv = (
         await service.exportReviewCommentsCsv(
-          "acp-1",
+          "ap-1",
           actor || { userId: "me", isManager: true },
         )
       ).toString("utf8");
@@ -775,7 +775,7 @@ describe("CommentsService", () => {
       const ExcelJS = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(
-        (await service.exportReviewCommentsXlsx("acp-1", actor)) as any,
+        (await service.exportReviewCommentsXlsx("ap-1", actor)) as any,
       );
       const sheet = workbook.getWorksheet("Kommentare")!;
       const headers = sheet.getRow(1).values as unknown[];
@@ -809,8 +809,8 @@ describe("CommentsService", () => {
           { id: "a", name: "Danach" },
         ],
       }));
-      acpRepository.findOne.mockResolvedValue({
-        acpIndex: { assessmentParts: [{ units }] },
+      apRepository.findOne.mockResolvedValue({
+        apIndex: { assessmentParts: [{ units }] },
       });
       unitParserService.getItemListFromFiles.mockResolvedValue({ items: [] });
       reviewManifestService.getManifest.mockResolvedValue({
@@ -831,7 +831,7 @@ describe("CommentsService", () => {
         extra = {},
       ) => ({
         id,
-        acpId: "acp-1",
+        apId: "ap-1",
         userId: actor.userId,
         credentialId: actor.credentialId,
         targetType: itemId ? CommentTargetType.ITEM : CommentTargetType.UNIT,
@@ -864,12 +864,12 @@ describe("CommentsService", () => {
         }),
       ]);
       const csv = (
-        await service.exportReviewCommentsCsv("acp-1", actor)
+        await service.exportReviewCommentsCsv("ap-1", actor)
       ).toString("utf8");
       const ExcelJS = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(
-        (await service.exportReviewCommentsXlsx("acp-1", actor)) as any,
+        (await service.exportReviewCommentsXlsx("ap-1", actor)) as any,
       );
       const sheet = workbook.getWorksheet("Kommentare")!;
       const rows: string[][] = [];
@@ -915,21 +915,21 @@ describe("CommentsService", () => {
       );
       commentRepository.find.mockResolvedValue([]);
       const emptyCsv = (
-        await service.exportReviewCommentsCsv("acp-1", actor)
+        await service.exportReviewCommentsCsv("ap-1", actor)
       ).toString("utf8");
       expect(emptyCsv.split("\r\n")).toHaveLength(2);
       await workbook.xlsx.load(
-        (await service.exportReviewCommentsXlsx("acp-1", actor)) as any,
+        (await service.exportReviewCommentsXlsx("ap-1", actor)) as any,
       );
       expect(workbook.getWorksheet("Kommentare")!.rowCount).toBe(1);
     },
   );
 
-  it("uses ACP labels and content order for the shared CSV and XLSX projection", async () => {
+  it("uses AP labels and content order for the shared CSV and XLSX projection", async () => {
     const date = new Date("2026-01-01T10:00:00.000Z");
-    acpRepository.findOne.mockResolvedValue({
+    apRepository.findOne.mockResolvedValue({
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-      acpIndex: {
+      apIndex: {
         assessmentParts: [
           {
             bookletModules: [
@@ -967,7 +967,7 @@ describe("CommentsService", () => {
       itemId?: string,
     ) => ({
       id,
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "manager",
       targetType,
       targetId,
@@ -1012,7 +1012,7 @@ describe("CommentsService", () => {
       comment("unit-2", CommentTargetType.UNIT, "unit-2", "Kommentar Unit 2"),
     ]);
 
-    const csv = await service.exportReviewCommentsCsv("acp-1", {
+    const csv = await service.exportReviewCommentsCsv("ap-1", {
       userId: "manager",
     });
     const csvText = csv.toString("utf8");
@@ -1035,7 +1035,7 @@ describe("CommentsService", () => {
       csvText.indexOf("Kommentar Unit 1"),
     );
 
-    const xlsx = await service.exportReviewCommentsXlsx("acp-1", {
+    const xlsx = await service.exportReviewCommentsXlsx("ap-1", {
       userId: "manager",
     });
     const ExcelJS = await import("exceljs");
@@ -1073,11 +1073,11 @@ describe("CommentsService", () => {
         }),
       };
       const restrictedCsv = (
-        await service.exportReviewCommentsCsv("acp-1", actor)
+        await service.exportReviewCommentsCsv("ap-1", actor)
       ).toString("utf8");
       const restrictedWorkbook = new ExcelJS.Workbook();
       await restrictedWorkbook.xlsx.load(
-        (await service.exportReviewCommentsXlsx("acp-1", actor)) as any,
+        (await service.exportReviewCommentsXlsx("ap-1", actor)) as any,
       );
       const sheetData = JSON.stringify(
         restrictedWorkbook.getWorksheet("Kommentare")!.getSheetValues(),
@@ -1099,7 +1099,7 @@ describe("CommentsService", () => {
     commentRepository.find.mockResolvedValue([
       {
         id: "old-comment",
-        acpId: "acp-1",
+        apId: "ap-1",
         credentialId: "old-credential-id",
         credentialUsername: "reviewer",
         targetType: CommentTargetType.ITEM,
@@ -1121,7 +1121,7 @@ describe("CommentsService", () => {
       },
     });
 
-    const snapshot = await service.getItemThread("acp-1", "unit-1", "item-1", {
+    const snapshot = await service.getItemThread("ap-1", "unit-1", "item-1", {
       credentialId: "new-credential-id",
       credentialUsername: "reviewer",
       authorLabel: "RE",
@@ -1143,7 +1143,7 @@ describe("CommentsService", () => {
     });
     commentRepository.findOne.mockResolvedValue({
       id: "reply-1",
-      acpId: "acp-1",
+      apId: "ap-1",
       targetType: CommentTargetType.ITEM,
       targetId: "unit-1_item-1",
       unitId: "unit-1",
@@ -1157,7 +1157,7 @@ describe("CommentsService", () => {
     }));
 
     const result = await service.createItemComment(
-      "acp-1",
+      "ap-1",
       {
         unitId: "unit-1",
         itemId: "item-1",
@@ -1173,7 +1173,7 @@ describe("CommentsService", () => {
     );
 
     expect(unitParserService.getItemListFromFiles).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {},
       commentRepository.manager,
     );
@@ -1201,7 +1201,7 @@ describe("CommentsService", () => {
     });
     commentRepository.findOne.mockResolvedValue({
       id: "legacy-root",
-      acpId: "acp-1",
+      apId: "ap-1",
       targetType: CommentTargetType.ITEM,
       targetId: "unit-1_item-1",
       unitId: null,
@@ -1217,7 +1217,7 @@ describe("CommentsService", () => {
 
     await expect(
       service.createItemComment(
-        "acp-1",
+        "ap-1",
         {
           unitId: "unit-1",
           itemId: "item-1",
@@ -1248,7 +1248,7 @@ describe("CommentsService", () => {
     });
     commentRepository.findOne.mockResolvedValue({
       id: "foreign-root",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "other",
       targetType: CommentTargetType.ITEM,
       targetId: "unit-1_item-1",
@@ -1259,7 +1259,7 @@ describe("CommentsService", () => {
 
     await expect(
       service.createItemComment(
-        "acp-1",
+        "ap-1",
         {
           unitId: "unit-1",
           itemId: "item-1",
@@ -1276,7 +1276,7 @@ describe("CommentsService", () => {
     const date = new Date("2026-01-01T10:00:00.000Z");
     const own = {
       id: "own",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "me",
       targetType: CommentTargetType.ITEM,
       targetId: "unit-1_item-1",
@@ -1315,13 +1315,13 @@ describe("CommentsService", () => {
     const actor = { userId: "me", authorLabel: "ME", isManager: false };
 
     const before = await service.getItemThread(
-      "acp-1",
+      "ap-1",
       "unit-1",
       "item-1",
       actor,
     );
     const after = await service.getItemThread(
-      "acp-1",
+      "ap-1",
       "unit-1",
       "item-1",
       actor,
@@ -1345,7 +1345,7 @@ describe("CommentsService", () => {
       },
     });
 
-    await service.getItemThread("acp-1", "unit-1", "01", {
+    await service.getItemThread("ap-1", "unit-1", "01", {
       userId: "me",
       authorLabel: "ME",
       isManager: false,
@@ -1379,13 +1379,13 @@ describe("CommentsService", () => {
       },
     });
 
-    await service.getItemThread("acp-1", "unit-1", "item-1", {
+    await service.getItemThread("ap-1", "unit-1", "item-1", {
       userId: "me",
       authorLabel: "ME",
       isManager: false,
     });
     const aliasedThread = await service.getItemThread(
-      "acp-1",
+      "ap-1",
       "unit-1",
       "unit-1_item-1",
       {
@@ -1427,8 +1427,8 @@ describe("CommentsService", () => {
     });
     const actor = { userId: "me", authorLabel: "ME", isManager: false };
 
-    await service.getItemThread("acp-1", "U", "U_I", actor);
-    await service.getItemThread("acp-1", "U", "I", actor);
+    await service.getItemThread("ap-1", "U", "U_I", actor);
+    await service.getItemThread("ap-1", "U", "I", actor);
 
     expect(commentRepository.find.mock.calls[0][0].where).toEqual([
       expect.objectContaining({ unitId: "U", itemId: "U_I" }),
@@ -1454,8 +1454,8 @@ describe("CommentsService", () => {
       .mockResolvedValueOnce({ signature: "files-v2" });
     const actor = { userId: "me", authorLabel: "ME", isManager: false };
 
-    await service.getItemThread("acp-1", "unit-1", "item-1", actor);
-    await service.getItemThread("acp-1", "unit-1", "item-1", actor);
+    await service.getItemThread("ap-1", "unit-1", "item-1", actor);
+    await service.getItemThread("ap-1", "unit-1", "item-1", actor);
 
     expect(unitParserService.getItemListFromFiles).toHaveBeenCalledTimes(2);
   });
@@ -1478,8 +1478,8 @@ describe("CommentsService", () => {
     });
     const actor = { userId: "me", authorLabel: "ME", isManager: false };
 
-    await service.getItemThread("acp-1", "a_b", "c", actor);
-    await service.getItemThread("acp-1", "a", "b_c", actor);
+    await service.getItemThread("ap-1", "a_b", "c", actor);
+    await service.getItemThread("ap-1", "a", "b_c", actor);
 
     expect(commentRepository.find.mock.calls[0][0].where).toEqual([
       expect.objectContaining({ unitId: "a_b", itemId: "c" }),
@@ -1500,8 +1500,8 @@ describe("CommentsService", () => {
     unitParserService.getItemListFromFiles.mockResolvedValue({
       items: [{ unitId: "unit-1", itemId: "unit-1_item-1" }],
     });
-    acpRepository.findOne.mockResolvedValue({
-      acpIndex: {
+    apRepository.findOne.mockResolvedValue({
+      apIndex: {
         assessmentParts: [
           {
             units: [
@@ -1523,15 +1523,13 @@ describe("CommentsService", () => {
       },
     ]);
     const actor = { userId: "me", authorLabel: "ME", isManager: false };
-    expect((await service.getItemCommentCounts("acp-1", actor)).counts).toEqual(
-      [
-        { unitId: "unit-1", itemId: "item-1", count: 1, codingCount: 0 },
-        { unitId: "unit-1", itemId: "unit-1_item-1", count: 0, codingCount: 0 },
-      ],
-    );
+    expect((await service.getItemCommentCounts("ap-1", actor)).counts).toEqual([
+      { unitId: "unit-1", itemId: "item-1", count: 1, codingCount: 0 },
+      { unitId: "unit-1", itemId: "unit-1_item-1", count: 0, codingCount: 0 },
+    ]);
     commentRepository.find.mockResolvedValue([]);
     const thread = await service.getItemThread(
-      "acp-1",
+      "ap-1",
       "unit-1",
       "unit-1_item-1",
       actor,
@@ -1548,7 +1546,7 @@ describe("CommentsService", () => {
     });
   });
 
-  it("accepts an item from the canonical ACP index when no parsed file row exists", async () => {
+  it("accepts an item from the canonical AP index when no parsed file row exists", async () => {
     const date = new Date("2026-01-01T00:00:00.000Z");
     accessConfigRepository.findOne.mockResolvedValue({
       featureConfig: {
@@ -1559,8 +1557,8 @@ describe("CommentsService", () => {
       },
     });
     unitParserService.getItemListFromFiles.mockResolvedValue({ items: [] });
-    acpRepository.findOne.mockResolvedValue({
-      acpIndex: {
+    apRepository.findOne.mockResolvedValue({
+      apIndex: {
         assessmentParts: [
           { units: [{ id: "unit-1", items: [{ id: "item-1" }] }] },
         ],
@@ -1574,7 +1572,7 @@ describe("CommentsService", () => {
 
     await expect(
       service.createItemComment(
-        "acp-1",
+        "ap-1",
         {
           unitId: "unit-1",
           itemId: "unit-1_item-1",
@@ -1593,7 +1591,7 @@ describe("CommentsService", () => {
     const createdAt = new Date("2026-01-01T10:00:00.000Z");
     const root = {
       id: "root",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "other",
       targetType: CommentTargetType.ITEM,
       targetId: "unit-1_item-1",
@@ -1629,7 +1627,7 @@ describe("CommentsService", () => {
       },
     });
 
-    const snapshot = await service.getItemThread("acp-1", "unit-1", "item-1", {
+    const snapshot = await service.getItemThread("ap-1", "unit-1", "item-1", {
       userId: "me",
       authorLabel: "ME",
       isManager: false,
@@ -1663,7 +1661,7 @@ describe("CommentsService", () => {
     });
     commentRepository.findOne.mockResolvedValue({
       id: "c-1",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "other",
       targetType: CommentTargetType.ITEM,
       targetId: "unit-1_item-1",
@@ -1677,7 +1675,7 @@ describe("CommentsService", () => {
     });
 
     await expect(
-      service.updateOwnComment("acp-1", "c-1", "Neu", 2, {
+      service.updateOwnComment("ap-1", "c-1", "Neu", 2, {
         userId: "me",
         authorLabel: "ME",
         isManager: true,
@@ -1686,7 +1684,7 @@ describe("CommentsService", () => {
 
     commentRepository.findOne.mockResolvedValue({
       id: "c-1",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "me",
       targetType: CommentTargetType.ITEM,
       targetId: "unit-1_item-1",
@@ -1697,7 +1695,7 @@ describe("CommentsService", () => {
       version: 2,
     });
     await expect(
-      service.updateOwnComment("acp-1", "c-1", "Neu", 1, {
+      service.updateOwnComment("ap-1", "c-1", "Neu", 1, {
         userId: "me",
         authorLabel: "ME",
         isManager: false,
@@ -1716,7 +1714,7 @@ describe("CommentsService", () => {
     });
     commentRepository.findOne.mockResolvedValue({
       id: "unit-comment",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "me",
       targetType: CommentTargetType.UNIT,
       targetId: "unit-1",
@@ -1727,7 +1725,7 @@ describe("CommentsService", () => {
     });
 
     await expect(
-      service.updateOwnComment("acp-1", "unit-comment", "Neu", 1, {
+      service.updateOwnComment("ap-1", "unit-comment", "Neu", 1, {
         userId: "me",
         authorLabel: "ME",
         isManager: false,
@@ -1740,7 +1738,7 @@ describe("CommentsService", () => {
     const date = new Date("2026-01-01T00:00:00.000Z");
     const ownComment = {
       id: "c-1",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "me",
       targetType: CommentTargetType.ITEM,
       targetId: "unit-1_item-1",
@@ -1764,14 +1762,14 @@ describe("CommentsService", () => {
     const actor = { userId: "me", authorLabel: "ME", isManager: false };
 
     await expect(
-      service.updateOwnComment("acp-1", "c-1", " Neu ", 1, actor),
+      service.updateOwnComment("ap-1", "c-1", " Neu ", 1, actor),
     ).resolves.toMatchObject({ commentText: "Neu", version: 2 });
     await expect(
-      service.deleteOwnComment("acp-1", "c-1", 1, actor),
+      service.deleteOwnComment("ap-1", "c-1", 1, actor),
     ).resolves.toBeUndefined();
     expect(commentRepository.update).toHaveBeenCalledTimes(2);
     expect(commentRepository.update).toHaveBeenLastCalledWith(
-      expect.objectContaining({ id: "c-1", acpId: "acp-1", version: 1 }),
+      expect.objectContaining({ id: "c-1", apId: "ap-1", version: 1 }),
       expect.objectContaining({ commentText: "", version: 2 }),
     );
   });
@@ -1780,7 +1778,7 @@ describe("CommentsService", () => {
     const date = new Date("2026-01-01T00:00:00.000Z");
     const ownComment = {
       id: "credential-comment",
-      acpId: "acp-1",
+      apId: "ap-1",
       credentialId: "credential-1",
       credentialUsername: "reviewer",
       targetType: CommentTargetType.ITEM,
@@ -1810,10 +1808,10 @@ describe("CommentsService", () => {
     };
 
     await expect(
-      service.updateOwnComment("acp-1", "credential-comment", "Neu", 1, actor),
+      service.updateOwnComment("ap-1", "credential-comment", "Neu", 1, actor),
     ).resolves.toMatchObject({ commentText: "Neu", version: 2, isOwn: true });
     await expect(
-      service.deleteOwnComment("acp-1", "credential-comment", 1, actor),
+      service.deleteOwnComment("ap-1", "credential-comment", 1, actor),
     ).resolves.toBeUndefined();
     expect(commentRepository.update).toHaveBeenCalledTimes(2);
   });
@@ -1834,7 +1832,7 @@ describe("CommentsService", () => {
     });
     commentRepository.findOne.mockResolvedValue({
       id: "removed-unit-comment",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "me",
       targetType: CommentTargetType.UNIT,
       targetId: "removed-unit",
@@ -1846,7 +1844,7 @@ describe("CommentsService", () => {
     });
 
     await expect(
-      service.updateOwnComment("acp-1", "removed-unit-comment", "Neu", 1, {
+      service.updateOwnComment("ap-1", "removed-unit-comment", "Neu", 1, {
         userId: "me",
         authorLabel: "ME",
         isManager: false,
@@ -1878,7 +1876,7 @@ describe("CommentsService", () => {
 
     await expect(
       service.createReviewComment(
-        "acp-1",
+        "ap-1",
         {
           targetType: CommentTargetType.CODING,
           unitId: "unit-1",
@@ -1926,7 +1924,7 @@ describe("CommentsService", () => {
       },
     ]);
 
-    const snapshot = await service.getItemCommentCounts("acp-1", {
+    const snapshot = await service.getItemCommentCounts("ap-1", {
       userId: "me",
       authorLabel: "ME",
       isManager: false,
@@ -1960,7 +1958,7 @@ describe("CommentsService", () => {
 
     await expect(
       service.getReviewThread(
-        "acp-1",
+        "ap-1",
         { targetType: CommentTargetType.BOOKLET, bookletId: "booklet-1" },
         actor,
       ),
@@ -1972,7 +1970,7 @@ describe("CommentsService", () => {
     });
     await expect(
       service.getReviewThread(
-        "acp-1",
+        "ap-1",
         { targetType: CommentTargetType.BOOKLET, bookletId: "module-1" },
         actor,
       ),
@@ -1982,7 +1980,7 @@ describe("CommentsService", () => {
   it("keeps unresolved legacy comments read-only", async () => {
     commentRepository.findOne.mockResolvedValue({
       id: "legacy-1",
-      acpId: "acp-1",
+      apId: "ap-1",
       userId: "me",
       targetType: CommentTargetType.TASK_SEQUENCE,
       targetId: "ambiguous-module",
@@ -1990,7 +1988,7 @@ describe("CommentsService", () => {
       version: 1,
     });
     await expect(
-      service.updateOwnComment("acp-1", "legacy-1", "Neu", 1, {
+      service.updateOwnComment("ap-1", "legacy-1", "Neu", 1, {
         userId: "me",
         authorLabel: "ME",
         isManager: false,

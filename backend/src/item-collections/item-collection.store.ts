@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { EntityManager, Repository } from "typeorm";
-import { AcpItemPreference } from "../database/entities";
+import { ApItemPreference } from "../database/entities";
 import { StablePreferenceIdentity } from "../item-preferences/preference-identity";
 import { ItemCollectionState } from "./item-collection.models";
 
@@ -10,22 +10,22 @@ const COLLECTION_VIEW_ID = "item-explorer";
 @Injectable()
 export class ItemCollectionStore {
   constructor(
-    @InjectRepository(AcpItemPreference)
-    private readonly itemPreferenceRepository: Repository<AcpItemPreference>,
+    @InjectRepository(ApItemPreference)
+    private readonly itemPreferenceRepository: Repository<ApItemPreference>,
   ) {}
 
   async readPreferences(
-    acpId: string,
+    apId: string,
     identity: StablePreferenceIdentity,
   ): Promise<Record<string, unknown> | null> {
     const record = await this.itemPreferenceRepository.findOne({
-      where: this.getIdentityWhere(acpId, identity),
+      where: this.getIdentityWhere(apId, identity),
     });
     return record?.preferences || null;
   }
 
   async readSharedCollections(
-    acpId: string,
+    apId: string,
     identity: StablePreferenceIdentity,
     limit: number,
   ): Promise<Array<{ collection: unknown; ownerLabel: string }>> {
@@ -66,7 +66,7 @@ export class ItemCollectionStore {
           COALESCE(shared_collection.collection ->> 'id', '') ASC
         LIMIT $3
       `,
-      [acpId, identityId, boundedLimit],
+      [apId, identityId, boundedLimit],
     );
     return (Array.isArray(rows) ? rows : []).map((row) => ({
       collection: row?.collection,
@@ -78,7 +78,7 @@ export class ItemCollectionStore {
   }
 
   async mutate(
-    acpId: string,
+    apId: string,
     identity: StablePreferenceIdentity,
     createIfMissing: boolean,
     mutation: (preferences: Record<string, unknown>) => ItemCollectionState,
@@ -86,12 +86,12 @@ export class ItemCollectionStore {
     return this.itemPreferenceRepository.manager.transaction(
       async (manager) => {
         if (createIfMissing) {
-          await this.insertIfMissing(manager, acpId, identity);
+          await this.insertIfMissing(manager, apId, identity);
         }
 
-        const repository = manager.getRepository(AcpItemPreference);
+        const repository = manager.getRepository(ApItemPreference);
         const record = await repository.findOne({
-          where: this.getIdentityWhere(acpId, identity),
+          where: this.getIdentityWhere(apId, identity),
           lock: { mode: "pessimistic_write" },
         });
         if (!record) throw new NotFoundException("Item collection not found");
@@ -147,7 +147,7 @@ export class ItemCollectionStore {
 
   private async insertIfMissing(
     manager: EntityManager,
-    acpId: string,
+    apId: string,
     identity: StablePreferenceIdentity,
   ): Promise<void> {
     const identityColumn =
@@ -168,7 +168,7 @@ export class ItemCollectionStore {
         DO NOTHING
       `,
       [
-        acpId,
+        apId,
         identity.kind === "user" ? identity.userId : null,
         identity.kind === "credential" ? identity.credentialId : null,
         identity.kind === "credential"
@@ -179,16 +179,16 @@ export class ItemCollectionStore {
   }
 
   private getIdentityWhere(
-    acpId: string,
+    apId: string,
     identity: StablePreferenceIdentity,
   ): {
-    acpId: string;
+    apId: string;
     viewId: string;
     userId?: string;
     credentialId?: string;
   } {
     return {
-      acpId,
+      apId,
       viewId: COLLECTION_VIEW_ID,
       ...(identity.kind === "user"
         ? { userId: identity.userId }

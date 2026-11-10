@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
 import { assertUuidParam } from "../common/uuid-param";
-import { Acp, AcpFile } from "../database/entities";
+import { Ap, ApFile } from "../database/entities";
 import { ArchiveExpansionService } from "./archive-expansion.service";
 import { FileStorageService } from "./file-storage.service";
 
@@ -23,22 +23,22 @@ export interface UploadMultipleOptions {
 @Injectable()
 export class FileMutationService {
   constructor(
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
     private readonly dataSource: DataSource,
     private readonly archiveExpansionService: ArchiveExpansionService,
     private readonly fileStorageService: FileStorageService,
   ) {}
 
   async upload(
-    acpId: string,
+    apId: string,
     uploadedFile: Express.Multer.File,
-  ): Promise<AcpFile> {
-    await this.getAcpOrFail(acpId);
+  ): Promise<ApFile> {
+    await this.getApOrFail(apId);
     const stagedFile = await this.fileStorageService.stageUpload(
-      acpId,
+      apId,
       uploadedFile,
     );
 
@@ -51,10 +51,10 @@ export class FileMutationService {
   }
 
   async uploadMultiple(
-    acpId: string,
+    apId: string,
     files: Express.Multer.File[],
     options: UploadMultipleOptions = {},
-  ): Promise<AcpFile[]> {
+  ): Promise<ApFile[]> {
     const conflictStrategy = this.resolveConflictStrategy(
       options.conflictStrategy,
     );
@@ -63,7 +63,7 @@ export class FileMutationService {
       throw new BadRequestException("At least one file is required");
     }
 
-    await this.getAcpOrFail(acpId);
+    await this.getApOrFail(apId);
     const normalizedFiles =
       options.expandArchives === false
         ? files
@@ -78,7 +78,7 @@ export class FileMutationService {
     }
     if (conflictStrategy === "reject") {
       const existingFiles = await this.fileRepository.find({
-        where: { acpId },
+        where: { apId },
         order: { originalName: "ASC" },
       });
       this.assertNoRejectedConflicts(
@@ -89,12 +89,10 @@ export class FileMutationService {
       );
     }
 
-    const stagedFiles: AcpFile[] = [];
+    const stagedFiles: ApFile[] = [];
     try {
       for (const file of filesToPersist) {
-        stagedFiles.push(
-          await this.fileStorageService.stageUpload(acpId, file),
-        );
+        stagedFiles.push(await this.fileStorageService.stageUpload(apId, file));
       }
     } catch (error) {
       await this.fileStorageService.removePhysicalFiles(stagedFiles);
@@ -103,18 +101,18 @@ export class FileMutationService {
 
     try {
       const result = await this.dataSource.transaction(async (manager) => {
-        const acpRepository = manager.getRepository(Acp);
-        const lockedAcp = await acpRepository.findOne({
-          where: { id: acpId },
+        const apRepository = manager.getRepository(Ap);
+        const lockedAp = await apRepository.findOne({
+          where: { id: apId },
           lock: { mode: "pessimistic_write" },
         });
-        if (!lockedAcp) {
-          throw new NotFoundException(`AP with ID ${acpId} not found`);
+        if (!lockedAp) {
+          throw new NotFoundException(`AP with ID ${apId} not found`);
         }
 
-        const repository = manager.getRepository(AcpFile);
+        const repository = manager.getRepository(ApFile);
         const existingFiles = await repository.find({
-          where: { acpId },
+          where: { apId },
           order: { originalName: "ASC" },
         });
         const existingByName = this.groupByNormalizedName(existingFiles);
@@ -179,7 +177,7 @@ export class FileMutationService {
 
   private assertNoRejectedConflicts(
     files: Express.Multer.File[],
-    existingByName: Map<string, AcpFile[]>,
+    existingByName: Map<string, ApFile[]>,
     conflictStrategy: UploadConflictStrategy,
     decisions: Map<string, UploadConflictDecision>,
   ): void {
@@ -255,9 +253,9 @@ export class FileMutationService {
 
   private collectOverwriteMatches(
     files: Express.Multer.File[],
-    existingByName: Map<string, AcpFile[]>,
-  ): AcpFile[] {
-    const matches = new Map<string, AcpFile>();
+    existingByName: Map<string, ApFile[]>,
+  ): ApFile[] {
+    const matches = new Map<string, ApFile>();
     for (const file of files) {
       for (const match of existingByName.get(
         this.normalizeFileName(file.originalname),
@@ -268,8 +266,8 @@ export class FileMutationService {
     return Array.from(matches.values());
   }
 
-  private groupByNormalizedName(files: AcpFile[]): Map<string, AcpFile[]> {
-    const grouped = new Map<string, AcpFile[]>();
+  private groupByNormalizedName(files: ApFile[]): Map<string, ApFile[]> {
+    const grouped = new Map<string, ApFile[]>();
     for (const file of files) {
       const key = this.normalizeFileName(file.originalName);
       if (!key) {
@@ -302,12 +300,12 @@ export class FileMutationService {
       .toLowerCase();
   }
 
-  private async getAcpOrFail(acpId: string): Promise<Acp> {
-    assertUuidParam(acpId, "AP ID");
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
-      throw new NotFoundException(`AP with ID ${acpId} not found`);
+  private async getApOrFail(apId: string): Promise<Ap> {
+    assertUuidParam(apId, "AP ID");
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
+      throw new NotFoundException(`AP with ID ${apId} not found`);
     }
-    return acp;
+    return ap;
   }
 }

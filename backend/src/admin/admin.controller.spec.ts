@@ -63,7 +63,7 @@ describe("AdminController", () => {
   it("creates application tokens for the current admin user", async () => {
     const payload = {
       name: "Studio",
-      scopes: ["acp.read"],
+      scopes: ["ap.read"],
     };
 
     await expect(

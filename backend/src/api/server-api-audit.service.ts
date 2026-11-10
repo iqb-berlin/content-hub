@@ -2,13 +2,14 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ServerApiAuditLog } from "../database/entities";
+import { legacyApAction } from "../common/ap-contract";
 
 export interface ServerApiAuditEntry {
   clientId: string;
   action: string;
   method: string;
   path: string;
-  acpId?: string;
+  apId?: string;
   resourceId?: string;
   success: boolean;
   statusCode?: number;
@@ -28,7 +29,7 @@ export class ServerApiAuditService {
       action: entry.action,
       method: entry.method,
       path: entry.path,
-      acpId: entry.acpId || undefined,
+      apId: entry.apId || undefined,
       resourceId: entry.resourceId || undefined,
       success: entry.success,
       statusCode: entry.statusCode,
@@ -42,7 +43,7 @@ export class ServerApiAuditService {
     limit = 100,
     action?: string,
     clientId?: string,
-    allowedAcpIds?: string[] | null,
+    allowedApIds?: string[] | null,
   ): Promise<ServerApiAuditLog[]> {
     const safeLimit = Math.max(1, Math.min(limit, 500));
     const qb = this.auditRepository
@@ -51,15 +52,15 @@ export class ServerApiAuditService {
       .limit(safeLimit);
 
     if (action) {
-      qb.andWhere("log.action = :action", { action });
+      qb.andWhere("log.action = :action", { action: legacyApAction(action) });
     }
 
     if (clientId) {
       qb.andWhere("log.client_id = :clientId", { clientId });
     }
 
-    if (Array.isArray(allowedAcpIds) && allowedAcpIds.length > 0) {
-      qb.andWhere("log.acp_id IN (:...allowedAcpIds)", { allowedAcpIds });
+    if (Array.isArray(allowedApIds) && allowedApIds.length > 0) {
+      qb.andWhere("log.acp_id IN (:...allowedApIds)", { allowedApIds });
     }
 
     return qb.getMany();

@@ -11,18 +11,18 @@ import * as path from "path";
 import * as fs from "fs/promises";
 import * as crypto from "crypto";
 import {
-  AcpFile,
-  Acp,
-  AcpAccessConfig,
+  ApFile,
+  Ap,
+  ApAccessConfig,
   ItemResponseState,
 } from "../database/entities";
 import {
   findUnitInIndex,
   getAssessmentParts,
   getIndexUnits,
-  toRuntimeAcpIndex,
-} from "../acp/acp-index.utils";
-import { normalizeFeatureConfig } from "../acp/feature-config.utils";
+  toRuntimeApIndex,
+} from "../ap/ap-index.utils";
+import { normalizeFeatureConfig } from "../ap/feature-config.utils";
 import { UnitParserService } from "./unit-parser.service";
 import {
   ValidationService,
@@ -152,12 +152,12 @@ export class FilesService {
   private readonly storagePath: string;
 
   constructor(
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
-    @InjectRepository(AcpAccessConfig)
-    private readonly accessConfigRepository: Repository<AcpAccessConfig>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
+    @InjectRepository(ApAccessConfig)
+    private readonly accessConfigRepository: Repository<ApAccessConfig>,
     @InjectRepository(ItemResponseState)
     private readonly itemResponseStateRepository: Repository<ItemResponseState>,
     private readonly configService: ConfigService,
@@ -173,19 +173,19 @@ export class FilesService {
     );
   }
 
-  async findByAcp(acpId: string): Promise<AcpFile[]> {
-    await this.getAcpOrFail(acpId);
-    return this.findFileRecordsByAcp(acpId);
+  async findByAp(apId: string): Promise<ApFile[]> {
+    await this.getApOrFail(apId);
+    return this.findFileRecordsByAp(apId);
   }
 
-  private async findFileRecordsByAcp(acpId: string): Promise<AcpFile[]> {
+  private async findFileRecordsByAp(apId: string): Promise<ApFile[]> {
     return this.fileRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { originalName: "ASC" },
     });
   }
 
-  async findById(id: string): Promise<AcpFile> {
+  async findById(id: string): Promise<ApFile> {
     const file = await this.fileRepository.findOne({ where: { id } });
     if (!file) {
       throw new NotFoundException(`File with ID ${id} not found`);
@@ -193,40 +193,40 @@ export class FilesService {
     return file;
   }
 
-  async findByIdForAcp(acpId: string, id: string): Promise<AcpFile> {
+  async findByIdForAp(apId: string, id: string): Promise<ApFile> {
     const file = await this.findById(id);
-    if (file.acpId !== acpId) {
+    if (file.apId !== apId) {
       throw new NotFoundException(
-        `File with ID ${id} not found for AP ${acpId}`,
+        `File with ID ${id} not found for AP ${apId}`,
       );
     }
     return file;
   }
 
   async upload(
-    acpId: string,
+    apId: string,
     uploadedFile: Express.Multer.File,
-  ): Promise<AcpFile> {
-    const file = await this.fileMutationService.upload(acpId, uploadedFile);
-    this.unitParserService.invalidateFileCaches(acpId);
+  ): Promise<ApFile> {
+    const file = await this.fileMutationService.upload(apId, uploadedFile);
+    this.unitParserService.invalidateFileCaches(apId);
     return file;
   }
 
   async uploadMultiple(
-    acpId: string,
+    apId: string,
     files: Express.Multer.File[],
     options: UploadMultipleOptions = {},
-  ): Promise<AcpFile[]> {
+  ): Promise<ApFile[]> {
     const savedFiles = await this.fileMutationService.uploadMultiple(
-      acpId,
+      apId,
       files,
       options,
     );
-    this.unitParserService.invalidateFileCaches(acpId);
+    this.unitParserService.invalidateFileCaches(apId);
     return savedFiles;
   }
 
-  async download(id: string): Promise<{ buffer: Buffer; file: AcpFile }> {
+  async download(id: string): Promise<{ buffer: Buffer; file: ApFile }> {
     const file = await this.findById(id);
     try {
       const buffer = await this.fileStorageService.read(file);
@@ -236,11 +236,11 @@ export class FilesService {
     }
   }
 
-  async downloadForAcp(
-    acpId: string,
+  async downloadForAp(
+    apId: string,
     id: string,
-  ): Promise<{ buffer: Buffer; file: AcpFile }> {
-    const file = await this.findByIdForAcp(acpId, id);
+  ): Promise<{ buffer: Buffer; file: ApFile }> {
+    const file = await this.findByIdForAp(apId, id);
     try {
       const buffer = await this.fileStorageService.read(file);
       return { buffer, file };
@@ -253,17 +253,17 @@ export class FilesService {
     const file = await this.findById(id);
     await this.fileRepository.remove(file);
     await this.fileStorageService.removePhysicalFile(file);
-    this.unitParserService.invalidateFileCaches(file.acpId);
+    this.unitParserService.invalidateFileCaches(file.apId);
   }
 
-  async deleteForAcp(acpId: string, id: string): Promise<void> {
-    const file = await this.findByIdForAcp(acpId, id);
+  async deleteForAp(apId: string, id: string): Promise<void> {
+    const file = await this.findByIdForAp(apId, id);
     await this.fileRepository.remove(file);
     await this.fileStorageService.removePhysicalFile(file);
-    this.unitParserService.invalidateFileCaches(acpId);
+    this.unitParserService.invalidateFileCaches(apId);
   }
 
-  async deleteManyForAcp(acpId: string, ids: string[]): Promise<string[]> {
+  async deleteManyForAp(apId: string, ids: string[]): Promise<string[]> {
     const normalizedIds = Array.from(
       new Set(
         (ids || [])
@@ -276,36 +276,36 @@ export class FilesService {
       throw new BadRequestException("At least one file ID is required");
     }
 
-    const files = await this.findByAcp(acpId);
+    const files = await this.findByAp(apId);
     const filesById = new Map(files.map((file) => [file.id, file]));
     const missingIds = normalizedIds.filter((id) => !filesById.has(id));
     if (missingIds.length) {
       throw new NotFoundException(
-        `Files not found for AP ${acpId}: ${missingIds.join(", ")}`,
+        `Files not found for AP ${apId}: ${missingIds.join(", ")}`,
       );
     }
 
     const filesToDelete = normalizedIds.map((id) => filesById.get(id)!);
     await this.fileRepository.remove(filesToDelete);
     await this.fileStorageService.removePhysicalFiles(filesToDelete);
-    this.unitParserService.invalidateFileCaches(acpId);
+    this.unitParserService.invalidateFileCaches(apId);
     return normalizedIds;
   }
 
-  async deleteAll(acpId: string): Promise<void> {
-    const files = await this.findByAcp(acpId);
+  async deleteAll(apId: string): Promise<void> {
+    const files = await this.findByAp(apId);
     await this.fileRepository.remove(files);
     await this.fileStorageService.removePhysicalFiles(files);
-    this.unitParserService.invalidateFileCaches(acpId);
+    this.unitParserService.invalidateFileCaches(apId);
   }
 
-  async cleanupOrphanedResponseStates(acpId: string): Promise<{
+  async cleanupOrphanedResponseStates(apId: string): Promise<{
     totalStates: number;
     deletedStates: number;
     keptStates: number;
   }> {
     const existingStates = await this.itemResponseStateRepository.find({
-      where: { acpId },
+      where: { apId },
       select: {
         id: true,
         unitId: true,
@@ -323,7 +323,7 @@ export class FilesService {
     }
 
     const fileItemList =
-      await this.unitParserService.getItemListFromFiles(acpId);
+      await this.unitParserService.getItemListFromFiles(apId);
     const validKeys = new Set<string>();
     const validItemUuids = new Set<string>();
     for (const item of fileItemList.items || []) {
@@ -356,7 +356,7 @@ export class FilesService {
   }
 
   async cleanupReferencesAfterFileMutation(
-    acpId: string,
+    apId: string,
     options: { skipValidation?: boolean } = {},
     progress?: FileProcessingProgressReporter,
   ): Promise<{
@@ -378,10 +378,9 @@ export class FilesService {
       message: "Verweise und Antwortdaten werden nach dem Ersetzen bereinigt.",
     });
     const cleanupReport =
-      await this.unitParserService.pruneMissingDependencies(acpId);
+      await this.unitParserService.pruneMissingDependencies(apId);
     await progress?.advance({ message: "Index-Verweise bereinigt" });
-    const responseStateCleanup =
-      await this.cleanupOrphanedResponseStates(acpId);
+    const responseStateCleanup = await this.cleanupOrphanedResponseStates(apId);
     await progress?.advance({ message: "Antwortdaten bereinigt" });
 
     if (options.skipValidation) {
@@ -394,8 +393,8 @@ export class FilesService {
 
     const validationRun =
       await this.validationService.autoValidateUploadedFiles(
-        acpId,
-        await this.findByAcp(acpId),
+        apId,
+        await this.findByAp(apId),
       );
 
     await progress?.completePhase("Bereinigung nach Ersetzen abgeschlossen.");
@@ -413,28 +412,28 @@ export class FilesService {
     return (file.validationResult as Record<string, unknown>) || null;
   }
 
-  async getValidationResultForAcp(
-    acpId: string,
+  async getValidationResultForAp(
+    apId: string,
     id: string,
   ): Promise<Record<string, unknown> | null> {
-    const file = await this.findByIdForAcp(acpId, id);
+    const file = await this.findByIdForAp(apId, id);
     return (file.validationResult as Record<string, unknown>) || null;
   }
 
   async updateValidationResult(
     id: string,
     result: Record<string, unknown>,
-  ): Promise<AcpFile> {
+  ): Promise<ApFile> {
     const file = await this.findById(id);
     file.validationResult = result;
     return this.fileRepository.save(file);
   }
 
-  async getPreviewForAcp(
-    acpId: string,
+  async getPreviewForAp(
+    apId: string,
     id: string,
   ): Promise<FilePreviewResponse> {
-    const file = await this.findByIdForAcp(acpId, id);
+    const file = await this.findByIdForAp(apId, id);
     const extension = this.getFileExtension(file.originalName);
     const mimeType = this.normalizeMimeType(file.fileType);
 
@@ -529,32 +528,32 @@ export class FilesService {
   }
 
   async createUnitZip(
-    acpId: string,
+    apId: string,
     unitId: string,
   ): Promise<{ buffer: Buffer; fileName: string }> {
-    const index = await this.getAcpIndex(acpId);
-    const allFiles = await this.findByAcp(acpId);
+    const index = await this.getApIndex(apId);
+    const allFiles = await this.findByAp(apId);
     const unitFiles = this.collectUnitFiles(index, allFiles, unitId);
     if (!unitFiles.length) {
       throw new NotFoundException(`No files found for unit "${unitId}"`);
     }
 
     const buffer = await this.createZipBuffer(unitFiles);
-    return { buffer, fileName: `acp-${acpId}-unit-${unitId}.zip` };
+    return { buffer, fileName: `ap-${apId}-unit-${unitId}.zip` };
   }
 
   async createSequenceZip(
-    acpId: string,
+    apId: string,
     sequenceId: string,
     kind?: "booklet",
   ): Promise<{ buffer: Buffer; fileName: string }> {
-    const index = await this.getAcpIndex(acpId);
-    const allFiles = await this.findByAcp(acpId);
+    const index = await this.getApIndex(apId);
+    const allFiles = await this.findByAp(apId);
     const unitIds =
       kind === "booklet"
         ? [
             ...new Set(
-              (await this.reviewManifestService.getManifest(acpId)).booklets
+              (await this.reviewManifestService.getManifest(apId)).booklets
                 .find((entry) => !entry.legacy && entry.id === sequenceId)
                 ?.units.map((unit) => unit.id) || [],
             ),
@@ -565,7 +564,7 @@ export class FilesService {
       throw new NotFoundException(`Sequence "${sequenceId}" not found`);
     }
 
-    const fileMap = new Map<string, AcpFile>();
+    const fileMap = new Map<string, ApFile>();
     for (const unitId of unitIds) {
       const unitFiles = this.collectUnitFiles(index, allFiles, unitId, false);
       for (const file of unitFiles) {
@@ -581,24 +580,24 @@ export class FilesService {
     }
 
     const buffer = await this.createZipBuffer(files);
-    return { buffer, fileName: `acp-${acpId}-sequence-${sequenceId}.zip` };
+    return { buffer, fileName: `ap-${apId}-sequence-${sequenceId}.zip` };
   }
 
   async createFilesZip(
-    acpId: string,
+    apId: string,
     ids?: string[],
   ): Promise<{ buffer: Buffer; fileName: string }> {
-    const { files, fileName } = await this.resolveFilesForArchive(acpId, ids);
+    const { files, fileName } = await this.resolveFilesForArchive(apId, ids);
     const buffer = await this.createZipBuffer(files);
     return { buffer, fileName };
   }
 
   async createFilesZipArchive(
-    acpId: string,
+    apId: string,
     ids?: string[],
     progress?: FileProcessingProgressReporter,
   ): Promise<{ filePath: string; fileName: string }> {
-    const { files, fileName } = await this.resolveFilesForArchive(acpId, ids);
+    const { files, fileName } = await this.resolveFilesForArchive(apId, ids);
     const totalSourceBytes = this.getArchiveSourceBytesTotal(files);
     if (progress) {
       await progress.startPhase("zip-files", totalSourceBytes, {
@@ -613,7 +612,7 @@ export class FilesService {
     }
 
     const buffer = await this.createZipBuffer(files, progress);
-    const archiveDir = path.join(this.storagePath, acpId, "__archives");
+    const archiveDir = path.join(this.storagePath, apId, "__archives");
     await fs.mkdir(archiveDir, { recursive: true });
 
     const archivePath = path.join(archiveDir, `${crypto.randomUUID()}.zip`);
@@ -626,10 +625,10 @@ export class FilesService {
     return { filePath: archivePath, fileName };
   }
 
-  async getFeatureConfig(acpId: string): Promise<Record<string, any>> {
-    await this.getAcpOrFail(acpId);
+  async getFeatureConfig(apId: string): Promise<Record<string, any>> {
+    await this.getApOrFail(apId);
     const config = await this.accessConfigRepository.findOne({
-      where: { acpId },
+      where: { apId },
     });
     return normalizeFeatureConfig(config?.featureConfig || {}) as Record<
       string,
@@ -638,10 +637,10 @@ export class FilesService {
   }
 
   async isRuntimeDependencyFile(
-    acpId: string,
+    apId: string,
     fileName: string,
   ): Promise<boolean> {
-    const units = getIndexUnits(await this.getAcpIndex(acpId));
+    const units = getIndexUnits(await this.getApIndex(apId));
     const isRuntime = (dependency: any) =>
       ["PLAYER", "UNIT_DEFINITION", "CODING_SCHEME"].includes(
         dependency?.type,
@@ -651,7 +650,7 @@ export class FilesService {
       if ((unit.dependencies || []).some(isRuntime)) return true;
       // The uploaded Unit XML can be newer than the stored index dependency list.
       const view = await this.unitParserService.getUnitViewFromFiles(
-        acpId,
+        apId,
         unit.id,
       );
       if ((view?.dependencies || []).some(isRuntime)) return true;
@@ -659,11 +658,8 @@ export class FilesService {
     return false;
   }
 
-  async isUnitDependencyFile(
-    acpId: string,
-    fileName: string,
-  ): Promise<boolean> {
-    const index = await this.getAcpIndex(acpId);
+  async isUnitDependencyFile(apId: string, fileName: string): Promise<boolean> {
+    const index = await this.getApIndex(apId);
     for (const unit of getIndexUnits(index)) {
       if (`${unit.id}.xml` === fileName) {
         return true;
@@ -678,17 +674,17 @@ export class FilesService {
     return false;
   }
 
-  private async getAcpOrFail(acpId: string): Promise<Acp> {
-    assertUuidParam(acpId, "AP ID");
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
-      throw new NotFoundException(`AP with ID ${acpId} not found`);
+  private async getApOrFail(apId: string): Promise<Ap> {
+    assertUuidParam(apId, "AP ID");
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
+      throw new NotFoundException(`AP with ID ${apId} not found`);
     }
-    return acp;
+    return ap;
   }
 
   private buildBasePreview(
-    file: AcpFile,
+    file: ApFile,
     extension: string,
     mode: FilePreviewMode,
   ): FilePreviewResponse {
@@ -703,7 +699,7 @@ export class FilesService {
   }
 
   private buildTextPreview(
-    file: AcpFile,
+    file: ApFile,
     extension: string,
     fullContent: string,
     textFormat: FilePreviewTextFormat,
@@ -731,7 +727,7 @@ export class FilesService {
     };
   }
 
-  private async readTextFileForPreview(file: AcpFile): Promise<string> {
+  private async readTextFileForPreview(file: ApFile): Promise<string> {
     try {
       return await fs.readFile(file.filePath, "utf-8");
     } catch {
@@ -1217,12 +1213,12 @@ export class FilesService {
     return result;
   }
 
-  private async getAcpIndex(acpId: string): Promise<any> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
-      throw new NotFoundException(`AP with ID ${acpId} not found`);
+  private async getApIndex(apId: string): Promise<any> {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
+      throw new NotFoundException(`AP with ID ${apId} not found`);
     }
-    return toRuntimeAcpIndex(acp.acpIndex);
+    return toRuntimeApIndex(ap.apIndex);
   }
 
   private resolveSequenceUnitIds(index: any, sequenceId: string): string[] {
@@ -1246,10 +1242,10 @@ export class FilesService {
 
   private collectUnitFiles(
     index: any,
-    allFiles: AcpFile[],
+    allFiles: ApFile[],
     unitId: string,
     throwOnMissingUnit = true,
-  ): AcpFile[] {
+  ): ApFile[] {
     const unit = findUnitInIndex(index, unitId);
     if (!unit) {
       if (throwOnMissingUnit) {
@@ -1265,14 +1261,14 @@ export class FilesService {
       }
     }
 
-    // Most ACP exports include one XML per unit; include it if available.
+    // Most AP exports include one XML per unit; include it if available.
     dependencyNames.add(`${unitId}.xml`);
 
     return allFiles.filter((file) => dependencyNames.has(file.originalName));
   }
 
   private async createZipBuffer(
-    files: AcpFile[],
+    files: ApFile[],
     progress?: FileProcessingProgressReporter,
   ): Promise<Buffer> {
     // JSZip is already part of the backend dependency tree.
@@ -1322,14 +1318,14 @@ export class FilesService {
     return buffer as Buffer;
   }
 
-  private getArchiveSourceBytesTotal(files: AcpFile[]): number {
+  private getArchiveSourceBytesTotal(files: ApFile[]): number {
     return files.reduce(
       (sum, file) => sum + this.getArchiveProgressBytes(file),
       0,
     );
   }
 
-  private getArchiveProgressBytes(file: AcpFile): number {
+  private getArchiveProgressBytes(file: ApFile): number {
     const fileSize = Number(file.fileSize || 0);
     return Number.isFinite(fileSize) && fileSize > 0 ? fileSize : 0;
   }
@@ -1361,12 +1357,12 @@ export class FilesService {
   }
 
   private async resolveFilesForArchive(
-    acpId: string,
+    apId: string,
     ids?: string[],
-  ): Promise<{ files: AcpFile[]; fileName: string }> {
-    const allFiles = await this.findByAcp(acpId);
+  ): Promise<{ files: ApFile[]; fileName: string }> {
+    const allFiles = await this.findByAp(apId);
     if (!allFiles.length) {
-      throw new NotFoundException(`No files found for AP "${acpId}"`);
+      throw new NotFoundException(`No files found for AP "${apId}"`);
     }
 
     const normalizedIds = Array.from(
@@ -1380,7 +1376,7 @@ export class FilesService {
     if (!normalizedIds.length) {
       return {
         files: allFiles,
-        fileName: `acp-${acpId}-all-files.zip`,
+        fileName: `ap-${apId}-all-files.zip`,
       };
     }
 
@@ -1388,13 +1384,13 @@ export class FilesService {
     const missingIds = normalizedIds.filter((id) => !filesById.has(id));
     if (missingIds.length) {
       throw new NotFoundException(
-        `Files not found for AP ${acpId}: ${missingIds.join(", ")}`,
+        `Files not found for AP ${apId}: ${missingIds.join(", ")}`,
       );
     }
 
     return {
       files: normalizedIds.map((id) => filesById.get(id)!),
-      fileName: `acp-${acpId}-selected-files.zip`,
+      fileName: `ap-${apId}-selected-files.zip`,
     };
   }
 }

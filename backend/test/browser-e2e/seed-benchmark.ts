@@ -5,17 +5,17 @@ import { DataSource } from "typeorm";
 import { AppModule } from "../../src/app.module";
 import {
   AccessModel,
-  Acp,
-  AcpAccessConfig,
-  AcpFile,
-  AcpItemExplorerState,
-  AcpRole,
-  AcpUserRole,
+  Ap,
+  ApAccessConfig,
+  ApFile,
+  ApItemExplorerState,
+  ApRole,
+  ApUserRole,
   ItemResponseState,
   User,
 } from "../../src/database/entities";
 
-const ACP_ID = "20000000-0000-4000-8000-000000000001";
+const AP_ID = "20000000-0000-4000-8000-000000000001";
 const MANAGER_ID = "20000000-0000-4000-8000-000000000002";
 const MANAGER_USERNAME = "benchmark-manager";
 const UNIT_COUNT = 50;
@@ -136,13 +136,13 @@ async function seed(): Promise<void> {
     await addBaselineCompatibilityColumns(dataSource);
 
     const units = createUnits();
-    const acp = await dataSource.getRepository(Acp).save(
-      dataSource.getRepository(Acp).create({
-        id: ACP_ID,
+    const ap = await dataSource.getRepository(Ap).save(
+      dataSource.getRepository(Ap).create({
+        id: AP_ID,
         packageId: "item-explorer-browser-benchmark",
         name: "Item Explorer Browser Benchmark",
         description: "Synthetic 50-unit and 2,000-item benchmark fixture",
-        acpIndex: {
+        apIndex: {
           version: "0.5.0",
           packageId: "item-explorer-browser-benchmark",
           assessmentParts: [
@@ -174,16 +174,16 @@ async function seed(): Promise<void> {
         isAppAdmin: false,
       }),
     );
-    await dataSource.getRepository(AcpUserRole).save(
-      dataSource.getRepository(AcpUserRole).create({
+    await dataSource.getRepository(ApUserRole).save(
+      dataSource.getRepository(ApUserRole).create({
         userId: manager.id,
-        acpId: acp.id,
-        role: AcpRole.ACP_MANAGER,
+        apId: ap.id,
+        role: ApRole.AP_MANAGER,
       }),
     );
-    await dataSource.getRepository(AcpAccessConfig).save(
-      dataSource.getRepository(AcpAccessConfig).create({
-        acpId: acp.id,
+    await dataSource.getRepository(ApAccessConfig).save(
+      dataSource.getRepository(ApAccessConfig).create({
+        apId: ap.id,
         accessModel: AccessModel.REGISTERED,
         allowRegistered: true,
         featureConfig: {
@@ -203,9 +203,9 @@ async function seed(): Promise<void> {
       itemOrder: [],
       itemProperties: {},
     };
-    await dataSource.getRepository(AcpItemExplorerState).save(
-      dataSource.getRepository(AcpItemExplorerState).create({
-        acpId: acp.id,
+    await dataSource.getRepository(ApItemExplorerState).save(
+      dataSource.getRepository(ApItemExplorerState).create({
+        apId: ap.id,
         publishedState: sharedState,
         draftState: sharedState,
         status: "CLEAN",
@@ -217,7 +217,7 @@ async function seed(): Promise<void> {
     const firstUnit = units[0];
     await dataSource.getRepository(ItemResponseState).save(
       dataSource.getRepository(ItemResponseState).create({
-        acpId: acp.id,
+        apId: ap.id,
         itemId: firstUnit.items[0].id,
         unitId: firstUnit.id,
         rowKey: firstUnit.items[0].uuid,
@@ -249,8 +249,8 @@ async function seed(): Promise<void> {
       const filePath = join(fixtureDirectory, file.name);
       await writeFile(filePath, file.content, "utf8");
       fileEntities.push(
-        dataSource.getRepository(AcpFile).create({
-          acpId: acp.id,
+        dataSource.getRepository(ApFile).create({
+          apId: ap.id,
           filePath,
           originalName: file.name,
           fileType: file.type,
@@ -258,11 +258,11 @@ async function seed(): Promise<void> {
         }),
       );
     }
-    await dataSource.getRepository(AcpFile).save(fileEntities);
+    await dataSource.getRepository(ApFile).save(fileEntities);
 
     process.stdout.write(
       `${JSON.stringify({
-        acpId: ACP_ID,
+        apId: AP_ID,
         managerUsername: MANAGER_USERNAME,
         unitCount: units.length,
         itemCount: units.reduce((total, unit) => total + unit.items.length, 0),

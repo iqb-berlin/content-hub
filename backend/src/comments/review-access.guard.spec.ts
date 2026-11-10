@@ -31,7 +31,7 @@ describe("ReviewAccessGuard", () => {
       });
     }
   }
-  it("does not bypass ACP access", async () => {
+  it("does not bypass AP access", async () => {
     const capabilities = { resolve: jest.fn() };
     const guard = new ReviewAccessGuard(
       {

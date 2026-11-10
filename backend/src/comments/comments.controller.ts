@@ -39,7 +39,7 @@ export class CreateCommentDto {
 }
 
 @ApiTags("Comments")
-@Controller("acp/:acpId/comments")
+@Controller("ap/:apId/comments")
 export class CommentsController {
   constructor(
     private readonly commentsService: CommentsService,
@@ -50,25 +50,25 @@ export class CommentsController {
   @UseGuards(JwtAuthGuard, ReviewAccessGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "List all comments for an AP (Manager only)" })
-  async findAll(@UuidParam("acpId") acpId: string, @Request() req: any) {
+  async findAll(@UuidParam("apId") apId: string, @Request() req: any) {
     this.assertManagerAccess(req);
-    return this.commentsService.findByAcp(acpId);
+    return this.commentsService.findByAp(apId);
   }
 
   @Get("mine")
   @UseGuards(JwtAuthGuard, ReviewAccessGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "List my comments for an AP" })
-  async findMine(@UuidParam("acpId") acpId: string, @Request() req: any) {
+  async findMine(@UuidParam("apId") apId: string, @Request() req: any) {
     if (req.user.type === "credential") {
       return this.commentsService.findByCredential(
-        acpId,
+        apId,
         req.user.sub,
         this.reviewPolicy.resolveActor(req),
       );
     }
     return this.commentsService.findByUser(
-      acpId,
+      apId,
       req.user.sub,
       this.reviewPolicy.resolveActor(req),
     );
@@ -79,17 +79,17 @@ export class CommentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Create a comment" })
   async create(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: CreateCommentDto,
     @Request() req: any,
   ) {
     this.reviewPolicy.assertCanParticipateRequest(req);
-    if (dto.targetId === acpId) {
+    if (dto.targetId === apId) {
       throw new BadRequestException("Comment target ID must not be the AP ID");
     }
 
     return this.commentsService.createLegacyCompatibleComment(
-      acpId,
+      apId,
       {
         targetType: dto.targetType,
         targetId: dto.targetId,
@@ -107,12 +107,12 @@ export class CommentsController {
       "Delete unresolved legacy task-sequence comments for an AP (Manager only)",
   })
   async deleteLegacyComments(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
   ) {
     this.assertManagerAccess(req);
     const result =
-      await this.commentsService.deleteUnreferencedLegacyByAcp(acpId);
+      await this.commentsService.deleteUnreferencedLegacyByAp(apId);
     return {
       message: `${result.deletedCount} legacy comments deleted; ${result.retainedCount} comments retained`,
       ...result,
@@ -124,17 +124,17 @@ export class CommentsController {
   @UseGuards(JwtAuthGuard, ReviewAccessGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Export comments as JSON" })
-  async exportComments(@UuidParam("acpId") acpId: string, @Request() req: any) {
+  async exportComments(@UuidParam("apId") apId: string, @Request() req: any) {
     if (this.reviewPolicy.isManagerRequest(req)) {
-      return this.commentsService.exportComments(acpId);
+      return this.commentsService.exportComments(apId);
     }
     if (req.user.type === "credential") {
       return this.commentsService.exportCommentsByCredential(
-        acpId,
+        apId,
         req.user.sub,
       );
     }
-    return this.commentsService.exportComments(acpId, req.user.sub);
+    return this.commentsService.exportComments(apId, req.user.sub);
   }
 
   @Get("export.xlsx")
@@ -142,7 +142,7 @@ export class CommentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Export comments as XLSX" })
   async exportCommentsXlsx(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
     @Res() res: Response,
   ) {
@@ -150,17 +150,17 @@ export class CommentsController {
     let fileSuffix = "all";
 
     if (this.reviewPolicy.isManagerRequest(req)) {
-      buffer = await this.commentsService.exportCommentsXlsx(acpId);
+      buffer = await this.commentsService.exportCommentsXlsx(apId);
     } else if (req.user.type === "credential") {
       fileSuffix = req.user.username || "mine";
       buffer = await this.commentsService.exportCommentsXlsxByCredential(
-        acpId,
+        apId,
         req.user.sub,
       );
     } else {
       fileSuffix = req.user.username || "mine";
       buffer = await this.commentsService.exportCommentsXlsx(
-        acpId,
+        apId,
         req.user.sub,
       );
     }
@@ -171,7 +171,7 @@ export class CommentsController {
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="comments-${acpId}-${fileSuffix}.xlsx"`,
+      `attachment; filename="comments-${apId}-${fileSuffix}.xlsx"`,
     );
     res.send(buffer);
   }

@@ -98,7 +98,7 @@ describe('UsersComponent', () => {
 
   it('maps manager-protection error when deleting user fails', () => {
     api.deleteUser.mockReturnValue(
-      throwError(() => ({ error: { message: 'would have no ACP_MANAGER' } })),
+      throwError(() => ({ error: { message: 'would have no AP_MANAGER' } })),
     );
     const component = new UsersComponent(api as any);
     component.openDeleteUserDialog({ id: 'u1', username: 'alice', isAppAdmin: false });

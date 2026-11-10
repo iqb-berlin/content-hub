@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { AcpFile } from "../database/entities";
+import { ApFile } from "../database/entities";
 
 export interface SyntacticValidationResult {
   valid: boolean;
@@ -18,7 +18,7 @@ export class SyntacticValidator {
   /**
    * Validate a file's syntactic correctness based on its extension.
    */
-  validate(file: AcpFile, buffer: Buffer): SyntacticValidationResult {
+  validate(file: ApFile, buffer: Buffer): SyntacticValidationResult {
     const issues: SyntacticValidationResult["issues"] = [];
 
     if (buffer.length === 0) {

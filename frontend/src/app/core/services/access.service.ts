@@ -9,8 +9,8 @@ export type AccessReason =
 
 export interface AccessNavigationOptions {
   nextUrl?: string;
-  acpId?: string;
-  context?: 'admin' | 'acp' | 'view' | 'manage';
+  apId?: string;
+  context?: 'admin' | 'ap' | 'view' | 'manage';
   replaceUrl?: boolean;
 }
 
@@ -28,7 +28,7 @@ export class AccessService {
     const queryParams: Record<string, string> = { reason };
 
     if (options.nextUrl) queryParams['next'] = options.nextUrl;
-    if (options.acpId) queryParams['acpId'] = options.acpId;
+    if (options.apId) queryParams['apId'] = options.apId;
     if (options.context) queryParams['context'] = options.context;
 
     return this.router.createUrlTree(['/access'], { queryParams });

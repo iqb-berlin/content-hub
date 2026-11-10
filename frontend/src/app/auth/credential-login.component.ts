@@ -51,7 +51,7 @@ import { AuthService } from '../core/services/auth.service';
   ],
 })
 export class CredentialLoginComponent implements OnInit {
-  acpId = '';
+  apId = '';
   username = '';
   password = '';
   loading = false;
@@ -64,15 +64,15 @@ export class CredentialLoginComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.acpId = this.route.snapshot.paramMap.get('acpId') || '';
+    this.apId = this.route.snapshot.paramMap.get('apId') || '';
   }
 
   onSubmit() {
     this.loading = true;
     this.error = '';
-    this.auth.credentialLogin(this.acpId, this.username, this.password).subscribe({
+    this.auth.credentialLogin(this.apId, this.username, this.password).subscribe({
       next: () => {
-        this.router.navigate(['/view', this.acpId]);
+        this.router.navigate(['/view', this.apId]);
         this.loading = false;
       },
       error: (err) => {

@@ -4,19 +4,19 @@ import { JwtService } from "@nestjs/jwt";
 import { DataSource } from "typeorm";
 import * as request from "supertest";
 import {
-  Acp,
-  AcpAccessConfig,
-  AcpUserRole,
-  AcpCredential,
+  Ap,
+  ApAccessConfig,
+  ApUserRole,
+  ApCredential,
   User,
 } from "../src/database/entities";
-import { ACP_CAPABILITIES } from "../src/auth/capabilities/acp-capabilities";
+import { AP_CAPABILITIES } from "../src/auth/capabilities/ap-capabilities";
 import { AcpCapabilityGrants1789200000000 } from "../src/database/migrations/1789200000000-AcpCapabilityGrants";
 
 describe("Capability and import API integration", () => {
   jest.setTimeout(60000);
   let app: INestApplication, db: DataSource, server: any;
-  let acpId: string, configId: string, userId: string, credentialId: string;
+  let apId: string, configId: string, userId: string, credentialId: string;
   let adminToken: string, userToken: string, credentialToken: string;
   const password = "StrongPassword123!";
   beforeAll(async () => {
@@ -55,10 +55,10 @@ describe("Capability and import API integration", () => {
       });
     adminToken = token(admin);
     userToken = token(user);
-    const acp = await db.getRepository(Acp).save({
+    const ap = await db.getRepository(Ap).save({
       packageId: "cap-test-" + Date.now(),
       name: "Capability test",
-      acpIndex: {
+      apIndex: {
         assessmentParts: [
           {
             id: "p",
@@ -69,9 +69,9 @@ describe("Capability and import API integration", () => {
         ],
       },
     });
-    acpId = acp.id;
-    const config = await db.getRepository(AcpAccessConfig).save({
-      acpId,
+    apId = ap.id;
+    const config = await db.getRepository(ApAccessConfig).save({
+      apId,
       accessModel: "CREDENTIALS_LIST" as any,
       featureConfig: {
         enableReview: true,
@@ -81,17 +81,17 @@ describe("Capability and import API integration", () => {
     });
     configId = config.id;
     await db
-      .getRepository(AcpUserRole)
-      .save({ acpId, userId, role: "READ_ONLY" as any, capabilities: [] });
+      .getRepository(ApUserRole)
+      .save({ apId, userId, role: "READ_ONLY" as any, capabilities: [] });
     const res = await request(server)
-      .post(`/api/acp/${acpId}/access/credentials/single`)
+      .post(`/api/ap/${apId}/access/credentials/single`)
       .set("Authorization", "Bearer " + adminToken)
       .send({ username: "reviewer", password, capabilities: [] })
       .expect(201);
     credentialId = res.body.id;
     const login = await request(server)
       .post("/api/auth/credential-login")
-      .send({ acpId, username: "reviewer", password })
+      .send({ apId, username: "reviewer", password })
       .expect(201);
     credentialToken = login.body.accessToken;
   });
@@ -101,16 +101,16 @@ describe("Capability and import API integration", () => {
 
   it("blocks participant Explorer access when disabled without removing stored grants", async () => {
     const config = await db
-      .getRepository(AcpAccessConfig)
+      .getRepository(ApAccessConfig)
       .findOneByOrFail({ id: configId });
     await db
-      .getRepository(AcpUserRole)
-      .update({ acpId, userId }, { capabilities: [...ACP_CAPABILITIES] });
+      .getRepository(ApUserRole)
+      .update({ apId, userId }, { capabilities: [...AP_CAPABILITIES] });
     await db
-      .getRepository(AcpCredential)
-      .update(credentialId, { capabilities: [...ACP_CAPABILITIES] });
+      .getRepository(ApCredential)
+      .update(credentialId, { capabilities: [...AP_CAPABILITIES] });
     try {
-      await db.getRepository(AcpAccessConfig).update(configId, {
+      await db.getRepository(ApAccessConfig).update(configId, {
         featureConfig: { ...config.featureConfig, enableItemList: false },
       });
       for (const token of [userToken, credentialToken]) {
@@ -119,62 +119,62 @@ describe("Capability and import API integration", () => {
             .get(path)
             .set("Authorization", "Bearer " + token);
         for (const path of [
-          `/api/view/acp/${acpId}/items`,
-          `/api/acp/${acpId}/items`,
-          `/api/acp/${acpId}/files/item-list`,
-          `/api/view/acp/${acpId}/item-explorer/state`,
-          `/api/view/acp/${acpId}/items/preferences`,
-          `/api/view/acp/${acpId}/items/collections`,
+          `/api/view/ap/${apId}/items`,
+          `/api/ap/${apId}/items`,
+          `/api/ap/${apId}/files/item-list`,
+          `/api/view/ap/${apId}/item-explorer/state`,
+          `/api/view/ap/${apId}/items/preferences`,
+          `/api/view/ap/${apId}/items/collections`,
         ])
           await get(path).expect(403);
-        const response = await get(
-          `/api/view/acp/${acpId}/capabilities`,
-        ).expect(200);
+        const response = await get(`/api/view/ap/${apId}/capabilities`).expect(
+          200,
+        );
         expect(response.body).toMatchObject({
           canViewExplorer: false,
           canEditExplorer: false,
         });
-        expect(response.body.capabilities).toEqual([...ACP_CAPABILITIES]);
+        expect(response.body.capabilities).toEqual([...AP_CAPABILITIES]);
         await request(server)
-          .put(`/api/acp/${acpId}/items/tags`)
+          .put(`/api/ap/${apId}/items/tags`)
           .set("Authorization", "Bearer " + token)
           .send({})
           .expect(403);
       }
       await request(server)
-        .get(`/api/view/acp/${acpId}/items`)
+        .get(`/api/view/ap/${apId}/items`)
         .set("Authorization", "Bearer " + adminToken)
         .expect(200);
     } finally {
       await db
-        .getRepository(AcpAccessConfig)
+        .getRepository(ApAccessConfig)
         .save({ id: configId, featureConfig: config.featureConfig });
     }
     await request(server)
-      .get(`/api/view/acp/${acpId}/items`)
+      .get(`/api/view/ap/${apId}/items`)
       .set("Authorization", "Bearer " + userToken)
       .expect(200);
   });
 
   it("keeps migrated item-only commenting usable without activating booklet review", async () => {
     const config = await db
-      .getRepository(AcpAccessConfig)
+      .getRepository(ApAccessConfig)
       .findOneByOrFail({ id: configId });
     await db
-      .getRepository(AcpUserRole)
-      .update({ acpId, userId }, { capabilities: ["review:participate"] });
+      .getRepository(ApUserRole)
+      .update({ apId, userId }, { capabilities: ["review:participate"] });
     await db
-      .getRepository(AcpCredential)
+      .getRepository(ApCredential)
       .update(credentialId, { capabilities: ["review:participate"] });
     try {
-      await db.getRepository(AcpAccessConfig).save({
+      await db.getRepository(ApAccessConfig).save({
         id: configId,
         featureConfig: { ...config.featureConfig, enableReview: false },
       });
       for (const token of [userToken, credentialToken]) {
         const auth = { Authorization: "Bearer " + token };
         const created = await request(server)
-          .post(`/api/acp/${acpId}/comments`)
+          .post(`/api/ap/${apId}/comments`)
           .set(auth)
           .send({
             targetType: "ITEM",
@@ -183,41 +183,41 @@ describe("Capability and import API integration", () => {
           })
           .expect(201);
         const mine = await request(server)
-          .get(`/api/acp/${acpId}/comments/mine`)
+          .get(`/api/ap/${apId}/comments/mine`)
           .set(auth)
           .expect(200);
         expect(
           mine.body.some((comment: any) => comment.id === created.body.id),
         ).toBe(true);
         await request(server)
-          .get(`/api/acp/${acpId}/review/comments`)
+          .get(`/api/ap/${apId}/review/comments`)
           .query({ targetType: "ITEM", unitId: "U", itemId: "I" })
           .set(auth)
           .expect(200);
         await request(server)
-          .get(`/api/view/acp/${acpId}/review`)
+          .get(`/api/view/ap/${apId}/review`)
           .set(auth)
           .expect(403);
       }
     } finally {
       await db
-        .getRepository(AcpAccessConfig)
+        .getRepository(ApAccessConfig)
         .save({ id: configId, featureConfig: config.featureConfig });
     }
   });
 
   for (const type of ["oidc", "credential"]) {
     for (let mask = 0; mask < 16; mask++) {
-      const grants = ACP_CAPABILITIES.filter((_, i) => mask & (1 << i));
+      const grants = AP_CAPABILITIES.filter((_, i) => mask & (1 << i));
       it(`${type} API matrix ${mask}`, async () => {
         const token = type === "oidc" ? userToken : credentialToken;
         if (type === "oidc")
           await db
-            .getRepository(AcpUserRole)
-            .update({ acpId, userId }, { capabilities: [...grants] });
+            .getRepository(ApUserRole)
+            .update({ apId, userId }, { capabilities: [...grants] });
         else
           await db
-            .getRepository(AcpCredential)
+            .getRepository(ApCredential)
             .update(credentialId, { capabilities: [...grants] });
         const get = (path: string) =>
           request(server)
@@ -226,58 +226,58 @@ describe("Capability and import API integration", () => {
         const view =
           grants.includes("item-explorer:view") ||
           grants.includes("item-explorer:edit");
-        await get(`/api/view/acp/${acpId}/items`).expect(view ? 200 : 403);
-        await get(`/api/acp/${acpId}/items`).expect(view ? 200 : 403);
-        await get(`/api/acp/${acpId}/files/item-list`).expect(view ? 200 : 403);
-        await get(`/api/view/acp/${acpId}/item-explorer/state`).expect(
+        await get(`/api/view/ap/${apId}/items`).expect(view ? 200 : 403);
+        await get(`/api/ap/${apId}/items`).expect(view ? 200 : 403);
+        await get(`/api/ap/${apId}/files/item-list`).expect(view ? 200 : 403);
+        await get(`/api/view/ap/${apId}/item-explorer/state`).expect(
           view ? 200 : 403,
         );
-        await get(`/api/view/acp/${acpId}/review`).expect(
+        await get(`/api/view/ap/${apId}/review`).expect(
           grants.includes("review:participate") ||
             grants.includes("review:manage")
             ? 200
             : 403,
         );
-        await get(`/api/acp/${acpId}/review/comments/counts`).expect(
+        await get(`/api/ap/${apId}/review/comments/counts`).expect(
           grants.includes("review:participate") ||
             grants.includes("review:manage")
             ? 200
             : 403,
         );
         await request(server)
-          .post(`/api/acp/${acpId}/review/comments`)
+          .post(`/api/ap/${apId}/review/comments`)
           .set("Authorization", "Bearer " + token)
           .send({ unitId: "U", itemId: "I", commentText: "matrix" })
           .expect(grants.includes("review:participate") ? 201 : 403);
         await request(server)
-          .put(`/api/view/acp/${acpId}/review/config`)
+          .put(`/api/view/ap/${apId}/review/config`)
           .set("Authorization", "Bearer " + token)
           .send({
             enableReview: true,
             visibilityMode: "PRIVATE",
             configVersion: (
               await db
-                .getRepository(AcpAccessConfig)
+                .getRepository(ApAccessConfig)
                 .findOneByOrFail({ id: configId })
             ).reviewConfigVersion,
           })
           .expect(grants.includes("review:manage") ? 200 : 403);
         await request(server)
-          .put(`/api/acp/${acpId}/items/tags`)
+          .put(`/api/ap/${apId}/items/tags`)
           .set("Authorization", "Bearer " + token)
           .send({ tags: {} })
           .expect(grants.includes("item-explorer:edit") ? 200 : 403);
         // The read-only changelog is restricted to editors like the draft routes.
-        await get(`/api/acp/${acpId}/item-explorer/changes`).expect(
+        await get(`/api/ap/${apId}/item-explorer/changes`).expect(
           grants.includes("item-explorer:edit") ? 200 : 403,
         );
-        await get(`/api/acp/${acpId}/roles`).expect(403);
+        await get(`/api/ap/${apId}/roles`).expect(403);
       });
     }
   }
   it("allows a credential editor to save a draft without a user-table identity", async () => {
     const res = await request(server)
-      .patch(`/api/acp/${acpId}/item-explorer/draft`)
+      .patch(`/api/ap/${apId}/item-explorer/draft`)
       .set("Authorization", "Bearer " + credentialToken)
       .send({ changeType: "COLUMN_VISIBILITY", patch: { ui: {} } })
       .expect(200);
@@ -286,7 +286,7 @@ describe("Capability and import API integration", () => {
     for (const token of [userToken, credentialToken]) {
       for (const perspective of ["editor", "read-only"]) {
         const list = await request(server)
-          .get(`/api/acp/${acpId}/files/item-list?perspective=${perspective}`)
+          .get(`/api/ap/${apId}/files/item-list?perspective=${perspective}`)
           .set("Authorization", "Bearer " + token)
           .expect(200);
         expect(list.body.itemExplorerStateVersion).toBe(
@@ -299,7 +299,7 @@ describe("Capability and import API integration", () => {
   });
   it("does not give app admins participation without explicit grants", async () => {
     await request(server)
-      .post(`/api/acp/${acpId}/review/comments`)
+      .post(`/api/ap/${apId}/review/comments`)
       .set("Authorization", "Bearer " + adminToken)
       .send({
         unitId: "U",
@@ -312,7 +312,7 @@ describe("Capability and import API integration", () => {
     const upload = (preview: boolean) =>
       request(server)
         .post(
-          `/api/acp/${acpId}/access/credentials/file?mode=upsert&preview=${preview}`,
+          `/api/ap/${apId}/access/credentials/file?mode=upsert&preview=${preview}`,
         )
         .set("Authorization", "Bearer " + adminToken)
         .field("profile", "REVIEW_ONLY")
@@ -326,21 +326,21 @@ describe("Capability and import API integration", () => {
     expect(JSON.stringify(preview.body)).not.toContain(password);
     await upload(false).expect(201);
     const c = await db
-      .getRepository(AcpCredential)
+      .getRepository(ApCredential)
       .findOneByOrFail({ id: credentialId });
     expect(c.capabilities).toEqual(["review:participate"]);
     expect(c.passwordHash).not.toBe(password);
     await request(server)
-      .get(`/api/view/acp/${acpId}/items`)
+      .get(`/api/view/ap/${apId}/items`)
       .set("Authorization", "Bearer " + credentialToken)
       .expect(403);
   });
   it("rejects a malformed replace without deleting or changing any credential", async () => {
     const before = await db
-      .getRepository(AcpCredential)
+      .getRepository(ApCredential)
       .findBy({ accessConfigId: configId });
     const res = await request(server)
-      .post(`/api/acp/${acpId}/access/credentials/file?mode=replace`)
+      .post(`/api/ap/${apId}/access/credentials/file?mode=replace`)
       .set("Authorization", "Bearer " + adminToken)
       .field("profile", "BOTH")
       .attach(
@@ -354,14 +354,12 @@ describe("Capability and import API integration", () => {
     expect(res.body.errors).toHaveLength(4);
     expect(JSON.stringify(res.body)).not.toContain(password);
     expect(
-      await db
-        .getRepository(AcpCredential)
-        .findBy({ accessConfigId: configId }),
+      await db.getRepository(ApCredential).findBy({ accessConfigId: configId }),
     ).toEqual(before);
   });
   it("keeps append grants unchanged and rejects stale deleted credentials", async () => {
     await request(server)
-      .post(`/api/acp/${acpId}/access/credentials/file?mode=append`)
+      .post(`/api/ap/${apId}/access/credentials/file?mode=append`)
       .set("Authorization", "Bearer " + adminToken)
       .field("profile", "BOTH")
       .attach("file", Buffer.from("reviewer;" + password), "access.csv")
@@ -369,20 +367,20 @@ describe("Capability and import API integration", () => {
     expect(
       (
         await db
-          .getRepository(AcpCredential)
+          .getRepository(ApCredential)
           .findOneByOrFail({ id: credentialId })
       ).capabilities,
     ).toEqual(["review:participate"]);
     await request(server)
-      .delete(`/api/acp/${acpId}/access/credentials/${credentialId}`)
+      .delete(`/api/ap/${apId}/access/credentials/${credentialId}`)
       .set("Authorization", "Bearer " + adminToken)
       .expect(200);
     await request(server)
-      .get(`/api/view/acp/${acpId}/review`)
+      .get(`/api/view/ap/${apId}/review`)
       .set("Authorization", "Bearer " + credentialToken)
       .expect(403);
     await request(server)
-      .get(`/api/view/acp/${acpId}`)
+      .get(`/api/view/ap/${apId}`)
       .set("Authorization", "Bearer " + credentialToken)
       .expect(403);
   });
@@ -403,7 +401,7 @@ describe("Capability and import API integration", () => {
       const roles = await runner.query(
         "SELECT * FROM acp_user_roles ORDER BY acp_id,role",
       );
-      expect(roles[0].capabilities).toEqual([...ACP_CAPABILITIES]);
+      expect(roles[0].capabilities).toEqual([...AP_CAPABILITIES]);
       expect(roles[1].capabilities).toEqual(["review:participate"]);
       expect(roles[2].capabilities).toEqual(["item-explorer:view"]);
       expect(

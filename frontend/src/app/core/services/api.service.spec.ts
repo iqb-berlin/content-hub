@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { of, throwError } from 'rxjs';
 import { ApiService } from './api.service';
-import { Acp, User, AppSettings, AcpFile } from '../models/api.models';
+import { Ap, User, AppSettings, ApFile } from '../models/api.models';
 
 describe('ApiService', () => {
   let service: ApiService;
@@ -34,11 +34,11 @@ describe('ApiService', () => {
   });
 
   it('distinguishes booklet requests from legacy module requests with the same ID', () => {
-    service.getViewSequence('acp-1', 'same');
-    expect(httpClientMock.get).toHaveBeenLastCalledWith('/api/view/acp/acp-1/sequences/same');
-    service.getViewSequence('acp-1', 'same', 'booklet');
+    service.getViewSequence('ap-1', 'same');
+    expect(httpClientMock.get).toHaveBeenLastCalledWith('/api/view/ap/ap-1/sequences/same');
+    service.getViewSequence('ap-1', 'same', 'booklet');
     expect(httpClientMock.get).toHaveBeenLastCalledWith(
-      '/api/view/acp/acp-1/sequences/same?kind=booklet',
+      '/api/view/ap/ap-1/sequences/same?kind=booklet',
     );
   });
 
@@ -126,7 +126,7 @@ describe('ApiService', () => {
         theme: {},
         language: 'de',
         logoUrl: 'logo.png',
-        defaultAcpIndex: {},
+        defaultApIndex: {},
       };
       httpClientMock.get.mockReturnValue(of(mockSettings));
 
@@ -144,7 +144,7 @@ describe('ApiService', () => {
         theme: {},
         language: 'en',
         logoUrl: 'logo.png',
-        defaultAcpIndex: {},
+        defaultApIndex: {},
       };
       httpClientMock.put.mockReturnValue(of(mockSettings));
 
@@ -162,7 +162,7 @@ describe('ApiService', () => {
         theme: {},
         language: 'de',
         logoUrl: 'logo.png',
-        defaultAcpIndex: {},
+        defaultApIndex: {},
         geoGebraBundle: {
           sourceFileName: 'GeoGebra.itcr.zip',
           deployScriptUrl: '/api/shared-assets/GeoGebra/GeoGebra/deployggb.js',
@@ -190,7 +190,7 @@ describe('ApiService', () => {
         theme: {},
         language: 'de',
         logoUrl: 'logo.png',
-        defaultAcpIndex: {},
+        defaultApIndex: {},
         geoGebraBundle: null,
       };
       httpClientMock.delete.mockReturnValue(of(mockSettings));
@@ -218,13 +218,13 @@ describe('ApiService', () => {
     });
 
     it('should create application tokens', () => {
-      const payload = { name: 'Studio', scopes: ['acp.read' as const], expiresAt: null };
+      const payload = { name: 'Studio', scopes: ['ap.read' as const], expiresAt: null };
       const response = {
         id: 'token-1',
         name: 'Studio',
         tokenPrefix: 'ch_abc...',
         token: 'ch_secret',
-        scopes: ['acp.read' as const],
+        scopes: ['ap.read' as const],
         active: true,
         expiresAt: null,
         lastUsedAt: null,
@@ -257,78 +257,78 @@ describe('ApiService', () => {
     });
   });
 
-  describe('ACP', () => {
-    const baseAcp: Acp = {
+  describe('AP', () => {
+    const baseAp: Ap = {
       id: '1',
       packageId: 'pkg-1',
-      name: 'ACP 1',
+      name: 'AP 1',
       description: 'Desc',
-      acpIndex: {},
+      apIndex: {},
       settings: {},
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     };
 
-    it('should get all ACPs', () => {
-      httpClientMock.get.mockReturnValue(of([baseAcp]));
+    it('should get all APs', () => {
+      httpClientMock.get.mockReturnValue(of([baseAp]));
 
-      service.getAcps().subscribe((acps) => {
-        expect(acps).toEqual([baseAcp]);
+      service.getAps().subscribe((aps) => {
+        expect(aps).toEqual([baseAp]);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap');
     });
 
-    it('should get single ACP', () => {
-      httpClientMock.get.mockReturnValue(of(baseAcp));
+    it('should get single AP', () => {
+      httpClientMock.get.mockReturnValue(of(baseAp));
 
-      service.getAcp('1').subscribe((acp) => {
-        expect(acp).toEqual(baseAcp);
+      service.getAp('1').subscribe((ap) => {
+        expect(ap).toEqual(baseAp);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/1');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/1');
     });
 
-    it('should create ACP', () => {
-      const createData = { name: 'New ACP', description: 'New Desc' };
-      httpClientMock.post.mockReturnValue(of(baseAcp));
+    it('should create AP', () => {
+      const createData = { name: 'New AP', description: 'New Desc' };
+      httpClientMock.post.mockReturnValue(of(baseAp));
 
-      service.createAcp(createData).subscribe((acp) => {
-        expect(acp).toBeTruthy();
+      service.createAp(createData).subscribe((ap) => {
+        expect(ap).toBeTruthy();
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp', createData);
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap', createData);
     });
 
-    it('should update ACP', () => {
+    it('should update AP', () => {
       const updateData = { name: 'Updated' };
-      const updatedAcp = { ...baseAcp, name: 'Updated' };
-      httpClientMock.patch.mockReturnValue(of(updatedAcp));
+      const updatedAp = { ...baseAp, name: 'Updated' };
+      httpClientMock.patch.mockReturnValue(of(updatedAp));
 
-      service.updateAcp('1', updateData).subscribe((acp) => {
-        expect(acp.name).toBe('Updated');
+      service.updateAp('1', updateData).subscribe((ap) => {
+        expect(ap.name).toBe('Updated');
       });
 
-      expect(httpClientMock.patch).toHaveBeenCalledWith('/api/acp/1', updateData);
+      expect(httpClientMock.patch).toHaveBeenCalledWith('/api/ap/1', updateData);
     });
 
-    it('should delete ACP', () => {
+    it('should delete AP', () => {
       httpClientMock.delete.mockReturnValue(of(null));
 
-      service.deleteAcp('1').subscribe(() => {
+      service.deleteAp('1').subscribe(() => {
         expect(true).toBe(true);
       });
 
-      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/acp/1');
+      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/ap/1');
     });
   });
 
   describe('Files', () => {
     it('should get files', () => {
-      const mockFiles: AcpFile[] = [
+      const mockFiles: ApFile[] = [
         {
           id: '1',
-          acpId: 'acp1',
+          apId: 'ap1',
           filePath: '/files/test.zip',
           originalName: 'test.zip',
           fileSize: 1000,
@@ -337,11 +337,11 @@ describe('ApiService', () => {
       ];
       httpClientMock.get.mockReturnValue(of(mockFiles));
 
-      service.getFiles('acp1').subscribe((files) => {
+      service.getFiles('ap1').subscribe((files) => {
         expect(files).toEqual(mockFiles);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/files');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/files');
     });
 
     it('loads AP consistency independently of file validation', () => {
@@ -352,29 +352,29 @@ describe('ApiService', () => {
       };
       httpClientMock.get.mockReturnValue(of(result));
 
-      service.getAcpConsistency('acp1').subscribe((value) => expect(value).toEqual(result));
+      service.getApConsistency('ap1').subscribe((value) => expect(value).toEqual(result));
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/files/consistency');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/files/consistency');
     });
 
     it('should delete file', () => {
       httpClientMock.delete.mockReturnValue(of(null));
 
-      service.deleteFile('acp1', 'file1').subscribe(() => {
+      service.deleteFile('ap1', 'file1').subscribe(() => {
         expect(true).toBe(true);
       });
 
-      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/acp/acp1/files/file1');
+      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/ap/ap1/files/file1');
     });
 
     it('should bulk delete files', () => {
       httpClientMock.post.mockReturnValue(of({ message: 'Files deleted successfully' }));
 
-      service.bulkDeleteFiles('acp1', ['file1', 'file2']).subscribe(() => {
+      service.bulkDeleteFiles('ap1', ['file1', 'file2']).subscribe(() => {
         expect(true).toBe(true);
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/files/bulk-delete', {
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/files/bulk-delete', {
         fileIds: ['file1', 'file2'],
       });
     });
@@ -382,11 +382,11 @@ describe('ApiService', () => {
     it('should start a ZIP creation job for selected files', () => {
       httpClientMock.post.mockReturnValue(of({ id: 'job-1', status: 'pending' }));
 
-      service.startFileDownloadJob('acp1', { fileIds: ['file1', 'file2'] }).subscribe((job) => {
+      service.startFileDownloadJob('ap1', { fileIds: ['file1', 'file2'] }).subscribe((job) => {
         expect(job).toEqual({ id: 'job-1', status: 'pending' });
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/files/bulk-download/jobs', {
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/files/bulk-download/jobs', {
         fileIds: ['file1', 'file2'],
       });
     });
@@ -395,13 +395,13 @@ describe('ApiService', () => {
       const blob = new Blob(['zip']);
       httpClientMock.post.mockReturnValue(of({ body: blob }));
 
-      service.downloadFilesArchive('acp1').subscribe((result) => {
+      service.downloadFilesArchive('ap1').subscribe((result) => {
         expect(result).toEqual({ body: blob });
       });
 
       expect(httpClientMock.post).toHaveBeenNthCalledWith(
         1,
-        '/api/acp/acp1/files/bulk-download',
+        '/api/ap/ap1/files/bulk-download',
         { fileIds: [] },
         {
           observe: 'response',
@@ -409,13 +409,13 @@ describe('ApiService', () => {
         },
       );
 
-      service.downloadFilesArchive('acp1', ['file1', 'file2']).subscribe((result) => {
+      service.downloadFilesArchive('ap1', ['file1', 'file2']).subscribe((result) => {
         expect(result).toEqual({ body: blob });
       });
 
       expect(httpClientMock.post).toHaveBeenNthCalledWith(
         2,
-        '/api/acp/acp1/files/bulk-download',
+        '/api/ap/ap1/files/bulk-download',
         { fileIds: ['file1', 'file2'] },
         {
           observe: 'response',
@@ -428,11 +428,11 @@ describe('ApiService', () => {
       const event = { type: 'response' };
       httpClientMock.get.mockReturnValue(of(event));
 
-      service.downloadFileJobArchive('acp1', 'job-1').subscribe((result) => {
+      service.downloadFileJobArchive('ap1', 'job-1').subscribe((result) => {
         expect(result).toEqual(event);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/files/jobs/job-1/archive', {
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/files/jobs/job-1/archive', {
         observe: 'events',
         reportProgress: true,
         responseType: 'blob',
@@ -447,11 +447,11 @@ describe('ApiService', () => {
         }),
       );
 
-      service.uploadFiles('acp1', formData).subscribe(() => {
+      service.uploadFiles('ap1', formData).subscribe(() => {
         expect(true).toBe(true);
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/files/upload', formData, {
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/files/upload', formData, {
         observe: 'events',
         reportProgress: true,
       });
@@ -465,12 +465,12 @@ describe('ApiService', () => {
         }),
       );
 
-      service.uploadFiles('acp1', formData, { conflictStrategy: 'overwrite' }).subscribe(() => {
+      service.uploadFiles('ap1', formData, { conflictStrategy: 'overwrite' }).subscribe(() => {
         expect(true).toBe(true);
       });
 
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/acp/acp1/files/upload?conflictStrategy=overwrite',
+        '/api/ap/ap1/files/upload?conflictStrategy=overwrite',
         formData,
         {
           observe: 'events',
@@ -483,12 +483,12 @@ describe('ApiService', () => {
       httpClientMock.post.mockReturnValue(of({ id: 'job-1' }));
 
       service
-        .startFileProcessing('acp1', { fileIds: ['file-1'], runCleanup: true })
+        .startFileProcessing('ap1', { fileIds: ['file-1'], runCleanup: true })
         .subscribe((result) => {
           expect(result).toEqual({ id: 'job-1' });
         });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/files/process-upload', {
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/files/process-upload', {
         fileIds: ['file-1'],
         runCleanup: true,
       });
@@ -497,19 +497,19 @@ describe('ApiService', () => {
     it('should get file processing job', () => {
       httpClientMock.get.mockReturnValue(of({ id: 'job-1', status: 'running' }));
 
-      service.getFileProcessingJob('acp1', 'job-1').subscribe((result) => {
+      service.getFileProcessingJob('ap1', 'job-1').subscribe((result) => {
         expect(result).toEqual({ id: 'job-1', status: 'running' });
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/files/jobs/job-1');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/files/jobs/job-1');
     });
 
     it('should build file processing events URL with auth token', () => {
       localStorage.setItem('ch_token', 'job-token');
 
-      const url = service.getFileProcessingJobEventsUrl('acp1', 'job-1');
+      const url = service.getFileProcessingJobEventsUrl('ap1', 'job-1');
 
-      expect(url).toBe('/api/acp/acp1/files/jobs/job-1/events?auth_token=job-token');
+      expect(url).toBe('/api/ap/ap1/files/jobs/job-1/events?auth_token=job-token');
     });
 
     it('should validate unit files', () => {
@@ -526,39 +526,39 @@ describe('ApiService', () => {
       };
       httpClientMock.get.mockReturnValue(of(response));
 
-      service.validateUnitFiles('acp1').subscribe((result) => {
+      service.validateUnitFiles('ap1').subscribe((result) => {
         expect(result).toEqual(response);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/files/validate-units');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/files/validate-units');
     });
 
     it('should get file download URL with token', () => {
       localStorage.setItem('ch_token', 'test-token');
-      const url = service.getFileDownloadUrl('acp1', 'file1');
+      const url = service.getFileDownloadUrl('ap1', 'file1');
       expect(url).toContain('auth_token=test-token');
     });
 
     it('should get file download URL without token', () => {
       localStorage.removeItem('ch_token');
-      const url = service.getFileDownloadUrl('acp1', 'file1');
-      expect(url).toBe('/api/acp/acp1/files/file1/download');
+      const url = service.getFileDownloadUrl('ap1', 'file1');
+      expect(url).toBe('/api/ap/ap1/files/file1/download');
     });
 
     it('should get inline file content URL', () => {
       localStorage.setItem('ch_token', 'preview-token');
-      const url = service.getFileContentUrl('acp1', 'file1', { disposition: 'inline' });
+      const url = service.getFileContentUrl('ap1', 'file1', { disposition: 'inline' });
 
-      expect(url).toContain('/api/acp/acp1/files/file1/download');
+      expect(url).toContain('/api/ap/ap1/files/file1/download');
       expect(url).toContain('auth_token=preview-token');
       expect(url).toContain('disposition=inline');
     });
 
     it('should get file job archive URL with auth token', () => {
       localStorage.setItem('ch_token', 'job-token');
-      const url = service.getFileJobArchiveUrl('acp1', 'job-1');
+      const url = service.getFileJobArchiveUrl('ap1', 'job-1');
 
-      expect(url).toBe('/api/acp/acp1/files/jobs/job-1/archive?auth_token=job-token');
+      expect(url).toBe('/api/ap/ap1/files/jobs/job-1/archive?auth_token=job-token');
     });
 
     it('should request file preview metadata', () => {
@@ -572,179 +572,174 @@ describe('ApiService', () => {
         }),
       );
 
-      service.getFilePreview('acp1', 'file1').subscribe((result) => {
+      service.getFilePreview('ap1', 'file1').subscribe((result) => {
         expect(result.fileId).toBe('file1');
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/files/file1/preview');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/files/file1/preview');
     });
 
     it('should request explorer item list with read-only perspective when provided', () => {
       httpClientMock.get.mockReturnValue(of({ items: [] }));
 
-      service.getFileItemList('acp1', { perspective: 'read-only' }).subscribe((result) => {
+      service.getFileItemList('ap1', { perspective: 'read-only' }).subscribe((result) => {
         expect(result).toEqual({ items: [] });
       });
 
       expect(httpClientMock.get).toHaveBeenCalledWith(
-        '/api/acp/acp1/files/item-list?perspective=read-only',
+        '/api/ap/ap1/files/item-list?perspective=read-only',
       );
     });
 
     it('should request a fresh Item Explorer row numbering', () => {
       httpClientMock.post.mockReturnValue(of({ renumberedCount: 4 }));
 
-      service.recalculateItemRowNumbers('acp1').subscribe((result) => {
+      service.recalculateItemRowNumbers('ap1').subscribe((result) => {
         expect(result).toEqual({ renumberedCount: 4 });
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/acp/acp1/files/item-list/renumber',
-        {},
-      );
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/files/item-list/renumber', {});
     });
 
     it('should request explorer unit view with read-only perspective when provided', () => {
       httpClientMock.get.mockReturnValue(of({ unitId: 'unit-1' }));
 
-      service
-        .getFileUnitView('acp1', 'unit-1', { perspective: 'read-only' })
-        .subscribe((result) => {
-          expect(result).toEqual({ unitId: 'unit-1' });
-        });
+      service.getFileUnitView('ap1', 'unit-1', { perspective: 'read-only' }).subscribe((result) => {
+        expect(result).toEqual({ unitId: 'unit-1' });
+      });
 
       expect(httpClientMock.get).toHaveBeenCalledWith(
-        '/api/acp/acp1/files/unit-view/unit-1?perspective=read-only',
+        '/api/ap/ap1/files/unit-view/unit-1?perspective=read-only',
       );
     });
   });
 
-  describe('ACP Index', () => {
-    it('should get ACP index', () => {
+  describe('AP Index', () => {
+    it('should get AP index', () => {
       httpClientMock.get.mockReturnValue(of({ entries: [] }));
 
-      service.getAcpIndex('acp1').subscribe((result) => {
+      service.getApIndex('ap1').subscribe((result) => {
         expect(result).toEqual({ entries: [] });
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/index');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/index');
     });
 
-    it('should update ACP index', () => {
+    it('should update AP index', () => {
       const indexData = { entries: [{ id: '1' }] };
       httpClientMock.put.mockReturnValue(of(indexData));
 
-      service.updateAcpIndex('acp1', indexData).subscribe((result) => {
+      service.updateApIndex('ap1', indexData).subscribe((result) => {
         expect(result).toEqual(indexData);
       });
 
-      expect(httpClientMock.put).toHaveBeenCalledWith('/api/acp/acp1/index', indexData);
+      expect(httpClientMock.put).toHaveBeenCalledWith('/api/ap/ap1/index', indexData);
     });
 
-    it('should import ACP index', () => {
+    it('should import AP index', () => {
       const importData = { entries: [{ id: '1' }] };
       httpClientMock.post.mockReturnValue(of(importData));
 
-      service.importAcpIndex('acp1', importData).subscribe((result) => {
+      service.importApIndex('ap1', importData).subscribe((result) => {
         expect(result).toEqual(importData);
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/index/import', importData);
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/index/import', importData);
     });
 
-    it('should delete ACP index', () => {
+    it('should delete AP index', () => {
       httpClientMock.delete.mockReturnValue(of({}));
 
-      service.deleteAcpIndex('acp1').subscribe((result) => {
+      service.deleteApIndex('ap1').subscribe((result) => {
         expect(result).toEqual({});
       });
 
-      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/acp/acp1/index');
+      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/ap/ap1/index');
     });
 
     it('should build index export URL with auth token', () => {
       localStorage.setItem('ch_token', 'token+1');
 
-      const url = service.getIndexExportUrl('acp1');
+      const url = service.getIndexExportUrl('ap1');
 
-      expect(url).toBe('/api/acp/acp1/index/export?auth_token=token%2B1');
+      expect(url).toBe('/api/ap/ap1/index/export?auth_token=token%2B1');
     });
 
     it('should build index export URL without auth token', () => {
       localStorage.removeItem('ch_token');
 
-      const url = service.getIndexExportUrl('acp1');
+      const url = service.getIndexExportUrl('ap1');
 
-      expect(url).toBe('/api/acp/acp1/index/export');
+      expect(url).toBe('/api/ap/ap1/index/export');
     });
   });
 
-  describe('ACP Roles', () => {
-    it('should get ACP roles', () => {
+  describe('AP Roles', () => {
+    it('should get AP roles', () => {
       httpClientMock.get.mockReturnValue(of([{ userId: '1', role: 'MANAGER' }]));
 
-      service.getAcpRoles('acp1').subscribe((result) => {
+      service.getApRoles('ap1').subscribe((result) => {
         expect(result).toEqual([{ userId: '1', role: 'MANAGER' }]);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/roles');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/roles');
     });
 
-    it('should assign ACP role', () => {
+    it('should assign AP role', () => {
       const roleData = { userId: '1', role: 'MANAGER' };
       httpClientMock.post.mockReturnValue(of(roleData));
 
-      service.assignAcpRole('acp1', roleData).subscribe((result) => {
+      service.assignApRole('ap1', roleData).subscribe((result) => {
         expect(result).toEqual(roleData);
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/roles', roleData);
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/roles', roleData);
     });
 
-    it('should remove ACP role', () => {
+    it('should remove AP role', () => {
       httpClientMock.delete.mockReturnValue(of(null));
 
-      service.removeAcpRole('acp1', 'user1').subscribe(() => {
+      service.removeApRole('ap1', 'user1').subscribe(() => {
         expect(true).toBe(true);
       });
 
-      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/acp/acp1/roles/user1');
+      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/ap/ap1/roles/user1');
     });
   });
 
-  describe('ACP Access', () => {
+  describe('AP Access', () => {
     it('should get access config', () => {
       const accessConfig = { id: '1', accessModel: 'PUBLIC' };
       httpClientMock.get.mockReturnValue(of(accessConfig));
 
-      service.getAccessConfig('acp1').subscribe((result) => {
+      service.getAccessConfig('ap1').subscribe((result) => {
         expect(result).toEqual(accessConfig);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/access');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/access');
     });
 
     it('should update access config', () => {
       const configData = { accessModel: 'PRIVATE' };
       httpClientMock.put.mockReturnValue(of(configData));
 
-      service.updateAccessConfig('acp1', configData).subscribe((result) => {
+      service.updateAccessConfig('ap1', configData).subscribe((result) => {
         expect(result).toEqual(configData);
       });
 
-      expect(httpClientMock.put).toHaveBeenCalledWith('/api/acp/acp1/access', configData);
+      expect(httpClientMock.put).toHaveBeenCalledWith('/api/ap/ap1/access', configData);
     });
 
     it('should upload credentials', () => {
       const credentials = [{ username: 'user1', password: 'pass' }];
       httpClientMock.post.mockReturnValue(of({}));
 
-      service.uploadCredentials('acp1', credentials).subscribe(() => {
+      service.uploadCredentials('ap1', credentials).subscribe(() => {
         expect(true).toBe(true);
       });
 
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/acp/acp1/access/credentials?mode=replace',
+        '/api/ap/ap1/access/credentials?mode=replace',
         { credentials },
       );
     });
@@ -753,12 +748,12 @@ describe('ApiService', () => {
       const credentials = [{ username: 'user1', password: 'pass' }];
       httpClientMock.post.mockReturnValue(of({}));
 
-      service.uploadCredentials('acp1', credentials, 'append').subscribe(() => {
+      service.uploadCredentials('ap1', credentials, 'append').subscribe(() => {
         expect(true).toBe(true);
       });
 
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/acp/acp1/access/credentials?mode=append',
+        '/api/ap/ap1/access/credentials?mode=append',
         { credentials },
       );
     });
@@ -767,11 +762,11 @@ describe('ApiService', () => {
       const columns = ['col1', 'col2'];
       httpClientMock.put.mockReturnValue(of({}));
 
-      service.updateMetadataColumns('acp1', columns).subscribe(() => {
+      service.updateMetadataColumns('ap1', columns).subscribe(() => {
         expect(true).toBe(true);
       });
 
-      expect(httpClientMock.put).toHaveBeenCalledWith('/api/acp/acp1/metadata-columns', columns);
+      expect(httpClientMock.put).toHaveBeenCalledWith('/api/ap/ap1/metadata-columns', columns);
     });
   });
 
@@ -779,11 +774,11 @@ describe('ApiService', () => {
     it('should get snapshot diff', () => {
       httpClientMock.get.mockReturnValue(of({ changes: [] }));
 
-      service.getSnapshotDiff('acp1', 'snap1').subscribe((result) => {
+      service.getSnapshotDiff('ap1', 'snap1').subscribe((result) => {
         expect(result).toEqual({ changes: [] });
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/snapshots/snap1/diff');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/snapshots/snap1/diff');
     });
   });
 
@@ -791,21 +786,21 @@ describe('ApiService', () => {
     it('should get my comments', () => {
       httpClientMock.get.mockReturnValue(of([]));
 
-      service.getMyComments('acp1').subscribe((result) => {
+      service.getMyComments('ap1').subscribe((result) => {
         expect(result).toEqual([]);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/comments/mine');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/comments/mine');
     });
 
     it('should export comments', () => {
       httpClientMock.get.mockReturnValue(of([]));
 
-      service.exportComments('acp1').subscribe((result) => {
+      service.exportComments('ap1').subscribe((result) => {
         expect(result).toEqual([]);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/comments/export');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/comments/export');
     });
 
     it('should create comments and export XLSX comments', () => {
@@ -822,20 +817,20 @@ describe('ApiService', () => {
       httpClientMock.get.mockReturnValue(of(blob));
 
       service
-        .createComment('acp1', { targetType: 'ITEM', targetId: 'item1', commentText: 'hello' })
+        .createComment('ap1', { targetType: 'ITEM', targetId: 'item1', commentText: 'hello' })
         .subscribe((result) => {
           expect(result).toEqual(created);
         });
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/comments', {
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/comments', {
         targetType: 'ITEM',
         targetId: 'item1',
         commentText: 'hello',
       });
 
-      service.exportCommentsXlsx('acp1').subscribe((result) => {
+      service.exportCommentsXlsx('ap1').subscribe((result) => {
         expect(result).toEqual(blob);
       });
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/comments/export.xlsx', {
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/comments/export.xlsx', {
         responseType: 'blob',
       });
     });
@@ -850,17 +845,17 @@ describe('ApiService', () => {
       httpClientMock.get.mockReturnValue(throwError(() => ({ status: 304 })));
       let result: any;
       service
-        .getItemCommentThread('acp1', 'U', 'I', previous)
+        .getItemCommentThread('ap1', 'U', 'I', previous)
         .subscribe((snapshot) => (result = snapshot));
       expect(result).toBe(previous);
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/review/comments', {
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/review/comments', {
         params: { unitId: 'U', itemId: 'I' },
         headers: { 'If-None-Match': '"visible-a"' },
       });
       httpClientMock.get.mockReturnValue(throwError(() => ({ status: 403 })));
       let failure: any;
       service
-        .getItemCommentThread('acp1', 'U', 'I', previous)
+        .getItemCommentThread('ap1', 'U', 'I', previous)
         .subscribe({ error: (error) => (failure = error) });
       expect(failure.status).toBe(403);
     });
@@ -873,37 +868,37 @@ describe('ApiService', () => {
       httpClientMock.patch.mockReturnValue(of({ id: 'c1', version: 2 }));
       httpClientMock.delete.mockReturnValue(of({ success: true }));
 
-      service.getItemCommentThread('acp1', 'unit1', 'item1').subscribe();
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/review/comments', {
+      service.getItemCommentThread('ap1', 'unit1', 'item1').subscribe();
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/review/comments', {
         params: { unitId: 'unit1', itemId: 'item1' },
       });
 
-      service.getItemCommentCounts('acp1').subscribe();
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/review/comments/counts');
+      service.getItemCommentCounts('ap1').subscribe();
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/review/comments/counts');
 
       service
-        .createItemComment('acp1', {
+        .createItemComment('ap1', {
           unitId: 'unit1',
           itemId: 'item1',
           commentText: 'Hallo',
           parentCommentId: 'parent1',
         })
         .subscribe();
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/review/comments', {
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/review/comments', {
         unitId: 'unit1',
         itemId: 'item1',
         commentText: 'Hallo',
         parentCommentId: 'parent1',
       });
 
-      service.updateItemComment('acp1', 'c1', { commentText: 'Neu', version: 1 }).subscribe();
-      expect(httpClientMock.patch).toHaveBeenCalledWith('/api/acp/acp1/review/comments/c1', {
+      service.updateItemComment('ap1', 'c1', { commentText: 'Neu', version: 1 }).subscribe();
+      expect(httpClientMock.patch).toHaveBeenCalledWith('/api/ap/ap1/review/comments/c1', {
         commentText: 'Neu',
         version: 1,
       });
 
-      service.deleteItemComment('acp1', 'c1', 2).subscribe();
-      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/acp/acp1/review/comments/c1', {
+      service.deleteItemComment('ap1', 'c1', 2).subscribe();
+      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/ap/ap1/review/comments/c1', {
         params: { version: 2 },
       });
     });
@@ -912,95 +907,93 @@ describe('ApiService', () => {
       const blob = new Blob(['export']);
       httpClientMock.get.mockReturnValue(of(blob));
 
-      service.exportMyReviewCommentsCsv('acp1').subscribe();
+      service.exportMyReviewCommentsCsv('ap1').subscribe();
       expect(httpClientMock.get).toHaveBeenNthCalledWith(
         1,
-        '/api/acp/acp1/review/comments/export/mine.csv',
+        '/api/ap/ap1/review/comments/export/mine.csv',
         { params: {}, responseType: 'blob' },
       );
-      service.exportMyReviewCommentsXlsx('acp1').subscribe();
+      service.exportMyReviewCommentsXlsx('ap1').subscribe();
       expect(httpClientMock.get).toHaveBeenNthCalledWith(
         2,
-        '/api/acp/acp1/review/comments/export/mine.xlsx',
+        '/api/ap/ap1/review/comments/export/mine.xlsx',
         { params: {}, responseType: 'blob' },
       );
-      service.exportAllReviewCommentsXlsx('acp1').subscribe();
+      service.exportAllReviewCommentsXlsx('ap1').subscribe();
       expect(httpClientMock.get).toHaveBeenNthCalledWith(
         3,
-        '/api/acp/acp1/review/comments/export/all.xlsx',
+        '/api/ap/ap1/review/comments/export/all.xlsx',
         { responseType: 'blob' },
       );
     });
   });
 
   describe('Public Views', () => {
-    it('should get public settings and public ACP list', () => {
+    it('should get public settings and public AP list', () => {
       const publicSettings = { language: 'de' };
-      const publicAcps = [{ id: 'acp1', name: 'Public ACP' }];
-      httpClientMock.get
-        .mockReturnValueOnce(of(publicSettings))
-        .mockReturnValueOnce(of(publicAcps));
+      const publicAps = [{ id: 'ap1', name: 'Public AP' }];
+      httpClientMock.get.mockReturnValueOnce(of(publicSettings)).mockReturnValueOnce(of(publicAps));
 
       service.getPublicSettings().subscribe((result) => {
         expect(result).toEqual(publicSettings);
       });
       expect(httpClientMock.get).toHaveBeenNthCalledWith(1, '/api/view/settings');
 
-      service.getPublicAcps().subscribe((result) => {
-        expect(result).toEqual(publicAcps);
+      service.getPublicAps().subscribe((result) => {
+        expect(result).toEqual(publicAps);
       });
-      expect(httpClientMock.get).toHaveBeenNthCalledWith(2, '/api/view/acp');
+      expect(httpClientMock.get).toHaveBeenNthCalledWith(2, '/api/view/ap');
     });
 
-    it('should get ACP start page', () => {
+    it('should get AP start page', () => {
       httpClientMock.get.mockReturnValue(of({}));
 
-      service.getAcpStartPage('acp1').subscribe(() => {
+      service.getApStartPage('ap1').subscribe(() => {
         expect(true).toBe(true);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/acp/acp1');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/ap/ap1');
     });
 
     it('should get view units', () => {
       httpClientMock.get.mockReturnValue(of([{ id: 'unit1' }]));
 
-      service.getViewUnits('acp1').subscribe((result) => {
+      service.getViewUnits('ap1').subscribe((result) => {
         expect(result).toEqual([{ id: 'unit1' }]);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/acp/acp1/units');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/ap/ap1/units');
     });
 
     it('should get view unit', () => {
       httpClientMock.get.mockReturnValue(of({ id: 'unit1', items: [] }));
 
-      service.getViewUnit('acp1', 'unit1').subscribe((result) => {
+      service.getViewUnit('ap1', 'unit1').subscribe((result) => {
         expect(result.id).toBe('unit1');
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/acp/acp1/units/unit1');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/ap/ap1/units/unit1');
     });
 
     it('should get view items', () => {
       httpClientMock.get.mockReturnValue(of([]));
 
-      service.getViewItems('acp1').subscribe((result) => {
+      service.getViewItems('ap1').subscribe((result) => {
         expect(result).toEqual([]);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/acp/acp1/items');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/ap/ap1/items');
     });
 
     it('should get view item preferences', () => {
       httpClientMock.get.mockReturnValue(of({ ui: {}, tags: {} }));
 
-      service.getViewItemPreferences('acp1', 'item-explorer').subscribe((result) => {
+      service.getViewItemPreferences('ap1', 'item-explorer').subscribe((result) => {
         expect(result).toEqual({ ui: {}, tags: {} });
       });
 
       expect(httpClientMock.get).toHaveBeenCalledWith(
-        '/api/view/acp/acp1/items/preferences?viewId=item-explorer',
+        '/api/view/ap/ap1/items/preferences?viewId=item-explorer',
       );
     });
 
@@ -1008,11 +1001,11 @@ describe('ApiService', () => {
       const payload = { ui: { filterText: 'abc' }, tags: { item1: ['A'] } };
       httpClientMock.put.mockReturnValue(of(payload));
 
-      service.saveViewItemPreferences('acp1', payload, 'item-list').subscribe((result) => {
+      service.saveViewItemPreferences('ap1', payload, 'item-list').subscribe((result) => {
         expect(result).toEqual(payload);
       });
 
-      expect(httpClientMock.put).toHaveBeenCalledWith('/api/view/acp/acp1/items/preferences', {
+      expect(httpClientMock.put).toHaveBeenCalledWith('/api/view/ap/ap1/items/preferences', {
         viewId: 'item-list',
         ...payload,
       });
@@ -1023,13 +1016,13 @@ describe('ApiService', () => {
       httpClientMock.patch.mockReturnValue(of({ rowData: { 'uuid::1': rowData } }));
 
       service
-        .patchViewItemPreferenceRow('acp1', 'uuid::1', rowData, 'read-only')
+        .patchViewItemPreferenceRow('ap1', 'uuid::1', rowData, 'read-only')
         .subscribe((result) => {
           expect(result.rowData).toEqual({ 'uuid::1': rowData });
         });
 
       expect(httpClientMock.patch).toHaveBeenCalledWith(
-        '/api/view/acp/acp1/items/preferences/row-data',
+        '/api/view/ap/ap1/items/preferences/row-data',
         { rowKey: 'uuid::1', rowData, perspective: 'read-only' },
       );
     });
@@ -1039,13 +1032,13 @@ describe('ApiService', () => {
       httpClientMock.post.mockReturnValue(of(blob));
 
       service
-        .exportViewPersonalItemDataXlsx('acp1', ['uuid-2::1', 'uuid-1::1'], 'read-only')
+        .exportViewPersonalItemDataXlsx('ap1', ['uuid-2::1', 'uuid-1::1'], 'read-only')
         .subscribe((result) => {
           expect(result).toBe(blob);
         });
 
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/view/acp/acp1/items/preferences/export.xlsx',
+        '/api/view/ap/ap1/items/preferences/export.xlsx',
         { rowKeys: ['uuid-2::1', 'uuid-1::1'], perspective: 'read-only' },
         { responseType: 'blob' },
       );
@@ -1055,12 +1048,12 @@ describe('ApiService', () => {
       const blob = new Blob(['csv']);
       httpClientMock.post.mockReturnValue(of(blob));
 
-      service.exportAllViewPersonalItemDataCsv('acp1', 'editor').subscribe((result) => {
+      service.exportAllViewPersonalItemDataCsv('ap1', 'editor').subscribe((result) => {
         expect(result).toBe(blob);
       });
 
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/view/acp/acp1/items/preferences/export-all.csv',
+        '/api/view/ap/ap1/items/preferences/export-all.csv',
         { perspective: 'editor' },
         { responseType: 'blob' },
       );
@@ -1068,9 +1061,9 @@ describe('ApiService', () => {
 
     it('sends the selected collection identifier for the aggregate CSV export', () => {
       httpClientMock.post.mockReturnValue(of(new Blob(['csv'])));
-      service.exportAllViewPersonalItemDataCsv('acp1', 'editor', 'collection-1').subscribe();
+      service.exportAllViewPersonalItemDataCsv('ap1', 'editor', 'collection-1').subscribe();
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/view/acp/acp1/items/preferences/export-all.csv',
+        '/api/view/ap/ap1/items/preferences/export-all.csv',
         { perspective: 'editor', collectionId: 'collection-1' },
         { responseType: 'blob' },
       );
@@ -1085,17 +1078,14 @@ describe('ApiService', () => {
       httpClientMock.put.mockReturnValue(of(payload));
 
       service
-        .activateItemCollection('acp1', 'collection-1', 'read-only', 'active')
+        .activateItemCollection('ap1', 'collection-1', 'read-only', 'active')
         .subscribe((result) => expect(result).toEqual(payload));
 
-      expect(httpClientMock.put).toHaveBeenCalledWith(
-        '/api/view/acp/acp1/items/collections/active',
-        {
-          collectionId: 'collection-1',
-          perspective: 'read-only',
-          collectionViewMode: 'active',
-        },
-      );
+      expect(httpClientMock.put).toHaveBeenCalledWith('/api/view/ap/ap1/items/collections/active', {
+        collectionId: 'collection-1',
+        perspective: 'read-only',
+        collectionViewMode: 'active',
+      });
     });
 
     it('should mutate collection rows without sending the complete collection', () => {
@@ -1108,7 +1098,7 @@ describe('ApiService', () => {
       httpClientMock.patch.mockReturnValue(of(result));
 
       service
-        .mutateItemCollectionRows('acp1', 'collection-1', {
+        .mutateItemCollectionRows('ap1', 'collection-1', {
           baseVersion: 2,
           removeRowKeys: ['uuid::1'],
           perspective: 'read-only',
@@ -1116,7 +1106,7 @@ describe('ApiService', () => {
         .subscribe((response) => expect(response).toBe(result));
 
       expect(httpClientMock.patch).toHaveBeenCalledWith(
-        '/api/view/acp/acp1/items/collections/collection-1/rows',
+        '/api/view/ap/ap1/items/collections/collection-1/rows',
         {
           baseVersion: 2,
           removeRowKeys: ['uuid::1'],
@@ -1128,38 +1118,38 @@ describe('ApiService', () => {
     it('should get view sequences', () => {
       httpClientMock.get.mockReturnValue(of([]));
 
-      service.getViewSequences('acp1').subscribe((result) => {
+      service.getViewSequences('ap1').subscribe((result) => {
         expect(result).toEqual([]);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/acp/acp1/sequences');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/ap/ap1/sequences');
     });
 
     it('should get view sequence', () => {
       httpClientMock.get.mockReturnValue(of({ id: 'seq1', units: [] }));
 
-      service.getViewSequence('acp1', 'seq1').subscribe((result) => {
+      service.getViewSequence('ap1', 'seq1').subscribe((result) => {
         expect(result.id).toBe('seq1');
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/acp/acp1/sequences/seq1');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/ap/ap1/sequences/seq1');
     });
 
     it('should get view index and build export URL with/without token', () => {
       httpClientMock.get.mockReturnValue(of({ assessmentParts: [] }));
 
-      service.getViewIndex('acp1').subscribe((result) => {
+      service.getViewIndex('ap1').subscribe((result) => {
         expect(result).toEqual({ assessmentParts: [] });
       });
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/acp/acp1/index');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/ap/ap1/index');
 
       localStorage.setItem('ch_token', 'token+view');
-      expect(service.getViewIndexExportUrl('acp1')).toBe(
-        '/api/view/acp/acp1/index/export?auth_token=token%2Bview',
+      expect(service.getViewIndexExportUrl('ap1')).toBe(
+        '/api/view/ap/ap1/index/export?auth_token=token%2Bview',
       );
 
       localStorage.removeItem('ch_token');
-      expect(service.getViewIndexExportUrl('acp1')).toBe('/api/view/acp/acp1/index/export');
+      expect(service.getViewIndexExportUrl('ap1')).toBe('/api/view/ap/ap1/index/export');
     });
   });
 
@@ -1167,11 +1157,11 @@ describe('ApiService', () => {
     it('should fetch shared explorer state', () => {
       httpClientMock.get.mockReturnValue(of({ status: 'CLEAN', version: 1 }));
 
-      service.getItemExplorerState('acp1').subscribe((result) => {
+      service.getItemExplorerState('ap1').subscribe((result) => {
         expect((result as any).version).toBe(1);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/acp/acp1/item-explorer/state', {
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/view/ap/ap1/item-explorer/state', {
         params: {},
       });
     });
@@ -1184,24 +1174,21 @@ describe('ApiService', () => {
       };
       httpClientMock.patch.mockReturnValue(of({ status: 'DIRTY', version: 5 }));
 
-      service.patchItemExplorerDraft('acp1', payload).subscribe((result) => {
+      service.patchItemExplorerDraft('ap1', payload).subscribe((result) => {
         expect((result as any).status).toBe('DIRTY');
       });
 
-      expect(httpClientMock.patch).toHaveBeenCalledWith(
-        '/api/acp/acp1/item-explorer/draft',
-        payload,
-      );
+      expect(httpClientMock.patch).toHaveBeenCalledWith('/api/ap/ap1/item-explorer/draft', payload);
     });
 
     it('should save explorer draft', () => {
       httpClientMock.post.mockReturnValue(of({ status: 'CLEAN', version: 6 }));
 
-      service.saveItemExplorerDraft('acp1', 5).subscribe((result) => {
+      service.saveItemExplorerDraft('ap1', 5).subscribe((result) => {
         expect((result as any).version).toBe(6);
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/item-explorer/draft/save', {
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/item-explorer/draft/save', {
         baseVersion: 5,
       });
     });
@@ -1209,25 +1196,24 @@ describe('ApiService', () => {
     it('should discard explorer draft', () => {
       httpClientMock.post.mockReturnValue(of({ status: 'CLEAN', version: 6 }));
 
-      service.discardItemExplorerDraft('acp1', 5).subscribe((result) => {
+      service.discardItemExplorerDraft('ap1', 5).subscribe((result) => {
         expect((result as any).status).toBe('CLEAN');
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/acp/acp1/item-explorer/draft/discard',
-        { baseVersion: 5 },
-      );
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/item-explorer/draft/discard', {
+        baseVersion: 5,
+      });
     });
 
     it('should fetch explorer change history', () => {
       httpClientMock.get.mockReturnValue(of([]));
 
-      service.getItemExplorerChanges('acp1', 200).subscribe((result) => {
+      service.getItemExplorerChanges('ap1', 200).subscribe((result) => {
         expect(result).toEqual([]);
       });
 
       expect(httpClientMock.get).toHaveBeenCalledWith(
-        '/api/acp/acp1/item-explorer/changes?limit=200',
+        '/api/ap/ap1/item-explorer/changes?limit=200',
       );
     });
   });
@@ -1237,10 +1223,10 @@ describe('ApiService', () => {
       httpClientMock.post.mockReturnValue(of({ updated: 1, failed: [], successes: [] }));
 
       const file = new File(['item;infit\nx;1'], 'parameters.csv', { type: 'text/csv' });
-      service.uploadItemParameters('acp1', file, { draft: true, baseVersion: 7 }).subscribe();
+      service.uploadItemParameters('ap1', file, { draft: true, baseVersion: 7 }).subscribe();
 
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/acp/acp1/items/upload-item-parameters?draft=true&baseVersion=7',
+        '/api/ap/ap1/items/upload-item-parameters?draft=true&baseVersion=7',
         expect.any(FormData),
       );
     });
@@ -1252,7 +1238,7 @@ describe('ApiService', () => {
         type: 'text/csv',
       });
       service
-        .uploadItemParameters('acp1', file, {
+        .uploadItemParameters('ap1', file, {
           draft: true,
           baseVersion: 7,
           confirmWarnings: true,
@@ -1260,7 +1246,7 @@ describe('ApiService', () => {
         .subscribe();
 
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/acp/acp1/items/upload-item-parameters?draft=true&baseVersion=7&confirmWarnings=true',
+        '/api/ap/ap1/items/upload-item-parameters?draft=true&baseVersion=7&confirmWarnings=true',
         expect.any(FormData),
       );
     });
@@ -1271,27 +1257,27 @@ describe('ApiService', () => {
 
       service
         .updateItemCollection(
-          'acp1',
+          'ap1',
           'c1',
           { baseVersion: 2, rowKeys: ['uuid-1'], shared: true },
           'editor',
         )
         .subscribe();
-      service.copyItemCollection('acp1', 'shared-1', 'read-only').subscribe();
-      service.exportItemCollectionCsv('acp1', 'c1', 'editor').subscribe();
+      service.copyItemCollection('ap1', 'shared-1', 'read-only').subscribe();
+      service.exportItemCollectionCsv('ap1', 'c1', 'editor').subscribe();
 
-      expect(httpClientMock.patch).toHaveBeenCalledWith('/api/view/acp/acp1/items/collections/c1', {
+      expect(httpClientMock.patch).toHaveBeenCalledWith('/api/view/ap/ap1/items/collections/c1', {
         baseVersion: 2,
         rowKeys: ['uuid-1'],
         shared: true,
         perspective: 'editor',
       });
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/view/acp/acp1/items/collections/shared-1/copy',
+        '/api/view/ap/ap1/items/collections/shared-1/copy',
         { perspective: 'read-only' },
       );
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/view/acp/acp1/items/collections/c1/export.csv?perspective=editor',
+        '/api/view/ap/ap1/items/collections/c1/export.csv?perspective=editor',
         {},
         { responseType: 'blob' },
       );
@@ -1302,13 +1288,13 @@ describe('ApiService', () => {
 
       const file = new File(['item;est\nx;1'], 'data.csv', { type: 'text/csv' });
       service
-        .uploadEmpiricalDifficulties('acp1', file, { draft: true, baseVersion: 12 })
+        .uploadEmpiricalDifficulties('ap1', file, { draft: true, baseVersion: 12 })
         .subscribe(() => {
           expect(true).toBe(true);
         });
 
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/acp/acp1/items/upload-empirical-difficulty?draft=true&baseVersion=12',
+        '/api/ap/ap1/items/upload-empirical-difficulty?draft=true&baseVersion=12',
         expect.any(FormData),
       );
     });
@@ -1316,12 +1302,12 @@ describe('ApiService', () => {
     it('should clear empirical difficulties in draft mode with baseVersion', () => {
       httpClientMock.delete.mockReturnValue(of({ success: true }));
 
-      service.clearEmpiricalDifficulties('acp1', { draft: true, baseVersion: 9 }).subscribe(() => {
+      service.clearEmpiricalDifficulties('ap1', { draft: true, baseVersion: 9 }).subscribe(() => {
         expect(true).toBe(true);
       });
 
       expect(httpClientMock.delete).toHaveBeenCalledWith(
-        '/api/acp/acp1/items/empirical-difficulty?draft=true&baseVersion=9',
+        '/api/ap/ap1/items/empirical-difficulty?draft=true&baseVersion=9',
       );
     });
 
@@ -1329,11 +1315,11 @@ describe('ApiService', () => {
       const responseData = { value: 'test' };
       httpClientMock.post.mockReturnValue(of({}));
 
-      service.saveResponseState('acp1', 'item1', 'unit1', responseData).subscribe(() => {
+      service.saveResponseState('ap1', 'item1', 'unit1', responseData).subscribe(() => {
         expect(true).toBe(true);
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/items/item1/response-state', {
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/items/item1/response-state', {
         unitId: 'unit1',
         responseData,
       });
@@ -1342,24 +1328,24 @@ describe('ApiService', () => {
     it('should get response state', () => {
       httpClientMock.get.mockReturnValue(of({ state: {} }));
 
-      service.getResponseState('acp1', 'item1', 'unit1').subscribe((result) => {
+      service.getResponseState('ap1', 'item1', 'unit1').subscribe((result) => {
         expect(result).toEqual({ state: {} });
       });
 
       expect(httpClientMock.get).toHaveBeenCalledWith(
-        '/api/acp/acp1/items/item1/response-state?unitId=unit1',
+        '/api/ap/ap1/items/item1/response-state?unitId=unit1',
       );
     });
 
     it('should delete response state', () => {
       httpClientMock.delete.mockReturnValue(of({}));
 
-      service.deleteResponseState('acp1', 'item1', 'unit1').subscribe(() => {
+      service.deleteResponseState('ap1', 'item1', 'unit1').subscribe(() => {
         expect(true).toBe(true);
       });
 
       expect(httpClientMock.delete).toHaveBeenCalledWith(
-        '/api/acp/acp1/items/item1/response-state?unitId=unit1',
+        '/api/ap/ap1/items/item1/response-state?unitId=unit1',
       );
     });
 
@@ -1368,13 +1354,13 @@ describe('ApiService', () => {
       httpClientMock.post.mockReturnValue(of({ state: {}, isFallback: false }));
 
       service
-        .getResponseStateWithFallback('acp1', 'item1', 'unit1', itemList)
+        .getResponseStateWithFallback('ap1', 'item1', 'unit1', itemList)
         .subscribe((result) => {
           expect(result.isFallback).toBe(false);
         });
 
       expect(httpClientMock.post).toHaveBeenCalledWith(
-        '/api/acp/acp1/items/item1/response-state/with-fallback',
+        '/api/ap/ap1/items/item1/response-state/with-fallback',
         { unitId: 'unit1', itemList },
       );
     });
@@ -1382,11 +1368,11 @@ describe('ApiService', () => {
     it('should get all response states', () => {
       httpClientMock.get.mockReturnValue(of([]));
 
-      service.getAllResponseStates('acp1').subscribe((result) => {
+      service.getAllResponseStates('ap1').subscribe((result) => {
         expect(result).toEqual([]);
       });
 
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/items/response-state/all');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/items/response-state/all');
     });
 
     it('should scope response state requests to a stable partial-credit row key', () => {
@@ -1394,21 +1380,21 @@ describe('ApiService', () => {
       httpClientMock.get.mockReturnValue(of({}));
       httpClientMock.delete.mockReturnValue(of({}));
 
-      service.saveResponseState('acp1', 'item1', 'unit1', { answer: 1 }, 'uuid-1::1').subscribe();
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/acp/acp1/items/item1/response-state', {
+      service.saveResponseState('ap1', 'item1', 'unit1', { answer: 1 }, 'uuid-1::1').subscribe();
+      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/items/item1/response-state', {
         unitId: 'unit1',
         responseData: { answer: 1 },
         rowKey: 'uuid-1::1',
       });
 
-      service.getResponseState('acp1', 'item1', 'unit1', 'uuid-1::1').subscribe();
+      service.getResponseState('ap1', 'item1', 'unit1', 'uuid-1::1').subscribe();
       expect(httpClientMock.get).toHaveBeenCalledWith(
-        '/api/acp/acp1/items/item1/response-state?unitId=unit1&rowKey=uuid-1%3A%3A1',
+        '/api/ap/ap1/items/item1/response-state?unitId=unit1&rowKey=uuid-1%3A%3A1',
       );
 
-      service.deleteResponseState('acp1', 'item1', 'unit1', 'uuid-1::1').subscribe();
+      service.deleteResponseState('ap1', 'item1', 'unit1', 'uuid-1::1').subscribe();
       expect(httpClientMock.delete).toHaveBeenCalledWith(
-        '/api/acp/acp1/items/item1/response-state?unitId=unit1&rowKey=uuid-1%3A%3A1',
+        '/api/ap/ap1/items/item1/response-state?unitId=unit1&rowKey=uuid-1%3A%3A1',
       );
     });
 
@@ -1416,15 +1402,15 @@ describe('ApiService', () => {
       httpClientMock.get.mockReturnValue(of({ item1: ['A'] }));
       httpClientMock.put.mockReturnValue(of({ item1: ['A', 'B'] }));
 
-      service.getItemTags('acp1').subscribe((result) => {
+      service.getItemTags('ap1').subscribe((result) => {
         expect(result).toEqual({ item1: ['A'] });
       });
-      expect(httpClientMock.get).toHaveBeenCalledWith('/api/acp/acp1/items/tags');
+      expect(httpClientMock.get).toHaveBeenCalledWith('/api/ap/ap1/items/tags');
 
-      service.saveItemTags('acp1', { item1: ['A', 'B'] }).subscribe((result) => {
+      service.saveItemTags('ap1', { item1: ['A', 'B'] }).subscribe((result) => {
         expect(result).toEqual({ item1: ['A', 'B'] });
       });
-      expect(httpClientMock.put).toHaveBeenCalledWith('/api/acp/acp1/items/tags', {
+      expect(httpClientMock.put).toHaveBeenCalledWith('/api/ap/ap1/items/tags', {
         tags: { item1: ['A', 'B'] },
       });
     });

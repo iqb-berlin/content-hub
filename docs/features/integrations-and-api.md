@@ -1,8 +1,10 @@
 # Integrations and API
 
-This guide uses AP and AP-Index as product terms. API paths, payload fields, scopes and
-role values retain their existing `acp` identifiers; see
-[terminology and technical identifiers](../README.md#terminology-and-technical-identifiers).
+This guide uses the canonical AP paths, payload fields, scopes and roles.
+Existing ACP integrations remain supported; see [AP API compatibility](ap-api-compatibility.md).
+For shared endpoints such as `/api/server/capabilities`, send
+`X-Content-Hub-Terminology: ap` to receive canonical AP fields. Requests without
+that header retain the legacy response contract on shared endpoints.
 
 ## API Surfaces
 
@@ -21,7 +23,7 @@ Examples:
 - `/api/auth/...`
 - `/api/users/...`
 - `/api/admin/...`
-- `/api/acp/...`
+- `/api/ap/...`
 
 ### 2. Read-only view API
 
@@ -60,11 +62,11 @@ The main authenticated API groups are:
 - `/api/auth`
 - `/api/users`
 - `/api/admin`
-- `/api/acp`
-- `/api/acp/:acpId/files`
-- `/api/acp/:acpId/snapshots`
-- `/api/acp/:acpId/comments`
-- `/api/acp/:acpId/items`
+- `/api/ap`
+- `/api/ap/:apId/files`
+- `/api/ap/:apId/snapshots`
+- `/api/ap/:apId/comments`
+- `/api/ap/:apId/items`
 
 These endpoints expect the application JWT, not a server API token.
 
@@ -120,28 +122,28 @@ Example create payload:
 ```json
 {
   "name": "studio",
-  "scopes": ["acp.read", "transfer.read", "files.read"],
+  "scopes": ["ap.read", "transfer.read", "files.read"],
   "expiresAt": "2099-01-01T00:00:00.000Z",
-  "allowedAcpIds": ["2d41b6f7-9c25-4c7c-8d35-d9314cc4d3b7"]
+  "allowedApIds": ["2d41b6f7-9c25-4c7c-8d35-d9314cc4d3b7"]
 }
 ```
 
-`allowedAcpIds` is optional for admins. If it is omitted, `null`, or an empty
+`allowedApIds` is optional for admins. If it is omitted, `null`, or an empty
 array, the token is global and can access every AP permitted by its scopes.
 If AP IDs are provided, the server API limits list, read, transfer, index and
 file operations to those APs.
 
 For audit access, AP-limited tokens can only read audit entries whose `acp_id`
-is one of their `allowedAcpIds`. Global audit events without an `acp_id` are
+is one of their `allowedApIds`. Global audit events without an `acp_id` are
 visible only to global tokens with `audit.read`.
 
 AP managers can manage AP-limited application tokens from the AP management
 area. These endpoints always bind the token to the current AP:
 
 ```text
-GET   /api/acp/:acpId/application-tokens?limit=50&offset=0
-POST  /api/acp/:acpId/application-tokens
-PATCH /api/acp/:acpId/application-tokens/:tokenId/revoke
+GET   /api/ap/:apId/application-tokens?limit=50&offset=0
+POST  /api/ap/:apId/application-tokens
+PATCH /api/ap/:apId/application-tokens/:tokenId/revoke
 ```
 
 AP managers cannot create global tokens. They can revoke only tokens that are
@@ -159,7 +161,7 @@ to that AP and are therefore visible to AP-limited tokens with `audit.read`.
 
 Supported scopes:
 
-- `acp.read`
+- `ap.read`
 - `transfer.read`
 - `transfer.write`
 - `index.read`
@@ -170,7 +172,7 @@ Supported scopes:
 
 Each endpoint declares the required scope through the `ServerApiScopes` decorator.
 Scopes are necessary but not sufficient for AP-limited tokens: the target AP
-must also be part of the token's `allowedAcpIds`.
+must also be part of the token's `allowedApIds`.
 
 ## Main Server API Workflows
 
@@ -188,9 +190,9 @@ AP ID. It is intended for integration connection tests and returns:
 ```json
 {
   "clientId": "coding-box",
-  "scopes": ["acp.read", "files.read", "files.write"],
+  "scopes": ["ap.read", "files.read", "files.write"],
   "capabilities": {
-    "acp.read": true,
+    "ap.read": true,
     "transfer.read": false,
     "transfer.write": false,
     "index.read": false,
@@ -199,7 +201,7 @@ AP ID. It is intended for integration connection tests and returns:
     "files.write": true,
     "audit.read": false
   },
-  "allowedAcpIds": null
+  "allowedApIds": null
 }
 ```
 
@@ -211,12 +213,12 @@ synthetic or malformed AP ID.
 Endpoint:
 
 ```text
-GET /api/server/acp
+GET /api/server/ap
 ```
 
 Scope:
 
-- `acp.read`
+- `ap.read`
 
 Use case:
 
@@ -228,8 +230,8 @@ Use case:
 Endpoints:
 
 ```text
-GET /api/server/acp/:acpId
-GET /api/server/acp/:acpId/export
+GET /api/server/ap/:apId
+GET /api/server/ap/:apId/export
 ```
 
 Scope:
@@ -247,7 +249,7 @@ Returned payload includes:
 Endpoint:
 
 ```text
-GET /api/server/acp/:acpId/index
+GET /api/server/ap/:apId/index
 ```
 
 Scope:
@@ -259,7 +261,7 @@ Scope:
 Endpoint:
 
 ```text
-PUT /api/server/acp/:acpId/index?strategy=overwrite|merge
+PUT /api/server/ap/:apId/index?strategy=overwrite|merge
 ```
 
 Scope:
@@ -277,9 +279,9 @@ Supports:
 Endpoints:
 
 ```text
-GET /api/server/acp/:acpId/files
-GET /api/server/acp/:acpId/files/:fileId
-GET /api/server/acp/:acpId/files/:fileId/download
+GET /api/server/ap/:apId/files
+GET /api/server/ap/:apId/files/:fileId
+GET /api/server/ap/:apId/files/:fileId/download
 ```
 
 Scope:
@@ -291,7 +293,7 @@ Scope:
 Endpoint:
 
 ```text
-POST /api/server/acp/:acpId/files/upload?conflictStrategy=reject|overwrite|keep-both
+POST /api/server/ap/:apId/files/upload?conflictStrategy=reject|overwrite|keep-both
 ```
 
 Scope:
@@ -303,7 +305,7 @@ Scope:
 Endpoint:
 
 ```text
-POST /api/server/acp/:acpId/coding-schemes/replace
+POST /api/server/ap/:apId/coding-schemes/replace
 ```
 
 Scope:
@@ -321,8 +323,8 @@ This workflow is more specialized than a normal upload because it:
 Endpoints:
 
 ```text
-POST /api/server/acp/import
-POST /api/server/acp
+POST /api/server/ap/import
+POST /api/server/ap
 ```
 
 Scope:
@@ -363,7 +365,7 @@ SERVER_API_TOKENS=[{"id":"studio","token":"change-me","scopes":["transfer.read",
 
 ```bash
 curl -H "X-Server-Token: change-me" \
-  http://localhost:3000/api/server/acp
+  http://localhost:3000/api/server/ap
 ```
 
 ## Concurrency and Conflict Notes

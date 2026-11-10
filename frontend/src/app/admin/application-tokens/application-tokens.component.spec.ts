@@ -8,8 +8,8 @@ function createToken(overrides: Partial<ApplicationToken> = {}): ApplicationToke
     id: 'token-1',
     name: 'Studio',
     tokenPrefix: 'ch_abc...',
-    scopes: ['acp.read'],
-    allowedAcpIds: null,
+    scopes: ['ap.read'],
+    allowedApIds: null,
     active: true,
     expiresAt: null,
     lastUsedAt: null,
@@ -27,7 +27,7 @@ describe('ApplicationTokensComponent', () => {
     getApplicationTokens: ReturnType<typeof vi.fn>;
     createApplicationToken: ReturnType<typeof vi.fn>;
     revokeApplicationToken: ReturnType<typeof vi.fn>;
-    getAcps: ReturnType<typeof vi.fn>;
+    getAps: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -42,7 +42,7 @@ describe('ApplicationTokensComponent', () => {
       ),
       createApplicationToken: vi.fn(),
       revokeApplicationToken: vi.fn(),
-      getAcps: vi.fn().mockReturnValue(of([])),
+      getAps: vi.fn().mockReturnValue(of([])),
     };
   });
 
@@ -64,7 +64,7 @@ describe('ApplicationTokensComponent', () => {
     component.ngOnInit();
 
     expect(api.getApplicationTokens).toHaveBeenCalledWith({ limit: 50, offset: 0 });
-    expect(api.getAcps).toHaveBeenCalled();
+    expect(api.getAps).toHaveBeenCalled();
     expect(component.tokens).toHaveLength(1);
     expect(component.total).toBe(1);
   });
@@ -74,12 +74,12 @@ describe('ApplicationTokensComponent', () => {
     component.newToken = {
       name: ' Studio ',
       expiresAtLocal: '',
-      scopes: ['acp.read', 'files.read'],
-      allowedAcpIds: [],
+      scopes: ['ap.read', 'files.read'],
+      allowedApIds: [],
     };
     api.createApplicationToken.mockReturnValue(
       of({
-        ...createToken({ name: 'Studio', scopes: ['acp.read', 'files.read'] }),
+        ...createToken({ name: 'Studio', scopes: ['ap.read', 'files.read'] }),
         token: 'ch_secret',
       }),
     );
@@ -88,9 +88,9 @@ describe('ApplicationTokensComponent', () => {
 
     expect(api.createApplicationToken).toHaveBeenCalledWith({
       name: 'Studio',
-      scopes: ['acp.read', 'files.read'],
+      scopes: ['ap.read', 'files.read'],
       expiresAt: null,
-      allowedAcpIds: null,
+      allowedApIds: null,
     });
     expect(component.createdToken?.token).toBe('ch_secret');
     expect(component.showCreate).toBe(false);
@@ -98,7 +98,7 @@ describe('ApplicationTokensComponent', () => {
 
   it('rejects create when name or scopes are missing', () => {
     const component = new ApplicationTokensComponent(api as any);
-    component.newToken = { name: ' ', expiresAtLocal: '', scopes: ['acp.read'], allowedAcpIds: [] };
+    component.newToken = { name: ' ', expiresAtLocal: '', scopes: ['ap.read'], allowedApIds: [] };
 
     component.createToken();
 
@@ -106,7 +106,7 @@ describe('ApplicationTokensComponent', () => {
     expect(component.error).toContain('Name');
 
     component.error = '';
-    component.newToken = { name: 'Studio', expiresAtLocal: '', scopes: [], allowedAcpIds: [] };
+    component.newToken = { name: 'Studio', expiresAtLocal: '', scopes: [], allowedApIds: [] };
     component.createToken();
 
     expect(api.createApplicationToken).not.toHaveBeenCalled();

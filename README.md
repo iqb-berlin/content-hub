@@ -2,8 +2,8 @@
 
 Web application for managing **Assessment Packages (APs)** — bundles of data required to conduct and evaluate educational assessments.
 
-The UI and current documentation use **AP** and **AP-Index**. Technical identifiers such as
-`acpIndex`, `ACP_MANAGER` and `/api/acp` remain unchanged; see
+The UI and current documentation use **AP** and **AP-Index**. Code and new API
+contracts use `apIndex`, `AP_MANAGER` and `/api/ap`. Legacy ACP contracts remain available through compatibility adapters; see
 [terminology and technical identifiers](docs/README.md#terminology-and-technical-identifiers).
 
 ## Documentation
@@ -266,31 +266,31 @@ Application admins can create, inspect and revoke integration tokens in the UI u
 ### Core Endpoints
 
 - `GET /api/server/capabilities`: Inspect the authenticated token's scopes and AP restriction without addressing an AP
-- `GET /api/server/acp`: List transferable APs
-- `GET /api/server/acp/:acpId`: Full transfer payload (index + files metadata)
-- `GET /api/server/acp/:acpId/export`: Alias for full transfer payload
-- `POST /api/server/acp/import`: Create/update AP by `packageId`
-- `POST /api/server/acp`: Legacy alias for import
-- `GET /api/server/acp/:acpId/index`: Transfer only AP-Index
-- `PUT /api/server/acp/:acpId/index`: Update AP-Index only
-- `GET /api/server/acp/:acpId/files`: List AP files for transfer
-- `GET /api/server/acp/:acpId/files/:fileId`: File metadata
-- `GET /api/server/acp/:acpId/files/:fileId/download`: Download one file
-- `POST /api/server/acp/:acpId/files/upload`: Upload one or more files (multipart)
-- `POST /api/server/acp/:acpId/coding-schemes/replace`: Replace existing `.vocs` files and automatically create a new snapshot version with changelog
+- `GET /api/server/ap`: List transferable APs
+- `GET /api/server/ap/:apId`: Full transfer payload (index + files metadata)
+- `GET /api/server/ap/:apId/export`: Alias for full transfer payload
+- `POST /api/server/ap/import`: Create/update AP by `packageId`
+- `POST /api/server/ap`: Legacy alias for import
+- `GET /api/server/ap/:apId/index`: Transfer only AP-Index
+- `PUT /api/server/ap/:apId/index`: Update AP-Index only
+- `GET /api/server/ap/:apId/files`: List AP files for transfer
+- `GET /api/server/ap/:apId/files/:fileId`: File metadata
+- `GET /api/server/ap/:apId/files/:fileId/download`: Download one file
+- `POST /api/server/ap/:apId/files/upload`: Upload one or more files (multipart)
+- `POST /api/server/ap/:apId/coding-schemes/replace`: Replace existing `.vocs` files and automatically create a new snapshot version with changelog
 - `GET /api/server/audit`: Read integration audit log entries (scope required)
 
 ### Conflict Strategy
 
-- AP import (`POST /api/server/acp/import`, `POST /api/server/acp`):
+- AP import (`POST /api/server/ap/import`, `POST /api/server/ap`):
   - `conflictStrategy=reject` (default): fail when `packageId` already exists
   - `conflictStrategy=overwrite`: replace existing AP-Index
   - `conflictStrategy=merge`: deep-merge incoming index into existing index
-- Index update (`PUT /api/server/acp/:acpId/index`):
+- Index update (`PUT /api/server/ap/:apId/index`):
   - `strategy=overwrite` (default) or `strategy=merge`
-- File upload (`POST /api/server/acp/:acpId/files/upload`):
+- File upload (`POST /api/server/ap/:apId/files/upload`):
   - `conflictStrategy=keep-both` (default), `overwrite`, or `reject`
-- Coding scheme replacement (`POST /api/server/acp/:acpId/coding-schemes/replace`):
+- Coding scheme replacement (`POST /api/server/ap/:apId/coding-schemes/replace`):
   - replaces existing `.vocs` by filename (case-insensitive)
   - rejects unknown/non-existing `.vocs` (strict replace semantics)
   - creates a new snapshot version and stores the provided `changelog` (or auto-generated text)
@@ -311,7 +311,7 @@ Tokens can be scoped per integration client. Supported scopes:
 
 `GET /api/server/capabilities` requires a valid integration token but no
 particular scope. It returns the token's granted `scopes`, a capability map for
-all supported scopes, and its `allowedAcpIds` restriction. Integrations should
+all supported scopes, and its `allowedApIds` restriction (request `X-Content-Hub-Terminology: ap` for this shared endpoint). Integrations should
 use this endpoint for connection and permission checks instead of probing an
 AP route with a synthetic ID.
 

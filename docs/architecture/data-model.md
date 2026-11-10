@@ -12,10 +12,11 @@ fits the domain well because APs contain a combination of:
 
 ## Core Entities
 
-AP is the product term; the existing `Acp` entity and `acp` table names remain unchanged.
+Application entities and properties use AP names. The `Ap` entity maps to the
+existing `acp` table; physical table/column names remain unchanged for compatibility.
 See [terminology and technical identifiers](../README.md#terminology-and-technical-identifiers).
 
-### `Acp`
+### `Ap`
 
 The `acp` table is the central aggregate.
 
@@ -25,7 +26,7 @@ Key fields:
 - `packageId`
 - `name`
 - `description`
-- `acpIndex` as JSONB
+- `apIndex` as JSONB
 - `itemProperties` as JSONB
 - `settings` as JSONB
 - timestamps
@@ -46,18 +47,18 @@ Key fields:
 OIDC-backed users exist in the local database so AP roles, comments, and app-admin
 state can be resolved consistently. Authentication itself remains in Keycloak.
 
-### `AcpUserRole`
+### `ApUserRole`
 
 This table is the AP-level authorization join table.
 
 Supported roles:
 
-- `ACP_MANAGER`
+- `AP_MANAGER` (stored as `ACP_MANAGER`)
 - `READ_ONLY`
 
 One user can hold different roles across different APs.
 
-### `AcpAccessConfig`
+### `ApAccessConfig`
 
 This table defines how an AP is exposed to viewers.
 
@@ -72,7 +73,7 @@ Key fields:
 New APs receive a default access-config row with `accessModel = PRIVATE`. The table also
 owns the credential list entries for `CREDENTIALS_LIST` access.
 
-### `AcpCredential`
+### `ApCredential`
 
 This table stores AP-specific credentials for restricted read-only access.
 
@@ -87,7 +88,7 @@ The pair of `accessConfigId` and `username` is unique. Legacy duplicate rows are
 the constraint is created, retaining one stable credential ID and the newest personal preference
 per view.
 
-### `AcpFile`
+### `ApFile`
 
 This table stores metadata for uploaded AP files.
 
@@ -102,18 +103,18 @@ Key fields:
 
 The actual file content is stored on the filesystem at `filePath`.
 
-### `AcpSnapshot` and `AcpSnapshotFile`
+### `ApSnapshot` and `ApSnapshotFile`
 
 Snapshots preserve historical AP state.
 
-`AcpSnapshot` stores:
+`ApSnapshot` stores:
 
 - AP linkage,
 - version number,
 - index snapshot JSON,
 - optional changelog.
 
-`AcpSnapshotFile` stores metadata for the files included in the snapshot.
+`ApSnapshotFile` stores metadata for the files included in the snapshot.
 
 ### `Comment`
 
@@ -143,7 +144,7 @@ Global application settings are stored in a single table with fields for:
 This table stores per-item response state, mainly for manager and viewer workflows that
 need to persist answer-like data while browsing.
 
-### `AcpItemPreference`
+### `ApItemPreference`
 
 This table stores persisted viewer preferences for item-oriented pages. It supports both:
 
@@ -158,7 +159,7 @@ Personal rows are updated atomically inside the JSONB document. Credential-list 
 the IDs of credentials whose usernames remain present, preserving their personal preferences while
 still deleting preferences for credentials that are actually removed.
 
-### `AcpItemExplorerState`
+### `ApItemExplorerState`
 
 This table powers the shared draft/published item explorer model.
 
@@ -171,7 +172,7 @@ Key fields:
 - `publishedVersion`,
 - actor metadata for the last update.
 
-### `AcpItemExplorerChangeLog`
+### `ApItemExplorerChangeLog`
 
 This is the audit trail for explorer state changes.
 
@@ -199,21 +200,21 @@ Every server API request can be recorded here with:
 
 The most important relationships are:
 
-- one `Acp` to many `AcpFile`
-- one `Acp` to many `AcpSnapshot`
-- one `AcpSnapshot` to many `AcpSnapshotFile`
-- one `Acp` to many `Comment`
-- one `Acp` to many `AcpUserRole`
-- one `User` to many `AcpUserRole`
-- one `Acp` to one effective `AcpAccessConfig` record used by the application
-- one `AcpAccessConfig` to many `AcpCredential`
-- one `Acp` to one `AcpItemExplorerState`
+- one `Ap` to many `ApFile`
+- one `Ap` to many `ApSnapshot`
+- one `ApSnapshot` to many `ApSnapshotFile`
+- one `Ap` to many `Comment`
+- one `Ap` to many `ApUserRole`
+- one `User` to many `ApUserRole`
+- one `Ap` to one effective `ApAccessConfig` record used by the application
+- one `ApAccessConfig` to many `ApCredential`
+- one `Ap` to one `ApItemExplorerState`
 
 ## JSONB Usage
 
 JSONB is used heavily for data that varies per AP or is likely to evolve:
 
-### `acp.acpIndex`
+### `Ap.apIndex` (stored as `acp.acp_index`)
 
 The complete AP-Index payload. This avoids forcing a brittle relational model on a
 domain object that is naturally hierarchical.
@@ -230,7 +231,7 @@ Per-AP feature flags controlling read-only functionality.
 
 Validation issues and timestamps attached to uploaded files.
 
-### `app_settings.theme` and `app_settings.defaultAcpIndex`
+### `app_settings.theme` and `app_settings.defaultApIndex`
 
 Global theming and default content templates.
 
@@ -243,12 +244,12 @@ without a schema migration for every UI-level change.
 
 The practical ownership model is:
 
-- AP metadata belongs to `Acp`.
-- Viewer exposure rules belong to `AcpAccessConfig`.
-- Uploaded binaries belong to the filesystem, with `AcpFile` as the metadata index.
+- AP metadata belongs to `Ap`.
+- Viewer exposure rules belong to `ApAccessConfig`.
+- Uploaded binaries belong to the filesystem, with `ApFile` as the metadata index.
 - Historical rollbacks belong to snapshots.
 - Long-lived collaborative item-list state belongs to the explorer state tables.
-- User-specific lightweight view preferences belong to `AcpItemPreference`.
+- User-specific lightweight view preferences belong to `ApItemPreference`.
 
 ## Migration Strategy
 

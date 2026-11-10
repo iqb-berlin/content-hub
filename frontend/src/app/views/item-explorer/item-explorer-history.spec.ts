@@ -16,7 +16,7 @@ const filters: ItemExplorerHistoryFilters = {
 function entry(overrides: Partial<ItemExplorerChangeLogEntry> = {}): ItemExplorerChangeLogEntry {
   return {
     id: 'change',
-    acpId: 'package',
+    apId: 'package',
     changeType: 'TAGS_CHANGED',
     beforeState: {},
     afterState: {},

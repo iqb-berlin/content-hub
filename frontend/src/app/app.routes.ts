@@ -1,10 +1,11 @@
 import { explorerCapabilityGuard, reviewManageGuard } from './core/guards/capability.guard';
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, acpManagerGuard } from './core/guards/auth.guard';
-import { acpViewGuard } from './core/guards/acp-view.guard';
+import { authGuard, adminGuard, apManagerGuard } from './core/guards/auth.guard';
+import { apViewGuard } from './core/guards/ap-view.guard';
 import { itemExplorerPendingChangesGuard } from './core/guards/item-explorer-pending-changes.guard';
 
 export const routes: Routes = [
+  { path: 'acps', redirectTo: 'aps', pathMatch: 'full' },
   {
     path: '',
     loadComponent: () =>
@@ -24,15 +25,14 @@ export const routes: Routes = [
       import('./auth/oidc-callback.component').then((m) => m.OidcCallbackComponent),
   },
   {
-    path: 'credential-login/:acpId',
+    path: 'credential-login/:apId',
     loadComponent: () =>
       import('./auth/credential-login.component').then((m) => m.CredentialLoginComponent),
   },
   {
-    path: 'acps',
+    path: 'aps',
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./admin/acp-list/acp-list.component').then((m) => m.AcpListComponent),
+    loadComponent: () => import('./admin/ap-list/ap-list.component').then((m) => m.ApListComponent),
   },
 
   // Admin routes
@@ -40,6 +40,7 @@ export const routes: Routes = [
     path: 'admin',
     canActivate: [adminGuard],
     children: [
+      { path: 'acp', redirectTo: 'ap', pathMatch: 'full' },
       { path: '', redirectTo: 'users', pathMatch: 'full' },
       {
         path: 'users',
@@ -58,59 +59,59 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'acp',
+        path: 'ap',
         loadComponent: () =>
-          import('./admin/acp-list/acp-list.component').then((m) => m.AcpListComponent),
+          import('./admin/ap-list/ap-list.component').then((m) => m.ApListComponent),
       },
     ],
   },
 
-  // ACP Manager routes
+  // AP Manager routes
   {
-    path: 'manage/:acpId',
-    canActivate: [acpManagerGuard],
+    path: 'manage/:apId',
+    canActivate: [apManagerGuard],
     children: [
       {
         path: '',
         loadComponent: () =>
-          import('./acp-manager/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+          import('./ap-manager/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
       {
         path: 'files',
         loadComponent: () =>
-          import('./acp-manager/files/files.component').then((m) => m.FilesComponent),
+          import('./ap-manager/files/files.component').then((m) => m.FilesComponent),
       },
       {
         path: 'snapshots',
         loadComponent: () =>
-          import('./acp-manager/snapshots/snapshots.component').then((m) => m.SnapshotsComponent),
+          import('./ap-manager/snapshots/snapshots.component').then((m) => m.SnapshotsComponent),
       },
       {
         path: 'access',
         loadComponent: () =>
-          import('./acp-manager/access-config/access-config.component').then(
+          import('./ap-manager/access-config/access-config.component').then(
             (m) => m.AccessConfigComponent,
           ),
       },
       {
         path: 'application-tokens',
         loadComponent: () =>
-          import('./acp-manager/application-tokens/application-tokens.component').then(
-            (m) => m.AcpApplicationTokensComponent,
+          import('./ap-manager/application-tokens/application-tokens.component').then(
+            (m) => m.ApApplicationTokensComponent,
           ),
       },
     ],
   },
 
-  // Public view routes (protected by acpViewGuard to handle access models)
+  // Public view routes (protected by apViewGuard to handle access models)
   {
-    path: 'view/:acpId',
-    canActivate: [acpViewGuard],
+    path: 'view/:apId',
+    canActivate: [apViewGuard],
     children: [
       {
         path: '',
         loadComponent: () =>
-          import('./views/acp-start/acp-start.component').then((m) => m.AcpStartComponent),
+          import('./views/ap-start/ap-start.component').then((m) => m.ApStartComponent),
       },
       {
         path: 'units',
@@ -158,8 +159,8 @@ export const routes: Routes = [
       {
         path: 'index',
         loadComponent: () =>
-          import('./views/acp-index-view/acp-index-view.component').then(
-            (m) => m.AcpIndexViewComponent,
+          import('./views/ap-index-view/ap-index-view.component').then(
+            (m) => m.ApIndexViewComponent,
           ),
       },
     ],

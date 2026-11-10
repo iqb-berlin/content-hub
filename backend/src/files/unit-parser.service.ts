@@ -11,17 +11,17 @@ import { EntityManager, Repository } from "typeorm";
 import * as fs from "fs/promises";
 import { performance } from "perf_hooks";
 import {
-  AcpFile,
-  Acp,
-  AcpAccessConfig,
-  AcpItemRowNumber,
+  ApFile,
+  Ap,
+  ApAccessConfig,
+  ApItemRowNumber,
 } from "../database/entities";
 import {
   getAssessmentParts,
   normalizeIndexForStorage,
-} from "../acp/acp-index.utils";
+} from "../ap/ap-index.utils";
 import { FileProcessingProgressReporter } from "./file-processing-progress";
-import { normalizeFeatureConfig } from "../acp/feature-config.utils";
+import { normalizeFeatureConfig } from "../ap/feature-config.utils";
 import { parseItemRowKeyParts } from "../items/item-row-key.util";
 import { ItemRowNumberingService } from "./item-row-numbering.service";
 import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.service";
@@ -74,7 +74,7 @@ interface ParsedItemListResult {
 }
 
 interface ItemListSourceContext {
-  allFiles: AcpFile[];
+  allFiles: ApFile[];
   fallbackItemProperties: Record<string, Record<string, unknown>>;
   normalizedFeatureConfig: Record<string, unknown>;
   sourceFileSignature: string;
@@ -111,12 +111,12 @@ export class UnitParserService {
   private readOnlyRowNumbers = false;
 
   constructor(
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
-    @InjectRepository(AcpAccessConfig)
-    private readonly accessConfigRepository: Repository<AcpAccessConfig>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
+    @InjectRepository(ApAccessConfig)
+    private readonly accessConfigRepository: Repository<ApAccessConfig>,
     private readonly itemRowNumberingService: ItemRowNumberingService,
     private readonly itemExplorerStateService: ItemExplorerStateService,
     private readonly fileCatalogCache: FileCatalogCache,
@@ -169,9 +169,9 @@ export class UnitParserService {
   /**
    * Validate that all files referenced by a unit .xml are present.
    */
-  async validateUnitFiles(acpId: string): Promise<UnitValidationResult[]> {
-    // Get all files for this ACP
-    const allFiles = await this.fileRepository.find({ where: { acpId } });
+  async validateUnitFiles(apId: string): Promise<UnitValidationResult[]> {
+    // Get all files for this AP
+    const allFiles = await this.fileRepository.find({ where: { apId } });
     const fileNames = allFiles.map((f) => f.originalName);
     const results: UnitValidationResult[] = [];
 
@@ -245,22 +245,22 @@ export class UnitParserService {
   }
 
   /**
-   * Merge uploaded unit files into ACP-Index (non-destructive).
+   * Merge uploaded unit files into AP-Index (non-destructive).
    * - Adds/updates units and items inferred from unit XML + VOMD
    * - Preserves existing manual index fields
    * - Never removes existing units/items automatically
    * - Prunes dependency entries that reference files no longer present
    */
   async syncIndexFromFiles(
-    acpId: string,
+    apId: string,
     progress?: FileProcessingProgressReporter,
   ): Promise<IndexSyncReport> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
-      throw new NotFoundException(`AP with ID ${acpId} not found`);
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
+      throw new NotFoundException(`AP with ID ${apId} not found`);
     }
 
-    const allFiles = await this.fileRepository.find({ where: { acpId } });
+    const allFiles = await this.fileRepository.find({ where: { apId } });
     const fileNames = allFiles.map((f) => f.originalName);
     const fileNameSet = new Set(fileNames);
 
@@ -273,7 +273,7 @@ export class UnitParserService {
       warnings: [],
     };
 
-    const normalizedIndex = normalizeIndexForStorage(acp.acpIndex || {});
+    const normalizedIndex = normalizeIndexForStorage(ap.apIndex || {});
     const parts = getAssessmentParts(normalizedIndex).map((part: any) => ({
       ...part,
       ...(Array.isArray(part?.instruments)
@@ -498,9 +498,9 @@ export class UnitParserService {
       assessmentParts: parts,
     });
 
-    if (JSON.stringify(acp.acpIndex || {}) !== JSON.stringify(nextIndex)) {
-      acp.acpIndex = nextIndex;
-      await this.acpRepository.save(acp);
+    if (JSON.stringify(ap.apIndex || {}) !== JSON.stringify(nextIndex)) {
+      ap.apIndex = nextIndex;
+      await this.apRepository.save(ap);
     }
 
     report.warnings = Array.from(warningSet);
@@ -514,19 +514,19 @@ export class UnitParserService {
 
   /**
    * Remove unit dependency entries that reference files no longer present
-   * in ACP storage. This is intended for cleanup after file deletions.
+   * in AP storage. This is intended for cleanup after file deletions.
    */
   async pruneMissingDependencies(
-    acpId: string,
+    apId: string,
   ): Promise<IndexDependencyCleanupReport> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
-      throw new NotFoundException(`AP with ID ${acpId} not found`);
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
+      throw new NotFoundException(`AP with ID ${apId} not found`);
     }
 
-    const allFiles = await this.fileRepository.find({ where: { acpId } });
+    const allFiles = await this.fileRepository.find({ where: { apId } });
     const fileNameSet = new Set(allFiles.map((f) => f.originalName));
-    const normalizedIndex = normalizeIndexForStorage(acp.acpIndex || {});
+    const normalizedIndex = normalizeIndexForStorage(ap.apIndex || {});
     const parts = getAssessmentParts(normalizedIndex).map((part: any) => ({
       ...part,
       units: Array.isArray(part?.units) ? [...part.units] : [],
@@ -539,11 +539,11 @@ export class UnitParserService {
       assessmentParts: parts,
     });
     const indexUpdated =
-      JSON.stringify(acp.acpIndex || {}) !== JSON.stringify(nextIndex);
+      JSON.stringify(ap.apIndex || {}) !== JSON.stringify(nextIndex);
 
     if (indexUpdated) {
-      acp.acpIndex = nextIndex;
-      await this.acpRepository.save(acp);
+      ap.apIndex = nextIndex;
+      await this.apRepository.save(ap);
     }
 
     return {
@@ -556,11 +556,11 @@ export class UnitParserService {
   }
 
   /**
-   * Read all .vomd files for an ACP, extract items with profile metadata,
+   * Read all .vomd files for an AP, extract items with profile metadata,
    * and determine dynamic columns.
    */
   async getItemListFromFiles(
-    acpId: string,
+    apId: string,
     options: {
       itemPropertiesOverride?: Record<string, Record<string, unknown>>;
       publishedItemPropertiesOverride?: Record<string, Record<string, unknown>>;
@@ -572,37 +572,37 @@ export class UnitParserService {
   ): Promise<ItemListResult> {
     if (manager) {
       // Share only the pure file parser. Database-backed in-flight caches must
-      // not wait for another transaction while this one holds the ACP lock.
+      // not wait for another transaction while this one holds the AP lock.
       const scoped = new UnitParserService(
-        manager.getRepository(AcpFile),
-        manager.getRepository(Acp),
-        manager.getRepository(AcpAccessConfig),
-        new ItemRowNumberingService(manager.getRepository(AcpItemRowNumber)),
+        manager.getRepository(ApFile),
+        manager.getRepository(Ap),
+        manager.getRepository(ApAccessConfig),
+        new ItemRowNumberingService(manager.getRepository(ApItemRowNumber)),
         this.itemExplorerStateService,
-        new FileCatalogCache(manager.getRepository(AcpFile)),
+        new FileCatalogCache(manager.getRepository(ApFile)),
         this.itemListParser,
         new NumberedItemListCache(),
         this.unitViewResolver,
       );
       // Review transactions already hold the configuration lock. Persisting
-      // missing numbers would also lock ACP and invert the Explorer save order.
+      // missing numbers would also lock AP and invert the Explorer save order.
       scoped.readOnlyRowNumbers = true;
-      return scoped.getItemListFromFiles(acpId, options);
+      return scoped.getItemListFromFiles(apId, options);
     }
     const totalStartedAt = performance.now();
     const rowRevisionStartedAt = performance.now();
     const rowRevisionPromise = this.itemRowNumberingService
-      .getRevision(acpId)
+      .getRevision(apId)
       .then((rowRevision) => ({
         rowRevision,
         rowNumberRevisionMs: performance.now() - rowRevisionStartedAt,
       }));
     const sourceContext = await this.loadItemListSourceContext(
-      acpId,
+      apId,
       options.itemPropertiesOverride === undefined,
     );
     const activeParse = await this.parseItemListFromContext(
-      acpId,
+      apId,
       sourceContext,
       options.itemPropertiesOverride || sourceContext.fallbackItemProperties,
       options.activeStateSignature,
@@ -618,7 +618,7 @@ export class UnitParserService {
       )
     ) {
       publishedParse = await this.parseItemListFromContext(
-        acpId,
+        apId,
         sourceContext,
         options.publishedItemPropertiesOverride,
         options.publishedStateSignature,
@@ -637,7 +637,7 @@ export class UnitParserService {
       const { rowNumberRevisionMs } = await rowRevisionPromise;
       const rowNumberingStartedAt = performance.now();
       const result = await this.applyItemRowNumbers(
-        acpId,
+        apId,
         activeParse.itemList,
         {
           persistMissingRowNumbers: false,
@@ -664,16 +664,12 @@ export class UnitParserService {
       const rowNumberingStartedAt = performance.now();
       let result: ItemListResult;
       if (publishedParse) {
-        await this.applyItemRowNumbers(acpId, publishedParse.itemList, {});
-        result = await this.applyItemRowNumbers(acpId, activeParse.itemList, {
+        await this.applyItemRowNumbers(apId, publishedParse.itemList, {});
+        result = await this.applyItemRowNumbers(apId, activeParse.itemList, {
           persistMissingRowNumbers: false,
         });
       } else {
-        result = await this.applyItemRowNumbers(
-          acpId,
-          activeParse.itemList,
-          {},
-        );
+        result = await this.applyItemRowNumbers(apId, activeParse.itemList, {});
       }
       options.onDiagnostics?.({
         cacheStatus: parseDiagnostics.cacheStatus,
@@ -694,14 +690,14 @@ export class UnitParserService {
     }`;
     const { value, status: rowCacheStatus } =
       await this.numberedItemListCache.getOrLoad(
-        acpId,
+        apId,
         numberedCacheBaseKey,
         rowRevision,
         async () => {
           const rowNumberingStartedAt = performance.now();
           const numberedResult =
             await this.applyItemRowNumbersWithStableRevision(
-              acpId,
+              apId,
               activeParse.itemList,
               publishedParse?.itemList,
               rowRevision,
@@ -727,20 +723,20 @@ export class UnitParserService {
   }
 
   private async loadItemListSourceContext(
-    acpId: string,
+    apId: string,
     loadFallbackItemProperties: boolean,
   ): Promise<ItemListSourceContext> {
     const sourceReadStartedAt = performance.now();
-    const [catalog, acp, accessConfig] = await Promise.all([
-      this.fileCatalogCache.get(acpId),
+    const [catalog, ap, accessConfig] = await Promise.all([
+      this.fileCatalogCache.get(apId),
       loadFallbackItemProperties
-        ? this.acpRepository.findOne({ where: { id: acpId } })
+        ? this.apRepository.findOne({ where: { id: apId } })
         : Promise.resolve(null),
-      this.accessConfigRepository.findOne({ where: { acpId } }),
+      this.accessConfigRepository.findOne({ where: { apId } }),
     ]);
     return {
       allFiles: catalog.files,
-      fallbackItemProperties: acp?.itemProperties || {},
+      fallbackItemProperties: ap?.itemProperties || {},
       normalizedFeatureConfig: normalizeFeatureConfig(
         accessConfig?.featureConfig || {},
       ) as Record<string, unknown>,
@@ -751,7 +747,7 @@ export class UnitParserService {
   }
 
   private async parseItemListFromContext(
-    acpId: string,
+    apId: string,
     sourceContext: ItemListSourceContext,
     itemProperties: Record<string, Record<string, unknown>>,
     itemPropertiesSignature?: string,
@@ -765,7 +761,7 @@ export class UnitParserService {
       sourceFileSignature: sourceContext.sourceFileSignature,
     };
     const parsed: ItemListParseResult = await this.itemListParser.parse(
-      acpId,
+      apId,
       context,
       strictSourceReads,
     );
@@ -777,16 +773,16 @@ export class UnitParserService {
   }
 
   async recalculatePublishedItemRowNumbers(
-    acpId: string,
+    apId: string,
   ): Promise<{ renumberedCount: number }> {
     const publishedState =
-      await this.itemExplorerStateService.getCleanPublishedState(acpId);
-    const sourceContext = await this.loadItemListSourceContext(acpId, false);
+      await this.itemExplorerStateService.getCleanPublishedState(apId);
+    const sourceContext = await this.loadItemListSourceContext(apId, false);
     const expectedSourceFileSignature = this.buildSourceFileSignature(
       sourceContext.allFiles,
     );
     const { itemList } = await this.parseItemListFromContext(
-      acpId,
+      apId,
       sourceContext,
       publishedState.publishedState.itemProperties,
       `published:${publishedState.publishedVersion}`,
@@ -794,14 +790,14 @@ export class UnitParserService {
     );
 
     const result = await this.itemExplorerStateService.runWithLockedCleanState(
-      acpId,
+      apId,
       async (_explorerState, manager) => {
-        const result = await this.applyItemRowNumbers(acpId, itemList, {
+        const result = await this.applyItemRowNumbers(apId, itemList, {
           recalculateRowNumbers: true,
           rowNumberingManager: manager,
           validateSourceFiles: (lockedManager) =>
             this.assertSourceFilesUnchanged(
-              acpId,
+              apId,
               expectedSourceFileSignature,
               lockedManager,
             ),
@@ -810,12 +806,12 @@ export class UnitParserService {
       },
       publishedState.publishedVersion,
     );
-    this.numberedItemListCache.invalidate(acpId);
+    this.numberedItemListCache.invalidate(apId);
     return result;
   }
 
   private async applyItemRowNumbersWithStableRevision(
-    acpId: string,
+    apId: string,
     activeItemList: ItemListResult,
     publishedItemList: ItemListResult | undefined,
     initialRevision: string,
@@ -830,14 +826,14 @@ export class UnitParserService {
       let result: ItemListResult;
       if (publishedItemList) {
         const publishedResult = await this.applyPersistedItemRowNumbers(
-          acpId,
+          apId,
           publishedItemList,
         );
-        result = await this.applyItemRowNumbers(acpId, activeItemList, {
+        result = await this.applyItemRowNumbers(apId, activeItemList, {
           persistMissingRowNumbers: false,
         });
         const observedRevision =
-          await this.itemRowNumberingService.getRevision(acpId);
+          await this.itemRowNumberingService.getRevision(apId);
         if (
           observedRevision === (publishedResult.rowRevision || expectedRevision)
         ) {
@@ -850,7 +846,7 @@ export class UnitParserService {
         continue;
       } else {
         const activeResult = await this.applyPersistedItemRowNumbers(
-          acpId,
+          apId,
           activeItemList,
         );
         result = activeResult.itemList;
@@ -863,7 +859,7 @@ export class UnitParserService {
       }
 
       const observedRevision =
-        await this.itemRowNumberingService.getRevision(acpId);
+        await this.itemRowNumberingService.getRevision(apId);
       if (observedRevision === expectedRevision) {
         return {
           itemList: result,
@@ -879,12 +875,12 @@ export class UnitParserService {
   }
 
   private async applyPersistedItemRowNumbers(
-    acpId: string,
+    apId: string,
     itemList: ItemListResult,
   ): Promise<{ itemList: ItemListResult; rowRevision?: string }> {
     const assignment =
       await this.itemRowNumberingService.assignNumbersWithRevision(
-        acpId,
+        apId,
         this.getNumberableItemRows(itemList),
       );
     this.setItemRowNumbers(itemList, assignment.numbers);
@@ -895,7 +891,7 @@ export class UnitParserService {
   }
 
   private async applyItemRowNumbers(
-    acpId: string,
+    apId: string,
     itemList: ItemListResult,
     options: {
       recalculateRowNumbers?: boolean;
@@ -908,18 +904,18 @@ export class UnitParserService {
 
     const rowNumbers = options.recalculateRowNumbers
       ? await this.itemRowNumberingService.recalculateNumbers(
-          acpId,
+          apId,
           numberableRows,
           options.rowNumberingManager,
           options.validateSourceFiles,
         )
       : options.persistMissingRowNumbers === false
         ? await this.itemRowNumberingService.assignProvisionalNumbers(
-            acpId,
+            apId,
             numberableRows,
           )
         : await this.itemRowNumberingService.assignNumbers(
-            acpId,
+            apId,
             numberableRows,
           );
     this.setItemRowNumbers(itemList, rowNumbers);
@@ -946,15 +942,15 @@ export class UnitParserService {
   }
 
   private async assertSourceFilesUnchanged(
-    acpId: string,
+    apId: string,
     expectedSignature: string,
     manager: EntityManager,
   ): Promise<void> {
     const currentFiles = await manager
-      .getRepository(AcpFile)
+      .getRepository(ApFile)
       .createQueryBuilder("file")
       .setLock("pessimistic_read")
-      .where("file.acpId = :acpId", { acpId })
+      .where("file.apId = :apId", { apId })
       .orderBy("file.id", "ASC")
       .getMany();
 
@@ -965,16 +961,16 @@ export class UnitParserService {
     }
   }
 
-  private buildSourceFileSignature(files: AcpFile[]): string {
+  private buildSourceFileSignature(files: ApFile[]): string {
     return buildSourceFileSignature(files);
   }
 
-  invalidateFileCaches(acpId: string): void {
-    this.fileCatalogCache.invalidate(acpId);
-    this.itemListParser.invalidate(acpId);
-    this.numberedItemListCache.invalidate(acpId);
-    this.unitViewResolver.invalidate(acpId);
-    const prefix = `${acpId}:`;
+  invalidateFileCaches(apId: string): void {
+    this.fileCatalogCache.invalidate(apId);
+    this.itemListParser.invalidate(apId);
+    this.numberedItemListCache.invalidate(apId);
+    this.unitViewResolver.invalidate(apId);
+    const prefix = `${apId}:`;
     for (const key of this.itemRowKeyCache.keys()) {
       if (key.startsWith(prefix)) this.itemRowKeyCache.delete(key);
     }
@@ -995,18 +991,18 @@ export class UnitParserService {
    * Explorer item-property keys, which are what create partial-credit rows.
    */
   async getItemRowKeysFromFiles(
-    acpId: string,
+    apId: string,
     options: {
       itemPropertiesOverride?: Record<string, Record<string, unknown>>;
       publishedItemPropertiesOverride?: Record<string, Record<string, unknown>>;
     } = {},
   ): Promise<ReadonlySet<string>> {
-    const [files, acp] = await Promise.all([
-      this.fileRepository.find({ where: { acpId } }),
-      this.acpRepository.findOne({ where: { id: acpId } }),
+    const [files, ap] = await Promise.all([
+      this.fileRepository.find({ where: { apId } }),
+      this.apRepository.findOne({ where: { id: apId } }),
     ]);
     const itemProperties =
-      options.itemPropertiesOverride || acp?.itemProperties || {};
+      options.itemPropertiesOverride || ap?.itemProperties || {};
     const signature = JSON.stringify({
       files: files
         .map((file) => [
@@ -1024,13 +1020,13 @@ export class UnitParserService {
         options.publishedItemPropertiesOverride || {},
       ).sort(),
     });
-    const cacheKey = `${acpId}:${signature}`;
+    const cacheKey = `${apId}:${signature}`;
     const cached = this.itemRowKeyCache.get(cacheKey);
     if (cached?.signature === signature) {
       return cached.rowKeys;
     }
 
-    const itemList = await this.getItemListFromFiles(acpId, options);
+    const itemList = await this.getItemListFromFiles(apId, options);
     const rowKeys = new Set(
       itemList.items
         .map((item) => String(item.rowKey || "").trim())
@@ -1065,17 +1061,17 @@ export class UnitParserService {
 
   /**
    * Get unit view data (player + definition file references) directly from
-   * uploaded files, without relying on the ACP-Index.
+   * uploaded files, without relying on the AP-Index.
    */
   async getUnitViewFromFiles(
-    acpId: string,
+    apId: string,
     unitId: string,
     onDiagnostics?: (diagnostics: ItemExplorerLoadDiagnostics) => void,
     explorerStateSignature: string | Promise<string> = "",
   ): Promise<any> {
     const totalStartedAt = performance.now();
     const result = await this.unitViewResolver.resolve(
-      acpId,
+      apId,
       unitId,
       explorerStateSignature,
     );
@@ -1317,7 +1313,7 @@ export class UnitParserService {
 
   private async extractItemsForUnit(
     parsedUnit: UnitXmlData,
-    allFiles: AcpFile[],
+    allFiles: ApFile[],
     warningSet: Set<string>,
   ): Promise<
     Array<{
@@ -1412,9 +1408,9 @@ export class UnitParserService {
   }
 
   private findFileByOriginalName(
-    allFiles: AcpFile[],
+    allFiles: ApFile[],
     originalName: string,
-  ): AcpFile | undefined {
+  ): ApFile | undefined {
     return allFiles.find(
       (f) =>
         f.originalName === originalName ||

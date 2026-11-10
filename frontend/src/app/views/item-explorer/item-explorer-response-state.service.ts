@@ -5,7 +5,7 @@ import type { ExplorerItem } from './item-explorer.models';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
 
 export interface ItemExplorerResponseStateContext {
-  acpId: string;
+  apId: string;
   selectedItem: ExplorerItem | null;
   isCorrectSolutionActive: boolean;
   previewReady: boolean;
@@ -104,7 +104,7 @@ export class ItemExplorerResponseStateService implements OnDestroy {
     const responseSession = this.player.responseSessionToken;
     this.api
       .saveResponseState(
-        context.acpId,
+        context.apId,
         responseItem.itemId,
         responseItem.unitId,
         responseData,
@@ -141,7 +141,7 @@ export class ItemExplorerResponseStateService implements OnDestroy {
     this.confirmDialogState = 'deleting';
     this.api
       .deleteResponseState(
-        context.acpId,
+        context.apId,
         responseItem.itemId,
         responseItem.unitId,
         responseItem.rowKey,
@@ -167,16 +167,16 @@ export class ItemExplorerResponseStateService implements OnDestroy {
     const context = this.getContext();
     if (!context) return;
     this.api
-      .getAllResponseStates(context.acpId)
+      .getAllResponseStates(context.apId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (states) => {
-          if (this.readContext?.().acpId !== context.acpId) return;
+          if (this.readContext?.().apId !== context.apId) return;
           this.allResponseStates = states;
           this.showRawDataOverlay = true;
         },
         error: (err) => {
-          if (this.readContext?.().acpId !== context.acpId) return;
+          if (this.readContext?.().apId !== context.apId) return;
           console.error('Error loading response states:', err);
           this.loadFailed.next();
         },
@@ -212,7 +212,7 @@ export class ItemExplorerResponseStateService implements OnDestroy {
     const current = this.readContext?.();
     return (
       !this.destroyed &&
-      current?.acpId === context.acpId &&
+      current?.apId === context.apId &&
       current?.selectedItem === context.selectedItem &&
       this.player.responseSessionToken === responseSession
     );

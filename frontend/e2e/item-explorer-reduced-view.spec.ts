@@ -1,12 +1,12 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { createOidcAppToken, installOidcSession } from './oidc-test-session';
 
-const acpId = '10000000-0000-4000-8000-000000000101';
+const apId = '10000000-0000-4000-8000-000000000101';
 const managerId = '10000000-0000-4000-8000-000000000002';
 const viewerId = '10000000-0000-4000-8000-000000000003';
-const accessUrl = `/api/acp/${acpId}/access`;
-const stateUrl = `/api/view/acp/${acpId}/item-explorer/state`;
-const explorerUrl = `/view/${acpId}/item-explorer`;
+const accessUrl = `/api/ap/${apId}/access`;
+const stateUrl = `/api/view/ap/${apId}/item-explorer/state`;
+const explorerUrl = `/view/${apId}/item-explorer`;
 const headers = { Authorization: `Bearer ${createOidcAppToken(managerId, 'e2e-manager')}` };
 let originalAccess: Record<string, any>;
 let originalViewerRole: Record<string, any> | undefined;
@@ -39,7 +39,7 @@ async function open(page: Page, manager = false) {
 
 async function patch(request: APIRequestContext) {
   const state = await (await request.get(stateUrl, { headers })).json();
-  const response = await request.patch(`/api/acp/${acpId}/item-explorer/draft`, {
+  const response = await request.patch(`/api/ap/${apId}/item-explorer/draft`, {
     headers,
     data: {
       baseVersion: state.version,
@@ -54,9 +54,9 @@ async function patch(request: APIRequestContext) {
 test.beforeEach(async ({ request }) => {
   const response = await request.get(accessUrl, { headers });
   expect(response.ok()).toBeTruthy();
-  const roles = await (await request.get(`/api/acp/${acpId}/roles`, { headers })).json();
+  const roles = await (await request.get(`/api/ap/${apId}/roles`, { headers })).json();
   originalViewerRole = roles.find((role: any) => role.userId === viewerId);
-  const assigned = await request.post(`/api/acp/${acpId}/roles`, {
+  const assigned = await request.post(`/api/ap/${apId}/roles`, {
     headers,
     data: { userId: viewerId, role: 'READ_ONLY', capabilities: ['item-explorer:view'] },
   });
@@ -74,14 +74,14 @@ test.beforeEach(async ({ request }) => {
 test.afterEach(async ({ page, request }) => {
   await page.close();
   const state = await (await request.get(stateUrl, { headers })).json();
-  const discard = await request.post(`/api/acp/${acpId}/item-explorer/draft/discard`, {
+  const discard = await request.post(`/api/ap/${apId}/item-explorer/draft/discard`, {
     headers,
     data: { baseVersion: state.version },
   });
   expect(discard.ok()).toBeTruthy();
   const clean = await discard.json();
   if (JSON.stringify(clean.publishedState.itemOrder) !== JSON.stringify(originalPublishedOrder)) {
-    const reset = await request.patch(`/api/acp/${acpId}/item-explorer/draft`, {
+    const reset = await request.patch(`/api/ap/${apId}/item-explorer/draft`, {
       headers,
       data: {
         baseVersion: clean.version,
@@ -91,14 +91,14 @@ test.afterEach(async ({ page, request }) => {
     });
     expect(reset.ok()).toBeTruthy();
     const resetState = await reset.json();
-    const published = await request.post(`/api/acp/${acpId}/item-explorer/draft/save`, {
+    const published = await request.post(`/api/ap/${apId}/item-explorer/draft/save`, {
       headers,
       data: { baseVersion: resetState.version },
     });
     expect(published.ok()).toBeTruthy();
   }
   const roleRestore = originalViewerRole
-    ? await request.post(`/api/acp/${acpId}/roles`, {
+    ? await request.post(`/api/ap/${apId}/roles`, {
         headers,
         data: {
           userId: viewerId,
@@ -106,7 +106,7 @@ test.afterEach(async ({ page, request }) => {
           capabilities: originalViewerRole['capabilities'],
         },
       })
-    : await request.delete(`/api/acp/${acpId}/roles/${viewerId}`, { headers });
+    : await request.delete(`/api/ap/${apId}/roles/${viewerId}`, { headers });
   expect(roleRestore.ok()).toBeTruthy();
   const restored = await request.put(accessUrl, { headers, data: originalAccess });
   expect(restored.ok()).toBeTruthy();
@@ -120,7 +120,7 @@ test('saves the reviewer view directly in access settings independently of publi
   await configure(request, undefined);
   const draft = await patch(request);
   await installOidcSession(page, managerId, 'e2e-manager');
-  await page.goto(`/manage/${acpId}/access`);
+  await page.goto(`/manage/${apId}/access`);
   const settings = page
     .locator('details')
     .filter({ has: page.locator('summary', { hasText: 'Ansicht für Reviewer vereinfachen' }) });
@@ -145,7 +145,7 @@ test('saves the reviewer view directly in access settings independently of publi
     const viewerHeaders = { Authorization: `Bearer ${createOidcAppToken(viewerId, 'e2e-viewer')}` };
     const denied = await request.put(accessUrl, { headers: viewerHeaders, data: originalAccess });
     expect(denied.status()).toBe(403);
-    const deniedDraft = await request.patch(`/api/acp/${acpId}/item-explorer/draft`, {
+    const deniedDraft = await request.patch(`/api/ap/${apId}/item-explorer/draft`, {
       headers: viewerHeaders,
       data: { baseVersion: state.version, patch: { ui: {} } },
     });
@@ -156,7 +156,7 @@ test('saves the reviewer view directly in access settings independently of publi
 
   for (const operation of ['discard', 'save']) {
     const current = operation === 'save' ? await patch(request) : state;
-    const response = await request.post(`/api/acp/${acpId}/item-explorer/draft/${operation}`, {
+    const response = await request.post(`/api/ap/${apId}/item-explorer/draft/${operation}`, {
       headers,
       data: { baseVersion: current.version },
     });
@@ -390,7 +390,7 @@ test('shows all rows when a saved empty collection is inaccessible in the reduce
   });
   expect(access.ok()).toBeTruthy();
   const viewerHeaders = { Authorization: `Bearer ${createOidcAppToken(viewerId, 'e2e-viewer')}` };
-  const url = `/api/view/acp/${acpId}/items/collections`;
+  const url = `/api/view/ap/${apId}/items/collections`;
   const created = await request.post(url, {
     headers: viewerHeaders,
     data: { name: 'Hidden collection filter', perspective: 'read-only' },

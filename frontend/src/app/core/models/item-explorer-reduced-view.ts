@@ -1,4 +1,4 @@
-/** Explicit defaults for existing ACPs. Review the visibility of each new action. */
+/** Explicit defaults for existing APs. Review the visibility of each new action. */
 export const EXPLORER_OPTIONAL_HEADER_ACTIONS = [
   { id: 'readonlyPreview', label: 'Leseansicht', managerOnly: true },
   { id: 'columnManager', label: 'Spalten verwalten', managerOnly: false },

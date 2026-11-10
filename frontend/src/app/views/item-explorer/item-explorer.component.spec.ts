@@ -16,10 +16,10 @@ function createFeature() {
   };
 }
 
-function createShell(acpId = 'acp-1') {
+function createShell(apId = 'ap-1') {
   const feature = createFeature();
   const component = new ItemExplorerComponent(
-    { snapshot: { paramMap: { get: () => acpId } } } as any,
+    { snapshot: { paramMap: { get: () => apId } } } as any,
     feature as any,
   );
   return { component, feature };
@@ -27,12 +27,12 @@ function createShell(acpId = 'acp-1') {
 
 describe('ItemExplorerComponent', () => {
   it('initializes and registers the route-scoped facade', () => {
-    const { component, feature } = createShell('acp-42');
+    const { component, feature } = createShell('ap-42');
 
     component.ngOnInit();
 
     expect(feature.registerShellDom).toHaveBeenCalledWith(component);
-    expect(feature.init).toHaveBeenCalledWith('acp-42');
+    expect(feature.init).toHaveBeenCalledWith('ap-42');
   });
 
   it('opens the coding context from a stable item deep link', () => {
@@ -45,7 +45,7 @@ describe('ItemExplorerComponent', () => {
     const component = new ItemExplorerComponent(
       {
         snapshot: {
-          paramMap: { get: () => 'acp-42' },
+          paramMap: { get: () => 'ap-42' },
           queryParamMap: { get: (key: string) => params.get(key) || null },
         },
       } as any,
@@ -54,7 +54,7 @@ describe('ItemExplorerComponent', () => {
 
     component.ngOnInit();
 
-    expect(feature.init).toHaveBeenCalledWith('acp-42', {
+    expect(feature.init).toHaveBeenCalledWith('ap-42', {
       unitId: 'unit-1',
       itemId: 'item-1',
       open: false,

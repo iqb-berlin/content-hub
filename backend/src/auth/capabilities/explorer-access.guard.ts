@@ -1,12 +1,12 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { AcpAccessGuard } from "../guards/acp-access.guard";
-import { AcpCapabilitiesService } from "./acp-capabilities.service";
+import { ApAccessGuard } from "../guards/ap-access.guard";
+import { ApCapabilitiesService } from "./ap-capabilities.service";
 
 @Injectable()
 export class ExplorerReadGuard implements CanActivate {
   constructor(
-    private readonly access: AcpAccessGuard,
-    private readonly capabilities: AcpCapabilitiesService,
+    private readonly access: ApAccessGuard,
+    private readonly capabilities: ApCapabilitiesService,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     await this.access.canActivate(context);
@@ -21,8 +21,8 @@ export class ExplorerReadGuard implements CanActivate {
 @Injectable()
 export class ExplorerEditGuard implements CanActivate {
   constructor(
-    private readonly access: AcpAccessGuard,
-    private readonly capabilities: AcpCapabilitiesService,
+    private readonly access: ApAccessGuard,
+    private readonly capabilities: ApCapabilitiesService,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     await this.access.canActivate(context);

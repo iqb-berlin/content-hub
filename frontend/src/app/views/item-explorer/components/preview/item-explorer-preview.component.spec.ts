@@ -93,7 +93,7 @@ describe('ItemExplorerPreviewComponent', () => {
         unregisterPlayerDom: vi.fn(),
         playerFrameChanged: vi.fn(),
         previewViewModel: {
-          acpId: 'acp',
+          apId: 'ap',
           selectedItem: item,
           selectedIndex: 0,
           filteredItems: [item],
@@ -115,7 +115,7 @@ describe('ItemExplorerPreviewComponent', () => {
         await fixture.whenStable();
         const link = fixture.nativeElement.querySelector('.empty-state a');
         expect(Boolean(link)).toBe(canOpenFullUnit && showPlayerPreview);
-        if (link) expect(link.getAttribute('href')).toBe('/view/acp/unit/unit');
+        if (link) expect(link.getAttribute('href')).toBe('/view/ap/unit/unit');
       } finally {
         fixture.destroy();
         TestBed.resetTestingModule();
@@ -124,7 +124,7 @@ describe('ItemExplorerPreviewComponent', () => {
   );
   afterEach(() => TestBed.resetTestingModule());
 
-  it('shows Studio comments only for the selected item when the ACP enables them', async () => {
+  it('shows Studio comments only for the selected item when the AP enables them', async () => {
     const comments = [{ id: 1, body: 'Studio hint for item 1', hidden: false }];
     const item = { itemId: 'i1', unitId: 'u1', uuid: 'a', studioComments: comments };
     const vm = {
@@ -174,7 +174,7 @@ describe('ItemExplorerPreviewComponent', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('shows Studio comments only for the selected item when the ACP enables them', async () => {
+  it('shows Studio comments only for the selected item when the AP enables them', async () => {
     const comments = [{ id: 1, body: 'Studio hint for item 1', hidden: false }];
     const item = { itemId: 'i1', unitId: 'u1', uuid: 'a', studioComments: comments };
     const vm = {

@@ -1,11 +1,11 @@
 import { createHash } from "crypto";
 import { stat } from "fs/promises";
-import { Acp } from "../database/entities/acp.entity";
+import { Ap } from "../database/entities/ap.entity";
 import { ReviewReadinessSnapshot } from "../database/entities/review-readiness-snapshot.entity";
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { AcpFile } from "../database/entities";
+import { ApFile } from "../database/entities";
 import { UnitParserService } from "../files/unit-parser.service";
 import {
   ValidationIssue,
@@ -33,12 +33,12 @@ export interface ReviewReadinessResult {
 @Injectable()
 export class ReviewReadinessService {
   constructor(
-    @InjectRepository(AcpFile)
-    private readonly files: Repository<AcpFile>,
+    @InjectRepository(ApFile)
+    private readonly files: Repository<ApFile>,
     private readonly validation: ValidationService,
     private readonly unitParser: UnitParserService,
     private readonly manifest: ReviewManifestService,
-    @InjectRepository(Acp) private readonly acps: Repository<Acp>,
+    @InjectRepository(Ap) private readonly aps: Repository<Ap>,
     @InjectRepository(ReviewReadinessSnapshot)
     private readonly snapshots: Repository<ReviewReadinessSnapshot>,
   ) {}
@@ -46,10 +46,10 @@ export class ReviewReadinessService {
   // Bump when readiness rules or validation dependencies change.
   private readonly rulesVersion = "review-readiness-v2";
 
-  private async fingerprint(acpId: string): Promise<string> {
-    const [acp, files] = await Promise.all([
-      this.acps.findOne({ where: { id: acpId } }),
-      this.files.find({ where: { acpId } }),
+  private async fingerprint(apId: string): Promise<string> {
+    const [ap, files] = await Promise.all([
+      this.aps.findOne({ where: { id: apId } }),
+      this.files.find({ where: { apId } }),
     ]);
     const entries = await Promise.all(
       files.map(async (file) => {
@@ -79,33 +79,31 @@ export class ReviewReadinessService {
             )
           : value;
     return createHash("sha256")
-      .update(
-        JSON.stringify(stable([this.rulesVersion, acp?.acpIndex, entries])),
-      )
+      .update(JSON.stringify(stable([this.rulesVersion, ap?.apIndex, entries])))
       .digest("hex");
   }
 
-  async getLast(acpId: string): Promise<ReviewReadinessResult | null> {
-    const snapshot = await this.snapshots.findOne({ where: { acpId } });
+  async getLast(apId: string): Promise<ReviewReadinessResult | null> {
+    const snapshot = await this.snapshots.findOne({ where: { apId } });
     if (!snapshot) return null;
     return {
       ...snapshot.result,
       stale:
         snapshot.result.stale === true ||
-        snapshot.fingerprint !== (await this.fingerprint(acpId)),
+        snapshot.fingerprint !== (await this.fingerprint(apId)),
     };
   }
 
-  async check(acpId: string): Promise<ReviewReadinessResult> {
-    const fingerprint = await this.fingerprint(acpId);
+  async check(apId: string): Promise<ReviewReadinessResult> {
+    const fingerprint = await this.fingerprint(apId);
     const blockers = new Set<string>();
     const warnings = new Set<string>();
-    const files = await this.files.find({ where: { acpId } });
+    const files = await this.files.find({ where: { apId } });
 
     if (files.length === 0) blockers.add("Der AP enthält keine Dateien.");
 
     const validationRun = await this.validation.autoValidateUploadedFiles(
-      acpId,
+      apId,
       files,
       undefined,
       false,
@@ -122,8 +120,8 @@ export class ReviewReadinessService {
       else if (issue.severity === "warning") warnings.add(text);
     }
 
-    const unitResults = await this.unitParser.validateUnitFiles(acpId);
-    const manifest = await this.manifest.getManifest(acpId);
+    const unitResults = await this.unitParser.validateUnitFiles(apId);
+    const manifest = await this.manifest.getManifest(apId);
 
     if (manifest.booklets.length === 0) {
       blockers.add("Der AP enthält kein auflösbares Booklet.");
@@ -203,12 +201,12 @@ export class ReviewReadinessService {
         unitCount: referencedUnitIds.size,
       },
     };
-    result.stale = fingerprint !== (await this.fingerprint(acpId));
-    await this.snapshots.upsert({ acpId, fingerprint, result }, ["acpId"]);
+    result.stale = fingerprint !== (await this.fingerprint(apId));
+    await this.snapshots.upsert({ apId, fingerprint, result }, ["apId"]);
     return result;
   }
 
-  private uniqueIssues(files: AcpFile[]): ValidationIssue[] {
+  private uniqueIssues(files: ApFile[]): ValidationIssue[] {
     const issues = new Map<string, ValidationIssue>();
     for (const file of files) {
       const result = file.validationResult as
