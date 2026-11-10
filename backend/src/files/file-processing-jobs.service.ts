@@ -10,7 +10,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
 import { ReplaySubject, Observable, map } from "rxjs";
 import * as fs from "fs/promises";
-import { AcpFile, AcpFileProcessingJob } from "../database/entities";
+import { ApFile, ApFileProcessingJob } from "../database/entities";
 import { FilesService } from "./files.service";
 import { UnitParserService } from "./unit-parser.service";
 import { ValidationService } from "../validation/validation.service";
@@ -30,17 +30,17 @@ export class FileProcessingJobsService {
   private readonly runningJobs = new Set<string>();
 
   constructor(
-    @InjectRepository(AcpFileProcessingJob)
-    private readonly jobRepository: Repository<AcpFileProcessingJob>,
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
+    @InjectRepository(ApFileProcessingJob)
+    private readonly jobRepository: Repository<ApFileProcessingJob>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
     private readonly filesService: FilesService,
     private readonly unitParserService: UnitParserService,
     private readonly validationService: ValidationService,
   ) {}
 
   async createAndStartJob(
-    acpId: string,
+    apId: string,
     uploadedFileIds: string[],
     options: { createdByUserId?: string | null; runCleanup?: boolean } = {},
   ): Promise<FileProcessingJobSnapshot> {
@@ -58,10 +58,10 @@ export class FileProcessingJobsService {
       );
     }
 
-    await this.ensureNoActiveJob(acpId);
+    await this.ensureNoActiveJob(apId);
     const files = await this.fileRepository.find({
       where: {
-        acpId,
+        apId,
         id: In(normalizedIds),
       },
     });
@@ -73,7 +73,7 @@ export class FileProcessingJobsService {
     }
 
     let job = this.jobRepository.create({
-      acpId,
+      apId,
       createdByUserId: options.createdByUserId || null,
       jobType: "upload-process",
       status: "pending",
@@ -97,7 +97,7 @@ export class FileProcessingJobsService {
   }
 
   async createAndStartDownloadJob(
-    acpId: string,
+    apId: string,
     fileIds: string[],
     options: { createdByUserId?: string | null } = {},
   ): Promise<FileProcessingJobSnapshot> {
@@ -109,13 +109,13 @@ export class FileProcessingJobsService {
       ),
     );
 
-    await this.ensureNoActiveJob(acpId);
+    await this.ensureNoActiveJob(apId);
 
     let fileCount = 0;
     if (normalizedIds.length) {
       const files = await this.fileRepository.find({
         where: {
-          acpId,
+          apId,
           id: In(normalizedIds),
         },
       });
@@ -127,7 +127,7 @@ export class FileProcessingJobsService {
       }
       fileCount = files.length;
     } else {
-      fileCount = await this.fileRepository.count({ where: { acpId } });
+      fileCount = await this.fileRepository.count({ where: { apId } });
       if (!fileCount) {
         throw new BadRequestException(
           "At least one file is required to create an archive",
@@ -136,7 +136,7 @@ export class FileProcessingJobsService {
     }
 
     let job = this.jobRepository.create({
-      acpId,
+      apId,
       createdByUserId: options.createdByUserId || null,
       jobType: "archive-download",
       status: "pending",
@@ -162,15 +162,15 @@ export class FileProcessingJobsService {
   }
 
   async getJobSnapshot(
-    acpId: string,
+    apId: string,
     jobId: string,
   ): Promise<FileProcessingJobSnapshot> {
-    const job = await this.getJobForAcp(acpId, jobId);
+    const job = await this.getJobForAp(apId, jobId);
     return this.toSnapshot(job);
   }
 
-  async ensureJobExists(acpId: string, jobId: string): Promise<void> {
-    await this.getJobForAcp(acpId, jobId);
+  async ensureJobExists(apId: string, jobId: string): Promise<void> {
+    await this.getJobForAp(apId, jobId);
   }
 
   streamJob(jobId: string): Observable<MessageEvent> {
@@ -179,10 +179,10 @@ export class FileProcessingJobsService {
   }
 
   async downloadArchive(
-    acpId: string,
+    apId: string,
     jobId: string,
   ): Promise<{ buffer: Buffer; fileName: string }> {
-    const job = await this.getJobForAcp(acpId, jobId);
+    const job = await this.getJobForAp(apId, jobId);
     if (job.jobType !== "archive-download") {
       throw new BadRequestException(
         "The requested job does not provide an archive",
@@ -215,8 +215,8 @@ export class FileProcessingJobsService {
 
     let job = await this.getJob(jobId);
     const persist = async (
-      patch: Partial<AcpFileProcessingJob>,
-    ): Promise<AcpFileProcessingJob> => {
+      patch: Partial<ApFileProcessingJob>,
+    ): Promise<ApFileProcessingJob> => {
       Object.assign(job, patch);
       job = await this.jobRepository.save(job);
       this.emit(job);
@@ -237,7 +237,7 @@ export class FileProcessingJobsService {
 
       if (job.jobType === "archive-download") {
         const archive = await this.filesService.createFilesZipArchive(
-          job.acpId,
+          job.apId,
           job.uploadedFileIds || [],
           reporter,
         );
@@ -255,12 +255,12 @@ export class FileProcessingJobsService {
       } else {
         const uploadedFiles = await this.loadUploadedFiles(job);
         const syncReport = await this.unitParserService.syncIndexFromFiles(
-          job.acpId,
+          job.apId,
           reporter,
         );
         const validationRun =
           await this.validationService.autoValidateUploadedFiles(
-            job.acpId,
+            job.apId,
             uploadedFiles,
             reporter,
           );
@@ -273,7 +273,7 @@ export class FileProcessingJobsService {
         if (job.runCleanup) {
           cleanupResult =
             await this.filesService.cleanupReferencesAfterFileMutation(
-              job.acpId,
+              job.apId,
               { skipValidation: true },
               reporter,
             );
@@ -329,10 +329,10 @@ export class FileProcessingJobsService {
     }
   }
 
-  private async ensureNoActiveJob(acpId: string): Promise<void> {
+  private async ensureNoActiveJob(apId: string): Promise<void> {
     const existing = await this.jobRepository.findOne({
       where: {
-        acpId,
+        apId,
         status: In(["pending", "running"]),
       },
       order: { createdAt: "DESC" },
@@ -345,12 +345,10 @@ export class FileProcessingJobsService {
     }
   }
 
-  private async loadUploadedFiles(
-    job: AcpFileProcessingJob,
-  ): Promise<AcpFile[]> {
+  private async loadUploadedFiles(job: ApFileProcessingJob): Promise<ApFile[]> {
     const files = await this.fileRepository.find({
       where: {
-        acpId: job.acpId,
+        apId: job.apId,
         id: In(job.uploadedFileIds || []),
       },
       order: { originalName: "ASC" },
@@ -358,7 +356,7 @@ export class FileProcessingJobsService {
     const filesById = new Map(files.map((file) => [file.id, file]));
     const orderedFiles = (job.uploadedFileIds || [])
       .map((fileId) => filesById.get(fileId))
-      .filter((file): file is AcpFile => !!file);
+      .filter((file): file is ApFile => !!file);
 
     if (orderedFiles.length !== (job.uploadedFileIds || []).length) {
       throw new BadRequestException(
@@ -371,8 +369,8 @@ export class FileProcessingJobsService {
 
   private createProgressReporter(
     persist: (
-      patch: Partial<AcpFileProcessingJob>,
-    ) => Promise<AcpFileProcessingJob>,
+      patch: Partial<ApFileProcessingJob>,
+    ) => Promise<ApFileProcessingJob>,
   ): FileProcessingProgressReporter {
     let currentPhase: FileProcessingJobPhase = "queued";
     let current = 0;
@@ -444,7 +442,7 @@ export class FileProcessingJobsService {
     }
   }
 
-  private async getJob(jobId: string): Promise<AcpFileProcessingJob> {
+  private async getJob(jobId: string): Promise<ApFileProcessingJob> {
     const job = await this.jobRepository.findOne({ where: { id: jobId } });
     if (!job) {
       throw new NotFoundException(`Processing job ${jobId} not found`);
@@ -452,14 +450,14 @@ export class FileProcessingJobsService {
     return job;
   }
 
-  private async getJobForAcp(
-    acpId: string,
+  private async getJobForAp(
+    apId: string,
     jobId: string,
-  ): Promise<AcpFileProcessingJob> {
+  ): Promise<ApFileProcessingJob> {
     const job = await this.getJob(jobId);
-    if (job.acpId !== acpId) {
+    if (job.apId !== apId) {
       throw new NotFoundException(
-        `Processing job ${jobId} not found for AP ${acpId}`,
+        `Processing job ${jobId} not found for AP ${apId}`,
       );
     }
     return job;
@@ -496,14 +494,14 @@ export class FileProcessingJobsService {
     }
   }
 
-  private emit(job: AcpFileProcessingJob): void {
+  private emit(job: ApFileProcessingJob): void {
     this.ensureStream(job.id).next(this.toSnapshot(job));
   }
 
-  private toSnapshot(job: AcpFileProcessingJob): FileProcessingJobSnapshot {
+  private toSnapshot(job: ApFileProcessingJob): FileProcessingJobSnapshot {
     return {
       id: job.id,
-      acpId: job.acpId,
+      apId: job.apId,
       jobType: job.jobType,
       status: job.status,
       phase: job.phase,

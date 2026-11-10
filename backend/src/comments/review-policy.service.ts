@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import {
-  AcpAccessConfig,
+  ApAccessConfig,
   Comment,
   CommentTargetType,
 } from "../database/entities";
@@ -15,7 +15,7 @@ import {
 import {
   CommentCategory,
   ReviewGroup,
-} from "../database/entities/acp-access-config.entity";
+} from "../database/entities/ap-access-config.entity";
 import { commentAuthorName } from "./comment-author-name";
 
 export type CommentVisibilityMode = "PRIVATE" | "SHARED" | "GROUP";
@@ -38,8 +38,8 @@ export interface CommentActor {
 @Injectable()
 export class ReviewPolicyService {
   constructor(
-    @InjectRepository(AcpAccessConfig)
-    private readonly accessConfigRepository: Repository<AcpAccessConfig>,
+    @InjectRepository(ApAccessConfig)
+    private readonly accessConfigRepository: Repository<ApAccessConfig>,
   ) {}
 
   resolveActor(req: any): CommentActor {
@@ -55,35 +55,32 @@ export class ReviewPolicyService {
         ) || "Unbekannt",
       isManager: this.isManagerRequest(req),
       canParticipate: Boolean(
-        req.user?.sub && req.acpCapabilities?.includes("review:participate"),
+        req.user?.sub && req.apCapabilities?.includes("review:participate"),
       ),
     };
   }
 
   isManagerRequest(req: any): boolean {
     return Boolean(
-      req.user?.isAppAdmin || req.acpCapabilities?.includes("review:manage"),
+      req.user?.isAppAdmin || req.apCapabilities?.includes("review:manage"),
     );
   }
 
   assertCanParticipateRequest(req: any): void {
-    if (
-      !req.user?.sub ||
-      !req.acpCapabilities?.includes("review:participate")
-    ) {
+    if (!req.user?.sub || !req.apCapabilities?.includes("review:participate")) {
       throw new ForbiddenException("Review-Teilnahme ist nicht erlaubt");
     }
   }
 
   async assertItemCommentAccess(
-    acpId: string,
+    apId: string,
     actor: CommentActor,
   ): Promise<CommentVisibilityMode> {
-    return this.assertCommentAccess(acpId, actor, CommentTargetType.ITEM);
+    return this.assertCommentAccess(apId, actor, CommentTargetType.ITEM);
   }
 
   async assertCommentAccess(
-    acpId: string,
+    apId: string,
     actor: CommentActor,
     targetType: CommentTargetType,
   ): Promise<CommentVisibilityMode> {
@@ -93,7 +90,7 @@ export class ReviewPolicyService {
     if (targetType === CommentTargetType.TASK_SEQUENCE) {
       throw new ForbiddenException("Legacy comments are read-only");
     }
-    const featureConfig = await this.getFeatureConfig(acpId, actor);
+    const featureConfig = await this.getFeatureConfig(apId, actor);
     const targets = this.commentTargets(featureConfig);
     if (
       (!featureConfig.enableCommenting && !actor.isManager) ||
@@ -107,7 +104,7 @@ export class ReviewPolicyService {
   }
 
   async assertItemAndCodingCountAccess(
-    acpId: string,
+    apId: string,
     actor: CommentActor,
   ): Promise<{
     visibilityMode: CommentVisibilityMode;
@@ -116,7 +113,7 @@ export class ReviewPolicyService {
     if (!actor.userId && !actor.credentialId) {
       throw new ForbiddenException("Authenticated review access required");
     }
-    const featureConfig = await this.getFeatureConfig(acpId, actor);
+    const featureConfig = await this.getFeatureConfig(apId, actor);
     const configured = this.commentTargets(featureConfig);
     const targetTypes = [
       CommentTargetType.ITEM,
@@ -134,10 +131,10 @@ export class ReviewPolicyService {
   }
 
   async isCommentingEnabled(
-    acpId: string,
+    apId: string,
     targetType: CommentTargetType,
   ): Promise<boolean> {
-    const featureConfig = await this.getFeatureConfig(acpId);
+    const featureConfig = await this.getFeatureConfig(apId);
     if (!featureConfig.enableCommenting) return false;
     const targets = this.commentTargets(featureConfig);
     return this.isTargetEnabled(targets, targetType);
@@ -201,11 +198,11 @@ export class ReviewPolicyService {
   }
 
   private async getFeatureConfig(
-    acpId: string,
+    apId: string,
     actor?: CommentActor,
   ): Promise<Record<string, unknown>> {
     const config = await this.accessConfigRepository.findOne({
-      where: { acpId },
+      where: { apId },
     });
     if (actor) {
       actor.categories = config?.commentCategories || [];
@@ -232,9 +229,9 @@ export class ReviewPolicyService {
     return (config?.featureConfig || {}) as Record<string, unknown>;
   }
 
-  async getCommentCategories(acpId: string): Promise<CommentCategory[]> {
+  async getCommentCategories(apId: string): Promise<CommentCategory[]> {
     const config = await this.accessConfigRepository.findOne({
-      where: { acpId },
+      where: { apId },
     });
     return config?.commentCategories || [];
   }
@@ -256,10 +253,10 @@ export class ReviewPolicyService {
   }
 
   async prepareVisibility(
-    acpId: string,
+    apId: string,
     actor: CommentActor,
   ): Promise<CommentVisibilityMode> {
-    return this.visibilityMode(await this.getFeatureConfig(acpId, actor));
+    return this.visibilityMode(await this.getFeatureConfig(apId, actor));
   }
 
   private visibilityMode(

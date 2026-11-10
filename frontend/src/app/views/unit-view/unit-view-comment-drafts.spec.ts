@@ -43,10 +43,10 @@ describe('Unit review comment drafts', () => {
 
   beforeEach(async () => {
     token = session('user-1');
-    api.getViewUnit.mockImplementation((_acpId: string, unitId: string) =>
+    api.getViewUnit.mockImplementation((_apId: string, unitId: string) =>
       of({ id: unitId, name: unitId, items: [], dependencies: [] }),
     );
-    api.getReviewCommentThread.mockImplementation((_acpId: string, target: unknown) =>
+    api.getReviewCommentThread.mockImplementation((_apId: string, target: unknown) =>
       of({
         revision: '1',
         target,
@@ -70,8 +70,8 @@ describe('Unit review comment drafts', () => {
         ],
       }),
     );
-    api.getItemCommentThread.mockImplementation((_acpId: string, unitId: string, itemId: string) =>
-      api.getReviewCommentThread(_acpId, { targetType: 'ITEM', unitId, itemId }),
+    api.getItemCommentThread.mockImplementation((_apId: string, unitId: string, itemId: string) =>
+      api.getReviewCommentThread(_apId, { targetType: 'ITEM', unitId, itemId }),
     );
     api.createItemComment.mockReturnValue(of({}));
     (ItemCommentThreadComponent as any).ctorParameters = () => [{ type: ApiService }];
@@ -89,7 +89,7 @@ describe('Unit review comment drafts', () => {
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(UnitViewComponent);
-    fixture.componentRef.setInput('acpId', 'A');
+    fixture.componentRef.setInput('apId', 'A');
     fixture.componentRef.setInput('unitId', 'U');
     fixture.componentRef.setInput('bookletId', 'B');
     fixture.componentRef.setInput('embedded', true);
@@ -330,10 +330,10 @@ describe('Unit review comment drafts', () => {
     fixture.componentRef.setInput('unitId', 'U');
     detect();
     expectDrafts();
-    fixture.componentRef.setInput('acpId', 'OTHER');
+    fixture.componentRef.setInput('apId', 'OTHER');
     detect();
     expect(thread()!.newCommentText).toBe('');
-    fixture.componentRef.setInput('acpId', 'A');
+    fixture.componentRef.setInput('apId', 'A');
     detect();
     expectDrafts();
   });

@@ -1,7 +1,7 @@
 import { expect, Page, test } from '@playwright/test';
 import { createOidcAppToken, installOidcSession } from './oidc-test-session';
 
-const ACP_ID = '10000000-0000-4000-8000-000000000001';
+const AP_ID = '10000000-0000-4000-8000-000000000001';
 const MANAGER_ID = '10000000-0000-4000-8000-000000000002';
 const MANAGER_USERNAME = 'e2e-manager';
 
@@ -31,8 +31,8 @@ test('toggles manual sorting without discarding the edited item order', async ({
   const headers = {
     Authorization: `Bearer ${createOidcAppToken(MANAGER_ID, MANAGER_USERNAME)}`,
   };
-  const stateUrl = `/api/view/acp/${ACP_ID}/item-explorer/state`;
-  const draftUrl = `/api/acp/${ACP_ID}/item-explorer/draft`;
+  const stateUrl = `/api/view/ap/${AP_ID}/item-explorer/state`;
+  const draftUrl = `/api/ap/${AP_ID}/item-explorer/draft`;
   const originalResponse = await request.get(stateUrl, { headers });
   expect(originalResponse.ok()).toBeTruthy();
   const original = await originalResponse.json();
@@ -66,7 +66,7 @@ test('toggles manual sorting without discarding the edited item order', async ({
       },
     });
     expect(setup.ok()).toBeTruthy();
-    await page.goto(`/view/${ACP_ID}/item-explorer`);
+    await page.goto(`/view/${AP_ID}/item-explorer`);
     const toggle = page.getByRole('button', { name: 'Manuell sortieren' });
     const idHeader = page.getByRole('columnheader', { name: /^Item-ID/ });
     const up = page.getByRole('button', { name: 'Ausgewähltes Item nach oben verschieben' });
@@ -141,12 +141,12 @@ test('toggles manual sorting without discarding the edited item order', async ({
 
 test('shows a slow-connection hint while the Explorer item list is delayed', async ({ page }) => {
   await installOidcSession(page, MANAGER_ID, MANAGER_USERNAME);
-  await page.route('**/api/acp/*/files/item-list*', async (route) => {
+  await page.route('**/api/ap/*/files/item-list*', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 2200));
     await route.continue();
   });
 
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
 
   const slowHint = page.getByText(/Das Laden dauert länger als erwartet/);
   await expect(slowHint).toBeVisible();
@@ -157,12 +157,12 @@ test('shows a slow-connection hint while the Explorer item list is delayed', asy
 
 test('shows and clears the slow-connection hint for a delayed preview phase', async ({ page }) => {
   await installOidcSession(page, MANAGER_ID, MANAGER_USERNAME);
-  await page.route('**/api/acp/*/files/unit-view/*', async (route) => {
+  await page.route('**/api/ap/*/files/unit-view/*', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 2200));
     await route.continue();
   });
 
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   const firstRow = page.locator('tbody tr').first();
   await expect(firstRow).toBeVisible();
   await firstRow.click();
@@ -201,7 +201,7 @@ test('reuses preview assets and requests only response state within one unit', a
     if (trackSameUnitReuse) sameUnitReuseRequests.push(requestType);
   });
 
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   const rows = page.locator('tbody tr');
   await expect(rows).toHaveCount(2);
 
@@ -231,7 +231,7 @@ test('imports booklet assignments without positions and retains known positions'
   request,
 }) => {
   await installOidcSession(page, MANAGER_ID, MANAGER_USERNAME);
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await expect(page.getByRole('heading', { name: 'Item-Explorer' })).toBeVisible();
 
   const upload = async (content: string): Promise<void> => {
@@ -261,7 +261,7 @@ test('imports booklet assignments without positions and retains known positions'
 
   const managerToken = await page.evaluate(() => localStorage.getItem('ch_token'));
   expect(managerToken).toBeTruthy();
-  const itemListResponse = await request.get(`/api/acp/${ACP_ID}/files/item-list`, {
+  const itemListResponse = await request.get(`/api/ap/${AP_ID}/files/item-list`, {
     headers: { Authorization: `Bearer ${managerToken}` },
   });
   expect(itemListResponse.ok()).toBeTruthy();
@@ -296,7 +296,7 @@ test('paginates large personal collections and removes selections across pages',
     complete: true,
   };
   let removePayload: { removeRowKeys?: string[]; rowKeys?: string[] } | null = null;
-  await page.route(`**/api/view/acp/${ACP_ID}/items/collections**`, async (route) => {
+  await page.route(`**/api/view/ap/${AP_ID}/items/collections**`, async (route) => {
     const browserRequest = route.request();
     const pathname = new URL(browserRequest.url()).pathname;
     if (browserRequest.method() === 'GET' && pathname.endsWith('/items/collections')) {
@@ -337,7 +337,7 @@ test('paginates large personal collections and removes selections across pages',
     await route.continue();
   });
 
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await page.getByText('Liste verwalten ▾', { exact: true }).click();
   await page.getByRole('button', { name: 'Details', exact: true }).click();
   const collectionDialog = page.getByRole('dialog', { name: 'Große Auswahlliste' });
@@ -424,7 +424,7 @@ test('keeps collection management actions inside wide, narrow and mobile panels'
 }) => {
   await page.setViewportSize({ width: 1440, height: 1100 });
   await installOidcSession(page, MANAGER_ID, MANAGER_USERNAME);
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
 
   const trigger = page.getByText('Liste verwalten ▾', { exact: true });
   const menu = page.locator('.collection-management-actions');
@@ -470,8 +470,8 @@ test('hides, persists, and restores the position column through column managemen
   const headers = {
     Authorization: `Bearer ${createOidcAppToken(MANAGER_ID, MANAGER_USERNAME)}`,
   };
-  const stateUrl = `/api/view/acp/${ACP_ID}/item-explorer/state`;
-  const draftUrl = `/api/acp/${ACP_ID}/item-explorer/draft`;
+  const stateUrl = `/api/view/ap/${AP_ID}/item-explorer/state`;
+  const draftUrl = `/api/ap/${AP_ID}/item-explorer/draft`;
   const originalResponse = await request.get(stateUrl, { headers });
   expect(originalResponse.ok()).toBeTruthy();
   const original = await originalResponse.json();
@@ -491,7 +491,7 @@ test('hides, persists, and restores the position column through column managemen
   };
 
   try {
-    await page.goto(`/view/${ACP_ID}/item-explorer`);
+    await page.goto(`/view/${AP_ID}/item-explorer`);
     const positionHeader = page.getByRole('columnheader', { name: 'Pos.' });
     await expect(positionHeader).toBeVisible();
     await expect(page.locator('tbody tr td.number-col')).toHaveText(['1', '2']);
@@ -562,8 +562,8 @@ test('normalizes legacy VOMD time columns without duplicating or rewriting the d
   const headers = {
     Authorization: `Bearer ${createOidcAppToken(MANAGER_ID, MANAGER_USERNAME)}`,
   };
-  const stateUrl = `/api/view/acp/${ACP_ID}/item-explorer/state`;
-  const draftUrl = `/api/acp/${ACP_ID}/item-explorer/draft`;
+  const stateUrl = `/api/view/ap/${AP_ID}/item-explorer/state`;
+  const draftUrl = `/api/ap/${AP_ID}/item-explorer/draft`;
   const originalResponse = await request.get(stateUrl, { headers });
   expect(originalResponse.ok()).toBeTruthy();
   const original = await originalResponse.json();
@@ -603,7 +603,7 @@ test('normalizes legacy VOMD time columns without duplicating or rewriting the d
     });
     expect(setup.ok()).toBeTruthy();
 
-    await page.route(`**/api/acp/${ACP_ID}/files/item-list*`, async (route) => {
+    await page.route(`**/api/ap/${AP_ID}/files/item-list*`, async (route) => {
       const response = await route.fetch();
       const itemList = await response.json();
       itemList.columns = [
@@ -633,7 +633,7 @@ test('normalizes legacy VOMD time columns without duplicating or rewriting the d
         draftPatchCount += 1;
       }
     });
-    await page.goto(`/view/${ACP_ID}/item-explorer`);
+    await page.goto(`/view/${AP_ID}/item-explorer`);
 
     const itemTimeHeader = page.getByRole('columnheader', { name: /^Itemzeit \(s\)/ });
     const stimulusTimeHeader = page.getByRole('columnheader', { name: /^Stimuluszeit \(s\)/ });
@@ -690,7 +690,7 @@ test('keeps positions gapless and persists the personal selection view across pe
   await page.setViewportSize({ width: 1440, height: 1100 });
   await installOidcSession(page, MANAGER_ID, MANAGER_USERNAME);
 
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await expect(page.getByRole('columnheader', { name: 'Pos.' })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: /Referenz-Nr/ })).toBeHidden();
   await expect(page.locator('tbody tr td.number-col')).toHaveText(['1', '2']);

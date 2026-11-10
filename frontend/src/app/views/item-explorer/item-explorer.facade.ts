@@ -95,7 +95,7 @@ export class ItemExplorerFacade implements OnDestroy {
   private shellDom?: ItemExplorerShellDomPort;
   private tableDom?: ItemExplorerTableDomPort;
 
-  acpId = '';
+  apId = '';
   canOpenFullUnit = false;
   private unitViewAccessRequest?: Subscription;
   private studioItemCommentsConfigured = false;
@@ -539,7 +539,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   // Metadata column management
-  isAcpManager = false;
+  isApManager = false;
   private explorerEditingAllowed = false;
   get canEditExplorer(): boolean {
     return this.explorerEditingAllowed && !this.draft.discarding;
@@ -1042,7 +1042,7 @@ export class ItemExplorerFacade implements OnDestroy {
       this.applyFilter(false);
     });
     this.responseStates.connect(() => ({
-      acpId: this.acpId,
+      apId: this.apId,
       selectedItem: this.selectedItem,
       isCorrectSolutionActive: this.isCorrectSolutionActive,
       previewReady: this.previewCoordinator.status.kind === 'ready',
@@ -1133,7 +1133,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private configureDraft(): void {
     this.draft.configure({
-      acpId: this.acpId,
+      apId: this.apId,
       canEdit: this.explorerEditingAllowed,
       canPublish: this.canPublishExplorer,
     });
@@ -1141,7 +1141,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private configureCollections(): void {
     this.collections.configure({
-      acpId: this.acpId,
+      apId: this.apId,
       identity: this.pendingPersonalSessionStorage.resolveIdentityFromToken(
         this.authService.getToken(),
       ),
@@ -1153,7 +1153,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private configurePersonalData(): void {
     this.personalData.configure({
-      acpId: this.acpId,
+      apId: this.apId,
       identity: this.pendingPersonalSessionStorage.resolveIdentityFromToken(
         this.authService.getToken(),
       ),
@@ -1165,7 +1165,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private configureComments(): void {
     this.comments.configure({
-      acpId: this.acpId,
+      apId: this.apId,
       identity: this.pendingPersonalSessionStorage.resolveIdentityFromToken(
         this.authService.getToken(),
       ),
@@ -1314,12 +1314,12 @@ export class ItemExplorerFacade implements OnDestroy {
   async confirmItemParameterUploadWarnings(): Promise<void> {
     if (this.destroyed) return;
     await this.applyImportResult(
-      await this.imports.confirmWarnings({ acpId: this.acpId, baseVersion: this.explorerVersion }),
+      await this.imports.confirmWarnings({ apId: this.apId, baseVersion: this.explorerVersion }),
     );
   }
 
   init(
-    acpId: string,
+    apId: string,
     initialCommentTarget?: {
       unitId: string;
       itemId: string;
@@ -1329,7 +1329,7 @@ export class ItemExplorerFacade implements OnDestroy {
   ) {
     if (this.initialized || this.destroyed) return;
     this.initialized = true;
-    this.acpId = acpId;
+    this.apId = apId;
     if (initialCommentTarget?.unitId && initialCommentTarget.itemId) {
       this.initialCommentTarget = {
         unitId: initialCommentTarget.unitId,
@@ -1340,7 +1340,7 @@ export class ItemExplorerFacade implements OnDestroy {
     }
     this.breadcrumbs = [
       { label: 'Content Hub', route: ['/'] },
-      { label: 'AP', route: ['/view', this.acpId] },
+      { label: 'AP', route: ['/view', this.apId] },
       { label: 'Item-Explorer' },
     ];
 
@@ -1354,12 +1354,12 @@ export class ItemExplorerFacade implements OnDestroy {
         this.syncItemCollectionSession();
       });
 
-    // Check if user is ACP Manager
+    // Check if user is AP Manager
     this.checkUserRole();
 
     // Load feature config and metadata settings
     this.api
-      .getAcpStartPage(this.acpId)
+      .getApStartPage(this.apId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
@@ -1391,7 +1391,7 @@ export class ItemExplorerFacade implements OnDestroy {
           this.table.itemSubIdLabel = String(fc.itemSubIdLabel || 'Sub-ID').trim() || 'Sub-ID';
           this.personalData.configureFeatures(fc);
           this.collections.enableItemCollections = fc.enableItemCollections === true;
-          // Explorer uses ACP-shared draft/published state instead of per-user preferences.
+          // Explorer uses AP-shared draft/published state instead of per-user preferences.
           this.persistUserPreferences = false;
           this.useServerPreferences = false;
 
@@ -1438,7 +1438,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
     // Load item list from .vomd files
     this.api
-      .getFileItemList(this.acpId, {
+      .getFileItemList(this.apId, {
         perspective: this.getPerspectiveForViewerRequests(expectedExplorerState),
       })
       .pipe(takeUntil(this.destroy$), finalize(settle))
@@ -1838,7 +1838,7 @@ export class ItemExplorerFacade implements OnDestroy {
     if (!file || this.destroyed) return;
     input.value = '';
     await this.applyImportResult(
-      await this.imports.upload(file, { acpId: this.acpId, baseVersion: this.explorerVersion }),
+      await this.imports.upload(file, { apId: this.apId, baseVersion: this.explorerVersion }),
     );
   }
 
@@ -1891,7 +1891,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.draft.lastDraftOperationError = '';
 
     this.api
-      .clearEmpiricalDifficulties(this.acpId, {
+      .clearEmpiricalDifficulties(this.apId, {
         draft: true,
         baseVersion: this.explorerVersion,
       })
@@ -1948,7 +1948,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.renumberError = '';
 
     this.api
-      .recalculateItemRowNumbers(this.acpId)
+      .recalculateItemRowNumbers(this.apId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
@@ -2123,7 +2123,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private loadPreviewSelection(item: ExplorerItem, reuseUnit: boolean): void {
     this.previewCoordinator.select({
-      acpId: this.acpId,
+      apId: this.apId,
       perspective: this.getPerspectiveForViewerRequests(),
       item,
       itemList: this.filteredItems.map((candidate) => ({
@@ -2605,7 +2605,7 @@ export class ItemExplorerFacade implements OnDestroy {
     return this.personalData.hasPendingPersonalItemDataChanges();
   }
 
-  // --- Shared ACP tags ---
+  // --- Shared AP tags ---
   addItemTag(uuid: string, event: Event) {
     if (!this.canEditExplorer) return;
     const tag = (event.target as HTMLSelectElement).value;
@@ -2655,7 +2655,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private loadPersistedTags() {
-    // Explorer uses shared ACP state; tags are loaded with the versioned item-list snapshot.
+    // Explorer uses shared AP state; tags are loaded with the versioned item-list snapshot.
     this.applyFilter(false);
   }
 
@@ -2726,7 +2726,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   downloadUnit() {
-    const url = `/api/acp/${this.acpId}/files?unitId=${this.selectedItem?.unitId}&format=zip`;
+    const url = `/api/ap/${this.apId}/files?unitId=${this.selectedItem?.unitId}&format=zip`;
     window.open(this.api.appendAuthToken(url), '_blank');
   }
 
@@ -2735,7 +2735,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.canOpenFullUnit = false;
     this.unitViewAccessRequest?.unsubscribe();
     this.unitViewAccessRequest = this.api
-      .getCapabilities(this.acpId)
+      .getCapabilities(this.apId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (access) => {
@@ -2745,7 +2745,7 @@ export class ItemExplorerFacade implements OnDestroy {
           this.canOpenFullUnit = false;
         },
       });
-    this.isAcpManager = this.authService.hasAcpRole(this.acpId, 'ACP_MANAGER');
+    this.isApManager = this.authService.hasApRole(this.apId, 'AP_MANAGER');
     this.hasExplorerEditPermission = this.latestExplorerState?.canEdit ?? false;
     this.hasExplorerPublishPermission = this.hasExplorerEditPermission;
     this.comments.itemCommentsEnabled =
@@ -3055,7 +3055,7 @@ export class ItemExplorerFacade implements OnDestroy {
     if (this.destroyed) return null;
     try {
       const envelope = await firstValueFrom(
-        this.api.getItemExplorerState(this.acpId, this.isReadOnlyPreview ? 'read-only' : 'editor'),
+        this.api.getItemExplorerState(this.apId, this.isReadOnlyPreview ? 'read-only' : 'editor'),
       );
       return this.destroyed ? null : envelope;
     } catch (error) {
@@ -3311,7 +3311,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   showHistory(): void {
     this.rememberFocusBeforeOverlay();
-    this.history.showHistory(this.acpId);
+    this.history.showHistory(this.apId);
   }
 
   openCodingOverlay() {

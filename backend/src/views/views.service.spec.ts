@@ -7,17 +7,17 @@ import { ViewsService } from "./views.service";
 import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.service";
 import { UnitParserService } from "../files/unit-parser.service";
 import {
-  Acp,
-  AcpAccessConfig,
-  AcpFile,
+  Ap,
+  ApAccessConfig,
+  ApFile,
   AppSettings,
-  AcpItemPreference,
+  ApItemPreference,
 } from "../database/entities";
 
 describe("ViewsService", () => {
   let service: ViewsService;
   let manifestService: ReviewManifestService;
-  let acpRepository: { findOne: jest.Mock };
+  let apRepository: { findOne: jest.Mock };
   let accessConfigRepository: { findOne: jest.Mock; find: jest.Mock };
   let fileRepository: { find: jest.Mock; findOne: jest.Mock };
   let settingsRepository: { findOne: jest.Mock };
@@ -37,7 +37,7 @@ describe("ViewsService", () => {
   };
 
   beforeEach(async () => {
-    acpRepository = { findOne: jest.fn() };
+    apRepository = { findOne: jest.fn() };
     accessConfigRepository = { findOne: jest.fn(), find: jest.fn() };
     fileRepository = { find: jest.fn(), findOne: jest.fn() };
     settingsRepository = { findOne: jest.fn() };
@@ -88,18 +88,18 @@ describe("ViewsService", () => {
               .mockResolvedValue({ booklets: [], units: [], issues: [] }),
           },
         },
-        { provide: getRepositoryToken(Acp), useValue: acpRepository },
+        { provide: getRepositoryToken(Ap), useValue: apRepository },
         {
-          provide: getRepositoryToken(AcpAccessConfig),
+          provide: getRepositoryToken(ApAccessConfig),
           useValue: accessConfigRepository,
         },
-        { provide: getRepositoryToken(AcpFile), useValue: fileRepository },
+        { provide: getRepositoryToken(ApFile), useValue: fileRepository },
         {
           provide: getRepositoryToken(AppSettings),
           useValue: settingsRepository,
         },
         {
-          provide: getRepositoryToken(AcpItemPreference),
+          provide: getRepositoryToken(ApItemPreference),
           useValue: itemPreferenceRepository,
         },
         {
@@ -115,10 +115,10 @@ describe("ViewsService", () => {
   });
 
   it("lists canonical booklets and returns their complete navigation", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      name: "ACP",
-      acpIndex: {},
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      name: "AP",
+      apIndex: {},
     });
     accessConfigRepository.findOne.mockResolvedValue(null);
     const booklet = {
@@ -139,7 +139,7 @@ describe("ViewsService", () => {
     jest
       .mocked(manifestService.getManifest)
       .mockResolvedValue({ booklets: [booklet], units: [], issues: [] });
-    expect((await service.getAcpStartPage("acp-1")).sequences).toEqual([
+    expect((await service.getApStartPage("ap-1")).sequences).toEqual([
       {
         id: "b1",
         name: "Booklet",
@@ -147,7 +147,7 @@ describe("ViewsService", () => {
         kind: "booklet",
       },
     ]);
-    expect(await service.getTaskSequence("acp-1", "b1", "booklet")).toEqual(
+    expect(await service.getTaskSequence("ap-1", "b1", "booklet")).toEqual(
       booklet,
     );
   });
@@ -179,14 +179,14 @@ describe("ViewsService", () => {
           ],
         ]),
       );
-      acpRepository.findOne.mockResolvedValue({ id: "acp-1", acpIndex: index });
+      apRepository.findOne.mockResolvedValue({ id: "ap-1", apIndex: index });
       accessConfigRepository.findOne.mockResolvedValue(null);
       jest.mocked(manifestService.getManifest).mockResolvedValue(manifest);
-      expect((await service.getAcpStartPage("acp-1")).sequences[0].name).toBe(
+      expect((await service.getApStartPage("ap-1")).sequences[0].name).toBe(
         expected,
       );
       expect(
-        (await service.getTaskSequence("acp-1", "b1", "booklet")).name,
+        (await service.getTaskSequence("ap-1", "b1", "booklet")).name,
       ).toBe(expected);
     },
   );
@@ -207,35 +207,35 @@ describe("ViewsService", () => {
       '<Booklet><Metadata><Id>same</Id></Metadata><Units><Unit id="new"/></Units></Booklet>';
     const manifest = buildReviewManifest(index, new Map([["b.xml", xml]]));
     expect(manifest.issues).toEqual([]);
-    acpRepository.findOne.mockResolvedValue({ id: "acp-1", acpIndex: index });
+    apRepository.findOne.mockResolvedValue({ id: "ap-1", apIndex: index });
     accessConfigRepository.findOne.mockResolvedValue(null);
     jest.mocked(manifestService.getManifest).mockResolvedValue(manifest);
     expect(
-      (await service.getTaskSequence("acp-1", "same")).units.map(
+      (await service.getTaskSequence("ap-1", "same")).units.map(
         (unit: any) => unit.id,
       ),
     ).toEqual(["old"]);
     expect(
-      (await service.getTaskSequence("acp-1", "same", "booklet")).units.map(
+      (await service.getTaskSequence("ap-1", "same", "booklet")).units.map(
         (unit: any) => unit.id,
       ),
     ).toEqual(["new"]);
-    const sequences = (await service.getAcpStartPage("acp-1")).sequences;
+    const sequences = (await service.getApStartPage("ap-1")).sequences;
     expect(sequences).toHaveLength(2);
     expect(sequences[0]).toMatchObject({ id: "same", kind: "booklet" });
     expect(sequences[1]).toMatchObject({ id: "same" });
     expect(sequences[1].kind).toBeUndefined();
     expect(
-      await service.getTaskSequence("acp-1", "unknown", "booklet"),
+      await service.getTaskSequence("ap-1", "unknown", "booklet"),
     ).toBeNull();
   });
 
-  it("uses bookletModule IDs as sequence IDs on ACP start page", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      name: "ACP",
+  it("uses bookletModule IDs as sequence IDs on AP start page", async () => {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      name: "AP",
       description: "Demo",
-      acpIndex: {
+      apIndex: {
         assessmentParts: [
           {
             units: [{ id: "unit-1", name: "Unit 1" }],
@@ -264,7 +264,7 @@ describe("ViewsService", () => {
     });
     accessConfigRepository.findOne.mockResolvedValue({ featureConfig: {} });
 
-    const start = await service.getAcpStartPage("acp-1");
+    const start = await service.getApStartPage("ap-1");
     expect(start.sequences).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -277,11 +277,11 @@ describe("ViewsService", () => {
   });
 
   it("supports different module reference formats and deduplicates sequence IDs", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      name: "ACP",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      name: "AP",
       description: "Demo",
-      acpIndex: {
+      apIndex: {
         assessmentParts: [
           {
             units: [{ id: "unit-1", name: "Unit 1" }],
@@ -315,7 +315,7 @@ describe("ViewsService", () => {
     });
     accessConfigRepository.findOne.mockResolvedValue({ featureConfig: {} });
 
-    const start = await service.getAcpStartPage("acp-1");
+    const start = await service.getApStartPage("ap-1");
     const sequenceIds = (start.sequences || []).map(
       (s: { id: string }) => s.id,
     );
@@ -325,11 +325,11 @@ describe("ViewsService", () => {
   });
 
   it("exposes canonical metadataColumns when legacy key is stored", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      name: "ACP",
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      name: "AP",
       description: "Demo",
-      acpIndex: {
+      apIndex: {
         assessmentParts: [],
       },
     });
@@ -339,7 +339,7 @@ describe("ViewsService", () => {
       },
     });
 
-    const start = await service.getAcpStartPage("acp-1");
+    const start = await service.getApStartPage("ap-1");
     expect(start.featureConfig).toMatchObject({
       metadataColumns: {
         visible: ["metaA", "metaB"],
@@ -350,7 +350,7 @@ describe("ViewsService", () => {
   });
 
   it("returns empty item preferences when no authenticated identity is available", async () => {
-    const prefs = await service.getItemPreferences("acp-1", null, "item-list");
+    const prefs = await service.getItemPreferences("ap-1", null, "item-list");
     expect(prefs).toEqual({ ui: {}, tags: {}, rowData: {} });
     expect(itemPreferenceRepository.findOne).not.toHaveBeenCalled();
   });
@@ -370,7 +370,7 @@ describe("ViewsService", () => {
     });
 
     const prefs = await service.getItemPreferences(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       "item-list",
     );
@@ -388,10 +388,10 @@ describe("ViewsService", () => {
 
   it("requires a stable identity for personal item preferences", async () => {
     await expect(
-      service.getItemPreferences("acp-1", null, "item-explorer"),
+      service.getItemPreferences("ap-1", null, "item-explorer"),
     ).rejects.toThrow(UnauthorizedException);
     await expect(
-      service.patchPersonalItemPreferenceRow("acp-1", null, "uuid::1", {
+      service.patchPersonalItemPreferenceRow("ap-1", null, "uuid::1", {
         note: "not saved",
       }),
     ).rejects.toThrow(UnauthorizedException);
@@ -458,7 +458,7 @@ describe("ViewsService", () => {
     });
 
     const buffer = await service.exportPersonalItemDataXlsx(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       ["uuid-2::1", "removed-row", "uuid-1::1"],
       true,
@@ -466,17 +466,17 @@ describe("ViewsService", () => {
 
     expect(itemPreferenceRepository.findOne).toHaveBeenCalledWith({
       where: {
-        acpId: "acp-1",
+        apId: "ap-1",
         viewId: "item-explorer",
         userId: "user-1",
       },
     });
     expect(itemExplorerStateService.getStateForViewer).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       true,
     );
     expect(unitParserService.getItemListFromFiles).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {
         itemPropertiesOverride: { "uuid-1::1": { draft: true } },
         publishedItemPropertiesOverride: {
@@ -536,7 +536,7 @@ describe("ViewsService", () => {
       featureConfig: { personalItemCategoryLabel: "Priorität" },
     });
     const customLabelBuffer = await service.exportPersonalItemDataXlsx(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       ["uuid-1::1"],
       true,
@@ -552,7 +552,7 @@ describe("ViewsService", () => {
   it("requires an explicit filtered and sorted row order for exports", async () => {
     await expect(
       service.exportPersonalItemDataXlsx(
-        "acp-1",
+        "ap-1",
         { kind: "user", userId: "user-1" },
         undefined as unknown as string[],
       ),
@@ -574,7 +574,7 @@ describe("ViewsService", () => {
     );
     unitParserService.getItemListFromFiles.mockResolvedValue({ items: [] });
     const csv = (
-      await service.exportAllPersonalItemDataCsv("acp-1", false, [
+      await service.exportAllPersonalItemDataCsv("ap-1", false, [
         "uuid::A",
         "uuid::A",
       ])
@@ -584,12 +584,12 @@ describe("ViewsService", () => {
     expect(csv).not.toContain("excluded");
     expect(csv.trim().split("\r\n")).toHaveLength(3);
     const empty = (
-      await service.exportAllPersonalItemDataCsv("acp-1", false, [])
+      await service.exportAllPersonalItemDataCsv("ap-1", false, [])
     ).toString("utf8");
     expect(empty.trim().split("\r\n")).toHaveLength(1);
     expect(empty).toContain("Teilnehmerkennung");
     const noData = (
-      await service.exportAllPersonalItemDataCsv("acp-1", false, [
+      await service.exportAllPersonalItemDataCsv("ap-1", false, [
         "without-data",
       ])
     ).toString("utf8");
@@ -654,15 +654,15 @@ describe("ViewsService", () => {
     });
 
     const csv = (
-      await service.exportAllPersonalItemDataCsv("acp-1", true)
+      await service.exportAllPersonalItemDataCsv("ap-1", true)
     ).toString("utf8");
 
     expect(itemPreferenceRepository.find).toHaveBeenCalledWith({
-      where: { acpId: "acp-1", viewId: "item-explorer" },
+      where: { apId: "ap-1", viewId: "item-explorer" },
       relations: { user: true, credential: true },
     });
     expect(itemExplorerStateService.getStateForViewer).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       true,
     );
     expect(csv.startsWith("\uFEFF")).toBe(true);
@@ -686,7 +686,7 @@ describe("ViewsService", () => {
 
     await expect(
       service.exportPersonalItemDataXlsx(
-        "acp-1",
+        "ap-1",
         { kind: "user", userId: "user-1" },
         rowKeys,
       ),
@@ -706,7 +706,7 @@ describe("ViewsService", () => {
 
     await expect(
       service.getItemPreferences(
-        "acp-1",
+        "ap-1",
         {
           kind: "credential",
           credentialId: "credential-new",
@@ -718,7 +718,7 @@ describe("ViewsService", () => {
     expect(itemPreferenceRepository.findOne).toHaveBeenCalledTimes(1);
     expect(itemPreferenceRepository.findOne).toHaveBeenCalledWith({
       where: {
-        acpId: "acp-1",
+        apId: "ap-1",
         viewId: "item-explorer",
         credentialId: "credential-new",
       },
@@ -727,7 +727,7 @@ describe("ViewsService", () => {
 
   it("saves preferences scoped by stable credential id", async () => {
     const saved = await service.saveItemPreferences(
-      "acp-1",
+      "ap-1",
       {
         kind: "credential",
         credentialId: "credential-1",
@@ -758,7 +758,7 @@ describe("ViewsService", () => {
         'ON CONFLICT ("acp_id", "view_id", "credential_id")',
       ),
       [
-        "acp-1",
+        "ap-1",
         "item-explorer",
         null,
         "credential-1",
@@ -806,58 +806,58 @@ describe("ViewsService", () => {
     });
   });
 
-  it("aggregates public ACPs and active credential ACPs without duplicates", async () => {
+  it("aggregates public APs and active credential APs without duplicates", async () => {
     accessConfigRepository.find
       .mockResolvedValueOnce([
         {
-          acpId: "acp-public",
+          apId: "ap-public",
           accessModel: "PUBLIC",
-          acp: { id: "acp-public", name: "Public", description: "Public Desc" },
+          ap: { id: "ap-public", name: "Public", description: "Public Desc" },
         },
       ])
       .mockResolvedValueOnce([
         {
-          acpId: "acp-public",
+          apId: "ap-public",
           accessModel: "CREDENTIALS_LIST",
           validFrom: null,
           validUntil: null,
-          acp: { id: "acp-public", name: "Public", description: "Public Desc" },
+          ap: { id: "ap-public", name: "Public", description: "Public Desc" },
         },
         {
-          acpId: "acp-credential",
+          apId: "ap-credential",
           accessModel: "CREDENTIALS_LIST",
           validFrom: new Date("2026-01-01T00:00:00.000Z"),
           validUntil: new Date("2026-12-31T23:59:59.000Z"),
-          acp: {
-            id: "acp-credential",
+          ap: {
+            id: "ap-credential",
             name: "Credential",
             description: "Credential Desc",
           },
         },
         {
-          acpId: "acp-inactive",
+          apId: "ap-inactive",
           accessModel: "CREDENTIALS_LIST",
           validFrom: new Date("2027-01-01T00:00:00.000Z"),
           validUntil: new Date("2027-12-31T23:59:59.000Z"),
-          acp: {
-            id: "acp-inactive",
+          ap: {
+            id: "ap-inactive",
             name: "Inactive",
             description: "Inactive Desc",
           },
         },
       ]);
 
-    const result = await service.getPublicAcps();
+    const result = await service.getPublicAps();
 
     expect(result).toEqual([
       {
-        id: "acp-public",
+        id: "ap-public",
         name: "Public",
         description: "Public Desc",
         accessModel: "PUBLIC",
       },
       {
-        id: "acp-credential",
+        id: "ap-credential",
         name: "Credential",
         description: "Credential Desc",
         accessModel: "CREDENTIALS_LIST",
@@ -866,11 +866,11 @@ describe("ViewsService", () => {
     ]);
   });
 
-  it("returns null for unknown ACPs in start page/index/unit/sequence lookups", async () => {
-    acpRepository.findOne.mockResolvedValue(null);
+  it("returns null for unknown APs in start page/index/unit/sequence lookups", async () => {
+    apRepository.findOne.mockResolvedValue(null);
 
-    await expect(service.getAcpStartPage("missing")).resolves.toBeNull();
-    await expect(service.getAcpIndex("missing")).resolves.toBeNull();
+    await expect(service.getApStartPage("missing")).resolves.toBeNull();
+    await expect(service.getApIndex("missing")).resolves.toBeNull();
     await expect(
       service.getUnitViewData("missing", "unit-1"),
     ).resolves.toBeNull();
@@ -880,9 +880,9 @@ describe("ViewsService", () => {
   });
 
   it("loads unit view data with resolved dependencies", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      acpIndex: {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
         assessmentParts: [
           {
             units: [
@@ -911,7 +911,7 @@ describe("ViewsService", () => {
       })
       .mockResolvedValueOnce(null);
 
-    await expect(service.getUnitViewData("acp-1", "unit-1")).resolves.toEqual({
+    await expect(service.getUnitViewData("ap-1", "unit-1")).resolves.toEqual({
       id: "unit-1",
       name: "Unit 1",
       description: "Desc",
@@ -921,7 +921,7 @@ describe("ViewsService", () => {
         {
           type: "PLAYER",
           originalName: "player.html",
-          downloadUrl: "/api/acp/acp-1/files/file-1/download",
+          downloadUrl: "/api/ap/ap-1/files/file-1/download",
           fileId: "file-1",
         },
       ],
@@ -931,16 +931,16 @@ describe("ViewsService", () => {
   });
 
   it("returns null for unknown units and computes item list prefixes", async () => {
-    acpRepository.findOne
+    apRepository.findOne
       .mockResolvedValueOnce({
-        id: "acp-1",
-        acpIndex: {
+        id: "ap-1",
+        apIndex: {
           assessmentParts: [{ units: [{ id: "unit-1", items: [] }] }],
         },
       })
       .mockResolvedValueOnce({
-        id: "acp-1",
-        acpIndex: {
+        id: "ap-1",
+        apIndex: {
           assessmentParts: [
             {
               units: [
@@ -959,9 +959,9 @@ describe("ViewsService", () => {
       });
 
     await expect(
-      service.getUnitViewData("acp-1", "missing-unit"),
+      service.getUnitViewData("ap-1", "missing-unit"),
     ).resolves.toBeNull();
-    await expect(service.getItemList("acp-1")).resolves.toEqual([
+    await expect(service.getItemList("ap-1")).resolves.toEqual([
       {
         itemId: "unit-1_item-1",
         unitId: "unit-1",
@@ -979,15 +979,15 @@ describe("ViewsService", () => {
     ]);
   });
 
-  it("returns empty item list when ACP does not exist", async () => {
-    acpRepository.findOne.mockResolvedValue(null);
+  it("returns empty item list when AP does not exist", async () => {
+    apRepository.findOne.mockResolvedValue(null);
     await expect(service.getItemList("missing")).resolves.toEqual([]);
   });
 
   it("projects mean task difficulty from the published Explorer item list", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      acpIndex: {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
         assessmentParts: [
           {
             units: [
@@ -1030,7 +1030,7 @@ describe("ViewsService", () => {
       ],
     });
 
-    await expect(service.getItemList("acp-1")).resolves.toEqual([
+    await expect(service.getItemList("ap-1")).resolves.toEqual([
       expect.objectContaining({
         itemId: "unit-1_item-1",
         meanTaskDifficulty: -0.25,
@@ -1041,15 +1041,15 @@ describe("ViewsService", () => {
       }),
     ]);
     expect(itemExplorerStateService.getStateForViewer).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       false,
     );
   });
 
   it("keeps one simple-list entry per index item for partial-credit rows", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      acpIndex: {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
         assessmentParts: [
           {
             units: [
@@ -1084,7 +1084,7 @@ describe("ViewsService", () => {
       ],
     });
 
-    await expect(service.getItemList("acp-1")).resolves.toEqual([
+    await expect(service.getItemList("ap-1")).resolves.toEqual([
       {
         itemId: "unit-1_item-1",
         unitId: "unit-1",
@@ -1097,9 +1097,9 @@ describe("ViewsService", () => {
   });
 
   it("returns sorted sequence units and falls back to raw ids when units are missing", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      acpIndex: {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
         assessmentParts: [
           {
             units: [{ id: "unit-1", name: "Unit 1" }],
@@ -1118,7 +1118,7 @@ describe("ViewsService", () => {
       },
     });
 
-    await expect(service.getTaskSequence("acp-1", "seq-1")).resolves.toEqual({
+    await expect(service.getTaskSequence("ap-1", "seq-1")).resolves.toEqual({
       id: "seq-1",
       name: "Sequence",
       units: [
@@ -1127,13 +1127,13 @@ describe("ViewsService", () => {
       ],
     });
     await expect(
-      service.getTaskSequence("acp-1", "unknown"),
+      service.getTaskSequence("ap-1", "unknown"),
     ).resolves.toBeNull();
   });
 
   it("returns normalized preferences immediately when identity is missing on save", async () => {
     await expect(
-      service.saveItemPreferences("acp-1", null, {
+      service.saveItemPreferences("ap-1", null, {
         ui: { filterText: "abc" },
         tags: { item1: ["x", " x ", ""] },
       }),
@@ -1147,7 +1147,7 @@ describe("ViewsService", () => {
 
   it("upserts preference records atomically for authenticated users", async () => {
     const saved = await service.saveItemPreferences(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       {
         ui: { sortBy: "name" },
@@ -1160,7 +1160,7 @@ describe("ViewsService", () => {
       expect.stringMatching(
         /ON CONFLICT \("acp_id", "view_id", "user_id"\)[\s\S]*jsonb_typeof\("acp_item_preferences"\."preferences"\) = 'object'[\s\S]*ELSE '\{\}'::jsonb[\s\S]*\) \|\| EXCLUDED\."preferences"/,
       ),
-      ["acp-1", "item-list", "user-1", null, null, JSON.stringify(saved)],
+      ["ap-1", "item-list", "user-1", null, null, JSON.stringify(saved)],
     );
     expect(itemPreferenceRepository.findOne).not.toHaveBeenCalled();
     expect(itemPreferenceRepository.create).not.toHaveBeenCalled();
@@ -1169,7 +1169,7 @@ describe("ViewsService", () => {
 
   it("persists personal working data by stable row key", async () => {
     const saved = await service.saveItemPreferences(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       {
         rowData: {
@@ -1198,7 +1198,7 @@ describe("ViewsService", () => {
     itemPreferenceRepository.query.mockResolvedValue([{ updated: 1 }]);
 
     const result = await service.patchPersonalItemPreferenceRow(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       "uuid-2::1",
       { category: " II ", formatted: "ignored" },
@@ -1208,11 +1208,11 @@ describe("ViewsService", () => {
       "uuid-2::1": { category: "II" },
     });
     expect(itemExplorerStateService.getStateForViewer).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       false,
     );
     expect(unitParserService.getItemRowKeysFromFiles).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {
         itemPropertiesOverride: {},
         publishedItemPropertiesOverride: {},
@@ -1223,7 +1223,7 @@ describe("ViewsService", () => {
         /\("acp_item_preferences"\."preferences"->'rowData'\) - \$8::text[\s\S]*jsonb_build_object\(\$8::text, \$7::jsonb\)[\s\S]*\? \$8::text[\s\S]*RETURNING 1 AS "updated"/,
       ),
       expect.arrayContaining([
-        "acp-1",
+        "ap-1",
         "item-explorer",
         "user-1",
         null,
@@ -1236,14 +1236,14 @@ describe("ViewsService", () => {
     );
   });
 
-  it("rejects personal data for a row that does not exist in the ACP", async () => {
+  it("rejects personal data for a row that does not exist in the AP", async () => {
     unitParserService.getItemRowKeysFromFiles.mockResolvedValue(
       new Set(["uuid-1::1"]),
     );
 
     await expect(
       service.patchPersonalItemPreferenceRow(
-        "acp-1",
+        "ap-1",
         { kind: "user", userId: "user-1" },
         "invented-row",
         { note: "unbounded" },
@@ -1257,7 +1257,7 @@ describe("ViewsService", () => {
 
     await expect(
       service.patchPersonalItemPreferenceRow(
-        "acp-1",
+        "ap-1",
         { kind: "user", userId: "user-1" },
         "removed-row",
         null,
@@ -1272,7 +1272,7 @@ describe("ViewsService", () => {
 
     await expect(
       service.patchPersonalItemPreferenceRow(
-        "acp-1",
+        "ap-1",
         { kind: "user", userId: "user-1" },
         "uuid-1::1",
         { note: "one too many" },

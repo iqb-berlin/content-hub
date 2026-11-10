@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin, map } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { PublicAcp, Acp } from '../../core/models/api.models';
+import { PublicAp, Ap } from '../../core/models/api.models';
 import { renderMarkdownContent } from '../../core/utils/markdown.util';
 
 @Component({
@@ -24,49 +24,49 @@ import { renderMarkdownContent } from '../../core/utils/markdown.util';
         <section class="custom-content card rich-text-content" [innerHTML]="landingHtml"></section>
       }
 
-      <!-- ACP grid -->
-      <section class="acp-section">
+      <!-- AP grid -->
+      <section class="ap-section">
         <h2>Verfügbare Pakete</h2>
-        <div class="acp-grid">
-          @for (acp of acps; track acp.id) {
-            <div class="card acp-card">
-              <div class="acp-card-header">
+        <div class="ap-grid">
+          @for (ap of aps; track ap.id) {
+            <div class="card ap-card">
+              <div class="ap-card-header">
                 <span
                   class="badge"
                   [class.badge-success]="
-                    acp.accessModel === 'PUBLIC' || acp.accessModel === 'CREDENTIALS_LIST'
+                    ap.accessModel === 'PUBLIC' || ap.accessModel === 'CREDENTIALS_LIST'
                   "
                   [class.badge-info]="
-                    acp.accessModel !== 'PUBLIC' &&
-                    acp.accessModel !== 'CREDENTIALS_LIST' &&
-                    acp.accessModel !== 'ADMIN'
+                    ap.accessModel !== 'PUBLIC' &&
+                    ap.accessModel !== 'CREDENTIALS_LIST' &&
+                    ap.accessModel !== 'ADMIN'
                   "
-                  [class.badge-warning]="acp.accessModel === 'ADMIN'"
+                  [class.badge-warning]="ap.accessModel === 'ADMIN'"
                 >
-                  @if (acp.accessModel === 'PUBLIC') {
+                  @if (ap.accessModel === 'PUBLIC') {
                     Öffentlich
-                  } @else if (acp.accessModel === 'CREDENTIALS_LIST') {
+                  } @else if (ap.accessModel === 'CREDENTIALS_LIST') {
                     Zugangsdaten erforderlich
-                  } @else if (acp.accessModel === 'REGISTERED') {
+                  } @else if (ap.accessModel === 'REGISTERED') {
                     Registriert
-                  } @else if (acp.accessModel === 'ADMIN') {
+                  } @else if (ap.accessModel === 'ADMIN') {
                     Admin
                   } @else {
                     Privat
                   }
                 </span>
               </div>
-              <h3>{{ acp.name }}</h3>
-              <p class="desc">{{ acp.description || 'Keine Beschreibung verfügbar.' }}</p>
+              <h3>{{ ap.name }}</h3>
+              <p class="desc">{{ ap.description || 'Keine Beschreibung verfügbar.' }}</p>
               <div class="card-footer">
-                @if (acp.accessModel === 'CREDENTIALS_LIST' && !isLoggedIn) {
-                  @if (loginAcpId === acp.id) {
+                @if (ap.accessModel === 'CREDENTIALS_LIST' && !isLoggedIn) {
+                  @if (loginApId === ap.id) {
                     <!-- Inline login form -->
                     <div class="inline-login-form">
                       @if (loginError) {
                         <div class="login-error">{{ loginError }}</div>
                       }
-                      <form (ngSubmit)="onLoginSubmit(acp.id)">
+                      <form (ngSubmit)="onLoginSubmit(ap.id)">
                         <div class="login-fields">
                           <input
                             type="text"
@@ -112,21 +112,21 @@ import { renderMarkdownContent } from '../../core/utils/markdown.util';
                     </div>
                   } @else {
                     <!-- Show login button -->
-                    <button class="btn btn-primary" (click)="showLoginForm(acp.id)">
+                    <button class="btn btn-primary" (click)="showLoginForm(ap.id)">
                       <span class="btn-icon">🔑</span> Anmelden
                     </button>
                   }
-                } @else if (acp.requiresLogin && !isLoggedIn) {
-                  <a [routerLink]="['/credential-login', acp.id]" class="btn btn-primary">
+                } @else if (ap.requiresLogin && !isLoggedIn) {
+                  <a [routerLink]="['/credential-login', ap.id]" class="btn btn-primary">
                     <span class="btn-icon">🔑</span> Anmelden
                   </a>
                 } @else {
-                  @if (isManagerForAcp(acp.id)) {
-                    <a [routerLink]="['/manage', acp.id]" class="btn btn-primary">
+                  @if (isManagerForAp(ap.id)) {
+                    <a [routerLink]="['/manage', ap.id]" class="btn btn-primary">
                       <span class="btn-icon">🛠</span> Verwalten
                     </a>
                   } @else {
-                    <a [routerLink]="['/view', acp.id]" class="btn btn-primary">
+                    <a [routerLink]="['/view', ap.id]" class="btn btn-primary">
                       <span class="btn-icon">📦</span> Öffnen
                     </a>
                   }
@@ -135,7 +135,7 @@ import { renderMarkdownContent } from '../../core/utils/markdown.util';
             </div>
           }
         </div>
-        @if (!acps.length) {
+        @if (!aps.length) {
           <div class="empty-state">
             <div class="empty-icon">📭</div>
             <h3>Keine öffentlichen Pakete verfügbar</h3>
@@ -221,25 +221,25 @@ import { renderMarkdownContent } from '../../core/utils/markdown.util';
         line-height: 1.7;
       }
 
-      /* ACP Section */
-      .acp-section {
+      /* AP Section */
+      .ap-section {
         flex: 1;
       }
-      .acp-section h2 {
+      .ap-section h2 {
         font-size: 1.4rem;
         margin-bottom: 20px;
         display: flex;
         align-items: center;
         gap: 8px;
       }
-      .acp-grid {
+      .ap-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 20px;
       }
 
-      /* ACP Card */
-      .acp-card {
+      /* AP Card */
+      .ap-card {
         display: flex;
         flex-direction: column;
         transition:
@@ -247,14 +247,14 @@ import { renderMarkdownContent } from '../../core/utils/markdown.util';
           box-shadow 0.2s ease;
         border: 1px solid var(--color-border);
       }
-      .acp-card:hover {
+      .ap-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
       }
-      .acp-card-header {
+      .ap-card-header {
         margin-bottom: 12px;
       }
-      .acp-card h3 {
+      .ap-card h3 {
         font-size: 1.15rem;
         font-weight: 600;
         margin-bottom: 8px;
@@ -409,7 +409,7 @@ import { renderMarkdownContent } from '../../core/utils/markdown.util';
   ],
 })
 export class LandingComponent implements OnInit {
-  acps: PublicAcp[] = [];
+  aps: PublicAp[] = [];
   landingHtml: string | null = null;
   imprintHtml: string | null = null;
   privacyHtml: string | null = null;
@@ -420,7 +420,7 @@ export class LandingComponent implements OnInit {
   activeLegalContent: string | null = null;
 
   // Inline login form state
-  loginAcpId: string | null = null;
+  loginApId: string | null = null;
   loginUsername = '';
   loginPassword = '';
   loginLoading = false;
@@ -437,25 +437,25 @@ export class LandingComponent implements OnInit {
   }
 
   ngOnInit() {
-    const acpsRequest = this.authService.isAdmin
-      ? forkJoin({ public: this.api.getPublicAcps(), all: this.api.getAcps() }).pipe(
-          map(({ public: publicAcps, all: allAcps }: { public: PublicAcp[]; all: Acp[] }) =>
-            this.mergeForAdmin(publicAcps, allAcps),
+    const apsRequest = this.authService.isAdmin
+      ? forkJoin({ public: this.api.getPublicAps(), all: this.api.getAps() }).pipe(
+          map(({ public: publicAps, all: allAps }: { public: PublicAp[]; all: Ap[] }) =>
+            this.mergeForAdmin(publicAps, allAps),
           ),
         )
       : this.authService.isLoggedIn
-        ? forkJoin({ public: this.api.getPublicAcps(), all: this.api.getAcps() }).pipe(
-            map(({ public: publicAcps, all: allAcps }: { public: PublicAcp[]; all: Acp[] }) =>
-              this.mergeForLoggedUsers(publicAcps, allAcps),
+        ? forkJoin({ public: this.api.getPublicAps(), all: this.api.getAps() }).pipe(
+            map(({ public: publicAps, all: allAps }: { public: PublicAp[]; all: Ap[] }) =>
+              this.mergeForLoggedUsers(publicAps, allAps),
             ),
           )
-        : this.api.getPublicAcps();
+        : this.api.getPublicAps();
 
     forkJoin({
       settings: this.api.getPublicSettings(),
-      acps: acpsRequest,
-    }).subscribe(({ settings, acps }) => {
-      this.acps = acps as PublicAcp[];
+      aps: apsRequest,
+    }).subscribe(({ settings, aps }) => {
+      this.aps = aps as PublicAp[];
       this.landingHtml = renderMarkdownContent(settings.landingPageHtml);
       this.imprintHtml = renderMarkdownContent(settings.imprintHtml);
       this.privacyHtml = renderMarkdownContent(settings.privacyHtml);
@@ -484,8 +484,8 @@ export class LandingComponent implements OnInit {
   }
 
   // Inline login form handlers
-  showLoginForm(acpId: string) {
-    this.loginAcpId = acpId;
+  showLoginForm(apId: string) {
+    this.loginApId = apId;
     this.loginUsername = '';
     this.loginPassword = '';
     this.loginError = '';
@@ -493,23 +493,23 @@ export class LandingComponent implements OnInit {
   }
 
   cancelLogin() {
-    this.loginAcpId = null;
+    this.loginApId = null;
     this.loginUsername = '';
     this.loginPassword = '';
     this.loginError = '';
     this.loginLoading = false;
   }
 
-  onLoginSubmit(acpId: string) {
+  onLoginSubmit(apId: string) {
     if (!this.loginUsername || !this.loginPassword || this.loginLoading) return;
 
     this.loginLoading = true;
     this.loginError = '';
 
-    this.authService.credentialLogin(acpId, this.loginUsername, this.loginPassword).subscribe({
+    this.authService.credentialLogin(apId, this.loginUsername, this.loginPassword).subscribe({
       next: () => {
         this.loginLoading = false;
-        this.router.navigate([this.isManagerForAcp(acpId) ? '/manage' : '/view', acpId]);
+        this.router.navigate([this.isManagerForAp(apId) ? '/manage' : '/view', apId]);
       },
       error: (err) => {
         this.loginError = err.error?.message || 'Anmeldung fehlgeschlagen';
@@ -518,26 +518,26 @@ export class LandingComponent implements OnInit {
     });
   }
 
-  isManagerForAcp(acpId: string): boolean {
-    return this.authService.hasAcpRole(acpId, 'ACP_MANAGER');
+  isManagerForAp(apId: string): boolean {
+    return this.authService.hasApRole(apId, 'AP_MANAGER');
   }
 
-  private mergeForAdmin(publicAcps: PublicAcp[], allAcps: Acp[]): PublicAcp[] {
-    const merged = [...publicAcps];
-    const byId = new Map(merged.map((acp) => [acp.id, acp]));
+  private mergeForAdmin(publicAps: PublicAp[], allAps: Ap[]): PublicAp[] {
+    const merged = [...publicAps];
+    const byId = new Map(merged.map((ap) => [ap.id, ap]));
 
-    for (const acp of allAcps) {
-      const existing = byId.get(acp.id);
+    for (const ap of allAps) {
+      const existing = byId.get(ap.id);
       if (existing) {
-        // Admins can always access configured credential ACPs directly.
+        // Admins can always access configured credential APs directly.
         existing.requiresLogin = false;
         continue;
       }
 
-      const mapped: PublicAcp = {
-        id: acp.id,
-        name: acp.name,
-        description: acp.description ?? undefined,
+      const mapped: PublicAp = {
+        id: ap.id,
+        name: ap.name,
+        description: ap.description ?? undefined,
         accessModel: 'ADMIN',
         requiresLogin: false,
       };
@@ -548,14 +548,14 @@ export class LandingComponent implements OnInit {
     return merged;
   }
 
-  private mergeForLoggedUsers(publicAcps: PublicAcp[], allAcps: Acp[]): PublicAcp[] {
-    const merged = [...publicAcps];
-    const byId = new Map(merged.map((acp) => [acp.id, acp]));
+  private mergeForLoggedUsers(publicAps: PublicAp[], allAps: Ap[]): PublicAp[] {
+    const merged = [...publicAps];
+    const byId = new Map(merged.map((ap) => [ap.id, ap]));
 
-    for (const acp of allAcps) {
-      const existing = byId.get(acp.id);
+    for (const ap of allAps) {
+      const existing = byId.get(ap.id);
       if (existing) {
-        // Logged-in users with explicit ACP roles should not be forced into credential re-login.
+        // Logged-in users with explicit AP roles should not be forced into credential re-login.
         existing.requiresLogin = false;
         if (existing.accessModel === 'CREDENTIALS_LIST') {
           existing.accessModel = 'REGISTERED';
@@ -563,10 +563,10 @@ export class LandingComponent implements OnInit {
         continue;
       }
 
-      const mapped: PublicAcp = {
-        id: acp.id,
-        name: acp.name,
-        description: acp.description ?? undefined,
+      const mapped: PublicAp = {
+        id: ap.id,
+        name: ap.name,
+        description: ap.description ?? undefined,
         accessModel: 'REGISTERED',
         requiresLogin: false,
       };

@@ -67,7 +67,7 @@ interface ReviewBookletOption {
 
       @if (showCommentBtn && !isBooklet) {
         <app-item-comment-thread
-          [acpId]="acpId"
+          [apId]="apId"
           [targetType]="'BOOKLET'"
           [bookletId]="sequenceId"
           [enabled]="showCommentBtn"
@@ -242,7 +242,7 @@ interface ReviewBookletOption {
         @if (hasUnits && currentUnit) {
           <div class="unit-embed card">
             <app-unit-view
-              [acpId]="acpId"
+              [apId]="apId"
               [unitId]="currentUnit.id"
               [bookletId]="sequenceId"
               [bookletName]="bookletName"
@@ -291,7 +291,7 @@ interface ReviewBookletOption {
                   @if (isBooklet) {
                     <a
                       class="unit-direct-link"
-                      [routerLink]="['/view', acpId, 'sequence', sequenceId]"
+                      [routerLink]="['/view', apId, 'sequence', sequenceId]"
                       [queryParams]="unitLinkParams(i)"
                       queryParamsHandling="merge"
                       [attr.aria-label]="
@@ -637,7 +637,7 @@ interface ReviewBookletOption {
 export class TaskSequenceComponent implements OnInit, OnDestroy {
   @ViewChild('reviewWorkspace') reviewWorkspace?: ElementRef<HTMLElement>;
 
-  acpId = '';
+  apId = '';
   sequenceId = '';
   sequenceKind?: 'booklet';
   canReview = false;
@@ -689,10 +689,10 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   ngOnInit() {
     document.addEventListener('fullscreenchange', this.fullscreenChangeHandler);
     document.addEventListener('keydown', this.fullscreenKeyHandler);
-    this.acpId = this.route.snapshot.paramMap.get('acpId') || '';
+    this.apId = this.route.snapshot.paramMap.get('apId') || '';
 
     this.api
-      .getCapabilities(this.acpId)
+      .getCapabilities(this.apId)
       .pipe(
         catchError(() => of({ canReview: false })),
         takeUntil(this.destroy$),
@@ -703,7 +703,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
       });
 
     this.api
-      .getAcpStartPage(this.acpId)
+      .getApStartPage(this.apId)
       .pipe(takeUntil(this.destroy$))
       .subscribe((data) => {
         const fc: FeatureConfig = data?.featureConfig || {};
@@ -739,7 +739,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
           this.unitListOpen = false;
           this.changeDetector.markForCheck();
           return this.api
-            .getViewSequence(this.acpId, sequenceId, sequenceKind)
+            .getViewSequence(this.apId, sequenceId, sequenceKind)
             .pipe(
               switchMap((sequence) =>
                 (sequenceKind === 'booklet'
@@ -764,7 +764,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
         this.selectLinkedUnit(queryParams);
         this.breadcrumbs = [
           { label: 'Content Hub', route: ['/'] },
-          { label: 'AP', route: ['/view', this.acpId] },
+          { label: 'AP', route: ['/view', this.apId] },
           {
             label: this.isBooklet ? this.sequenceId : this.sequence.name || 'Aufgabenfolge',
           },
@@ -837,7 +837,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
     const max = this.sequence.units.length - 1;
     if (!Number.isInteger(index) || index < 0 || index > max) return;
     if (this.isBooklet) {
-      void this.router.navigate(['/view', this.acpId, 'sequence', this.sequenceId], {
+      void this.router.navigate(['/view', this.apId, 'sequence', this.sequenceId], {
         queryParams: this.unitLinkParams(index),
         queryParamsHandling: 'merge',
       });
@@ -858,7 +858,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   }
 
   unitHref(index: number): string {
-    const tree = this.router.createUrlTree(['/view', this.acpId, 'sequence', this.sequenceId], {
+    const tree = this.router.createUrlTree(['/view', this.apId, 'sequence', this.sequenceId], {
       queryParams: this.unitLinkParams(index),
       queryParamsHandling: 'merge',
     });
@@ -942,7 +942,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
     if (!bookletId || !this.reviewBooklets.some((booklet) => booklet.id === bookletId)) return;
     this.closeBookletList();
     if (bookletId === this.sequenceId) return;
-    void this.router.navigate(['/view', this.acpId, 'sequence', bookletId], {
+    void this.router.navigate(['/view', this.apId, 'sequence', bookletId], {
       queryParams: { kind: 'booklet' },
     });
   }
@@ -981,7 +981,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   downloadSequence() {
     if (!this.hasUnits) return;
     // Download all units in the sequence as ZIP
-    const url = `/api/acp/${this.acpId}/files?sequenceId=${encodeURIComponent(this.sequenceId)}&format=zip${this.sequenceKind === 'booklet' ? '&kind=booklet' : ''}`;
+    const url = `/api/ap/${this.apId}/files?sequenceId=${encodeURIComponent(this.sequenceId)}&format=zip${this.sequenceKind === 'booklet' ? '&kind=booklet' : ''}`;
     window.open(this.api.appendAuthToken(url), '_blank');
   }
 

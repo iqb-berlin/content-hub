@@ -2,7 +2,7 @@ import { QueryRunner } from "typeorm";
 import { ReconcileItemExplorerState1783901000000 } from "../migrations/1783901000000-ReconcileItemExplorerState";
 
 describe("ReconcileItemExplorerState1783901000000", () => {
-  it("rebases a pending draft onto newer ACP item properties", async () => {
+  it("rebases a pending draft onto newer AP item properties", async () => {
     const queryRunner = {
       query: jest
         .fn()

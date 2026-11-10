@@ -1,21 +1,21 @@
 export { User } from "./user.entity";
-export { Acp } from "./acp.entity";
-export { AcpUserRole, AcpRole } from "./acp-user-role.entity";
-export { AcpFile } from "./acp-file.entity";
-export { AcpFileProcessingJob } from "./acp-file-processing-job.entity";
-export { AcpSnapshot } from "./acp-snapshot.entity";
-export { AcpSnapshotFile } from "./acp-snapshot-file.entity";
-export { AcpAccessConfig, AccessModel } from "./acp-access-config.entity";
-export { AcpCredential } from "./acp-credential.entity";
+export { Ap } from "./ap.entity";
+export { ApUserRole, ApRole } from "./ap-user-role.entity";
+export { ApFile } from "./ap-file.entity";
+export { ApFileProcessingJob } from "./ap-file-processing-job.entity";
+export { ApSnapshot } from "./ap-snapshot.entity";
+export { ApSnapshotFile } from "./ap-snapshot-file.entity";
+export { ApAccessConfig, AccessModel } from "./ap-access-config.entity";
+export { ApCredential } from "./ap-credential.entity";
 export { Comment, CommentTargetType } from "./comment.entity";
 export { AppSettings } from "./app-settings.entity";
 export { ApplicationToken } from "./application-token.entity";
 export { ItemResponseState } from "./item-response-state.entity";
-export { AcpItemPreference } from "./acp-item-preference.entity";
-export { AcpItemRowNumber } from "./acp-item-row-number.entity";
+export { ApItemPreference } from "./ap-item-preference.entity";
+export { ApItemRowNumber } from "./ap-item-row-number.entity";
 export { ServerApiAuditLog } from "./server-api-audit-log.entity";
 export {
-  AcpItemExplorerState,
+  ApItemExplorerState,
   ItemExplorerDraftStatus,
-} from "./acp-item-explorer-state.entity";
-export { AcpItemExplorerChangeLog } from "./acp-item-explorer-change-log.entity";
+} from "./ap-item-explorer-state.entity";
+export { ApItemExplorerChangeLog } from "./ap-item-explorer-change-log.entity";

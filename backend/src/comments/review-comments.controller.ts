@@ -113,7 +113,7 @@ class UpdateReviewCommentDto {
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, ReviewAccessGuard)
 @UseInterceptors(ReviewSnapshotInterceptor)
-@Controller("acp/:acpId/review/comments")
+@Controller("ap/:apId/review/comments")
 export class ReviewCommentsController {
   constructor(
     private readonly commentsService: CommentsService,
@@ -123,7 +123,7 @@ export class ReviewCommentsController {
   @Get()
   @ApiOperation({ summary: "Get the visible comment thread for one item" })
   async getItemThread(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Query("unitId") unitId: string,
     @Query("itemId") itemId: string,
     @Request() req: any,
@@ -133,14 +133,14 @@ export class ReviewCommentsController {
     const targetType = this.normalizeTargetType(rawTargetType);
     if (targetType !== CommentTargetType.ITEM) {
       return this.commentsService.getReviewThread(
-        acpId,
+        apId,
         this.normalizeReviewTarget(targetType, bookletId, unitId, itemId),
         this.reviewPolicy.resolveActor(req),
       );
     }
     const target = this.normalizeItemTarget(unitId, itemId);
     return this.commentsService.getItemThread(
-      acpId,
+      apId,
       target.unitId,
       target.itemId,
       this.reviewPolicy.resolveActor(req),
@@ -148,19 +148,19 @@ export class ReviewCommentsController {
   }
 
   @Get("visible")
-  async visible(@UuidParam("acpId") acpId: string, @Request() req: any) {
+  async visible(@UuidParam("apId") apId: string, @Request() req: any) {
     const actor = this.reviewPolicy.resolveActor(req);
-    return this.commentsService.findVisibleViews(acpId, actor);
+    return this.commentsService.findVisibleViews(apId, actor);
   }
 
   @Get("export/visible.xlsx")
   async exportVisible(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
     @Res() res: Response,
     @Query() filters?: ReviewCommentFilters,
   ) {
-    const buffer = await this.commentsService.exportReviewCommentsXlsx(acpId, {
+    const buffer = await this.commentsService.exportReviewCommentsXlsx(apId, {
       ...this.reviewPolicy.resolveActor(req),
       visible: true,
       columnPolicy: req.reviewerColumnPolicy,
@@ -171,18 +171,18 @@ export class ReviewCommentsController {
       res,
       buffer,
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      `comments-${acpId}-visible.xlsx`,
+      `comments-${apId}-visible.xlsx`,
     );
   }
 
   @Get("counts")
   @ApiOperation({ summary: "Get visible comment counts for all AP items" })
   async getItemCommentCounts(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
   ) {
     return this.commentsService.getItemCommentCounts(
-      acpId,
+      apId,
       this.reviewPolicy.resolveActor(req),
     );
   }
@@ -190,13 +190,13 @@ export class ReviewCommentsController {
   @Get("export/mine.csv")
   @ApiOperation({ summary: "Export own review comments as CSV" })
   async exportMineCsv(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
     @Res() res: Response,
     @Query() filters?: ReviewCommentFilters,
   ) {
     const actor = this.reviewPolicy.resolveActor(req);
-    const buffer = await this.commentsService.exportReviewCommentsCsv(acpId, {
+    const buffer = await this.commentsService.exportReviewCommentsCsv(apId, {
       ...actor,
       columnPolicy: req.reviewerColumnPolicy,
       ...(filters && Object.keys(filters).length ? { filters } : {}),
@@ -206,20 +206,20 @@ export class ReviewCommentsController {
       res,
       buffer,
       "text/csv; charset=utf-8",
-      `comments-${acpId}-mine.csv`,
+      `comments-${apId}-mine.csv`,
     );
   }
 
   @Get("export/mine.xlsx")
   @ApiOperation({ summary: "Export own review comments as XLSX" })
   async exportMineXlsx(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
     @Res() res: Response,
     @Query() filters?: ReviewCommentFilters,
   ) {
     const actor = this.reviewPolicy.resolveActor(req);
-    const buffer = await this.commentsService.exportReviewCommentsXlsx(acpId, {
+    const buffer = await this.commentsService.exportReviewCommentsXlsx(apId, {
       ...actor,
       columnPolicy: req.reviewerColumnPolicy,
       ...(filters && Object.keys(filters).length ? { filters } : {}),
@@ -229,7 +229,7 @@ export class ReviewCommentsController {
       res,
       buffer,
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      `comments-${acpId}-mine.xlsx`,
+      `comments-${apId}-mine.xlsx`,
     );
   }
 
@@ -238,7 +238,7 @@ export class ReviewCommentsController {
     summary: "Export all review comments as XLSX (Manager only)",
   })
   async exportAllXlsx(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
     @Res() res: Response,
   ) {
@@ -246,7 +246,7 @@ export class ReviewCommentsController {
       throw new ForbiddenException("Manager access required");
     }
     const buffer = await this.commentsService.exportReviewCommentsXlsx(
-      acpId,
+      apId,
       req.reviewerColumnPolicy?.restricted
         ? {
             visible: true,
@@ -260,14 +260,14 @@ export class ReviewCommentsController {
       res,
       buffer,
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      `comments-${acpId}-all.xlsx`,
+      `comments-${apId}-all.xlsx`,
     );
   }
 
   @Post()
   @ApiOperation({ summary: "Create an item comment or reply" })
   async createItemComment(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: CreateItemReviewCommentDto,
     @Request() req: any,
   ) {
@@ -275,7 +275,7 @@ export class ReviewCommentsController {
     const targetType = this.normalizeTargetType(dto.targetType);
     if (targetType !== CommentTargetType.ITEM) {
       return this.commentsService.createReviewComment(
-        acpId,
+        apId,
         {
           ...this.normalizeReviewTarget(
             targetType,
@@ -293,7 +293,7 @@ export class ReviewCommentsController {
     }
     const target = this.normalizeItemTarget(dto.unitId, dto.itemId);
     return this.commentsService.createItemComment(
-      acpId,
+      apId,
       {
         ...target,
         commentText: dto.commentText,
@@ -307,14 +307,14 @@ export class ReviewCommentsController {
 
   @Put(":commentId/vote")
   async vote(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("commentId") commentId: string,
     @Body() dto: VoteDto,
     @Request() req: any,
   ) {
     this.reviewPolicy.assertCanParticipateRequest(req);
     return this.commentsService.setVote(
-      acpId,
+      apId,
       commentId,
       dto.value,
       this.reviewPolicy.resolveActor(req),
@@ -323,13 +323,13 @@ export class ReviewCommentsController {
 
   @Delete(":commentId/vote")
   async removeVote(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("commentId") commentId: string,
     @Request() req: any,
   ) {
     this.reviewPolicy.assertCanParticipateRequest(req);
     return this.commentsService.setVote(
-      acpId,
+      apId,
       commentId,
       null,
       this.reviewPolicy.resolveActor(req),
@@ -339,14 +339,14 @@ export class ReviewCommentsController {
   @Patch(":commentId")
   @ApiOperation({ summary: "Update an own comment with optimistic locking" })
   async updateComment(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("commentId") commentId: string,
     @Body() dto: UpdateReviewCommentDto,
     @Request() req: any,
   ) {
     this.reviewPolicy.assertCanParticipateRequest(req);
     return this.commentsService.updateOwnComment(
-      acpId,
+      apId,
       commentId,
       dto.commentText,
       dto.version,
@@ -358,7 +358,7 @@ export class ReviewCommentsController {
   @Delete(":commentId")
   @ApiOperation({ summary: "Delete an own comment" })
   async deleteComment(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("commentId") commentId: string,
     @Query("version") rawVersion: string,
     @Request() req: any,
@@ -369,7 +369,7 @@ export class ReviewCommentsController {
       throw new BadRequestException("A valid comment version is required");
     }
     await this.commentsService.deleteOwnComment(
-      acpId,
+      apId,
       commentId,
       version,
       this.reviewPolicy.resolveActor(req),

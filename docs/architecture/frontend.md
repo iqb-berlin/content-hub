@@ -41,45 +41,45 @@ The route tree is organized by user journey:
   login choice and sign-in entry
 - `/auth/callback`
   OIDC callback handling
-- `/credential-login/:acpId`
+- `/credential-login/:apId`
   AP credential login page
 
 ### Manager and admin routes
 
-- `/acps`
+- `/aps`
   list of accessible APs for authenticated managers/admins
 - `/admin/users`
   user administration
 - `/admin/settings`
   global settings administration
-- `/admin/acp`
+- `/admin/ap`
   AP administration view
-- `/manage/:acpId`
+- `/manage/:apId`
   AP manager dashboard
-- `/manage/:acpId/files`
+- `/manage/:apId/files`
   file manager
-- `/manage/:acpId/snapshots`
+- `/manage/:apId/snapshots`
   snapshot manager
-- `/manage/:acpId/access`
+- `/manage/:apId/access`
   AP access configuration
 
 ### Read-only view routes
 
-- `/view/:acpId`
+- `/view/:apId`
   AP start page
-- `/view/:acpId/units`
+- `/view/:apId/units`
   unit list
-- `/view/:acpId/unit/:unitId`
+- `/view/:apId/unit/:unitId`
   single unit view
-- `/view/:acpId/sequence/:sequenceId`
+- `/view/:apId/sequence/:sequenceId`
   task sequence view
-- `/view/:acpId/items`
+- `/view/:apId/items`
   item list
-- `/view/:acpId/item-explorer`
+- `/view/:apId/item-explorer`
   item explorer
-- `/view/:acpId/item/:itemId`
+- `/view/:apId/item/:itemId`
   item detail view
-- `/view/:acpId/index`
+- `/view/:apId/index`
   AP-Index browser
 
 ## Guards and Access UX
@@ -91,9 +91,9 @@ uses lightweight guards to guide the user into the correct flow:
   requires login for generic authenticated pages.
 - `adminGuard`
   requires login and app-admin status.
-- `acpManagerGuard`
+- `apManagerGuard`
   checks that the user can access manager APIs for the AP.
-- `acpViewGuard`
+- `apViewGuard`
   lets public APs through and redirects restricted APs to the access page.
 - `itemExplorerPendingChangesGuard`
   prevents accidental navigation away from unsaved explorer changes.

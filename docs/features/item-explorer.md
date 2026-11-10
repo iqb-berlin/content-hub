@@ -345,8 +345,8 @@ and active edits. An active edit keeps the original comment version so a concurr
 produces a version conflict instead of silently overwriting newer text.
 Unsaved main-comment and reply drafts remain assigned to their item while navigating. JSON and
 XLSX comment exports include `unitId`, `itemId`, `threadId`, `parentCommentId`, and the updated
-timestamp. The original `/api/acp/:acpId/comments` endpoints remain available; the threaded Item
-Explorer UI uses `/api/acp/:acpId/review/comments`.
+timestamp. The original `/api/ap/:apId/comments` endpoints remain available; the threaded Item
+Explorer UI uses `/api/ap/:apId/review/comments`.
 
 The AP start page does not offer a context-free comment action. It links to the Item Explorer
 when item comments are enabled and keeps the XLSX export and recent-comment summary available.
@@ -364,7 +364,7 @@ WHERE target_type = 'UNIT'
 This audit query does not update or delete comments. Any cleanup requires a separate, explicitly
 approved procedure.
 
-The legacy AP-wide `DELETE /api/acp/:acpId/comments` endpoint removes only unreferenced,
+The legacy AP-wide `DELETE /api/ap/:apId/comments` endpoint removes only unreferenced,
 non-item legacy rows. Its response reports both `deletedCount` and `retainedCount` plus the
 restricted deletion scope, so callers cannot mistake it for deleting every comment in the AP.
 
@@ -719,7 +719,7 @@ ignores `playerConfig.startPage`.
 
 ## History and Auditing
 
-Every explorer change is written to `AcpItemExplorerChangeLog`.
+Every explorer change is written to `ApItemExplorerChangeLog`.
 
 Stored history data includes:
 

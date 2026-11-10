@@ -7,14 +7,14 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as fs from "fs/promises";
-import { AcpFile, Acp } from "../database/entities";
+import { ApFile, Ap } from "../database/entities";
 import {
-  ACP_INDEX_ALLOWED_STATUS_VALUES,
+  AP_INDEX_ALLOWED_STATUS_VALUES,
   getAssessmentParts,
   getIndexScales,
   getIndexUnits,
-  toRuntimeAcpIndex,
-} from "../acp/acp-index.utils";
+  toRuntimeApIndex,
+} from "../ap/ap-index.utils";
 import { FileProcessingProgressReporter } from "../files/file-processing-progress";
 
 export interface ValidationIssue {
@@ -45,10 +45,10 @@ export class ValidationService {
   private readonly logger = new Logger(ValidationService.name);
 
   constructor(
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
     private readonly reviewManifestService: ReviewManifestService,
   ) {}
 
@@ -56,7 +56,7 @@ export class ValidationService {
    * Validate a single file (syntactic validation).
    */
   async validateFile(
-    file: AcpFile,
+    file: ApFile,
     buffer: Buffer,
     persist = true,
   ): Promise<ValidationResult> {
@@ -129,14 +129,14 @@ export class ValidationService {
 
   /**
    * Validate freshly uploaded files automatically and persist per-file results.
-   * Merges syntactic/schema checks with ACP-wide semantic checks.
+   * Merges syntactic/schema checks with AP-wide semantic checks.
    */
   async autoValidateUploadedFiles(
-    acpId: string,
-    files: AcpFile[],
+    apId: string,
+    files: ApFile[],
     progress?: FileProcessingProgressReporter,
     persistResults = true,
-  ): Promise<{ files: AcpFile[]; summary: AutoValidationSummary }> {
+  ): Promise<{ files: ApFile[]; summary: AutoValidationSummary }> {
     if (!files.length) {
       return {
         files: [],
@@ -183,7 +183,7 @@ export class ValidationService {
 
     await progress?.completePhase("Dateivaliderung abgeschlossen.");
 
-    const semanticResult = await this.validateAcpConsistency(acpId, progress);
+    const semanticResult = await this.validateApConsistency(apId, progress);
     const semanticIssues = semanticResult.issues.map((issue) => ({
       ...issue,
       scope: "semantic" as const,
@@ -236,14 +236,14 @@ export class ValidationService {
   }
 
   /**
-   * Semantic validation: check cross-references within an ACP.
+   * Semantic validation: check cross-references within an AP.
    */
-  async validateAcpConsistency(
-    acpId: string,
+  async validateApConsistency(
+    apId: string,
     progress?: FileProcessingProgressReporter,
   ): Promise<ValidationResult> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
       return {
         valid: false,
         issues: [{ severity: "error", message: "AP not found" }],
@@ -252,14 +252,14 @@ export class ValidationService {
     }
 
     const issues: ValidationIssue[] = [];
-    const index = toRuntimeAcpIndex(acp.acpIndex);
+    const index = toRuntimeApIndex(ap.apIndex);
     const units = getIndexUnits(index);
     const unitIds = new Set(
       units
         .map((u: any) => (typeof u?.id === "string" ? u.id : ""))
         .filter((id: string) => id.length > 0),
     );
-    const files = await this.fileRepository.find({ where: { acpId } });
+    const files = await this.fileRepository.find({ where: { apId } });
     const fileNames = new Set(files.map((f) => f.originalName));
     const assessmentParts = getAssessmentParts(index);
     const scalesInParts =
@@ -428,7 +428,7 @@ export class ValidationService {
       }
     }
 
-    const manifest = await this.reviewManifestService.getManifest(acpId);
+    const manifest = await this.reviewManifestService.getManifest(apId);
     issues.push(...manifest.issues);
 
     const knownItemIds = this.collectKnownItemIds(units);
@@ -465,7 +465,7 @@ export class ValidationService {
     fileName: string,
     payload: unknown,
   ): ValidationIssue[] {
-    if (!this.looksLikeAcpIndex(fileName, payload)) {
+    if (!this.looksLikeApIndex(fileName, payload)) {
       return [];
     }
 
@@ -506,11 +506,11 @@ export class ValidationService {
 
     if (
       typeof index.status !== "string" ||
-      !ACP_INDEX_ALLOWED_STATUS_VALUES.includes(index.status as any)
+      !AP_INDEX_ALLOWED_STATUS_VALUES.includes(index.status as any)
     ) {
       issues.push({
         severity: "error",
-        message: `AP-Index schema: "status" must be one of ${ACP_INDEX_ALLOWED_STATUS_VALUES.join(", ")}`,
+        message: `AP-Index schema: "status" must be one of ${AP_INDEX_ALLOWED_STATUS_VALUES.join(", ")}`,
         scope: "schema",
         path: "status",
       });
@@ -685,8 +685,9 @@ export class ValidationService {
     return issues;
   }
 
-  private looksLikeAcpIndex(fileName: string, payload: unknown): boolean {
-    if (fileName.toLowerCase().includes("acp-index")) {
+  private looksLikeApIndex(fileName: string, payload: unknown): boolean {
+    // Existing integrations still upload indexes exported under the ACP name.
+    if (/(?:ap|acp)-index/i.test(fileName)) {
       return true;
     }
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {

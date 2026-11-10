@@ -8,20 +8,20 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import {
-  Acp,
-  AcpAccessConfig,
+  Ap,
+  ApAccessConfig,
   AccessModel,
-  AcpFile,
+  ApFile,
   AppSettings,
-  AcpItemPreference,
+  ApItemPreference,
 } from "../database/entities";
 import {
   findUnitInIndex,
   getAssessmentParts,
   getIndexUnits,
-  toRuntimeAcpIndex,
-} from "../acp/acp-index.utils";
-import { normalizeFeatureConfig } from "../acp/feature-config.utils";
+  toRuntimeApIndex,
+} from "../ap/ap-index.utils";
+import { normalizeFeatureConfig } from "../ap/feature-config.utils";
 import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.service";
 import { UnitParserService, VomdItemData } from "../files/unit-parser.service";
 import {
@@ -57,16 +57,16 @@ export type { ItemPreferencesPayload } from "../item-preferences/item-preference
 @Injectable()
 export class ViewsService {
   constructor(
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
-    @InjectRepository(AcpAccessConfig)
-    private readonly accessConfigRepository: Repository<AcpAccessConfig>,
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
+    @InjectRepository(ApAccessConfig)
+    private readonly accessConfigRepository: Repository<ApAccessConfig>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
     @InjectRepository(AppSettings)
     private readonly settingsRepository: Repository<AppSettings>,
-    @InjectRepository(AcpItemPreference)
-    private readonly itemPreferenceRepository: Repository<AcpItemPreference>,
+    @InjectRepository(ApItemPreference)
+    private readonly itemPreferenceRepository: Repository<ApItemPreference>,
     private readonly itemExplorerStateService: ItemExplorerStateService,
     private readonly unitParserService: UnitParserService,
     private readonly reviewManifestService: ReviewManifestService,
@@ -100,16 +100,16 @@ export class ViewsService {
   }
 
   /**
-   * Get list of publicly accessible ACPs for the landing page.
+   * Get list of publicly accessible APs for the landing page.
    */
-  async getPublicAcps(): Promise<any[]> {
+  async getPublicAps(): Promise<any[]> {
     const publicConfigs = await this.accessConfigRepository.find({
       where: { accessModel: AccessModel.PUBLIC },
-      relations: ["acp"],
+      relations: ["ap"],
     });
     const credentialConfigs = await this.accessConfigRepository.find({
       where: { accessModel: AccessModel.CREDENTIALS_LIST },
-      relations: ["acp"],
+      relations: ["ap"],
     });
     const now = new Date();
     const activeCredentialConfigs = credentialConfigs.filter((cfg) => {
@@ -118,23 +118,20 @@ export class ViewsService {
       return startsOk && endsOk;
     });
 
+    console.log("[DEBUG] getPublicAps - PUBLIC configs:", publicConfigs.length);
     console.log(
-      "[DEBUG] getPublicAcps - PUBLIC configs:",
-      publicConfigs.length,
-    );
-    console.log(
-      "[DEBUG] getPublicAcps - CREDENTIALS_LIST configs:",
+      "[DEBUG] getPublicAps - CREDENTIALS_LIST configs:",
       credentialConfigs.length,
     );
     console.log(
-      "[DEBUG] getPublicAcps - active CREDENTIALS_LIST configs:",
+      "[DEBUG] getPublicAps - active CREDENTIALS_LIST configs:",
       activeCredentialConfigs.length,
     );
     for (const cfg of activeCredentialConfigs) {
       console.log("[DEBUG] Credential config:", {
         id: cfg.id,
-        acpId: cfg.acpId,
-        acpName: cfg.acp?.name,
+        apId: cfg.apId,
+        apName: cfg.ap?.name,
         accessModel: cfg.accessModel,
         validFrom: cfg.validFrom,
         validUntil: cfg.validUntil,
@@ -145,51 +142,51 @@ export class ViewsService {
     const seenIds = new Set<string>();
 
     for (const config of publicConfigs) {
-      if (config.acp) {
+      if (config.ap) {
         results.push({
-          id: config.acp.id,
-          name: config.acp.name,
-          description: config.acp.description,
+          id: config.ap.id,
+          name: config.ap.name,
+          description: config.ap.description,
           accessModel: "PUBLIC",
         });
-        seenIds.add(config.acp.id);
+        seenIds.add(config.ap.id);
       }
     }
 
-    // Include credential-based ACPs (they are listed on landing page too)
+    // Include credential-based APs (they are listed on landing page too)
     for (const config of activeCredentialConfigs) {
-      if (seenIds.has(config.acpId)) continue;
-      if (config.acp) {
+      if (seenIds.has(config.apId)) continue;
+      if (config.ap) {
         results.push({
-          id: config.acp.id,
-          name: config.acp.name,
-          description: config.acp.description,
+          id: config.ap.id,
+          name: config.ap.name,
+          description: config.ap.description,
           accessModel: "CREDENTIALS_LIST",
           requiresLogin: true,
         });
-        seenIds.add(config.acp.id);
+        seenIds.add(config.ap.id);
       }
     }
 
-    console.log("[DEBUG] getPublicAcps - final results:", results.length);
+    console.log("[DEBUG] getPublicAps - final results:", results.length);
     return results;
   }
 
   /**
-   * Get ACP start page data.
+   * Get AP start page data.
    */
-  async getAcpStartPage(acpId: string): Promise<any> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) return null;
+  async getApStartPage(apId: string): Promise<any> {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) return null;
 
     const config = await this.accessConfigRepository.findOne({
-      where: { acpId },
+      where: { apId },
     });
 
     const featureConfig = normalizeFeatureConfig(config?.featureConfig || {});
-    const index = toRuntimeAcpIndex(acp.acpIndex);
+    const index = toRuntimeApIndex(ap.apIndex);
 
-    // Extract units from ACP-Index
+    // Extract units from AP-Index
     const units = getIndexUnits(index).map((u: any) => ({
       id: u.id,
       name: u.name,
@@ -235,7 +232,7 @@ export class ViewsService {
         }
       }
     }
-    const manifest = await this.reviewManifestService.getManifest(acpId);
+    const manifest = await this.reviewManifestService.getManifest(apId);
     const booklets = manifest.booklets.filter((booklet) => !booklet.legacy);
     const definitions = new Set(
       booklets.map((booklet) => booklet.definitionId).filter(Boolean),
@@ -258,9 +255,9 @@ export class ViewsService {
     ];
 
     return {
-      id: acp.id,
-      name: acp.name,
-      description: acp.description,
+      id: ap.id,
+      name: ap.name,
+      description: ap.description,
       featureConfig,
       units,
       sequences,
@@ -268,22 +265,22 @@ export class ViewsService {
   }
 
   /**
-   * Get full ACP-Index for read-only/public view routes.
+   * Get full AP-Index for read-only/public view routes.
    */
-  async getAcpIndex(acpId: string): Promise<Record<string, unknown> | null> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) return null;
-    return toRuntimeAcpIndex(acp.acpIndex);
+  async getApIndex(apId: string): Promise<Record<string, unknown> | null> {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) return null;
+    return toRuntimeApIndex(ap.apIndex);
   }
 
   /**
    * Get unit view data including player reference.
    */
-  async getUnitViewData(acpId: string, unitId: string): Promise<any> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) return null;
+  async getUnitViewData(apId: string, unitId: string): Promise<any> {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) return null;
 
-    const index = toRuntimeAcpIndex(acp.acpIndex);
+    const index = toRuntimeApIndex(ap.apIndex);
     const unit = findUnitInIndex(index, unitId);
     if (!unit) return null;
 
@@ -292,13 +289,13 @@ export class ViewsService {
     const fileRefs: any[] = [];
     for (const dep of dependencies) {
       const file = await this.fileRepository.findOne({
-        where: { acpId, originalName: dep.id },
+        where: { apId, originalName: dep.id },
       });
       if (file) {
         fileRefs.push({
           type: dep.type,
           originalName: file.originalName,
-          downloadUrl: `/api/acp/${acpId}/files/${file.id}/download`,
+          downloadUrl: `/api/ap/${apId}/files/${file.id}/download`,
           fileId: file.id,
         });
       }
@@ -317,22 +314,22 @@ export class ViewsService {
   }
 
   /**
-   * Get all items across all units in an ACP.
+   * Get all items across all units in an AP.
    */
   async getItemList(
-    acpId: string,
+    apId: string,
     canEditExplorerState = false,
   ): Promise<SimpleItemListEntryDto[]> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) return [];
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) return [];
 
-    const index = toRuntimeAcpIndex(acp.acpIndex);
+    const index = toRuntimeApIndex(ap.apIndex);
     const explorerState = await this.itemExplorerStateService.getStateForViewer(
-      acpId,
+      apId,
       canEditExplorerState,
     );
     const parsedItemList = await this.unitParserService.getItemListFromFiles(
-      acpId,
+      apId,
       {
         itemPropertiesOverride: explorerState.activeState.itemProperties,
         publishedItemPropertiesOverride:
@@ -375,22 +372,22 @@ export class ViewsService {
    * Get task sequence (ordered list of units from a booklet module).
    */
   async getTaskSequence(
-    acpId: string,
+    apId: string,
     sequenceId: string,
     kind?: "booklet",
   ): Promise<any> {
     if (kind === "booklet") {
-      const manifest = await this.reviewManifestService.getManifest(acpId);
+      const manifest = await this.reviewManifestService.getManifest(apId);
       return (
         manifest.booklets.find(
           (entry) => !entry.legacy && entry.id === sequenceId,
         ) || null
       );
     }
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) return null;
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) return null;
 
-    const index = toRuntimeAcpIndex(acp.acpIndex);
+    const index = toRuntimeApIndex(ap.apIndex);
     const parts = getAssessmentParts(index);
 
     // Find the module
@@ -421,7 +418,7 @@ export class ViewsService {
   }
 
   async getItemPreferences(
-    acpId: string,
+    apId: string,
     identity: StablePreferenceIdentity | null,
     viewId?: string,
   ): Promise<ItemPreferencesPayload> {
@@ -435,7 +432,7 @@ export class ViewsService {
       return { ui: {}, tags: {}, rowData: {} };
     }
     const record = await this.findPreferenceRecord(
-      acpId,
+      apId,
       normalizedViewId,
       identity,
     );
@@ -443,7 +440,7 @@ export class ViewsService {
   }
 
   async saveItemPreferences(
-    acpId: string,
+    apId: string,
     identity: StablePreferenceIdentity | null,
     preferences: Partial<ItemPreferencesPayload>,
     viewId?: string,
@@ -455,7 +452,7 @@ export class ViewsService {
 
     const normalizedViewId = this.normalizeViewId(viewId);
     await this.upsertItemPreferences(
-      acpId,
+      apId,
       normalizedViewId,
       identity,
       normalized,
@@ -464,7 +461,7 @@ export class ViewsService {
   }
 
   async patchPersonalItemPreferenceRow(
-    acpId: string,
+    apId: string,
     identity: StablePreferenceIdentity | null,
     rawRowKey: string,
     rawRowData: Record<string, unknown> | null,
@@ -486,11 +483,7 @@ export class ViewsService {
     }
 
     if (normalizedRow) {
-      await this.assertKnownPersonalItemRow(
-        acpId,
-        rowKey,
-        canEditExplorerState,
-      );
+      await this.assertKnownPersonalItemRow(apId, rowKey, canEditExplorerState);
     }
 
     const normalizedViewId = this.normalizeViewId(viewId);
@@ -506,7 +499,7 @@ export class ViewsService {
     const rows = await this.itemPreferenceRepository.query(
       buildPatchPersonalItemPreferenceRowQuery(identityColumn),
       [
-        acpId,
+        apId,
         normalizedViewId,
         identity.kind === "user" ? identity.userId : null,
         identity.kind === "credential" ? identity.credentialId : null,
@@ -532,7 +525,7 @@ export class ViewsService {
   }
 
   async exportPersonalItemDataXlsx(
-    acpId: string,
+    apId: string,
     identity: StablePreferenceIdentity | null,
     rawRowKeys: string[],
     canEditExplorerState = false,
@@ -540,14 +533,14 @@ export class ViewsService {
   ): Promise<Buffer> {
     const rowKeys = this.normalizeExportRowKeys(rawRowKeys);
     const [preferences, explorerState, accessConfig] = await Promise.all([
-      this.getItemPreferences(acpId, identity, "item-explorer"),
+      this.getItemPreferences(apId, identity, "item-explorer"),
       this.itemExplorerStateService.getStateForViewer(
-        acpId,
+        apId,
         canEditExplorerState,
       ),
-      this.accessConfigRepository.findOne({ where: { acpId } }),
+      this.accessConfigRepository.findOne({ where: { apId } }),
     ]);
-    const itemList = await this.unitParserService.getItemListFromFiles(acpId, {
+    const itemList = await this.unitParserService.getItemListFromFiles(apId, {
       itemPropertiesOverride: explorerState.activeState.itemProperties,
       publishedItemPropertiesOverride:
         explorerState.publishedState.itemProperties,
@@ -593,7 +586,7 @@ export class ViewsService {
   }
 
   async exportAllPersonalItemDataCsv(
-    acpId: string,
+    apId: string,
     canEditExplorerState = false,
     collectionRowKeys?: readonly string[],
   ): Promise<Buffer> {
@@ -602,15 +595,15 @@ export class ViewsService {
       collectionRowKeys === undefined ? null : new Set(collectionRowKeys);
     const [preferenceRecords, explorerState] = await Promise.all([
       this.itemPreferenceRepository.find({
-        where: { acpId, viewId: "item-explorer" },
+        where: { apId, viewId: "item-explorer" },
         relations: { user: true, credential: true },
       }),
       this.itemExplorerStateService.getStateForViewer(
-        acpId,
+        apId,
         canEditExplorerState,
       ),
     ]);
-    const itemList = await this.unitParserService.getItemListFromFiles(acpId, {
+    const itemList = await this.unitParserService.getItemListFromFiles(apId, {
       itemPropertiesOverride: explorerState.activeState.itemProperties,
       publishedItemPropertiesOverride:
         explorerState.publishedState.itemProperties,
@@ -655,7 +648,7 @@ export class ViewsService {
   }
 
   private async upsertItemPreferences(
-    acpId: string,
+    apId: string,
     viewId: string,
     identity: StablePreferenceIdentity,
     preferences: ItemPreferencesPayload,
@@ -694,7 +687,7 @@ export class ViewsService {
           "updated_at" = now()
       `,
       [
-        acpId,
+        apId,
         viewId,
         identity.kind === "user" ? identity.userId : null,
         identity.kind === "credential" ? identity.credentialId : null,
@@ -707,16 +700,16 @@ export class ViewsService {
   }
 
   private async assertKnownPersonalItemRow(
-    acpId: string,
+    apId: string,
     rowKey: string,
     canEditExplorerState: boolean,
   ): Promise<void> {
     const explorerState = await this.itemExplorerStateService.getStateForViewer(
-      acpId,
+      apId,
       canEditExplorerState,
     );
     const validRowKeys = await this.unitParserService.getItemRowKeysFromFiles(
-      acpId,
+      apId,
       {
         itemPropertiesOverride: explorerState.activeState.itemProperties,
         publishedItemPropertiesOverride:
@@ -931,7 +924,7 @@ export class ViewsService {
   }
 
   private getPreferenceParticipantIdentifier(
-    record: AcpItemPreference,
+    record: ApItemPreference,
   ): string | null {
     const identifiers = [
       record.credential?.username,
@@ -949,14 +942,14 @@ export class ViewsService {
   }
 
   private async findPreferenceRecord(
-    acpId: string,
+    apId: string,
     viewId: string,
     identity: StablePreferenceIdentity,
-  ): Promise<AcpItemPreference | null> {
+  ): Promise<ApItemPreference | null> {
     if (identity.kind === "user") {
       return this.itemPreferenceRepository.findOne({
         where: {
-          acpId,
+          apId,
           viewId,
           userId: identity.userId,
         },
@@ -965,7 +958,7 @@ export class ViewsService {
 
     return this.itemPreferenceRepository.findOne({
       where: {
-        acpId,
+        apId,
         viewId,
         credentialId: identity.credentialId,
       },

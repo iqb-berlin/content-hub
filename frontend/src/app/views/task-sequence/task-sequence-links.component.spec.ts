@@ -16,7 +16,7 @@ vi.mock('../comment-thread/item-comment-thread.component', async () => {
     selector: 'app-item-comment-thread',
     standalone: true,
     template: '',
-    inputs: ['acpId', 'targetType', 'bookletId', 'enabled'],
+    inputs: ['apId', 'targetType', 'bookletId', 'enabled'],
   })(Stub);
   return { ItemCommentThreadComponent: Stub };
 });
@@ -28,7 +28,7 @@ vi.mock('../unit-view/unit-view.component', async () => {
     standalone: true,
     template: '',
     inputs: [
-      'acpId',
+      'apId',
       'unitId',
       'bookletId',
       'bookletName',
@@ -61,12 +61,12 @@ const sequence: TaskSequence = {
     { id: 'u2', name: 'Aufgabe 2' },
   ],
 };
-const baseUrl = '/view/acp-1/sequence/booklet-1';
+const baseUrl = '/view/ap-1/sequence/booklet-1';
 
 async function setup(url: string, pending?: Subject<TaskSequence>) {
   const api = {
     getCapabilities: vi.fn().mockReturnValue(of({ canReview: true })),
-    getAcpStartPage: vi.fn().mockReturnValue(of({ featureConfig: {} })),
+    getApStartPage: vi.fn().mockReturnValue(of({ featureConfig: {} })),
     getViewSequence: vi.fn().mockReturnValue(pending || of(sequence)),
   };
   await TestBed.configureTestingModule({
@@ -74,7 +74,7 @@ async function setup(url: string, pending?: Subject<TaskSequence>) {
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([
-        { path: 'view/:acpId/sequence/:sequenceId', component: TaskSequenceComponent },
+        { path: 'view/:apId/sequence/:sequenceId', component: TaskSequenceComponent },
       ]),
       { provide: ApiService, useValue: api },
       {
@@ -358,7 +358,7 @@ describe('Booklet task links', () => {
     api.getViewSequence.mockReturnValue(of({ id: 'booklet-2', units: [{ id: 'other' }] }));
     component.switchBooklet('booklet-2');
     await harness.fixture.whenStable();
-    expect(router.url).toBe('/view/acp-1/sequence/booklet-2?kind=booklet');
+    expect(router.url).toBe('/view/ap-1/sequence/booklet-2?kind=booklet');
     expect(component.currentIndex).toBe(0);
     expect(component.currentUnit?.id).toBe('other');
     expect(component.invalidUnitLink).toBe(false);
@@ -373,7 +373,7 @@ describe('Booklet task links', () => {
       button.textContent?.includes('Aufgabenliste'),
     )!;
     component.reviewBooklets = [{ id: 'booklet-1' }, { id: 'booklet-2' }];
-    api.getViewSequence.mockImplementation((_acpId: string, id: string) =>
+    api.getViewSequence.mockImplementation((_apId: string, id: string) =>
       id === 'booklet-2' ? pending : of(sequence),
     );
     taskListButton.click();
@@ -383,7 +383,7 @@ describe('Booklet task links', () => {
     component.switchBooklet('booklet-2');
     await harness.fixture.whenStable();
     harness.detectChanges();
-    const switchedUrl = '/view/acp-1/sequence/booklet-2?kind=booklet';
+    const switchedUrl = '/view/ap-1/sequence/booklet-2?kind=booklet';
     expect(router.url).toBe(switchedUrl);
     expect(component.canGoPrev).toBe(false);
     expect(component.canGoNext).toBe(false);

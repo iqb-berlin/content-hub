@@ -401,7 +401,7 @@
             @if (vm.canOpenFullUnit) {
               <a
                 class="btn btn-outline"
-                [routerLink]="['/view', vm.acpId, 'unit', vm.selectedItem.unitId]"
+                [routerLink]="['/view', vm.apId, 'unit', vm.selectedItem.unitId]"
                 >Gesamte Aufgabe öffnen</a
               >
             }
@@ -635,7 +635,7 @@
     <app-item-comment-thread
       #commentThread
       [hideToggle]="true"
-      [acpId]="vm.acpId"
+      [apId]="vm.apId"
       [unitId]="vm.selectedItem.unitId"
       [itemId]="vm.selectedItem.itemId"
       [enabled]="vm.itemCommentsEnabled"

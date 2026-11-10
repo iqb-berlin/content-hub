@@ -28,7 +28,7 @@ function createComponent() {
     deleteItemComment: vi.fn().mockReturnValue(of({ success: true })),
   } as any;
   const component = new ItemCommentThreadComponent(api);
-  component.acpId = 'acp-1';
+  component.apId = 'ap-1';
   component.unitId = 'unit-1';
   component.itemId = 'item-1';
   component.enabled = true;
@@ -51,7 +51,7 @@ describe('ItemCommentThreadComponent', () => {
     api.createItemComment.mockReturnValue(throwError(() => ({ error: { message: 'Offline' } })));
     component.submitComment();
     expect(api.createItemComment).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       expect.objectContaining({ categoryId: 'category' }),
     );
     expect(component.selectedCategoryId).toBe('category');
@@ -80,14 +80,14 @@ describe('ItemCommentThreadComponent', () => {
     component.startEdit(comment);
     component.editText = 'New text';
     component.saveEdit(comment);
-    expect(api.updateItemComment).toHaveBeenLastCalledWith('acp-1', 'own', {
+    expect(api.updateItemComment).toHaveBeenLastCalledWith('ap-1', 'own', {
       commentText: 'New text',
       version: 1,
     });
     component.startEdit(comment);
     component.editCategoryId = '';
     component.saveEdit(comment);
-    expect(api.updateItemComment).toHaveBeenLastCalledWith('acp-1', 'own', {
+    expect(api.updateItemComment).toHaveBeenLastCalledWith('ap-1', 'own', {
       commentText: 'Original',
       version: 1,
       categoryId: null,
@@ -95,7 +95,7 @@ describe('ItemCommentThreadComponent', () => {
     component.startEdit(comment);
     component.editCategoryId = 'active';
     component.saveEdit(comment);
-    expect(api.updateItemComment).toHaveBeenLastCalledWith('acp-1', 'own', {
+    expect(api.updateItemComment).toHaveBeenLastCalledWith('ap-1', 'own', {
       commentText: 'Original',
       version: 1,
       categoryId: 'active',
@@ -109,11 +109,11 @@ describe('ItemCommentThreadComponent', () => {
     component.newCommentText = 'Ungespeichert';
     const comment = { id: 'foreign', canVote: true, myVote: null } as any;
     component.vote(comment, 'UP');
-    expect(api.setCommentVote).toHaveBeenLastCalledWith('acp-1', 'foreign', 'UP');
+    expect(api.setCommentVote).toHaveBeenLastCalledWith('ap-1', 'foreign', 'UP');
     component.vote({ ...comment, myVote: 'UP' }, 'DOWN');
-    expect(api.setCommentVote).toHaveBeenLastCalledWith('acp-1', 'foreign', 'DOWN');
+    expect(api.setCommentVote).toHaveBeenLastCalledWith('ap-1', 'foreign', 'DOWN');
     component.vote({ ...comment, myVote: 'DOWN' }, 'DOWN');
-    expect(api.setCommentVote).toHaveBeenLastCalledWith('acp-1', 'foreign', null);
+    expect(api.setCommentVote).toHaveBeenLastCalledWith('ap-1', 'foreign', null);
     expect(api.getItemCommentThread).toHaveBeenCalledTimes(4);
     expect(component.newCommentText).toBe('Ungespeichert');
     component.ngOnDestroy();
@@ -346,8 +346,8 @@ describe('ItemCommentThreadComponent', () => {
     });
 
     expect(component.snapshot?.revision).toBe('new');
-    expect(api.getItemCommentThread).toHaveBeenNthCalledWith(1, 'acp-1', 'unit-1', 'item-1', null);
-    expect(api.getItemCommentThread).toHaveBeenNthCalledWith(2, 'acp-1', 'unit-1', 'item-2', null);
+    expect(api.getItemCommentThread).toHaveBeenNthCalledWith(1, 'ap-1', 'unit-1', 'item-1', null);
+    expect(api.getItemCommentThread).toHaveBeenNthCalledWith(2, 'ap-1', 'unit-1', 'item-2', null);
     component.ngOnDestroy();
   });
 
@@ -479,7 +479,7 @@ describe('ItemCommentThreadComponent', () => {
     expect(component.threadGroups.find((group) => group.id === 'own')?.root?.version).toBe(1);
     expect(component.commentCount).toBe(0);
     component.saveEdit({ ...original, version: 2 });
-    expect(api.updateItemComment).toHaveBeenCalledWith('acp-1', 'own', {
+    expect(api.updateItemComment).toHaveBeenCalledWith('ap-1', 'own', {
       commentText: 'unsaved edit',
       version: 1,
     });
@@ -533,7 +533,7 @@ describe('ItemCommentThreadComponent', () => {
 
     component.setReplyText('root-1', 'Antwort');
     component.submitComment('root-1');
-    expect(api.createItemComment).toHaveBeenCalledWith('acp-1', {
+    expect(api.createItemComment).toHaveBeenCalledWith('ap-1', {
       unitId: 'unit-1',
       itemId: 'item-1',
       commentText: 'Antwort',
@@ -604,7 +604,7 @@ describe('ItemCommentThreadComponent', () => {
     component.submitComment();
 
     expect(api.getReviewCommentThread).toHaveBeenCalledWith(
-      'acp-1',
+      'ap-1',
       {
         targetType: 'CODING',
         unitId: 'unit-1',
@@ -612,7 +612,7 @@ describe('ItemCommentThreadComponent', () => {
       },
       null,
     );
-    expect(api.createReviewComment).toHaveBeenCalledWith('acp-1', {
+    expect(api.createReviewComment).toHaveBeenCalledWith('ap-1', {
       targetType: 'CODING',
       unitId: 'unit-1',
       itemId: 'item-1',

@@ -20,11 +20,10 @@ export class PendingPersonalSessionStorageService {
         return null;
       }
       if (payload['type'] === 'credential') {
-        return JSON.stringify([
-          'credential',
-          sub,
-          typeof payload['acpId'] === 'string' ? payload['acpId'] : '',
-        ]);
+        const apId = payload['apId'] ?? payload['acpId'];
+        if (payload['apId'] && payload['acpId'] && payload['apId'] !== payload['acpId'])
+          return null;
+        return JSON.stringify(['credential', sub, typeof apId === 'string' ? apId : '']);
       }
       return JSON.stringify(['user', sub, '']);
     } catch {

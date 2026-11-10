@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import {
-  Acp,
+  Ap,
   ApplicationToken,
   CreatedApplicationToken,
   ServerApiScope,
@@ -16,7 +16,7 @@ type ScopeOption = {
 };
 
 const SCOPE_OPTIONS: ScopeOption[] = [
-  { value: 'acp.read', label: 'AP lesen' },
+  { value: 'ap.read', label: 'AP lesen' },
   { value: 'transfer.read', label: 'Transfer lesen' },
   { value: 'transfer.write', label: 'Transfer schreiben' },
   { value: 'index.read', label: 'Index lesen' },
@@ -111,22 +111,22 @@ const SCOPE_OPTIONS: ScopeOption[] = [
 
           <div class="form-group">
             <label>AP-Begrenzung</label>
-            <div class="acp-limit-actions">
-              <button type="button" class="btn btn-outline btn-sm" (click)="clearAcpLimits()">
+            <div class="ap-limit-actions">
+              <button type="button" class="btn btn-outline btn-sm" (click)="clearApLimits()">
                 Global
               </button>
               <span class="subtle"> Ohne Auswahl gilt der Token für alle APs. </span>
             </div>
-            <div class="acp-grid">
-              @for (acp of acps; track acp.id) {
+            <div class="ap-grid">
+              @for (ap of aps; track ap.id) {
                 <label class="scope-option">
                   <input
                     type="checkbox"
-                    [checked]="isAcpSelected(acp.id)"
-                    (change)="toggleAcp(acp.id, $any($event.target).checked)"
+                    [checked]="isApSelected(ap.id)"
+                    (change)="toggleAp(ap.id, $any($event.target).checked)"
                   />
-                  <span>{{ acp.name }}</span>
-                  <code>{{ acp.packageId }}</code>
+                  <span>{{ ap.name }}</span>
+                  <code>{{ ap.packageId }}</code>
                 </label>
               } @empty {
                 <div class="subtle">Keine APs verfügbar.</div>
@@ -212,7 +212,7 @@ const SCOPE_OPTIONS: ScopeOption[] = [
                       }
                     </div>
                   </td>
-                  <td>{{ acpLimitLabel(token) }}</td>
+                  <td>{{ apLimitLabel(token) }}</td>
                   <td>
                     <span
                       class="badge"
@@ -323,7 +323,7 @@ const SCOPE_OPTIONS: ScopeOption[] = [
         gap: 8px;
       }
 
-      .acp-grid {
+      .ap-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
         gap: 8px;
@@ -331,7 +331,7 @@ const SCOPE_OPTIONS: ScopeOption[] = [
         overflow: auto;
       }
 
-      .acp-limit-actions {
+      .ap-limit-actions {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -395,7 +395,7 @@ const SCOPE_OPTIONS: ScopeOption[] = [
 })
 export class ApplicationTokensComponent implements OnInit {
   tokens: ApplicationToken[] = [];
-  acps: Acp[] = [];
+  aps: Ap[] = [];
   total = 0;
   limit = 50;
   offset = 0;
@@ -410,12 +410,12 @@ export class ApplicationTokensComponent implements OnInit {
     name: string;
     expiresAtLocal: string;
     scopes: ServerApiScope[];
-    allowedAcpIds: string[];
+    allowedApIds: string[];
   } = {
     name: '',
     expiresAtLocal: '',
-    scopes: ['acp.read'],
-    allowedAcpIds: [],
+    scopes: ['ap.read'],
+    allowedApIds: [],
   };
 
   revokeDialogOpen = false;
@@ -427,7 +427,7 @@ export class ApplicationTokensComponent implements OnInit {
 
   ngOnInit() {
     this.load();
-    this.loadAcps();
+    this.loadAps();
   }
 
   get hasNextPage(): boolean {
@@ -502,24 +502,24 @@ export class ApplicationTokensComponent implements OnInit {
     }
   }
 
-  isAcpSelected(acpId: string): boolean {
-    return this.newToken.allowedAcpIds.includes(acpId);
+  isApSelected(apId: string): boolean {
+    return this.newToken.allowedApIds.includes(apId);
   }
 
-  toggleAcp(acpId: string, checked: boolean) {
-    if (checked && !this.newToken.allowedAcpIds.includes(acpId)) {
-      this.newToken.allowedAcpIds = [...this.newToken.allowedAcpIds, acpId];
+  toggleAp(apId: string, checked: boolean) {
+    if (checked && !this.newToken.allowedApIds.includes(apId)) {
+      this.newToken.allowedApIds = [...this.newToken.allowedApIds, apId];
       return;
     }
     if (!checked) {
-      this.newToken.allowedAcpIds = this.newToken.allowedAcpIds.filter(
-        (selected) => selected !== acpId,
+      this.newToken.allowedApIds = this.newToken.allowedApIds.filter(
+        (selected) => selected !== apId,
       );
     }
   }
 
-  clearAcpLimits() {
-    this.newToken.allowedAcpIds = [];
+  clearApLimits() {
+    this.newToken.allowedApIds = [];
   }
 
   createToken() {
@@ -547,7 +547,7 @@ export class ApplicationTokensComponent implements OnInit {
         name,
         scopes: this.newToken.scopes,
         expiresAt,
-        allowedAcpIds: this.newToken.allowedAcpIds?.length ? this.newToken.allowedAcpIds : null,
+        allowedApIds: this.newToken.allowedApIds?.length ? this.newToken.allowedApIds : null,
       })
       .subscribe({
         next: (created) => {
@@ -644,22 +644,22 @@ export class ApplicationTokensComponent implements OnInit {
     return token.active && !token.revokedAt;
   }
 
-  acpLimitLabel(token: ApplicationToken): string {
-    if (!token.allowedAcpIds?.length) {
+  apLimitLabel(token: ApplicationToken): string {
+    if (!token.allowedApIds?.length) {
       return 'Global';
     }
-    return token.allowedAcpIds
-      .map((acpId) => this.acps.find((acp) => acp.id === acpId)?.name || acpId)
+    return token.allowedApIds
+      .map((apId) => this.aps.find((ap) => ap.id === apId)?.name || apId)
       .join(', ');
   }
 
-  private loadAcps() {
-    this.api.getAcps().subscribe({
-      next: (acps) => {
-        this.acps = acps;
+  private loadAps() {
+    this.api.getAps().subscribe({
+      next: (aps) => {
+        this.aps = aps;
       },
       error: () => {
-        this.acps = [];
+        this.aps = [];
       },
     });
   }
@@ -685,8 +685,8 @@ export class ApplicationTokensComponent implements OnInit {
     this.newToken = {
       name: '',
       expiresAtLocal: '',
-      scopes: ['acp.read'],
-      allowedAcpIds: [],
+      scopes: ['ap.read'],
+      allowedApIds: [],
     };
   }
 }

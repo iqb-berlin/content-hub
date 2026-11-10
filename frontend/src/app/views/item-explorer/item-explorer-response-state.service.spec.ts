@@ -24,7 +24,7 @@ function createService() {
     clearResponseState: vi.fn(),
   };
   const context: ItemExplorerResponseStateContext = {
-    acpId: 'package',
+    apId: 'package',
     selectedItem: { itemId: 'ITEM', unitId: 'UNIT', rowKey: 'row::1' } as any,
     isCorrectSolutionActive: false,
     previewReady: true,
@@ -151,7 +151,7 @@ describe('response-state mutation ownership', () => {
             player.responseSessionToken = {};
             player.sessionChanges$.next();
           }
-          if (change === 'package') context.acpId = 'another package';
+          if (change === 'package') context.apId = 'another package';
           service.confirmDialogError = 'new dialog';
           if (result === 'success') mutation.next({});
           else mutation.error(new Error('old request'));
@@ -232,7 +232,7 @@ describe('saved response list and lifecycle', () => {
     const failed = vi.fn();
     service.loadFailed$.subscribe(failed);
     service.loadAllResponseStates();
-    context.acpId = 'another package';
+    context.apId = 'another package';
     if (result === 'success') states.next([{ id: 'old state' }]);
     else states.error(new Error('old request'));
     expect(service.allResponseStates).toEqual([]);

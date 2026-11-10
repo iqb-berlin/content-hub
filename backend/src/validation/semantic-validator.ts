@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { Acp, AcpFile } from "../database/entities";
+import { Ap, ApFile } from "../database/entities";
 import {
   getAssessmentParts,
   getIndexUnits,
-  toRuntimeAcpIndex,
-} from "../acp/acp-index.utils";
+  toRuntimeApIndex,
+} from "../ap/ap-index.utils";
 
 export interface SemanticValidationResult {
   valid: boolean;
@@ -18,7 +18,7 @@ export interface SemanticValidationResult {
 }
 
 /**
- * Validates cross-reference consistency within an ACP:
+ * Validates cross-reference consistency within an AP:
  * - Unit IDs in booklets exist among defined units
  * - File dependencies reference existing uploaded files
  * - Items reference valid source variables
@@ -26,27 +26,27 @@ export interface SemanticValidationResult {
 @Injectable()
 export class SemanticValidator {
   constructor(
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
   ) {}
 
   /**
-   * Validate semantic consistency of the entire ACP.
+   * Validate semantic consistency of the entire AP.
    */
-  async validate(acpId: string): Promise<SemanticValidationResult> {
+  async validate(apId: string): Promise<SemanticValidationResult> {
     const issues: SemanticValidationResult["issues"] = [];
 
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
       return {
         valid: false,
         issues: [{ severity: "error", message: "AP not found" }],
       };
     }
 
-    const index = toRuntimeAcpIndex(acp.acpIndex);
+    const index = toRuntimeApIndex(ap.apIndex);
     if (!index) {
       return {
         valid: false,
@@ -54,7 +54,7 @@ export class SemanticValidator {
       };
     }
 
-    const files = await this.fileRepository.find({ where: { acpId } });
+    const files = await this.fileRepository.find({ where: { apId } });
     const fileNames = new Set(files.map((f) => f.originalName));
 
     // Collect all unit IDs

@@ -1,9 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import {
-  AcpAccessConfig,
-  AcpCredential,
-  AcpUserRole,
-} from "../database/entities";
+import { ApAccessConfig, ApCredential, ApUserRole } from "../database/entities";
 import { ReviewController } from "./review.controller";
 
 describe("unit view access in capability responses", () => {
@@ -21,7 +17,7 @@ describe("unit view access in capability responses", () => {
   ])(
     "matches unit-route access for %s (unit=%s, review=%s, grants=%j, identity=%s)",
     async (
-      acpAccessLevel,
+      apAccessLevel,
       enableUnitView,
       enableReview,
       grants,
@@ -38,8 +34,8 @@ describe("unit view access in capability responses", () => {
         } as any,
         {} as any,
       );
-      const access = await controller.getCapabilities("acp", {
-        acpAccessLevel,
+      const access = await controller.getCapabilities("ap", {
+        apAccessLevel,
         ...(identity ? { user: { sub: "viewer" } } : {}),
       });
       expect(access.canViewUnit).toBe(expected);
@@ -53,7 +49,7 @@ describe("ReviewController stale memberships", () => {
     async (kind) => {
       const config = {
         id: "config",
-        acpId: "acp",
+        apId: "ap",
         reviewConfigVersion: 1,
         reviewRevision: "0",
         featureConfig: { enableReview: true, commentVisibilityMode: "GROUP" },
@@ -71,8 +67,8 @@ describe("ReviewController stale memberships", () => {
       };
       const manager = {
         findOne: jest.fn(async (entity, options) => {
-          if (entity === AcpAccessConfig) return config;
-          expect(entity).toBe(kind === "user" ? AcpUserRole : AcpCredential);
+          if (entity === ApAccessConfig) return config;
+          expect(entity).toBe(kind === "user" ? ApUserRole : ApCredential);
           return (options.where.userId || options.where.id) === "live"
             ? {}
             : null;
@@ -88,7 +84,7 @@ describe("ReviewController stale memberships", () => {
         { check: jest.fn() } as any,
       );
       const result = await controller.configure(
-        "acp",
+        "ap",
         {
           enableReview: false,
           visibilityMode: "GROUP",
@@ -141,7 +137,7 @@ describe("ReviewController stale memberships", () => {
       };
       const manager = {
         findOne: jest.fn(async (entity) =>
-          entity === AcpAccessConfig ? config : null,
+          entity === ApAccessConfig ? config : null,
         ),
         save: jest.fn(),
         transaction: async (fn: any): Promise<any> => fn(manager),
@@ -154,7 +150,7 @@ describe("ReviewController stale memberships", () => {
       );
       await expect(
         controller.configure(
-          "acp",
+          "ap",
           {
             enableReview: true,
             visibilityMode: "GROUP",
@@ -171,7 +167,7 @@ describe("ReviewController stale memberships", () => {
     },
   );
 
-  it("blocks activation when the ACP is not technically ready", async () => {
+  it("blocks activation when the AP is not technically ready", async () => {
     const config = {
       reviewConfigVersion: 1,
       reviewRevision: "0",
@@ -195,7 +191,7 @@ describe("ReviewController stale memberships", () => {
 
     await expect(
       controller.configure(
-        "acp",
+        "ap",
         {
           enableReview: true,
           visibilityMode: "PRIVATE",
@@ -205,7 +201,7 @@ describe("ReviewController stale memberships", () => {
         {},
       ),
     ).rejects.toThrow(BadRequestException);
-    expect(readiness.check).toHaveBeenCalledWith("acp");
+    expect(readiness.check).toHaveBeenCalledWith("ap");
     expect(manager.transaction).not.toHaveBeenCalled();
   });
 });
@@ -243,19 +239,19 @@ describe("deleting review groups", () => {
         deletedGroupIds: ["g"],
       };
       if (count) {
-        await expect(controller.configure("acp", dto, {})).rejects.toThrow(
+        await expect(controller.configure("ap", dto, {})).rejects.toThrow(
           "enthält Kommentare",
         );
         expect(manager.save).not.toHaveBeenCalled();
       } else {
-        expect((await controller.configure("acp", dto, {})).groups).toEqual([]);
+        expect((await controller.configure("ap", dto, {})).groups).toEqual([]);
       }
       expect(manager.findOne).toHaveBeenCalledWith(
-        AcpAccessConfig,
+        ApAccessConfig,
         expect.objectContaining({ lock: { mode: "pessimistic_write" } }),
       );
       expect(manager.count).toHaveBeenCalledWith(expect.anything(), {
-        where: { acpId: "acp", groupId: "g" },
+        where: { apId: "ap", groupId: "g" },
       });
     },
   );
@@ -278,7 +274,7 @@ describe("deleting review groups", () => {
     );
     await expect(
       controller.configure(
-        "acp",
+        "ap",
         {
           configVersion: 1,
           enableReview: false,
@@ -322,7 +318,7 @@ describe.each(["hideReviewMetadata", "hideReviewDeveloperNames"])(
           {} as any,
         );
         const result = await controller.configure(
-          "acp",
+          "ap",
           {
             enableReview: true,
             visibilityMode: "PRIVATE",
@@ -334,7 +330,7 @@ describe.each(["hideReviewMetadata", "hideReviewDeveloperNames"])(
         expect(result[setting as keyof typeof result]).toBe(hidden ?? true);
         expect(config.featureConfig.showMetadata).toBe(true);
         expect(
-          (await controller.getConfig("acp", {}))[
+          (await controller.getConfig("ap", {}))[
             setting as keyof typeof result
           ],
         ).toBe(hidden ?? true);

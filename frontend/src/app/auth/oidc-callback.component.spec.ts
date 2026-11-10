@@ -37,7 +37,7 @@ describe('OidcCallbackComponent', () => {
           of(
             url.endsWith('/token')
               ? { access_token: 'access', id_token: 'id' }
-              : { accessToken: 'app-token', user: { id: 'user', acpRoles: [] } },
+              : { accessToken: 'app-token', user: { id: 'user', apRoles: [] } },
           ),
         ),
     };

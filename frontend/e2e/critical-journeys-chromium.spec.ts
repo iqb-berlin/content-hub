@@ -10,38 +10,38 @@ import { installOidcSession } from './oidc-test-session';
 
 test.use({ actionTimeout: 15_000 });
 
-const baseAcp = '10000000-0000-4000-8000-000000000001';
-const regressionAcp = '10000000-0000-4000-8000-000000000101';
-const filesAcp = '10000000-0000-4000-8000-000000000301';
-const snapshotsAcp = '10000000-0000-4000-8000-000000000302';
+const baseAp = '10000000-0000-4000-8000-000000000001';
+const regressionAp = '10000000-0000-4000-8000-000000000101';
+const filesAp = '10000000-0000-4000-8000-000000000301';
+const snapshotsAp = '10000000-0000-4000-8000-000000000302';
 const managerId = '10000000-0000-4000-8000-000000000002';
 
-test('credential access cannot cross into ACP management or another private ACP', async ({
+test('credential access cannot cross into ACP management or another private AP', async ({
   page,
 }) => {
-  await page.goto(`/credential-login/${baseAcp}`);
+  await page.goto(`/credential-login/${baseAp}`);
   await page.getByLabel('Benutzername').fill('e2e-reviewer');
   await page.getByLabel('Kennwort').fill('Reviewer-E2E-123!');
   await page.getByRole('button', { name: 'Zugang öffnen' }).click();
-  await expect(page).toHaveURL(`/view/${baseAcp}`);
-  await page.goto(`/manage/${baseAcp}`);
+  await expect(page).toHaveURL(`/view/${baseAp}`);
+  await page.goto(`/manage/${baseAp}`);
   await expect(page.getByRole('heading', { name: 'Kein Zugriff' })).toBeVisible();
   await expect(page.locator('a[href^="/manage/"]')).toHaveCount(0);
   const token = await page.evaluate(() => localStorage.getItem('ch_token'));
   expect(token).toBeTruthy();
-  const otherAcp = await page.request.get(`/api/view/acp/${regressionAcp}`, {
+  const otherAp = await page.request.get(`/api/view/ap/${regressionAp}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  expect(otherAcp.status()).toBe(403);
+  expect(otherAp.status()).toBe(403);
 });
 
 test('item deep link shows its unit and unknown item state', async ({ page }) => {
   await installOidcSession(page, managerId, 'e2e-manager');
-  await page.goto(`/view/${regressionAcp}/item/u1_i1`);
+  await page.goto(`/view/${regressionAp}/item/u1_i1`);
   await expect(page.getByRole('heading', { name: 'Item: Direkter Zustand' })).toBeVisible();
   await expect(page.locator('.item-highlight-info')).toContainText('Regression Aufgabe 1');
   await expect(page.locator('iframe.player-iframe')).toBeVisible();
-  await page.goto(`/view/${regressionAcp}/item/does-not-exist`);
+  await page.goto(`/view/${regressionAp}/item/does-not-exist`);
   await expect(page.getByRole('heading', { name: 'Item nicht gefunden' })).toBeVisible();
 });
 
@@ -49,7 +49,7 @@ test('snapshot diff, cancelled restore and confirmed restore track an index chan
   page,
 }) => {
   await installOidcSession(page, managerId, 'e2e-manager');
-  await page.goto(`/manage/${snapshotsAcp}`);
+  await page.goto(`/manage/${snapshotsAp}`);
   await page.locator('details.index-section summary').click();
   await page.getByRole('button', { name: 'JSON anzeigen' }).click();
   const index = JSON.parse(
@@ -60,7 +60,7 @@ test('snapshot diff, cancelled restore and confirmed restore track an index chan
     .getByRole('button', { name: 'Schließen' })
     .click();
 
-  await page.goto(`/manage/${snapshotsAcp}/snapshots`);
+  await page.goto(`/manage/${snapshotsAp}/snapshots`);
   await page.getByRole('button', { name: '+ Snapshot erstellen' }).click();
   await page.getByPlaceholder('Änderungen beschreiben...').fill('Vor Indexänderung');
   await page.getByRole('button', { name: 'Erstellen', exact: true }).click();
@@ -68,7 +68,7 @@ test('snapshot diff, cancelled restore and confirmed restore track an index chan
   await expect(snapshot).toBeVisible();
 
   index.assessmentParts[0].name = 'Geänderter E2E-Abschnitt';
-  await page.goto(`/manage/${snapshotsAcp}`);
+  await page.goto(`/manage/${snapshotsAp}`);
   await page.locator('details.index-section summary').click();
   await page.locator('details.index-section input[type=file]').setInputFiles({
     name: 'index.json',
@@ -76,7 +76,7 @@ test('snapshot diff, cancelled restore and confirmed restore track an index chan
     buffer: Buffer.from(JSON.stringify(index)),
   });
   await expect(page.getByText('AP-Index wurde importiert.', { exact: true })).toBeVisible();
-  await page.goto(`/manage/${snapshotsAcp}/snapshots`);
+  await page.goto(`/manage/${snapshotsAp}/snapshots`);
   const changedSnapshot = page.locator('tbody tr').filter({ hasText: 'Vor Indexänderung' });
   await changedSnapshot.getByRole('button', { name: 'Diff zum aktuellen Stand' }).click();
   await expect(page.getByText('AP-Index geändert:')).toBeVisible();
@@ -99,7 +99,7 @@ test('imports a task package, renders it, activates review and retains a partici
   test.setTimeout(120_000);
   page.on('dialog', (dialog) => dialog.accept());
   await installOidcSession(page, managerId, 'e2e-manager');
-  await page.goto(`/manage/${filesAcp}/files`);
+  await page.goto(`/manage/${filesAp}/files`);
   await expect(page.getByRole('heading', { name: 'Dateien', exact: true })).toBeVisible();
   await expect(page.locator('tbody tr')).toHaveCount(0);
   await page.locator('input[type=file]').setInputFiles(
@@ -124,19 +124,19 @@ test('imports a task package, renders it, activates review and retains a partici
   expect(await readFile((await download.path())!)).toEqual(definition.buffer);
   await page.reload();
   await expect(page.locator('tbody tr')).toHaveCount(6);
-  // Only the import/processing pipeline has populated this initially empty ACP.
-  await page.goto(`/view/${filesAcp}/units`);
+  // Only the import/processing pipeline has populated this initially empty AP.
+  await page.goto(`/view/${filesAp}/units`);
   await page
     .locator('tbody tr')
     .filter({ hasText: journeyUnitName })
     .getByRole('link', { name: 'Ansehen' })
     .click();
-  await expect(page).toHaveURL(`/view/${filesAcp}/unit/${journeyUnitId}`);
+  await expect(page).toHaveURL(`/view/${filesAp}/unit/${journeyUnitId}`);
   const player = page.frameLocator('iframe.player-iframe');
   await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();
   await player.getByRole('radio', { name: 'zum See', exact: true }).check();
   await expect(player.getByRole('radio', { name: 'zum See', exact: true })).toBeChecked();
-  await page.goto(`/view/${filesAcp}/review/manage`);
+  await page.goto(`/view/${filesAp}/review/manage`);
   await expect(page.getByText(journeyBookletId, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Bereitschaft prüfen' }).click();
   await expect(page.locator('.readiness-card')).toContainText('1 Testhefte');
@@ -160,10 +160,10 @@ test('imports a task package, renders it, activates review and retains a partici
   const participant = await participantContext.newPage();
   try {
     await installOidcSession(participant, '10000000-0000-4000-8000-000000000003', 'e2e-viewer');
-    await participant.goto(`/view/${filesAcp}`);
+    await participant.goto(`/view/${filesAp}`);
     await participant.getByRole('link', { name: 'Review öffnen', exact: true }).click();
     await expect(participant).toHaveURL(
-      `/view/${filesAcp}/sequence/${journeyBookletId}?kind=booklet`,
+      `/view/${filesAp}/sequence/${journeyBookletId}?kind=booklet`,
     );
     const participantPlayer = participant.frameLocator('app-unit-view iframe');
     await expect(participantPlayer.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();

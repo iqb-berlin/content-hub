@@ -76,7 +76,7 @@ Tab öffnen; Strg-/Cmd-Klick behält ebenfalls das native Browserverhalten bei.
 Zurück, Weiter und die Aufgabenliste aktualisieren ebenfalls die URL;
 Neuladen sowie Zurück/Vorwärts im Browser stellen die Auswahl wieder her.
 
-`/view/:acpId/sequence/:bookletId?kind=booklet&occurrence=:linkId`
+`/view/:apId/sequence/:bookletId?kind=booklet&occurrence=:linkId`
 adressiert ein bestimmtes Vorkommen, auch wenn dieselbe Aufgabe mehrmals im
 Testheft enthalten ist. Neue Links verwenden eine 16-stellige, URL-sichere
 `linkId`, zum Beispiel `?kind=booklet&occurrence=Y5gRx3-5hT2cV0WQ`.

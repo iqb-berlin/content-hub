@@ -23,11 +23,11 @@ regression floors, not claims of sufficient correctness or aspirational targets.
 
 | Module | Statements | Branches | Functions | Lines |
 | --- | ---: | ---: | ---: | ---: |
-| `backend/src/acp/acp.service.ts` | 96.2% | 83.59% | 100% | 96.09% |
-| `backend/src/acp/acp-credentials.service.ts` | 91.8% | 74% | 100% | 92.3% |
+| `backend/src/ap/ap.service.ts` | 96.2% | 83.59% | 100% | 96.09% |
+| `backend/src/ap/ap-credentials.service.ts` | 91.8% | 74% | 100% | 92.3% |
 | `backend/src/api/server-api-auth.guard.ts` | 100% | 93.33% | 100% | 100% |
 | `backend/src/api/server-api-auth.service.ts` | 93.63% | 77.27% | 100% | 93.33% |
-| `backend/src/auth/capabilities/acp-capabilities.service.ts` | 100% | 89.18% | 100% | 100% |
+| `backend/src/auth/capabilities/ap-capabilities.service.ts` | 100% | 89.18% | 100% | 100% |
 | `backend/src/auth/capabilities/explorer-access.guard.ts` | 100% | 100% | 100% | 100% |
 | `backend/src/auth/guards/roles.guard.ts` | 100% | 100% | 100% | 100% |
 | `backend/src/files/async-lru-cache.ts` | 91.66% | 83.33% | 90.9% | 94.28% |
@@ -86,7 +86,7 @@ are not directly comparable.
   test environment, with assertions that the failure paths are exercised. Removal
   failure cannot resurrect stale snapshots; identity changes and corrupt data are
   covered as well.
-- Explorer read/edit guards reject denied ACP access and missing capabilities.
+- Explorer read/edit guards reject denied AP access and missing capabilities.
 - Production templates are rendered to verify one instance of each feature,
   breadcrumb/fullscreen updates through toolbar clicks, and permission-dependent
   editing controls. The redundant raw-template substring tests are removed.
@@ -94,13 +94,13 @@ are not directly comparable.
 Existing data-loss, permission, and database transaction tests remain in place.
 
 
-## Work package 5: ACP service split
+## Work package 5: AP service split
 
-Credential import, hashing, and CRUD now live in `AcpCredentialsService`.
-The existing ACP service suite exercises the real injected credentials service,
+Credential import, hashing, and CRUD now live in `ApCredentialsService`.
+The existing AP service suite exercises the real injected credentials service,
 including transaction locks, duplicate handling, and capability preservation.
 Both resulting files have independent floors measured after the split. The
 credentials file's branch percentage reflects the moved credential branches;
-it does not represent lost tests. The remaining ACP service has higher floors,
+it does not represent lost tests. The remaining AP service has higher floors,
 with additional tests for capability updates and missing assignments.
 The historical overall measurements above remain the work-package-4 baseline.
