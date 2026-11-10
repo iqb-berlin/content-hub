@@ -116,7 +116,7 @@ export class AccessComponent implements OnInit, OnDestroy {
           const reason = params.get('reason');
           const context = params.get('context');
           const next = params.get('next');
-          const apId = params.get('apId');
+          const apId = params.get('apId') ?? params.get('acpId');
 
           this.reason = this.parseReason(reason);
           this.context = this.parseContext(context);
@@ -202,6 +202,7 @@ export class AccessComponent implements OnInit, OnDestroy {
   }
 
   private parseContext(value: string | null): AccessContext {
+    if (value === 'acp') return 'ap';
     if (value === 'admin' || value === 'ap' || value === 'view' || value === 'manage') {
       return value;
     }

@@ -20,6 +20,10 @@ redirect. They support the existing methods and subresources, including files,
 snapshots, comments and review. Old URLs return the old ACP response fields by
 default; new AP URLs return AP fields. No removal date is imposed on the aliases.
 
+Existing `/access` links retain `acpId` as an alias for `apId` and accept
+`context=acp` as `context=ap`. The package sign-in link and return destination are
+preserved. If both package ID parameters are present, `apId` takes precedence.
+
 Shared endpoints whose URLs contain neither `ap` nor `acp`, including
 `/api/auth/profile`, `/api/auth/credential-login`, `/api/admin/settings`,
 `/api/admin/application-tokens` and `/api/server/capabilities`, retain their legacy
