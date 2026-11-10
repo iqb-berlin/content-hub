@@ -11,6 +11,8 @@ Dieses Dokument enthält technische Nachweise und keine fachliche Abnahme.
 
 - Im Review gibt es bei vorhandenen, nicht leeren Transkripten einen eigenen
   Reiter **Hörtranskripte**, unabhängig von **Reiter „Metadaten“ ausblenden**.
+- Das schließt das gesamte Feld **Transkript Original / Text Original** ein,
+  auch wenn es den Originaltext einer Leseaufgabe enthält.
 - Andere Metadaten bleiben von dieser Einstellung abhängig. Die separate
   Einstellung zum Ausblenden der Entwicklernamen bleibt wirksam.
 - Transkripte erscheinen im Review ausschließlich im neuen Reiter. In regulären
@@ -22,7 +24,7 @@ Dieses Dokument enthält technische Nachweise und keine fachliche Abnahme.
   auf zwölf Felder unterschlug Transkripte in mehreren Standardprofilen.
   Die übrigen Vorschaugrenzen für Itemtabellen bleiben bestehen.
 
-## Belegte Erkennung und offene Abgrenzung
+## Belegte Erkennung und bestätigte Abgrenzung
 
 Die IDs und Bezeichnungen stammen aus den veröffentlichten IQB-Aufgabenprofilen,
 abgerufen am 10. November 2026:
@@ -34,10 +36,14 @@ abgerufen am 10. November 2026:
 | `k6` mit Bezeichnung „Transkript zur Aufgabe“ | [p53](https://github.com/iqb-vocabs/p53/blob/master/unit.json), [p54](https://github.com/iqb-vocabs/p54/blob/master/unit.json). Keine Erkennung allein anhand von `k6`: dasselbe Feld bedeutet in p16/p17 „Nebengeräusche“. |
 | `iqb_copyright_original` | [p52](https://github.com/iqb-vocabs/p52/blob/master/unit.json) bis [p55](https://github.com/iqb-vocabs/p55/blob/master/unit.json): „Transkript Original / Text Original“ |
 
-Die Implementierung schließt das gemeinsame Originalfeld derzeit ein. Die Profile
-unterscheiden dort nicht zwischen Audio-Originaltranskript und Originaltext einer
-Leseaufgabe. Ob dieses gesamte Feld unabhängig sichtbar sein soll, ist als
-fachliche Rückfrage offen und vor Freigabe zu bestätigen oder einzugrenzen.
+Fachliche Entscheidung vom 10. November 2026: Das gesamte gemeinsame Feld
+**Transkript Original / Text Original** (`iqb_copyright_original`) soll ebenfalls
+unabhängig von **Reiter „Metadaten“ ausblenden** sichtbar bleiben. Das gilt sowohl
+für Audio-Originaltranskripte als auch für Originaltexte von Leseaufgaben. Die
+bestehende Implementierung und die Komponententests schließen dieses Feld bereits
+ein; eine Codeänderung ist für diese Bestätigung nicht erforderlich.
+Die Entscheidung klärt den Funktionsumfang und ist keine fachliche Abnahme der
+Implementierung auf einer bereitgestellten Instanz.
 
 Erkennung erfolgt über die belegten stabilen IDs oder exakte bekannte
 Feldbezeichnungen, mit normalisierter Groß-/Kleinschreibung und Leerzeichen.
@@ -60,6 +66,7 @@ deterministische Browserfixtures; Review-Konfiguration und Speicherung laufen
 | Frontend und Backend `npm run format:check` | bestanden |
 | Frontend und Backend `npm run build` | bestanden |
 | Gezielte Playwright-Prüfung in Chromium, Firefox und WebKit | 6 Fälle bestanden |
+| GitHub-CI für Implementierungscommit `915d1c3f1d671e5c91e451df58f89987f75a16b5` | [CI einschließlich Release-Gate](https://github.com/iqb-berlin/content-hub/actions/runs/42777481316), [NPM Audits](https://github.com/iqb-berlin/content-hub/actions/runs/42777481308) und [CodeQL](https://github.com/iqb-berlin/content-hub/actions/runs/42777477937) erfolgreich; Trivy planmäßig übersprungen |
 
 Die Komponententests prüfen beide Metadateneinstellungen, die belegten
 Transkriptvarianten, Abgrenzung anderer Metadaten, Entwicklernamen, Umschalten,
