@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Verona Player 1</title>
+
+  <meta name="application-name" content="verona-simple-player-1.1.0"
+        data-version="1.0.1"
+        data-repository-url="https://github.com/iqb-berlin/testcenter-backend"
+        data-api-version="2.1.0"
+        data-not-supported-api-features=""
+        data-supported-unit-definition-types="verona-simple-player-1.0.0"
+        data-supported-unit-state-data-types="verona-simple-player-1.0.0"
+        data-supported-browsers='{"Firefox": 69, "Chrome": 72, "Edge": 79}'
+  />
+
+  <template id="player-info-template">
+    <div style="display: flex;">
+      <div style="flex: 50%; padding: 2px">
+        <h1>Simple Verona Player</h1>
+        <p>
+          This is a simple, dependency-less, vanilla-js-written, but full-featured unit player,
+          mainly as showcase for developers and for software-testing.
+        </p>
+        <p>
+          It does implement the
+          <a href="https://github.com/verona-interface" target="_blank">Verona 2.1.0</a>-Standard
+          and can be used for units containing simple any content in HTML-format.
+        </p>
+        <p>
+          Unit Description ist the <code>form</code>-content as HTML. Just give some names to the form element,
+          and the player does the rest. Use some special Ids for some special buttons.
+        </p>
+      </div>
+      <div style="flex: 50%; padding: 2px">
+        <h3>Player Specs</h3>
+        <table id="player-meta" style="width:100%"><!-- will be filled automatically --></table>
+      </div>
+    </div>
+  </template>
+
+  <style>
+    html, body {
+      height: 100vh; overflow: hidden; font-family: sans-serif; margin: 0;
+    }
+
+    #shield {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 51000
+    }
+
+    #unit {
+      overflow: auto; height: 100vh; margin: 0 9em;
+    }
+
+    #unit.paged.separate {
+      overflow-y: auto;
+      height: 100vh;
+    }
+
+    #unit.paged fieldset:first-of-type {
+      display: block
+    }
+
+    #unit.paged.separate fieldset {
+      overflow-y: auto;
+      height: calc(100% - 100px);
+      padding: 50px 20px;
+      border: 0;
+    }
+
+    /* add some whitespace in scollmode, to make it possible to get last pages on the top even if they are small */
+    #unit.paged.concat-scroll:after,
+    #unit.paged.concat-scroll-snap:after {
+      height: 100%;
+      display: block;
+      content: " ";
+    }
+
+    #unit.concat-scroll-snap {
+      scroll-snap-type: y proximity;
+    }
+
+    #unit.concat-scroll-snap fieldset {
+      scroll-snap-align: start;
+    }
+
+    .page-bottom-anchor {
+      display: block;
+      height: 50px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="shield"></div>
+
+<div style="position:fixed; width: 100%; text-align: center; top: 1em;">
+  <button id="prev-page" title="Previous Page" type="button" class="btn btn-outline-primary">↑</button>
+</div>
+
+<div style="position:fixed; bottom: 1em; left: 9em; right: 9em; text-align: center;">
+  <button id="next-page" title="Next Page" type="button" class="btn btn-outline-primary">↓</button>
+</div>
+
+<div style="position:fixed; top: 50%; left: 1em;">
+  <button id="first-unit" title="First Unit" type="submit" class="btn btn-primary" value="first" name="target">⇤</button>
+  <button id="prev-unit" title="Previous Unit" type="submit" class="btn btn-primary" value="previous" name="target">←</button>
+</div>
+
+<div style="position:fixed; top: 50%; right: 1em;">
+  <button id="next-unit" title="Next Unit" type="submit" class="btn btn-primary" value="next" name="target">→</button>
+  <button id="last-unit" title="Last Unit" type="submit" class="btn btn-primary" value="last" name="target">⇥</button>
+</div>
+
+<form>
+  <div id="unit"><!-- will be filled automatically --></div>
+</form>
+
+<script>
+
+  // some polyfills
+  (function polyfillReactionToProgrammaticallyChangedInputValue() {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    const originalSet = descriptor.set;
+
+    descriptor.set = function(val) {
+      if (this.value !== val) {
+        originalSet.apply(this, arguments);
+        const event = new CustomEvent(
+          'programmaticallyChange',
+          {
+            bubbles: true,
+            detail: {
+              from: this.value,
+              to: val
+            }
+          }
+        );
+        this.dispatchEvent(event);
+      }
+    }
+
+    Object.defineProperty(HTMLInputElement.prototype, "value", descriptor);
+  }());
+
+  // some settings, that might be overridden for testing per query-params in URL
+  const playerSettings = Object.assign(
+    {
+      debounceStateMessages: 1000,
+      debounceKeyboardEvents: 100
+    },
+    location.search
+      .substr(1)
+      .split("&")
+      .reduce((carry, item) => {const tmp = item.split("="); carry[tmp[0]] = tmp[1]; return carry;}, {})
+  );
+
+  // verona2 supported settings
+  let playerConfig = {
+    logPolicy: 'eager', // "disabled" | "lean" | "rich" | "debug"
+    unitNumber: 0,
+    unitTitle: 'Unit',
+    unitId: 'unit',
+    unitCount: Infinity,
+    stateReportPolicy: "eager", // none" | "eager" | "on-demand"
+    pagingMode: "separate", // "separate" | "concat-scroll" | "concat-scroll-snap"
+  }
+
+  let sessionId = "";
+
+  const isDefined = v => (typeof v !== "undefined");
+
+  const Time = new class {
+    throttle = (callback, limit) => {
+      let waiting = false;
+      return function() {
+        if (waiting) return;
+        callback.apply(this, arguments);
+        waiting = true;
+        setTimeout(() => {
+          waiting = false;
+        }, limit);
+      }
+    }
+
+    debounce = (callback, limit, debounceCallback) => {
+      let handle = null;
+      return function() {
+        if (typeof debounceCallback === "function") {
+          debounceCallback.apply(this, arguments);
+        }
+        clearTimeout(handle);
+        handle = setTimeout(() => {
+          callback.apply(this, arguments);
+        }, limit);
+      }
+    }
+  }
+
+  const Message = new class {
+    send = new class {
+      _lastStates = {
+        playerState: null,
+        unitState: null
+      };
+
+      vopStateChangedNotification = () => {
+        if (playerConfig.stateReportPolicy === "eager") {
+          this._sendVopStateChangedNotification();
+        }
+      };
+
+      _sendVopStateChangedNotification = Time.debounce(
+        () => {
+          const message = this._createStateMsg();
+          if (message.playerState || message.unitState || message.log) {
+            this._send(message);
+          }
+        },
+        parseInt(playerSettings.debounceStateMessages, 10),
+        () => {
+          document.dispatchEvent(new CustomEvent('queued:vopStateChangedNotification', {}))
+        }
+      );
+
+      vopGetStateResponse = () => this._send(this._createStateMsg(true));
+
+      vopReadyNotification = () => {
+        this._send(Object.assign(
+          {type: 'vopReadyNotification'},
+          document.querySelector('meta[name="application-name"]').dataset
+        ));
+      };
+
+      vopUnitNavigationRequestedNotification = target => {
+        this._send({
+          type: 'vopUnitNavigationRequestedNotification',
+          sessionId: sessionId,
+          targetRelative: target,
+        });
+      };
+
+      vopWindowFocusChangedNotification = hasFocus => {
+        this._send({
+          type: 'vopWindowFocusChangedNotification',
+          sessionId: sessionId,
+          hasFocus: hasFocus
+        });
+      }
+
+      _send = msg => {
+        window.parent.postMessage(msg, '*');
+        document.dispatchEvent(new CustomEvent('sent:' + msg.type, {detail: msg}));
+      }
+
+      _createStateMsg = (isRequested = false) => {
+        const message = {
+          type: isRequested ? 'vopGetStateResponse' : 'vopStateChangedNotification',
+          sessionId: sessionId,
+          timeStamp: Date.now(),
+          unitStateDataTyp: 'verona-simple-player-1.0.0',
+        }
+
+        const playerState = this._getPlayerState();
+        const unitState = this._getUnitState();
+        if (isRequested || (JSON.stringify(playerState) !== JSON.stringify(this._lastStates.playerState))) {
+          message.playerState = playerState;
+          this._lastStates.playerState = playerState;
+        }
+        if (isRequested || (JSON.stringify(unitState) !== JSON.stringify(this._lastStates.unitState))) {
+          message.unitState = unitState;
+          this._lastStates.unitState = unitState;
+        }
+        if (Log.hasNew()) {
+          message.log = Log.next();
+        }
+
+        return message;
+      }
+
+      _getPlayerState = () => {
+        const playerState = {};
+        if (Pages.hasPages) {
+          playerState.validPages = Pages.validPages;
+          playerState.currentPage = Pages.currentPage.toString()
+        } else {
+          /**
+           * `validPages` and `currentPage` is mandatory even if the unit does not have pages.
+           * - https://verona-interfaces.github.io/player/#operation-subscribe-vopStateChangedNotification
+           * - https://github.com/verona-interfaces/player/issues/27
+           */
+          playerState.validPages = {0: ''};
+          playerState.currentPage = 0;
+        }
+        return playerState;
+      }
+
+      _getUnitState = () => ({
+        dataParts: Unit.getData(),
+        presentationProgress: Unit.getPresentationProgress(),
+        responseProgress: Unit.getResponseProgress(),
+      });
+    }
+
+    receive = (type, data) => {
+      if (sessionId && (data.sessionId !== sessionId)) {
+        throw new Error("Wrong sessionId");
+      }
+      if (type === "vopStartCommand") {
+        Unit.start(data);
+      }
+      document.dispatchEvent(new CustomEvent(type, {detail: data}));
+    };
+  }
+
+  const Unit = new class {
+
+    dataPartsCollectors = {
+      answers: () => Answers.get()
+    }
+
+    presentationProgressFactors = {
+      pages: {
+        complete: () => Object.values(Pages.seenPages).filter(p => p.enter && p.bottom).length === Pages.pageCount,
+        some: () => Object.values(Pages.seenPages).filter(p => p.enter || p.bottom).length > 0
+      },
+    }
+
+    start = data => {
+
+      sessionId = data.sessionId || new Error("session ID missing");
+
+      this._setUnit(data["unitDefinition"] || new Error("unitDefinition missing"));
+      this._setPlayerConfig(data["playerConfig"] || {});
+      this._setUnitData(data["unitState"] || {});
+
+      if (data['unitDefinitionType'] !== "verona-simple-player-1.0.0") {
+        Log.debug("Unit definition type does not match: " + data['unitDefinitionType']);
+      }
+
+      this._setPlayerState(data["playerState"] || {});
+
+      PlayerUI.togglePageNavButtons();
+      PlayerUI.toggleUnitNavButtons();
+    }
+
+    getData = () => ({
+      all:
+        Object.keys(this.dataPartsCollectors)
+          .reduce((carry, key) => {
+            carry[key] = this.dataPartsCollectors[key]();
+            return carry;
+          }, {})
+    });
+
+    getPresentationProgress = () => Object.keys(this.presentationProgressFactors)
+      .reduce((carry, key) => {
+        if ((carry === 'complete') && this.presentationProgressFactors[key].complete()) {
+          return 'complete';
+        } else if ((carry !== 'none') || this.presentationProgressFactors[key].some()) {
+          return 'some';
+        } else {
+          return 'none'
+        }
+      }, 'complete');
+
+    // TODO make extensible like PresentationProgress
+    getResponseProgress = () => {
+      /**
+       * The state of being done for an item is not well defined in Verona2.
+       * It pretty much open, what for example makes a checkbox-item `done`, when it's unchecked,
+       * since it can not be told if it's left unchecked intentional not not.
+       * For this particular player, we define done as being noticed, to it's enough to hover with the mouse over
+       * the element.
+       * See: https://github.com/verona-interfaces/player/issues/25
+       */
+
+      const elements =  [...document.querySelectorAll(PlayerUI.itemElements)];
+
+      const touchedGroupedByName = {};
+      const allCount = elements.length;
+      let validCount = 0;
+
+      elements.forEach(item => {
+        validCount += (!isDefined(item.validity) || item.validity.valid) ? 1 : 0;
+        if (!touchedGroupedByName[item.name]) {
+          touchedGroupedByName[item.name] = {
+            count: 0,
+            touched: 0
+          }
+        }
+        touchedGroupedByName[item.name].count += 1;
+        touchedGroupedByName[item.name].touched += (item.dataset.touched ? 1 : 0);
+      });
+
+      const touchedCount = Object.values(touchedGroupedByName)
+        .reduce((agg, i) => agg + (i.touched ? i.count : 0), 0);
+
+      if (allCount === touchedCount && touchedCount === validCount) {
+        return 'complete-and-valid'
+      } else if (allCount === touchedCount) {
+        return 'complete'
+      } else if (touchedCount) {
+        return 'some'
+      } else {
+        return 'none';
+      }
+    }
+
+    selectDataPartFromUnitState = (unitState, partName) => {
+      /**
+       * we have to store the additional states like audio in the unitState.all, because IQB-testcenter as
+       * of 7.3 does neither support custom player-states not other partition of data
+       * than a single `all`-field
+       */
+      const dataParts = unitState.dataParts || {};
+      const all = dataParts.all || {};
+      return all[partName] || {};
+    }
+
+    _setUnitData = unitState => {
+      Answers.set(this.selectDataPartFromUnitState(unitState, 'answers'));
+    }
+
+    _setUnit = unitDef => {
+      document.querySelector('#unit').append(document.createRange().createContextualFragment(unitDef));
+      Pages.get();
+    }
+
+    _setPlayerConfig = newPlayerConfig => {
+      playerConfig = Object.assign(playerConfig, newPlayerConfig);
+      Pages.applyPagingMode();
+    }
+
+    _setPlayerState = playerState => {
+      /**
+       * Verona 2.1.0 does *not* provide the playerState in vopStartCommand,
+       * nor does IQB-testcenter 7.3 trigger an automatic vopPageNavigationCommand to
+       * start on the last page,
+       * so the following is just an assumption of how it may change and will not work.
+       * See https://github.com/verona-interfaces/player/issues/23
+       */
+      Pages.goto(playerState.currentPage || 1);
+    }
+  }
+
+  const Answers = new class {
+    get = () => ({...this._getAnswersFromForm(), ...this._getAnswersFromEditableElements()});
+
+    set = answers => {
+      Object.keys(answers).forEach(key => {this._setAnswer(key, answers[key]);});
+    }
+
+    _getAnswersFromForm = () => [...new FormData(document.querySelector("form"))]
+      .reduce((carry, entry) => {
+        if (isDefined(carry[entry[0]])) {
+          carry[entry[0]] = Array.isArray(carry[entry[0]]) ? [...carry[entry[0]], entry[1]] : [carry[entry[0]], entry[1]];
+        } else {
+          carry[entry[0]] = entry[1];
+        }
+        return carry;
+      }, {});
+
+    _getAnswersFromEditableElements = () => ([...document.querySelectorAll('form [contenteditable]')] || [])
+      .reduce((carry, element) => {
+        const name = element.getAttribute("name") || '';
+        if (isDefined(carry[name])) {
+          carry[name] = Array.isArray(carry[name])
+            ? [...carry[name], element.innerText]
+            : [carry[name], element.innerText];
+        } else {
+          carry[name] = element.innerText;
+        }
+        return carry;
+      }, {});
+
+    _setAnswer = (name, value, index = 0) => {
+      const elements = document.querySelectorAll(name
+        ? `form [name="${name}"]`
+        : "form select:not([name]), form textarea:not([name]), form input:not([name]), form [contenteditable]:not([name])"
+      );
+
+      if (elements.length === 0) {
+        Log.debug(`form field missing: "${name}"`);
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        value.forEach((valueEntry, i) => this._setAnswer(name, valueEntry, i));
+        return;
+      }
+
+      const element = elements[index] || elements[0];
+
+      element.dataset.touched = "true";
+
+      switch (element.tagName) {
+        case "INPUT":
+          switch (element.type) {
+            case 'radio':
+              elements.forEach(radioElem => {
+                if (radioElem.value === value) {
+                  radioElem.setAttribute('checked', 'checked');
+                } else {
+                  radioElem.removeAttribute('checked')
+                }
+              });
+              break;
+            case 'checkbox':
+              if (value === "on") {
+                element.setAttribute('checked', 'checked');
+              } else {
+                element.removeAttribute('checked');
+              }
+              break;
+            default:
+              element.setAttribute('value', value);
+          }
+          break;
+        case "SELECT":
+          element.querySelector(`option[value="${value}"]`)?.setAttribute('selected', 'on');
+          break;
+        default:
+          element.innerText = value;
+      }
+    }
+  }
+
+  const Pages = new class {
+    _currentPage = 0;
+    pageCount = 0;
+    hasPages = false;
+    validPages = {};
+    seenPages = {};
+    visiblePages = {};
+
+    get = () => {
+      const pageElements = document.querySelectorAll("fieldset");
+      this.pageCount = Math.max(1, pageElements.length);
+      this.hasPages = !!pageElements.length;
+      this.validPages = [...pageElements].reduce((carry, pageElement) => {
+        const pageNr = 1 + Object.keys(carry).length;
+        const legendElem = pageElement.querySelector('legend');
+        carry[pageNr.toString()] = (legendElem) ? legendElem.innerText : 'Page-' + pageNr;
+        return carry
+      }, {});
+      this._initPageStates();
+    }
+
+    get currentPage() {
+      if (playerConfig.pagingMode !== "separate") {
+        const currentPage = Math.min(...Object.keys(this.visiblePages).filter(i => this.visiblePages[i]));
+        if (currentPage === Infinity) {
+          return 0;
+        } else {
+          this._currentPage = currentPage;
+        }
+      }
+      return this._currentPage;
+    }
+
+    goto = target => {
+      if (!this.hasPages) {
+        return;
+      }
+
+      if (target === '#next') {
+        this._currentPage++;
+      } else if (target === '#previous') {
+        this._currentPage -= 1;
+      } else if (target === '#first') {
+        this._currentPage = 1;
+      } else if (target === '#first') {
+        this._currentPage = pageCount ;
+      } else {
+        this._currentPage = parseInt(target);
+      }
+
+      const pageElem = document.querySelector(`fieldset:nth-of-type(${this._currentPage})`);
+
+      if (playerConfig.pagingMode === "separate") {
+        this._showPage(pageElem);
+        PlayerUI.togglePageNavButtons();
+        this.seenPages[this._currentPage].enter = true;
+        Message.send.vopStateChangedNotification();
+      } else {
+        pageElem.scrollIntoView({block: 'start', behavior: 'smooth'});
+      }
+    }
+
+    applyPagingMode = () => {
+      document.querySelector('#unit').classList.add(playerConfig.pagingMode);
+      this._setScrollObserver();
+    }
+
+    _showPage = pageElem => {
+      document.querySelectorAll("fieldset")
+        .forEach(fieldsetElement => {fieldsetElement.style.display = 'none'});
+      pageElem.style.display = 'block';
+    }
+
+    _initPageStates = () => {
+      const pageElemType = this.hasPages ? 'fieldset' : '#unit';
+      document.querySelectorAll(pageElemType).forEach((pageElem, index) => {
+        pageElem.dataset.pagenr = (index + 1).toString(10);
+        this.seenPages[pageElem.dataset.pagenr] = {
+          enter: !this.hasPages,
+          bottom: false
+        }
+        this.visiblePages[pageElem.dataset.pagenr] = false;
+      });
+    }
+
+    _setScrollObserver = () => {
+      const pageElemType = this.hasPages ? 'fieldset' : '#unit';
+      document.querySelectorAll(pageElemType).forEach(pageElem => {
+        if (this.hasPages) {
+          this._newObserver(this._pageIntersection, pageElem);
+        }
+        const pageBottomAnchor = document.createElement('div');
+        pageElem.appendChild(pageBottomAnchor);
+        pageBottomAnchor.classList.add('page-bottom-anchor');
+        this._newObserver(this._pageBottomIntersection, pageBottomAnchor);
+      });
+    }
+
+    _newObserver = (callback, elem) => {
+      new IntersectionObserver(
+        entries => entries.forEach(callback),
+        {
+          root: document.querySelector('#unit'),
+          threshold: 0.01,
+          rootMargin: '0%'
+        }
+      ).observe(elem);
+    }
+
+    _pageIntersection = intersectionEntry => {
+      const pageId = parseInt(intersectionEntry.target.dataset.pagenr, 10);
+      if (playerConfig.pagingMode !== "separate") {
+        this.visiblePages[pageId] = intersectionEntry.isIntersecting;
+      }
+      this.seenPages[pageId].enter = this.seenPages[pageId].enter || intersectionEntry.isIntersecting;
+      Message.send.vopStateChangedNotification();
+    }
+
+    _pageBottomIntersection = intersectionEntry => {
+      if (!intersectionEntry.isIntersecting) {
+        return;
+      }
+      const pageId = parseInt(intersectionEntry.target.parentElement.dataset.pagenr, 10);
+      this.seenPages[pageId].bottom = true;
+      Message.send.vopStateChangedNotification();
+    }
+  }
+
+
+  const Log = new class {
+
+    _logStash = {
+      sent: [],
+      new: []
+    }; // log-items get stashed in case stateReportPolicy === 'on-demand'
+
+    debug = message => {
+      console.warn(message);
+      if (playerConfig.logPolicy === "debug") {
+        this._log('debug', message);
+      }
+    }
+
+    rich = (type, message) => {
+      if (["debug", "rich"].indexOf(playerConfig.logPolicy) > -1) {
+        console.log(message);
+        this._log(type, message);
+      }
+    }
+
+    lean = (type, message) => {
+      if (["debug", "rich", "lean"].indexOf(playerConfig.logPolicy) > -1) {
+        console.log(message);
+        this._log(type, message);
+      }
+    }
+
+    getAll = () => [...this._logStash.sent.map(msg => {msg.sent = true; return msg}), ...this._logStash.new];
+
+    next = () => {
+      const toSent = [...this._logStash.new];
+      this._logStash.sent.push(...toSent);
+      this._logStash.new.length = 0
+      return toSent;
+    }
+
+    hasNew = () => (this._logStash.new.length > 0);
+
+    _log = (type, message) => {
+      this._logStash.new.push({
+        timeStamp: Date.now(),
+        key: type,
+        content: message
+      });
+      Message.send.vopStateChangedNotification();
+      document.dispatchEvent(new CustomEvent('updateLog'));
+    }
+  };
+
+  const PlayerUI = new class {
+
+    itemElements = "form select:enabled, form textarea:enabled, form input:enabled, form [contenteditable]";
+
+    togglePlayerRunning = (running = false) => {
+      document.querySelector('#shield').style.display = running ? 'none' : 'block';
+    }
+
+    toggleButton = (buttonId, enabled, visible = true) => {
+      const button = document.querySelector(`#${buttonId}`);
+      if (button) {
+        if (enabled) {
+          button.removeAttribute("disabled");
+        } else {
+          button.setAttribute("disabled", "true");
+        }
+        button.style.display = visible ? 'inline-block' : 'none';
+      }
+    }
+
+    togglePageNavButtons = () => {
+      document.querySelector('#unit').classList[Pages.hasPages ? 'add' : 'remove']('paged');
+      this.toggleButton('next-page',
+        Pages.pageCount > 1 && Pages.currentPage < Pages.pageCount,
+        Pages.pageCount > 1 && playerConfig.pagingMode === 'separate'
+      );
+      this.toggleButton('prev-page',
+        Pages.pageCount > 1 && Pages.currentPage > 1,
+        Pages.pageCount > 1 && playerConfig.pagingMode === 'separate'
+      );
+    }
+
+    toggleUnitNavButtons = () => {
+      this.toggleButton('first-unit', playerConfig.unitNumber > 1);
+      this.toggleButton('prev-unit', playerConfig.unitNumber > 1);
+      this.toggleButton('next-unit', playerConfig.unitNumber < playerConfig.unitCount);
+      this.toggleButton('last-unit', playerConfig.unitNumber < playerConfig.unitCount);
+    }
+
+    markElementTouched = elem => {
+      elem.dataset.touched = "true";
+    }
+
+    getPlayerInfoHTML = () => {
+      const infoBoxElem = document.createElement('div');
+      infoBoxElem.innerHTML = document.querySelector('#player-info-template').innerHTML;
+      const meta = {...document.querySelector('meta[name="application-name"]').dataset};
+      const tableElement = infoBoxElem.querySelector('table');
+      Object.keys(meta).forEach(key => {
+        tableElement.innerHTML += `<tr><td>${key}</td><td>${meta[key]}</td></tr>`;
+      });
+      return infoBoxElem;
+    }
+
+    preventFromImplicitSubmission = event => {
+      const keyCode = event.charCode || event.keyCode || 0;
+      if (keyCode === 13) {
+        event.preventDefault();
+      }
+    }
+
+    addEventListener = (eventName, selector, listener) => {
+      document.querySelector('body').addEventListener(eventName, event => {
+        if (event.target.matches(selector)) {
+          listener(event);
+        }
+      });
+    }
+  }
+
+  window.addEventListener('message', event => {Message.receive(event.data.type, event.data)}, false);
+
+  document.addEventListener("DOMContentLoaded", Message.send.vopReadyNotification);
+
+  document.addEventListener("vopPageNavigationCommand", event => Pages.goto(event.detail.target));
+  document.addEventListener("vopGetStateRequest", event => {
+    if (event.detail.stop) {
+      PlayerUI.togglePlayerRunning(false);
+    }
+    Message.send.vopGetStateResponse();
+  }); // not implemented in IQB-testcenter 7.3.1
+  document.addEventListener("vopStopCommand", () => PlayerUI.togglePlayerRunning(false)); // not implemented in IQB-testcenter 7.3.1
+  document.addEventListener("vopContinueCommand", () => PlayerUI.togglePlayerRunning(true)); // not implemented in IQB-testcenter 7.3.1
+
+  window.addEventListener('blur', () => {
+    Message.send.vopWindowFocusChangedNotification(document.hasFocus());
+  });
+
+  window.addEventListener('focus', () => {
+    Message.send.vopWindowFocusChangedNotification(document.hasFocus());
+  });
+
+  PlayerUI.addEventListener('keypress', PlayerUI.itemElements, PlayerUI.preventFromImplicitSubmission);
+
+  PlayerUI.addEventListener('change', PlayerUI.itemElements, Message.send.vopStateChangedNotification);
+  PlayerUI.addEventListener('programmaticallyChange', PlayerUI.itemElements, event => {
+    PlayerUI.markElementTouched(event.target);
+    Message.send.vopStateChangedNotification();
+  });
+  PlayerUI.addEventListener('keyup', PlayerUI.itemElements,
+    Time.debounce(Message.send.vopStateChangedNotification, parseInt(playerSettings.debounceKeyboardEvents), 10)
+  );
+  PlayerUI.addEventListener('mouseover', PlayerUI.itemElements, event => PlayerUI.markElementTouched(event.target));
+  PlayerUI.addEventListener('keyup', PlayerUI.itemElements, event => PlayerUI.markElementTouched(event.target));
+
+  PlayerUI.addEventListener('click', '#next-page', () => Pages.goto('#next'));
+  PlayerUI.addEventListener('click', '#prev-page', () => Pages.goto('#previous'));
+
+  PlayerUI.addEventListener('click', '#prev-unit', () => {
+    Message.send.vopUnitNavigationRequestedNotification("#previous");
+  });
+  PlayerUI.addEventListener('click', '#next-unit', () => {
+    Message.send.vopUnitNavigationRequestedNotification("#next");
+  });
+  PlayerUI.addEventListener('click', '#first-unit', () => {
+    Message.send.vopUnitNavigationRequestedNotification("#first");
+  });
+  PlayerUI.addEventListener('click', '#last-unit', () => {
+    Message.send.vopUnitNavigationRequestedNotification("#last");
+  });
+</script>
+
+</body>
+</html>

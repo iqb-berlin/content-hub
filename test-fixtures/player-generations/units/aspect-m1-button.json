@@ -1,0 +1,2698 @@
+{
+  "id": "aspect-m1-button",
+  "name": "ASPECT 1: button – Einstellungen",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "version": "3.10.0",
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p0_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p0_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: Grundaufgabe</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-0"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p1_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p1_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: label = \"\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-1"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p2_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Synthetisch: Wasser, Brot und Äpfel",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p2_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: label = \"Synthetisch: Wasser, Brot und Äpfel\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-2"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p3_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p3_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: imageSrc = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-3"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p4_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p4_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: imageSrc = \"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-4"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p5_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p5_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: asLink = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-5"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p6_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": true,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p6_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: asLink = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-6"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p7_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p7_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: action = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-7"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p8_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": "unitNav",
+                "actionParam": null
+              },
+              {
+                "id": "p8_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: action = \"unitNav\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-8"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p9_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": "pageNav",
+                "actionParam": null
+              },
+              {
+                "id": "p9_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: action = \"pageNav\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-9"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p10_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": "highlightText",
+                "actionParam": null
+              },
+              {
+                "id": "p10_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: action = \"highlightText\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-10"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p11_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p11_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: actionParam = null</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-11"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p12_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#166b8c",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p12_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.fontColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-12"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p13_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#fff4d6",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p13_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.fontColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-13"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p14_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Arial",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p14_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.font = \"Arial\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-14"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p15_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p15_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.font = \"Roboto\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-15"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p16_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 16,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p16_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.fontSize = 16</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-16"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p17_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 24,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p17_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.fontSize = 24</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-17"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p18_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p18_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.bold = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-18"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p19_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": true,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p19_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.bold = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-19"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p20_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p20_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.italic = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-20"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p21_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": true,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p21_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.italic = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-21"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p22_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p22_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.underline = false</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-22"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p23_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": true,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p23_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.underline = true</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-23"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p24_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#166b8c"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p24_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.backgroundColor = \"#166b8c\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-24"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p25_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#fff4d6"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p25_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.backgroundColor = \"#fff4d6\"</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-25"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p26_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p26_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.borderRadius = 0</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-26"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p27_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 2,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p27_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: styling.borderRadius = 2</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-27"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p28_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p28_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: width = 180</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-28"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p29_e1",
+                "type": "button",
+                "width": 320,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p29_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: width = 320</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-29"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p30_e1",
+                "type": "button",
+                "width": 180,
+                "height": 60,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p30_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: height = 60</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-30"
+      },
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p31_e1",
+                "type": "button",
+                "width": 180,
+                "height": 140,
+                "styling": {
+                  "borderRadius": 0,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "backgroundColor": "#d3d3d3"
+                },
+                "label": "Zweite Seite öffnen",
+                "imageSrc": null,
+                "asLink": false,
+                "action": null,
+                "actionParam": null
+              },
+              {
+                "id": "p31_e2",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – button: height = 140</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-31"
+      }
+    ]
+  }
+}

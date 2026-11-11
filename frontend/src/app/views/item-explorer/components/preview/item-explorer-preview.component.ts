@@ -1,3 +1,8 @@
+import {
+  normalizePlayerMessage,
+  postPlayerMessage,
+  releasePlayerFrame,
+} from '../../../../core/utils/player-protocol';
 import { Component, ElementRef, HostListener, Inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -37,11 +42,14 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
   private readonly messageHandler = (event: MessageEvent) => {
     const frameWindow = this.frame?.nativeElement.contentWindow;
     if (!frameWindow || event.source !== frameWindow) return;
-    this.feature.handlePlayerMessage(event.data);
+    const message = normalizePlayerMessage(frameWindow, event.data);
+    this.feature.handlePlayerMessage(message);
   };
 
   @ViewChild('playerFrame')
   set playerFrame(value: ElementRef<HTMLIFrameElement> | undefined) {
+    if (this.frame?.nativeElement !== value?.nativeElement)
+      releasePlayerFrame(this.frame?.nativeElement.contentWindow);
     this.stopObservingInteractions?.();
     this.disconnectPrintLabelObserver();
     this.frame = value;
@@ -67,6 +75,7 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
   }
 
   ngOnDestroy(): void {
+    releasePlayerFrame(this.frame?.nativeElement.contentWindow);
     this.stopObservingInteractions?.();
     window.removeEventListener('message', this.messageHandler);
     this.stopAutoResize();
@@ -128,7 +137,7 @@ export class ItemExplorerPreviewComponent implements OnDestroy, ItemExplorerPlay
 
   postMessage(message: unknown): void {
     if ((message as { type?: string })?.type === 'vopStartCommand') this.observeInteractions();
-    this.frame?.nativeElement.contentWindow?.postMessage(message, '*');
+    postPlayerMessage(this.frame?.nativeElement.contentWindow, message);
   }
 
   getLastInteractionTime(): number {

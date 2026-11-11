@@ -1,0 +1,114 @@
+{
+  "id": "aspect-m3-acceptance-hotspot",
+  "name": "ASPECT-Abnahme: Gedrehtes Dreieck auswählen",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "version": "4.13.0",
+    "stateVariables": [],
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "linked_83",
+                "alias": "LINKED_83",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": null,
+                  "gridColumnRange": 1,
+                  "gridRow": null,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {},
+                "value": [
+                  {
+                    "top": 20,
+                    "left": 20,
+                    "width": 70,
+                    "height": 60,
+                    "shape": "triangle",
+                    "rotation": 45,
+                    "borderWidth": 2,
+                    "borderColor": "#166b8c",
+                    "backgroundColor": "#e19c30",
+                    "value": true,
+                    "readOnly": false
+                  }
+                ],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "hotspot-image",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4=",
+                "fileName": ""
+              }
+            ],
+            "height": 500,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50
+      }
+    ],
+    "enableSectionNumbering": false,
+    "sectionNumberingPosition": "left",
+    "showUnitNavNext": false
+  }
+}

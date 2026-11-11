@@ -3,6 +3,7 @@ import { ValidationPipe } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import * as fs from "fs/promises";
+import { join } from "node:path";
 import { AppModule } from "./app.module";
 import {
   GEOGEBRA_API_PREFIX,
@@ -22,6 +23,11 @@ async function bootstrap() {
   app.useBodyParser("json", { limit: MAX_JSON_BODY_SIZE });
 
   const geoGebraAssetsDir = getGeoGebraBundleCurrentDir();
+  app.useStaticAssets(join(__dirname, "assets/widgets"), {
+    prefix: "/api/shared-assets/widgets",
+    index: false,
+    redirect: false,
+  });
   await fs.mkdir(geoGebraAssetsDir, { recursive: true });
   app.useStaticAssets(geoGebraAssetsDir, {
     prefix: GEOGEBRA_ASSET_PREFIX,
