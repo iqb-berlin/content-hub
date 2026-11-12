@@ -5,13 +5,19 @@ Prüfpunkte vom 3. November um. Der damalige Bericht und seine Evidenz bleiben
 unverändert. Er bezog sich auf
 `d4b239c19a5bf6a33bd98d0d557a9e6e12e4ad48`.
 
-Die Änderungen dieses Follow-ups basieren auf dem aktuellen `master`-Stand
-`4ecc6383bbc2b14817b0611ead46dc5c4d11d03b`, im Branch
-`fix/license-notice-follow-up`. Der alte Compliance-Branch wurde nicht in
-`master` integriert. Insbesondere sind die dort vorbereiteten Release-Prüfungen
-und Projekt-Lizenzkopien im aktuellen `master` nicht vorhanden. Die alte
-Prüfung wird deshalb nicht als Rechtefreigabe für den heutigen Gesamtstand
-wiederverwendet.
+Die Nachprüfung wurde auf dem `master`-Stand
+`4ecc6383bbc2b14817b0611ead46dc5c4d11d03b` vorbereitet und anschließend mit
+dem bestehenden [Compliance-PR #157](https://github.com/iqb-berlin/content-hub/pull/157)
+zusammengeführt. Dessen Projekt-Lizenzkopien, Abhängigkeitsrichtlinie und an den
+Release-Commit gebundene menschliche Freigabeprüfung bleiben erhalten. Die alte
+Prüfung wird nicht als Rechtefreigabe des zusammengeführten Stands wiederverwendet.
+
+Der aktuelle technische Stand zu allen 141 historischen IDs ist im
+[versionierten Nachverfolgungsindex](provenance-follow-up-2026-11-12.json)
+nachlesbar: 138 IDs ohne nach verfügbarer Evidenz erkennbaren Verstoß, ein
+offener ASPECT-Fixture-Notice-Fall und zwei historisch belegte, hier technisch
+korrigierte Mängel. Alle menschlichen Entscheidungen bleiben `pending`.
+Die nachfolgenden Abschnitte halten auch die früheren Zwischenstände fest.
 
 ## Umgesetzt
 
@@ -26,8 +32,9 @@ Der vollständige Apache-2.0-Text liegt jetzt direkt im Theme unter
 `keycloak/themes/iqb-theme/LICENSE.txt`. `NOTICE.md` daneben dokumentiert die
 belegten Vergleichsquellen und trennt diese von der nicht rekonstruierten
 ursprünglichen Versionsherkunft. Die bestehende ALTCHA-MIT-Beilage bleibt
-daneben bestehen. Es wird keine Fremdurheberschaft des lokalen Projekts
-behauptet und keine neue Lizenz für das Gesamtprojekt festgelegt.
+daneben bestehen. Die Theme-Beilage weist dem lokalen Projekt keine
+Fremdurheberschaft zu. Sie ergänzt die Projekt-Lizenzierung aus PR #157 und
+ersetzt die jeweiligen Drittanbieterbedingungen nicht.
 
 Das Runtime-Archiv übernimmt das gesamte `keycloak`-Verzeichnis; die neuen
 Dateien werden daher mit dem Theme ausgeliefert. Der aktuelle Keycloak-24.0.1-
@@ -313,3 +320,32 @@ Entscheidungen bleiben `pending`. Anwendungscode und frühere Berichte wurden
 nicht geändert. Einzelbegründungen und Belege liegen unter
 `reports/nest-auth-dhanam-review-2026-11-12/`. Es wurden keine weiteren Mails
 versandt und keine Ticketaktionen ausgeführt.
+
+## Abgleich mit dem bestehenden Compliance-PR #157
+
+Der PR enthält jetzt sowohl die bisherigen Compliance- und Release-Prüfungen
+als auch die Nachprüfung vom 12. November. Die Merge-Konflikte wurden mit den
+aktuellen Content-Hub-Namen, Version 0.7.0 und den aktuellen Sicherheitsupdates
+aufgelöst. Die `unzipper`-Korrektur aus dem PR bleibt bestehen; die Abhängigkeit
+auf `buffers` ohne Lizenznachweis wird nicht wieder eingeführt.
+
+Die Theme-Lizenzkopie verwendet denselben vollständigen Apache-Text wie die
+Projektbeilagen. `scripts/check-license-metadata.py` prüft jetzt zusätzlich diese
+Kopie, das Vorhandensein der Theme-NOTICE und die Änderungshinweise beider
+modifizierter FreeMarker-Dateien. Der Runtime-Archivbau übernimmt die Hinweise
+zusammen mit dem Theme. Die ASPECT-Testdatei wird dadurch nicht ins Runtime-Archiv
+aufgenommen.
+
+Der versionierte JSON-Index enthält die IDs, Begründungen, Quellreferenzen,
+Hashes, Korrekturen und geprüften Framework-Paketversionen. Die in früheren
+Abschnitten genannten `reports/`-Verzeichnisse sind lokale Rohbelegpakete und
+werden entsprechend der [Compliance-Dokumentation](compliance.md) nicht in Git
+übernommen. Fremde Quellkopien und private Kommunikationsunterlagen werden
+nicht mitveröffentlicht. Die frühere 57-Fall-Baseline und der Abrufbericht vom
+27. Oktober bleiben unveränderte historische Belege.
+
+Die technischen Standardmuster-Einordnungen sind Vorschläge für den menschlichen
+Review und werden vom Release-Validator nicht als Freigabe importiert. Vor einem
+Release sind vollständige Nachweise für dessen tatsächlichen Commit und eine
+menschliche Entscheidung zu jedem dort erforderlichen Finding nötig. Das gilt
+auch dann, wenn ein früherer lokaler Scan oder ein CI-Lauf erfolgreich war.

@@ -1,0 +1,169 @@
+name: Compliance
+
+on:
+  pull_request:
+    paths:
+      - LICENSE
+      - backend/LICENSE
+      - frontend/LICENSE
+      - backend/package.json
+      - backend/package-lock.json
+      - frontend/package.json
+      - frontend/package-lock.json
+      - keycloak/extensions/altcha/pom.xml
+      - keycloak/extensions/altcha/licenses/**
+      - compliance/scancode-requirements.txt
+      - compliance/dependency-license-policy.json
+      - scripts/check-dependency-licenses.py
+      - scripts/generate-dependency-sboms.sh
+      - scripts/check-license-metadata.py
+      - .github/workflows/compliance.yml
+  schedule:
+    - cron: "30 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      include_similarity_scan:
+        description: Compare TypeScript files for internal similarity
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-sboms:
+    name: Dependency SBOMs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Verify Apache-2.0 declarations
+        run: python3 scripts/check-license-metadata.py
+      - name: Generate CycloneDX SBOMs
+        run: |
+          ./scripts/generate-dependency-sboms.sh dist/compliance
+          git rev-parse HEAD > dist/compliance/revision.txt
+      - name: Enforce reviewed dependency license policy
+        run: |
+          python3 scripts/check-dependency-licenses.py \
+            --policy compliance/dependency-license-policy.json \
+            dist/compliance/backend-runtime.cdx.json \
+            dist/compliance/frontend-runtime.cdx.json \
+            dist/compliance/keycloak-altcha-runtime.json
+      - name: Upload dependency SBOMs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dependency-sboms
+          path: |
+            dist/compliance/*.json
+            dist/compliance/revision.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  source-license-scan:
+    name: Full source license scan
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        id: setup-python
+        with:
+          python-version: "3.12"
+      - name: Restore ScanCode environment
+        id: scancode-cache
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: .venv/scancode
+          key: scancode-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('compliance/scancode-requirements.txt') }}
+      - name: Install ScanCode Toolkit
+        if: steps.scancode-cache.outputs.cache-hit != 'true'
+        run: |
+          python -m venv .venv/scancode
+          .venv/scancode/bin/python -m pip install \
+            -r compliance/scancode-requirements.txt
+      - name: Scan a clean source archive
+        run: |
+          mkdir -p "$RUNNER_TEMP/content-pool-source" dist/compliance/source
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/content-pool-source"
+          .venv/scancode/bin/scancode \
+            --license --copyright --package \
+            --processes 2 \
+            --json-pp dist/compliance/source/source-license-scan.json \
+            "$RUNNER_TEMP/content-pool-source"
+          git rev-parse HEAD > dist/compliance/source/revision.txt
+          .venv/scancode/bin/scancode --version > dist/compliance/source/tool-version.txt
+      - name: Upload source license report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: source-license-scan
+          path: dist/compliance/source/
+          if-no-files-found: error
+          retention-days: 90
+
+  code-similarity:
+    name: Manual code similarity scan
+    if: github.event_name == 'workflow_dispatch' && inputs.include_similarity_scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+      - name: Install Dolos
+        run: npm install --prefix "$RUNNER_TEMP/dolos" @dodona/dolos@2.9.3
+      - name: Compare production and test TypeScript separately
+        env:
+          DOLOS: ${{ runner.temp }}/dolos/node_modules/.bin/dolos
+        run: |
+          run_dolos() {
+            local label="$1"
+            shift
+            local work="$RUNNER_TEMP/dolos-${label}"
+            mkdir -p "$work" "dist/similarity/${label}"
+            (
+              cd "$work"
+              "$DOLOS" run --output-format csv --language typescript "$@"
+            )
+            report="$(find "$work" -mindepth 1 -maxdepth 1 -type d \
+              -name 'dolos-report-*' -print -quit)"
+            test -n "$report"
+            cp "$report/metadata.csv" "$report/pairs.csv" \
+              "dist/similarity/${label}/"
+          }
+
+          mapfile -d '' production < <(
+            find "$GITHUB_WORKSPACE/backend/src" "$GITHUB_WORKSPACE/frontend/src" \
+              -type f -name '*.ts' ! -name '*.spec.ts' -print0
+          )
+          mapfile -d '' tests < <(
+            find "$GITHUB_WORKSPACE/backend/src" "$GITHUB_WORKSPACE/frontend/src" \
+              -type f -name '*.spec.ts' -print0
+            find "$GITHUB_WORKSPACE/backend/test" "$GITHUB_WORKSPACE/frontend/e2e" \
+              -type f -name '*.ts' -print0
+          )
+          run_dolos production "${production[@]}"
+          run_dolos tests "${tests[@]}"
+          echo 'Dolos reports similarity indicators only; human review is required.' \
+            >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload similarity summaries
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: code-similarity-summaries
+          path: dist/similarity
+          if-no-files-found: error
+          retention-days: 30

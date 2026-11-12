@@ -1,0 +1,43 @@
+{
+  "allowed_licenses": [
+    "0BSD",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSD 3-clause License w/nuclear disclaimer",
+    "BlueOak-1.0.0",
+    "CC0-1.0",
+    "CDDL-1.0",
+    "EPL-2.0",
+    "ISC",
+    "MIT",
+    "MIT-0",
+    "Python-2.0",
+    "Public Domain",
+    "Unlicense",
+    "Zlib"
+  ],
+  "license_aliases": {
+    "CC0 1.0": "CC0-1.0",
+    "MIT/X11": "MIT"
+  },
+  "component_license_overrides": {
+    "pkg:npm/busboy@1.6.0": {
+      "expression": "MIT",
+      "source": "https://registry.npmjs.org/busboy/1.6.0"
+    },
+    "pkg:npm/passport-strategy@1.0.0": {
+      "expression": "MIT",
+      "source": "https://registry.npmjs.org/passport-strategy/1.0.0"
+    },
+    "pkg:npm/pause@0.0.1": {
+      "expression": "MIT",
+      "source": "https://registry.npmjs.org/pause/0.0.1"
+    },
+    "pkg:npm/streamsearch@1.1.0": {
+      "expression": "MIT",
+      "source": "https://registry.npmjs.org/streamsearch/1.1.0"
+    }
+  },
+  "reviewed_exceptions": {}
+}

@@ -2,6 +2,7 @@
   "name": "iqb-content-hub-backend",
   "version": "0.7.0",
   "description": "Content Hub - Backend API",
+  "license": "Apache-2.0",
   "private": true,
   "scripts": {
     "build": "nest build",
@@ -83,7 +84,8 @@
     "brace-expansion@>=5.0.0 <6.0.0": "5.0.12",
     "uuid": "$uuid",
     "multer": "2.5.0",
-    "body-parser": "2.4.0"
+    "body-parser": "2.4.0",
+    "unzipper": "0.12.5"
   },
   "jest": {
     "moduleFileExtensions": [

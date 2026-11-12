@@ -1,0 +1,147 @@
+{
+  "date": "2026-10-27",
+  "reviewer": "OpenAI Codex; retrieval attempts only, no human rights clearance",
+  "basis": "PR #157 follow-up on the seven unresolved baseline references",
+  "findings": [
+    {
+      "baseline_id": 4,
+      "path": "backend/src/app.module.ts",
+      "source_url": "https://raw.githubusercontent.com/ekadwrama/EdraVault/v0.1.0-beta/apps/backend/src/app.module.ts",
+      "reported_version": "v0.1.0-beta",
+      "local_sha256": "f69a6bdd25272f5ee92954088d1920eeb8269c4b1fdeaedd9359f0afd09a3c46",
+      "status": "pending-human-review",
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/ekadwrama/EdraVault/v0.1.0-beta/apps/backend/src/app.module.ts",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        },
+        {
+          "url": "https://api.github.com/repos/ekadwrama/EdraVault/commits/v0.1.0-beta",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "baseline_id": 12,
+      "path": "backend/src/comments/review-access.guard.spec.ts",
+      "source_url": "https://raw.githubusercontent.com/madfam-org/dhanam/%40dhanam%2Fbilling-sdk%400.3.0/apps/api/src/modules/transactions/transactions.service.spec.ts",
+      "reported_version": "@dhanam/billing-sdk@0.3.0",
+      "local_sha256": "99281dd55d91eded8288ca6f03ef57c0ac64f44882ae970fb3f0356d66b36ace",
+      "status": "pending-human-review",
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/madfam-org/dhanam/%40dhanam%2Fbilling-sdk%400.3.0/apps/api/src/modules/transactions/transactions.service.spec.ts",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        },
+        {
+          "url": "https://api.github.com/repos/madfam-org/dhanam/commits/%40dhanam%2Fbilling-sdk%400.3.0",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "baseline_id": 16,
+      "path": "backend/src/database/data-source.ts",
+      "source_url": "https://raw.githubusercontent.com/adeel99sa/ZephixPlatform/pre-architecture-migration-20250829-1640/zephix-backend/src/data-source.ts",
+      "reported_version": "pre-architecture-migration-20250829-1640",
+      "local_sha256": "609bd7d7fbc5194f62690223999cfd1b4c5943e3d637ea0ccb23e76c868ad794",
+      "status": "pending-human-review",
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/adeel99sa/ZephixPlatform/pre-architecture-migration-20250829-1640/zephix-backend/src/data-source.ts",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        },
+        {
+          "url": "https://api.github.com/repos/adeel99sa/ZephixPlatform/commits/pre-architecture-migration-20250829-1640",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "baseline_id": 29,
+      "path": "backend/src/database/migrations/1760641000000-CreateServerApiAuditLogs.ts",
+      "source_url": "https://raw.githubusercontent.com/adeel99sa/ZephixPlatform/pre-architecture-migration-20250829-1640/zephix-backend/src/database/migrations/1756271690591-CreateResourceTables.ts",
+      "reported_version": "pre-architecture-migration-20250829-1640",
+      "local_sha256": "53686a8ff427ea2bd19a728cc30edac76712c2f4d1ad1e884844b2becc5b89dd",
+      "status": "pending-human-review",
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/adeel99sa/ZephixPlatform/pre-architecture-migration-20250829-1640/zephix-backend/src/database/migrations/1756271690591-CreateResourceTables.ts",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        },
+        {
+          "url": "https://api.github.com/repos/adeel99sa/ZephixPlatform/commits/pre-architecture-migration-20250829-1640",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "baseline_id": 42,
+      "path": "backend/src/snapshots/snapshots.module.ts",
+      "source_url": "https://raw.githubusercontent.com/bhaataha/ninjabackup/v1.0.0/apps/api/src/modules/snapshots/snapshots.module.ts",
+      "reported_version": "v1.0.0",
+      "local_sha256": "2ed4d4169b47d440ecc4d205c170b6858b77bca31159b9f29eef50afa0b70736",
+      "status": "pending-human-review",
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/bhaataha/ninjabackup/v1.0.0/apps/api/src/modules/snapshots/snapshots.module.ts",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        },
+        {
+          "url": "https://api.github.com/repos/bhaataha/ninjabackup/commits/v1.0.0",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "baseline_id": 51,
+      "path": "frontend/src/app/views/item-explorer/components/column-manager-dialog/item-explorer-column-manager-dialog.component.ts",
+      "source_url": "https://raw.githubusercontent.com/matthiaskopeinigg/api-workbench/v1.0.0/src/app/features/workspace/shared/runner-dialog/runner-dialog.component.ts",
+      "reported_version": "v1.0.0",
+      "local_sha256": "1519b9474de8df32f4d0289ca0e9a33ea9c470b538e85e4671c3abc5b1cfcf10",
+      "status": "pending-human-review",
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/matthiaskopeinigg/api-workbench/v1.0.0/src/app/features/workspace/shared/runner-dialog/runner-dialog.component.ts",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        },
+        {
+          "url": "https://api.github.com/repos/matthiaskopeinigg/api-workbench/commits/v1.0.0",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "baseline_id": 52,
+      "path": "frontend/src/app/views/item-explorer/components/history-dialog/item-explorer-history-dialog.component.ts",
+      "source_url": "https://raw.githubusercontent.com/matthiaskopeinigg/api-workbench/v1.0.0/src/app/features/workspace/shared/runner-dialog/runner-dialog.component.ts",
+      "reported_version": "v1.0.0",
+      "local_sha256": "d7ea4b57e8d3b9c68788367bc874cbb236a2eed41cc01452a02f57177a374708",
+      "status": "pending-human-review",
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/matthiaskopeinigg/api-workbench/v1.0.0/src/app/features/workspace/shared/runner-dialog/runner-dialog.component.ts",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        },
+        {
+          "url": "https://api.github.com/repos/matthiaskopeinigg/api-workbench/commits/v1.0.0",
+          "http_status": 404,
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    }
+  ]
+}
