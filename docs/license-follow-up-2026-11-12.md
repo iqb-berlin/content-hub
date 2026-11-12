@@ -132,10 +132,12 @@ erkennbaren Verstoß, 18 ungeklärte Fälle und zwei am historischen Commit bele
 Pflichtmängel, deren technische Korrektur hier vorliegt. Diese Zahlen sind keine
 neue Vollprüfung des heutigen `master`.
 
-Die verantwortlichen Beitragenden müssen belastbare Originalarchive,
-Entstehungsnachweise oder eine andere konkrete Rechteerlaubnis für die 17 Fälle
-beibringen. Für ASPECT müssen die Verantwortlichen den vollständigen
-versionsbezogenen Copyright-/MIT-/Drittanbieter-Notice-Nachweis liefern. Der
+Bei tatsächlich relevanter Fremdübernahme sind belastbare Originalarchive,
+Entstehungsnachweise oder eine konkrete Rechteerlaubnis erforderlich. Die
+fehlende Abrufbarkeit einer Scanner-Referenz allein beweist eine solche
+Übernahme nicht. Die unten dokumentierte Standardmusterprüfung ordnet 13 der
+Fundstellen deshalb anhand ihres konkreten lokalen Ausdrucks ein. Der offene
+ASPECT-Notice-Prüfpunkt betrifft die Testdatei im Quellrepository. Der
 [MIT-Text](https://opensource.org/license/mit) verlangt bei einschlägiger
 Weitergabe die Copyright-/Permission-Notice; der verifizierte Assethash ersetzt
 diese Frage nicht.
@@ -148,8 +150,12 @@ ausgeführt. Konkrete Anfragetexte an Beitragende und ASPECT-Verantwortliche
 sind im dortigen `anfragen.md` als ursprüngliche Entwürfe erhalten. Der spätere
 Versand ist gesondert in `reports/license-outreach-2026-11-12/` dokumentiert:
 zwei E-Mails und ein öffentliches ASPECT-Issue. Seit der nachfolgenden
-Nutzeranweisung dürfen **keine weiteren E-Mails ohne ausdrückliche Bestätigung**
-versandt werden. Die weitere Untersuchung erfolgt ohne neue externe Nachrichten.
+Nutzeranweisung dürfen **keine weiteren E-Mails oder Ticketaktionen ohne
+ausdrückliche Bestätigung** erfolgen. Das ASPECT-Issue wurde auf ausdrücklichen
+Wunsch mit einer Klarstellung zur dynamischen Player-Einbindung zurückgezogen
+und am 12.11.2026 geschlossen (`not_planned`). Der Abschluss ist in
+`reports/aspect-ticket-closure-2026-11-12/` dokumentiert; er ist keine
+Lizenzfreigabe der im Quellrepository enthaltenen Testdatei.
 
 ## Weitere Klärung ohne Kontaktaufnahme
 
@@ -182,3 +188,39 @@ Prüfanforderungen. Ein bloßes Umformatieren oder Umbenennen wird nicht als
 Herkunftsnachweis oder Rechteklärung gewertet. Es wurden keine menschlichen
 Freigaben erfunden und keine Anwendungsfunktionen zur Vermeidung eines
 Scanner-Treffers entfernt.
+
+## Ergebnis der technischen Einzelprüfung der übrigen 13 Fälle
+
+Die 13 IDs betreffen acht lokale Dateien. Die Prüfung hat bei acht IDs
+Framework-Deklarationen und bei fünf IDs Standardkonfiguration bzw. einfache
+SQL-Deklarationen mit projektspezifischen Werten ergeben. In den gemeldeten
+Bereichen ist keine individuelle fremde Implementierung belegt.
+
+| Gegenstand | IDs | Technischer Befund |
+|---|---:|---|
+| Drei Angular-Dialoge | 5 | Imports, Component-Metadaten und lokale View-Model-Bindung |
+| SnapshotsModule | 2 | Standard-Modulregistrierung mit leerer Klasse |
+| ApplicationToken | 1 | Spaltenabbildung passend zur eigenen Token-Migration |
+| CLI-DataSource | 2 | Dokumentierte CLI-Befehle, Optionen und lokale DB-Werte |
+| Audit-Migration | 2 | Drei statische Indexanweisungen für das eigene Schema |
+| AppModule | 1 | Asynchrone DB-Konfiguration mit lokalen Schaltern |
+
+Die Belege umfassen das offizielle Angular-Schematic der beim Refactoring
+gesperrten Version 21.2.19, die API-Verträge der verwendeten Nest-/TypeORM-Pakete
+und die zugehörigen lokalen Git-Änderungen. Vier offizielle Paketarchive wurden
+gegen die Integritätswerte der Lockdateien geprüft. Die Strukturprüfung der
+acht aktuellen und acht historischen TypeScript-Dateien ist bestanden.
+
+Für diese Fundstellen ergibt sich kein begründeter Bedarf an einer Codeänderung
+oder zusätzlichen Fremdattribution. Die lokale Korrektur betrifft ihre
+Einordnung und den Nachverfolgungsplan. Der Anwendungscode ist unverändert.
+
+Die sechs gemeldeten Fremdoriginale sind weiterhin nicht verifiziert. Ob einzelne
+Standardzeilen ursprünglich kopiert wurden, bleibt damit eine getrennte
+Herkunftsfrage. Die Musterprüfung beweist weder unabhängige Autorenschaft noch
+eine vollständige Rechtefreigabe. Alle menschlichen Entscheidungen und die
+ursprünglichen Prüfberichte bleiben erhalten.
+
+Die begründeten Entscheidungen zu allen 13 ursprünglichen IDs und die neuen
+Belege liegen unter `reports/license-pattern-review-2026-11-12/`. Es wurden
+keine weiteren E-Mails oder Ticketaktionen ausgeführt.
