@@ -119,8 +119,11 @@ function handleUnauthorized(
   hadToken: boolean,
   error: HttpErrorResponse,
 ): Observable<never> {
+  if (hadToken) auth.clearSession();
+  // Public publications remain readable when optional profile restoration fails.
+  if (nextUrl.startsWith('/public/task/')) return throwError(() => error);
+
   if (hadToken) {
-    auth.clearSession();
     void access.redirectToAccess('session_expired', {
       nextUrl,
       replaceUrl: true,

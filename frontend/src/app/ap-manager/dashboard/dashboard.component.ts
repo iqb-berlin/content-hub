@@ -167,6 +167,13 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
               </div>
             </a>
           }
+          <a [routerLink]="['/manage', ap.id, 'publications']" class="card link-card">
+            <span class="tile-icon" aria-hidden="true">🌐</span>
+            <div>
+              <h3>Öffentliche Aufgaben</h3>
+              <p>Einzelne Aufgaben mit dauerhaftem Link veröffentlichen</p>
+            </div>
+          </a>
           <a [routerLink]="['/manage', ap.id, 'application-tokens']" class="card link-card">
             <span class="tile-icon" aria-hidden="true">🔑</span>
             <div>

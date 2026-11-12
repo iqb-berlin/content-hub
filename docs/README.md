@@ -89,6 +89,8 @@ For AP managers who need a task-oriented user guide, see:
   How APs are created, populated, configured, versioned, and reviewed.
 - [Item Explorer](features/item-explorer.md)
   Shared draft state, publish/discard flow, metadata columns, tags, and empirical difficulty workflows.
+- [Public task publications](features/public-tasks.md)
+  Anonymous, immutable task views with persistent links and explicit public release.
 - [Musterlösung und Kodierinformation im Booklet-Review](review-solutions.md)
   Reversible Musterlösungsanzeige und lesbare Anweisungen für offene Antwortformate.
 - [Integrations and API](features/integrations-and-api.md)
