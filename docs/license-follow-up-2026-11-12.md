@@ -43,7 +43,20 @@ Die beiden konkreten Pflichtmängel sind in diesem Änderungsvorschlag technisch
 behoben. Die Feststellung zum unveränderten historischen Commit bleibt bestehen.
 Maßstab: [Apache License 2.0, Ziffer 4](https://www.apache.org/licenses/LICENSE-2.0).
 
-### ASPECT: Unverändertheit des Players nachgewiesen
+### ASPECT: Testdatei im Quellrepository, kein fest eingebauter Player
+
+Content Hub lädt den Player dynamisch über die `PLAYER`-Abhängigkeit der jeweiligen
+Aufgabe und deren `downloadUrl`. Das gilt sowohl für die Aufgabenansicht als auch
+für die Vorschau im Item Explorer. Es gibt keine fest eingebaute ASPECT-Version
+für den Produktivbetrieb.
+
+Die Datei unter `test-fixtures/synthetic-aspect/` dient den Browser-Tests und ist
+im Git-Repository versioniert. Das geprüfte Runtime-Archiv enthält sie nicht;
+der Archivbau übernimmt dieses Verzeichnis nicht. Der Angular-Build übernimmt
+als statische Assets nur `frontend/public`, und die produktiven Docker-Stufen
+übernehmen die gebauten Anwendungen. Der hier beschriebene ASPECT-Prüfpunkt
+betrifft deshalb die weitergegebene Testdatei im Quellrepository, nicht einen
+zwangsläufig mit Content Hub ausgelieferten Runtime-Player.
 
 Das offizielle Release-Asset wurde direkt heruntergeladen. Seine 3.719.915 Bytes
 sind identisch zur lokalen Fixture. SHA-256:
@@ -93,9 +106,9 @@ zusätzlichen API-/Cleanup-Gerüst. Eine unabhängige Rechtekette der gesamten
 bleibt offen. Es wird keine bekannte Übernahme aus `okto-pulse` behauptet und
 keine vorsorgliche Fremdattribution erfunden. Der Helfer wurde nicht umgeschrieben.
 
-## Weiterhin erforderliche menschliche Nachweise
+## Ausgangsstand der weiteren Nachverfolgung
 
-Die neun nicht verfügbaren Originaldateien wurden erneut über die exakten
+Zum Zeitpunkt des ersten Follow-ups wurden die neun nicht verfügbaren Originaldateien über die exakten
 Dateiadressen, Versionsabfragen und Repository-Suchen geprüft. Sie sind weiter
 nicht erreichbar. Namensgleiche, aber nicht belegbar identische Repositories
 wurden nicht als Ersatz verwendet. Damit bleiben **17 IDs** ungeklärt,
@@ -132,4 +145,40 @@ Finding-IDs** liegen unter `reports/license-follow-up-2026-11-12/`. Alle
 menschlichen Entscheidungen darin bleiben `pending`. Es wurde kein Reviewer
 eingetragen, kein Issue geschlossen und keine Freigabe oder Veröffentlichung
 ausgeführt. Konkrete Anfragetexte an Beitragende und ASPECT-Verantwortliche
-sind im dortigen `anfragen.md` vorbereitet und wurden nicht versandt.
+sind im dortigen `anfragen.md` als ursprüngliche Entwürfe erhalten. Der spätere
+Versand ist gesondert in `reports/license-outreach-2026-11-12/` dokumentiert:
+zwei E-Mails und ein öffentliches ASPECT-Issue. Seit der nachfolgenden
+Nutzeranweisung dürfen **keine weiteren E-Mails ohne ausdrückliche Bestätigung**
+versandt werden. Die weitere Untersuchung erfolgt ohne neue externe Nachrichten.
+
+## Weitere Klärung ohne Kontaktaufnahme
+
+Der neue Untersuchungsstand liegt unter
+`reports/license-resolution-2026-11-12/`. Er verfolgt die 15 bislang nicht
+angefragten IDs in neun lokalen Dateien und erhält die alten Prüfberichte
+unverändert.
+
+Für `baseline:44` und `scanoss:65783c496fec1fcbc859de22` ist der gemeldete
+teachlink-Originalstand über den erhaltenen Fork `OsejiFabian/teachLink_backend`
+wieder verfügbar. Der vollständige Commit ist
+`d94883b0e83e06198dec2d69188379e3577ee2fa`. Die Datei ist identisch zum früher
+gesicherten Original: SHA-256
+`eaa2b1d57e67dfbc8ed032a5af87dc0c1e5122c20479560308b2ac3b607ee87c`.
+Die Paketdatei an genau diesem Commit deklariert `UNLICENSED`, während die README
+`MIT © 2025 TeachLink DAO` nennt. Eine vollständige und widerspruchsfrei diesem
+Code zugeordnete MIT-Beilage ist nicht belegt. Der wieder mögliche Vergleich
+und diese offenen Lizenzangaben werden getrennt dokumentiert.
+
+Für alle neun lokalen Dateien wurden Einführung, spätere Git-Änderungen und
+die gemeldeten Zeilenbereiche gesichert. Git-Autorennamen und Zeitstempel allein
+beweisen keine unabhängige Entstehung. Für die übrigen Quellen haben die
+durchgeführten GitHub-, Software-Heritage- und Wayback-Abfragen kein verifiziertes
+Original geliefert; das beweist weder dessen Nichtexistenz noch eine Erlaubnis.
+
+Die Fallblätter trennen dokumentierte Framework-Aufrufe und projektspezifische
+Angaben von einer menschlichen Beurteilung der tatsächlichen Übernahme. Für einen
+gegebenenfalls nötigen Ersatz enthalten sie konkrete Funktionsverträge und
+Prüfanforderungen. Ein bloßes Umformatieren oder Umbenennen wird nicht als
+Herkunftsnachweis oder Rechteklärung gewertet. Es wurden keine menschlichen
+Freigaben erfunden und keine Anwendungsfunktionen zur Vermeidung eines
+Scanner-Treffers entfernt.

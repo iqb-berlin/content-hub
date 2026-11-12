@@ -4,6 +4,12 @@ The critical browser journeys use the synthetic `u1.json` task and the unchanged
 ASPECT 3.0.1 release player. The same files belong to the synthetic ASPECT test pool
 in PR #253; there are no assessment or participant data in them.
 
+This pinned version is a repository test fixture. Content Hub selects its runtime
+player dynamically from each unit's uploaded dependencies. The fixture is not a
+fixed application player and is not included in the checked runtime archive.
+The outstanding notice review below concerns distribution of the tracked test
+file with the source repository.
+
 `../browser-journey-package.ts` assembles one task with two pages, metadata, coding,
 a Booklet XML and the player. The Chromium import journey uploads these six files
 through the application into an empty ACP. Cross-browser navigation and publishing

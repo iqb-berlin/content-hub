@@ -7,6 +7,17 @@
   "sha256": "54ee0f792c105c933b1c811ded0ee54eefae8502fa690edb18f6dd0b71c803c2",
   "bytes": 3719915,
   "comparison_date": "2026-11-12",
+  "usage_scope": "Tracked repository fixture for browser tests; application loads the player supplied by each unit dynamically.",
+  "fixed_application_player": false,
+  "included_in_checked_runtime_archive": false,
+  "distribution_scope_evidence": [
+    "scripts/build-runtime-bundle.sh",
+    "frontend/angular.json",
+    "frontend/Dockerfile.prod",
+    "backend/Dockerfile.prod",
+    "frontend/src/app/views/item-explorer/item-explorer-preview-loader.service.ts",
+    "frontend/src/app/views/unit-view/unit-view.component.ts"
+  ],
   "official_release_byte_comparison": "identical",
   "declared_license_in_verona_metadata": "MIT",
   "embedded_dejavu_copyright_and_license": "verified in font name records by assessment dated 2026-11-03",
