@@ -9,9 +9,10 @@
   "summary": {
     "finding_ids": 141,
     "no_violation_identifiable_from_available_technical_evidence": 138,
-    "open_fixture_notice_cases": 1,
+    "open_fixture_notice_cases": 0,
     "historically_evidenced_notice_gaps_remediated_locally": 2,
-    "human_approved": 0
+    "human_approved": 0,
+    "fixture_notices_reconstructed_awaiting_human_review": 1
   },
   "human_review": {
     "status": "pending",
@@ -1565,8 +1566,8 @@
       "reported_local_lines": "all",
       "assessed_local_sha256_at_historical_commit": "54ee0f792c105c933b1c811ded0ee54eefae8502fa690edb18f6dd0b71c803c2",
       "historical_status": "unresolved",
-      "technical_status": "unresolved",
-      "reason": "Official release bytes match the repository fixture. The player is selected dynamically per unit and the fixture is not part of the checked runtime archive. Complete version-specific ASPECT and bundled JavaScript notices remain unverified for the fixture distributed in the source repository.",
+      "technical_status": "notices-reconstructed-human-review-pending",
+      "reason": "A locked upstream rebuild is byte-identical to the official fixture. The original build license list, notices for all 14 packages in the module statistics, the missing ngx-translate v15.0.0 MIT text, and notices for 25 exact source-matched embedded fonts are included. Publisher attribution is based on the published IQB policy predating the release. Human confirmation remains pending.",
       "reported_original": {
         "reported_url": null,
         "reported_version": null,
@@ -1600,14 +1601,21 @@
         "official_release_byte_comparison": "identical",
         "declared_license_in_verona_metadata": "MIT",
         "embedded_dejavu_copyright_and_license": "verified in font name records by assessment dated 2026-11-03",
-        "complete_player_and_javascript_notice_package": "unverified",
+        "complete_player_and_javascript_notice_package": "reconstructed-and-supplemented; human review pending",
         "human_rights_decision": "pending",
         "next_evidence_required": [
-          "Version-specific ASPECT copyright and complete MIT permission notice",
-          "Complete third-party notices for the JavaScript and assets actually included in this release player"
+          "Human confirmation of publisher-policy applicability and the assembled version-specific notice package."
         ],
-        "scope": "Provenance and outstanding evidence only; this record is not a release approval."
-      }
+        "scope": "Provenance and outstanding evidence only; this record is not a release approval.",
+        "notice_manifest": "licenses/manifest.json",
+        "reproduction_sha256": "54ee0f792c105c933b1c811ded0ee54eefae8502fa690edb18f6dd0b71c803c2",
+        "byte_identical_upstream_rebuild": true,
+        "bundled_module_packages_with_notices": 14,
+        "embedded_fonts_with_notices": 25,
+        "publisher_notice_basis": "Published IQB software policy dated 2024-05-18 plus ASPECT MIT metadata; see licenses/manifest.json."
+      },
+      "proposed_resolution_for_human_review": "licensed-reuse",
+      "evidence": "test-fixtures/synthetic-aspect/licenses/manifest.json"
     },
     "scancode:85e097111ed36e85cf21f07d": {
       "finding_id": "scancode:85e097111ed36e85cf21f07d",

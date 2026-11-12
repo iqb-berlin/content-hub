@@ -99,8 +99,8 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/content-pool-source" dist/compliance/source
           git archive HEAD | tar -x -C "$RUNNER_TEMP/content-pool-source"
-          .venv/scancode/bin/scancode \
-            --license --copyright --package \
+          .venv/scancode/bin/python scripts/scancode_all_tracked.py \
+            --license --copyright --package --info --strip-root \
             --processes 2 \
             --json-pp dist/compliance/source/source-license-scan.json \
             "$RUNNER_TEMP/content-pool-source"

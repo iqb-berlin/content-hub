@@ -15,9 +15,34 @@ Prüfung wird nicht als Rechtefreigabe des zusammengeführten Stands wiederverwe
 Der aktuelle technische Stand zu allen 141 historischen IDs ist im
 [versionierten Nachverfolgungsindex](provenance-follow-up-2026-11-12.json)
 nachlesbar: 138 IDs ohne nach verfügbarer Evidenz erkennbaren Verstoß, ein
-offener ASPECT-Fixture-Notice-Fall und zwei historisch belegte, hier technisch
-korrigierte Mängel. Alle menschlichen Entscheidungen bleiben `pending`.
+ASPECT-Fixture-Fall mit inzwischen rekonstruierten Hinweisen und zwei historisch
+belegte, hier technisch korrigierte Mängel. Alle menschlichen Entscheidungen bleiben `pending`.
 Die nachfolgenden Abschnitte halten auch die früheren Zwischenstände fest.
+
+## ASPECT: zusätzliche Nachweise und Lizenzbeilagen
+
+Der erneute Build des exakten ASPECT-Quellstands
+`b964ba086519cdbc04903f18c36f874f2067f0cd` ist bytegleich zur offiziellen
+3.0.1-Fixture. Dadurch ist die neu erzeugte ursprüngliche `3rdpartylicenses.txt`
+dem ausgelieferten HTML belastbar zugeordnet. Die Lizenzliste wurde um die
+Originalhinweise aller 14 Pakete aus der Build-Modulstatistik ergänzt; der dort
+fehlende ngx-translate-Lizenztext ist am exakten v15.0.0-Tag wiedergefunden.
+
+Alle 25 eingebetteten Fonts stimmen mit Dateien dieses Quellstands überein.
+Ihre eingebetteten Copyright-/Lizenz-/Reserved-Name-Angaben, der vollständige
+DejaVu-/Bitstream-/Arev-Text und die vollständigen OFL-/Apache-Fontbedingungen
+liegen jetzt unter `test-fixtures/synthetic-aspect/licenses/`. Die separate
+IQB-Software-Lizenzerklärung vom 18.05.2024 liefert die belegte Publisher-
+Attribution und den deutschen Lizenztext. Ihre allgemeine Geltung wird mit
+der MIT-Metadeklaration des konkreten Players verknüpft und muss menschlich
+bestätigt werden; eine ursprüngliche ASPECT-LICENSE-Datei wird nicht behauptet.
+
+Die Fixture selbst wurde nicht verändert. Ein Manifest hält Quellen, Pakete,
+Font-Identitäten und Beilagenhashes fest. Die Lizenz-Metadatenprüfung verhindert
+den Austausch des Players oder den Verlust dieser Beilagen ohne neue Prüfung.
+Der technische Nachweis ist damit ergänzt; eine menschliche Freigabe bleibt
+ausdrücklich offen. Die älteren Abschnitte über fehlende Beilagen dokumentieren
+den vorherigen Stand.
 
 ## Umgesetzt
 

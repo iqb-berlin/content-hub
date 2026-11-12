@@ -27,6 +27,10 @@ class ThemeLicenseMetadataTest(unittest.TestCase):
         files.append("keycloak/extensions/altcha/pom.xml")
         files.extend(str(THEME / name) for name in
                      ("LICENSE.txt", "NOTICE.md", "login/login.ftl", "login/template.ftl"))
+        aspect = ROOT / "test-fixtures/synthetic-aspect"
+        files.append("test-fixtures/synthetic-aspect/iqb-player-aspect-3.0.1.html")
+        files.extend(str(p.relative_to(ROOT)) for p in (aspect / "licenses").iterdir()
+                     if p.is_file())
         for name in files:
             destination = self.root / name
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -48,6 +52,15 @@ class ThemeLicenseMetadataTest(unittest.TestCase):
 
     def test_missing_provenance_notice_is_rejected(self):
         (self.root / THEME / "NOTICE.md").unlink()
+        self.assertNotEqual(self.check().returncode, 0)
+
+    def test_changed_aspect_player_is_rejected(self):
+        (self.root / "test-fixtures/synthetic-aspect/iqb-player-aspect-3.0.1.html").write_text(
+            "different player bytes\n")
+        self.assertNotEqual(self.check().returncode, 0)
+
+    def test_missing_aspect_dependency_notice_is_rejected(self):
+        (self.root / "test-fixtures/synthetic-aspect/licenses/NPM_NOTICES.txt").unlink()
         self.assertNotEqual(self.check().returncode, 0)
 
     def test_either_missing_template_modification_notice_is_rejected(self):

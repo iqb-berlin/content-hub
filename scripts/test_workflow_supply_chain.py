@@ -11,6 +11,12 @@ IMMUTABLE_ACTION = re.compile(r"^[^\s#]+@[0-9a-f]{40}(?:\s+#\s+\S+)?$")
 
 
 class WorkflowSupplyChainTest(unittest.TestCase):
+    def test_source_scan_uses_the_complete_tracked_file_entrypoint(self) -> None:
+        workflow = (WORKFLOWS / "compliance.yml").read_text()
+        self.assertIn("python scripts/scancode_all_tracked.py", workflow)
+        self.assertIn("--license --copyright --package --info --strip-root", workflow)
+        self.assertIn("git archive HEAD", workflow)
+
     def test_external_actions_use_full_commit_shas(self) -> None:
         mutable: list[str] = []
         workflows = sorted((*WORKFLOWS.glob("*.yml"), *WORKFLOWS.glob("*.yaml")))

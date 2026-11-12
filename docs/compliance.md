@@ -271,8 +271,8 @@ dynamically selected runtime player, recovered teachlink evidence and the
 remaining local standard-pattern assessments, including nest-auth and Dhanam.
 
 The resulting technical view has 138 historical IDs with no identifiable
-violation on the available evidence, one open ASPECT fixture notice case and
-two historically evidenced notice gaps remediated in this change. Every human
+violation on the available evidence, one ASPECT fixture case with newly
+reconstructed notices and two historically evidenced notice gaps remediated in this change. Every human
 decision remains pending. Standard-pattern proposals do not prove independent
 authorship, waive missing source evidence or become automatic release approvals.
 The release validator does not import this technical index as clearance.
@@ -283,3 +283,10 @@ unchanged historical records. Their old retrieval status must be read with the
 later follow-up. Raw reports and foreign source snapshots remain outside Git;
 the current index records review facts, references and hashes. New complete
 scans and a completed human review must still cover the actual release commit.
+
+The ASPECT fixture now has a byte-identical upstream rebuild, its original
+build license list, supplemental npm notices and notices for all 25 embedded
+fonts. See the [fixture notice evidence](../test-fixtures/synthetic-aspect/licenses/README.md).
+The publisher-policy association and all rights decisions still need human
+confirmation. The full ScanCode workflow uses the same tracked-file entry
+point as the local runner, including file information and tracked VCS config.
