@@ -1,0 +1,20 @@
+{
+  "component": "IQB-Player (Aspect) 3.0.1",
+  "file": "iqb-player-aspect-3.0.1.html",
+  "source": "https://github.com/iqb-berlin/verona-modules-aspect/releases/download/editor/3.0.1%2Bplayer/3.0.1/iqb-player-aspect-3.0.1.html",
+  "release_tag": "editor/3.0.1+player/3.0.1",
+  "source_commit": "b964ba086519cdbc04903f18c36f874f2067f0cd",
+  "sha256": "54ee0f792c105c933b1c811ded0ee54eefae8502fa690edb18f6dd0b71c803c2",
+  "bytes": 3719915,
+  "comparison_date": "2026-11-12",
+  "official_release_byte_comparison": "identical",
+  "declared_license_in_verona_metadata": "MIT",
+  "embedded_dejavu_copyright_and_license": "verified in font name records by assessment dated 2026-11-03",
+  "complete_player_and_javascript_notice_package": "unverified",
+  "human_rights_decision": "pending",
+  "next_evidence_required": [
+    "Version-specific ASPECT copyright and complete MIT permission notice",
+    "Complete third-party notices for the JavaScript and assets actually included in this release player"
+  ],
+  "scope": "Provenance and outstanding evidence only; this record is not a release approval."
+}
