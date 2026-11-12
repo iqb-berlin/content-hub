@@ -261,3 +261,55 @@ ursprünglichen Abruflücke zurückgestellt. Der Anwendungscode und alle
 menschlichen Entscheidungen bleiben unverändert. Vergleich und Belege liegen
 unter `reports/teachlink-review-2026-11-12/`. Weitere E-Mails oder Ticketaktionen
 wurden nicht ausgeführt.
+
+## nest-auth und dhanam: die beiden verbleibenden lokalen Muster geprüft
+
+Für `scanoss:555df30b8cb103a249ff62e3` ist die Preference-Entität weiterhin
+vorhanden: `acp-item-preference.entity.ts` wurde beim AP-Refactoring in
+`ap-item-preference.entity.ts` umbenannt. Das frühere Flag für eine fehlende
+Datei berücksichtigte diese Git-Umbenennung nicht. Die aktuelle Fallzuordnung
+enthält den richtigen Pfad und Hash; der eingefrorene Ausgangsbericht bleibt
+erhalten.
+
+Der gemeldete Bereich 9–27 enthält TypeORM-Metadaten mit den eigenen Tabellen-
+und Indexwerten. Die ganze Entität enthält keine Authentifizierungs- oder andere
+Fachimplementierung. Beide bedingten Unique-Indizes passen zur lokalen Migration
+vom 13. Juli; ein Metadatenlauf bestätigt die Spaltenbindungen und Prädikate.
+Die gesperrte TypeORM-API erklärt die Dekoratorform. Der Scanner-Lizenzname
+`Unlicense` bleibt eine nicht am Original verifizierte Angabe.
+
+Für `baseline:12` wurde der dhanam-Treffer am verifizierten lokalen Baseline-
+Stand gelesen: Die gemeldeten Zeilen 36–47 gehören zum Commit
+`d77c33b3d4305a701d6afbc806331f85fb614042`. Sie setzen einen abgelehnten Mock,
+erwarten den Fehler des eigenen Review-Guards und schließen den Folgeaufruf der
+Review-Policy aus. Die verwendeten Formen sind in der offiziellen
+[Jest-29.7-Dokumentation](https://jestjs.io/docs/29.7/mock-function-api#mockfnmockrejectedvaluevalue)
+und den [Assertions](https://jestjs.io/docs/29.7/expect#rejects) beschrieben.
+Die spätere Umstellung auf eigene Review-Capabilities wurde separat verfolgt.
+Der entsprechende heutige Ablehnungstest steht in Zeilen 34–46. Alle 21
+vorhandenen Guard-Tests bestehen.
+
+Beide Fundstellen werden technisch als Standardmuster mit lokalen Schema- bzw.
+Testwerten eingeordnet. Eine individuelle Fremdimplementierung ist in den
+untersuchten lokalen Bereichen nicht belegt; eine Codeänderung oder zusätzliche
+Fremdattribution ist daraus nicht begründet. Dass der dhanam-Treffer Testcode
+betrifft, ist dabei kein pauschaler Ausschluss von Weitergabepflichten.
+
+Die exakten Fremdoriginale bleiben nach den Datei-, Repository- und Archivabfragen
+nicht verifiziert. Das gefundene `madfam-org/dhanam-core` liefert weder den
+gemeldeten Tag noch die betreffende Datei und ersetzt den Originalstand nicht.
+Ob einzelne Standardzeilen ursprünglich kopiert wurden, bleibt ohne Originale
+und Entstehungsunterlagen offen. In den beiden bereits versandten Anfrage-Threads
+war nur die jeweilige eigene Nachricht sichtbar, keine Antwort.
+
+Die lokale Korrektur umfasst die Fallzuordnung, Einordnung und eine aktuelle
+Sicht auf alle 141 unveränderten IDs unter
+`reports/nest-auth-dhanam-review-2026-11-12/current-review-index.json`. Diese
+vereinigt die vorherigen Nachprüfungen: 138 IDs ohne nach verfügbarer technischer
+Evidenz erkennbaren Verstoß, ein offener ASPECT-Fixture-Notice-Fall und zwei
+historisch belegte, lokal bereits technisch korrigierte Mängel. Das ist keine
+Vollprüfung des heutigen Gesamtstands oder Rechtefreigabe; alle menschlichen
+Entscheidungen bleiben `pending`. Anwendungscode und frühere Berichte wurden
+nicht geändert. Einzelbegründungen und Belege liegen unter
+`reports/nest-auth-dhanam-review-2026-11-12/`. Es wurden keine weiteren Mails
+versandt und keine Ticketaktionen ausgeführt.
