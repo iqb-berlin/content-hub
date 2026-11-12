@@ -224,3 +224,40 @@ ursprünglichen Prüfberichte bleiben erhalten.
 Die begründeten Entscheidungen zu allen 13 ursprünglichen IDs und die neuen
 Belege liegen unter `reports/license-pattern-review-2026-11-12/`. Es wurden
 keine weiteren E-Mails oder Ticketaktionen ausgeführt.
+
+## teachlink: beide IDs am wiedergefundenen Original verglichen
+
+`baseline:44` und `scanoss:65783c496fec1fcbc859de22` bezeichnen denselben
+lokalen Bereich 10–32 gegenüber den Originalzeilen 11–33. Der Originalstand
+`d94883b0e83e06198dec2d69188379e3577ee2fa` wurde erneut abgerufen und stimmt
+mit dem früher gesicherten SHA-256 und Git-Blob überein. Zusätzlich zu den
+gemeldeten Bereichen wurden beide vollständigen Controller verglichen.
+
+Die Übereinstimmungen betreffen das Nest-/Swagger-Gerüst, Konstruktor-Injection,
+CRUD-Service-Delegation und zwei kurze funktionale Swagger-Beschriftungen. Das
+offizielle Nest-CRUD-Template enthält dieselbe Grundform. Im Controller ist keine
+individuelle teachlink-Fachimplementierung belegt. Der lokale Controller hat
+andere Rollenwerte, UUID-Parameterprüfung, teilweise andere Service-Aufrufe,
+eine zusätzliche Admin-Aktion und eine andere DTO-Importstruktur. Diese
+Unterschiede allein sind kein Beweis unabhängiger Entstehung.
+
+Ein lokaler Metadatenlauf bestätigt alle sechs Routen mit explizitem
+`APP_ADMIN`, beide Klassenguards und UUID-Prüfpipes an den vier ID-Routen.
+Der fremde Code wurde ausschließlich geparst und nicht ausgeführt. Aus fehlenden
+Rollenannotationen einzelner fremder Handler wird keine Aussage über deren
+effektive Zugriffsregeln abgeleitet.
+
+Für beide IDs ergibt sich damit die technische Einordnung als Standardgerüst
+mit kurzen CRUD-Beschriftungen. Eine Codeänderung oder zusätzliche
+Fremdattribution ist aus dem Vergleich nicht begründet. Die abweichenden
+Original-Lizenzangaben (`UNLICENSED` in package.json, MIT in der README) bleiben
+als Fakten erhalten; sie werden weder zu einer neuen Erlaubnis noch allein zu
+einem lokalen Lizenzverstoß umgedeutet.
+
+Die Kopier- oder Generatorherkunft bleibt ohne Entstehungsunterlagen offen.
+Die lokale Korrektur betrifft den Prüfstatus und die Nachverfolgung: Beide
+IDs sind jetzt am Original technisch beurteilt und nicht mehr nur wegen der
+ursprünglichen Abruflücke zurückgestellt. Der Anwendungscode und alle
+menschlichen Entscheidungen bleiben unverändert. Vergleich und Belege liegen
+unter `reports/teachlink-review-2026-11-12/`. Weitere E-Mails oder Ticketaktionen
+wurden nicht ausgeführt.
