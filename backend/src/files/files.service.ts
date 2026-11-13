@@ -36,6 +36,7 @@ import {
   UploadMultipleOptions,
 } from "./file-mutation.service";
 import { FileStorageService } from "./file-storage.service";
+import { isReviewTranscript } from "../review/review-transcripts";
 export type FilePreviewMode =
   | "text"
   | "image"
@@ -429,6 +430,36 @@ export class FilesService {
     return this.fileRepository.save(file);
   }
 
+  async getReviewTranscripts(apId: string, unitId: string) {
+    const unit = findUnitInIndex(await this.getApIndex(apId), unitId);
+    const dependencies: { type?: unknown; id?: unknown }[] = Array.isArray(
+      unit?.dependencies,
+    )
+      ? unit.dependencies
+      : [];
+    const metadata = dependencies.find(
+      (entry) =>
+        typeof entry?.type === "string" &&
+        entry.type.toUpperCase() === "METADATA",
+    );
+    if (
+      typeof metadata?.id !== "string" ||
+      this.getFileExtension(metadata.id) !== "vomd"
+    ) {
+      return [];
+    }
+    const file = await this.fileRepository.findOne({
+      where: { apId, originalName: metadata.id },
+    });
+    if (!file) return [];
+    const parsed = this.unitParserService.parseVomd(
+      await this.readTextFileForPreview(file),
+    );
+    return this.extractVomdUnitEntries(parsed?.unitProfiles ?? []).filter(
+      isReviewTranscript,
+    );
+  }
+
   async getPreviewForAp(
     apId: string,
     id: string,
@@ -766,10 +797,9 @@ export class FilesService {
     }
 
     const metadataColumns = new Map<string, string>();
-    const unitProfiles = this.extractPreviewEntries(
-      (parsed.unitProfiles || []).flatMap((profile: any) =>
-        Array.isArray(profile?.entries) ? profile.entries : [],
-      ),
+    const unitProfiles = this.extractVomdUnitEntries(parsed.unitProfiles).slice(
+      0,
+      STRUCTURED_PREVIEW_MAX_COLUMNS,
     );
 
     const items = (parsed.items || [])
@@ -951,6 +981,14 @@ export class FilesService {
       headers,
       rows: parsedRows.slice(1, STRUCTURED_PREVIEW_MAX_ITEMS + 1),
     };
+  }
+
+  private extractVomdUnitEntries(profiles: any[]) {
+    return this.extractPreviewEntries(
+      profiles.flatMap((profile) =>
+        Array.isArray(profile?.entries) ? profile.entries : [],
+      ),
+    );
   }
 
   private extractPreviewEntries(

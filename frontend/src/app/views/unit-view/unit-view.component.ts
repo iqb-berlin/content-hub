@@ -35,7 +35,6 @@ import {
   mergePlayerSolutionIntoDataParts,
 } from '../item-explorer/item-explorer-solution-prefill';
 import { deriveReviewSolution, ReviewSolution } from './review-solution';
-import { isReviewTranscript } from './review-transcripts';
 
 type ReviewCodingAsText = Omit<CodingAsText, 'codes'> & {
   manualInstructionText?: string;
@@ -300,6 +299,9 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         </div>
 
         <div class="panel-content">
+          @if (reviewTranscriptError) {
+            <p class="help-text" role="status">{{ reviewTranscriptError }}</p>
+          }
           @if (activeTab === 'comments') {
             @if (commentScopeOptions.length) {
               @if (commentScopeOptions.length > 1) {
@@ -1030,6 +1032,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   codingFilterText = '';
   showAllCodingVariables = false;
   unitMetadata: FilePreviewVomdData['unitProfiles'] = [];
+  reviewTranscripts: FilePreviewVomdData['unitProfiles'] = [];
+  reviewTranscriptError = '';
   metadataLoading = false;
   metadataError = '';
   codingSchemeAsText: ReviewCodingAsText[] | null = null;
@@ -1107,6 +1111,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private featureConfigRequest: Subscription | null = null;
   private unitRequest: Subscription | null = null;
   private metadataRequest: Subscription | null = null;
+  private transcriptsRequest: Subscription | null = null;
   private commentItemsRequest: Subscription | null = null;
   private commentItemsLoadToken = 0;
   private unitAbortController: AbortController | null = null;
@@ -1150,16 +1155,16 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     return 'off';
   }
 
-  get reviewTranscripts(): FilePreviewVomdData['unitProfiles'] {
-    return this.reviewMode
-      ? this.unitMetadata.filter((entry) => isReviewTranscript(entry) && entry.value.trim())
-      : [];
-  }
-
   get visibleUnitMetadata(): FilePreviewVomdData['unitProfiles'] {
     if (!this.reviewMode) return this.unitMetadata;
     return this.unitMetadata.filter((entry) => {
-      if (isReviewTranscript(entry)) return false;
+      if (
+        this.reviewTranscripts.some(
+          (text) =>
+            text.id === entry.id && text.label === entry.label && text.value === entry.value,
+        )
+      )
+        return false;
       if (!this.hideReviewDeveloperNames) return true;
       const normalize = (value: string) =>
         value
@@ -1274,6 +1279,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (changes['apId'] || changes['unitId']) this.loadUnit();
+    else if (changes['reviewMode'] || changes['bookletId']) this.loadReviewTranscripts();
   }
 
   private loadFeatureConfig() {
@@ -1391,7 +1397,6 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.totalPages = 1;
     this.definitionContent = null;
     this.unitMetadata = [];
-    if (this.activeTab === 'transcripts') this.activeTab = 'comments';
     this.metadataLoading = false;
     this.metadataError = '';
     this.codingSchemeAsText = null;
@@ -1408,6 +1413,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.clearPlayerRefresh();
     this.codingFilterText = '';
     this.showAllCodingVariables = false;
+    this.loadReviewTranscripts();
     this.unitRequest = this.api.getViewUnit(this.apId, this.unitId).subscribe((u) => {
       if (requestToken !== this.unitLoadToken) return;
       this.unit = u;
@@ -1446,6 +1452,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.featureConfigRequest?.unsubscribe();
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
+    this.transcriptsRequest?.unsubscribe();
     this.unitAbortController?.abort();
     this.clearPlayerRefresh();
     this.stopReviewPanelResize();
@@ -1785,6 +1792,26 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .catch(() => {
         if (token !== this.unitLoadToken) return;
         this.definitionContent = null;
+      });
+  }
+
+  private loadReviewTranscripts() {
+    this.transcriptsRequest?.unsubscribe();
+    this.reviewTranscripts = [];
+    this.reviewTranscriptError = '';
+    if (this.activeTab === 'transcripts') this.activeTab = 'comments';
+    if (!this.reviewMode || !this.bookletId || !this.apId || !this.unitId) return;
+    this.transcriptsRequest = this.api
+      .getReviewTranscripts(this.apId, this.bookletId, this.unitId)
+      .subscribe({
+        next: (transcripts) => {
+          this.reviewTranscripts = transcripts;
+          this.changeDetector.markForCheck();
+        },
+        error: () => {
+          this.reviewTranscriptError = 'Hörtranskripte konnten nicht geladen werden.';
+          this.changeDetector.markForCheck();
+        },
       });
   }
 

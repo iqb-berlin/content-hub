@@ -2,15 +2,14 @@
 
 Refs #278 – [Anforderung](https://github.com/iqb-berlin/content-hub/issues/278).
 
-Stand: 10. November 2026. Implementiert auf Basis von `master`
-`52c45037b769dc631d41490324fd6d168ce8ffb5` und lokal technisch geprüft.
-Merge, Release, Deployment und fachliche Abnahme sind noch ausstehend.
-Dieses Dokument enthält technische Nachweise und keine fachliche Abnahme.
+Stand 13. November 2026. PR #281 enthält die Umsetzung zu #278. Veröffentlichung,
+Bereitstellung und fachliche Abnahme stehen aus.
 
 ## Verhalten
 
 - Im Review gibt es bei vorhandenen, nicht leeren Transkripten einen eigenen
-  Reiter **Hörtranskripte**, unabhängig von **Reiter „Metadaten“ ausblenden**.
+  Reiter **Hörtranskripte**, auch bei **Reiter „Metadaten“ ausblenden** und bei
+  veröffentlichter Spaltensperre für Reviewer.
 - Das schließt das gesamte Feld **Transkript Original / Text Original** ein,
   auch wenn es den Originaltext einer Leseaufgabe enthält.
 - Andere Metadaten bleiben von dieser Einstellung abhängig. Die separate
@@ -20,9 +19,9 @@ Dieses Dokument enthält technische Nachweise und keine fachliche Abnahme.
 - Zeilenumbrüche bleiben erhalten. Inhalte werden als Text dargestellt.
 - Beim Aufgabenwechsel werden alte Inhalte entfernt. Aufgaben ohne Transkript
   erhalten keinen leeren Transkriptreiter. Schmale Ansichten umbrechen die Reiter.
-- Die VOMD-Vorschau liefert sämtliche Aufgabenfelder. Die bisherige Begrenzung
-  auf zwölf Felder unterschlug Transkripte in mehreren Standardprofilen.
-  Die übrigen Vorschaugrenzen für Itemtabellen bleiben bestehen.
+- Der Transkript-Endpunkt gibt ausschließlich passende Aufgabenfelder aus der
+  zugeordneten VOMD-Datei zurück, einschließlich Feldern hinter Position zwölf.
+  Für die allgemeine Dateivorschau gelten die bisherigen Grenzen.
 
 ## Belegte Erkennung und bestätigte Abgrenzung
 
@@ -36,50 +35,26 @@ abgerufen am 10. November 2026:
 | `k6` mit Bezeichnung „Transkript zur Aufgabe“ | [p53](https://github.com/iqb-vocabs/p53/blob/master/unit.json), [p54](https://github.com/iqb-vocabs/p54/blob/master/unit.json). Keine Erkennung allein anhand von `k6`: dasselbe Feld bedeutet in p16/p17 „Nebengeräusche“. |
 | `iqb_copyright_original` | [p52](https://github.com/iqb-vocabs/p52/blob/master/unit.json) bis [p55](https://github.com/iqb-vocabs/p55/blob/master/unit.json): „Transkript Original / Text Original“ |
 
-Fachliche Entscheidung vom 10. November 2026: Das gesamte gemeinsame Feld
-**Transkript Original / Text Original** (`iqb_copyright_original`) soll ebenfalls
-unabhängig von **Reiter „Metadaten“ ausblenden** sichtbar bleiben. Das gilt sowohl
-für Audio-Originaltranskripte als auch für Originaltexte von Leseaufgaben. Die
-bestehende Implementierung und die Komponententests schließen dieses Feld bereits
-ein; eine Codeänderung ist für diese Bestätigung nicht erforderlich.
-Die Entscheidung klärt den Funktionsumfang und ist keine fachliche Abnahme der
-Implementierung auf einer bereitgestellten Instanz.
+Die [fachliche Klarstellung vom 13. November 2026](https://github.com/iqb-berlin/content-hub/issues/278#issuecomment-6854663174)
+schließt das vollständige Originalfeld und die veröffentlichte Spaltensperre ein.
+Die drei stabilen Transkript-IDs gelten unabhängig von der Bezeichnung. Beim
+mehrdeutigen Legacy-Feld `k6` zählt die Bezeichnung „Transkript zur Aufgabe“ mit
+normalisierter Groß-/Kleinschreibung und normalisierten Leerzeichen.
 
-Erkennung erfolgt über die belegten stabilen IDs oder exakte bekannte
-Feldbezeichnungen, mit normalisierter Groß-/Kleinschreibung und Leerzeichen.
-Hinweisfelder wie „Hinweise zum Transkript“, Quellenangaben und Nebengeräusche
-werden nicht durch eine unscharfe Teiltextsuche eingeblendet.
+## Zugriff und Prüfumfang
 
-## Ausgeführte technische Prüfungen
+`GET /api/view/ap/:apId/review/booklets/:bookletId/units/:unitId/transcripts`
+verwendet die vorhandene AP- und Review-Berechtigung. Die Aufgabe muss im
+angegebenen Testheft vorkommen. Die Antwort enthält nur Kennung, Bezeichnung und
+Text der belegten, nicht leeren Transkriptfelder auf Aufgabenebene. Rohdateien,
+Item-Metadaten und übrige Aufgabenmetadaten bleiben unter der veröffentlichten
+Spaltenfreigabe geschützt.
 
-Umgebung: Node.js 25.9.0, getrennte Installation aus den Lockdateien.
-Browserfälle: echte Angular-/NestJS-Anwendung mit isolierter lokaler
-PostgreSQL-14.24-Datenbank. Inhalte und Player der beiden Reviewaufgaben sind
-deterministische Browserfixtures; Review-Konfiguration und Speicherung laufen
-über die echte API. Produktionsdaten wurden nicht verwendet oder verändert.
-
-| Prüfung | Ergebnis |
-| --- | --- |
-| Gesamte Frontend-Suite, `npm test -- --run` | 79 Dateien, 1.186 Tests bestanden |
-| Backend `files.service.spec.ts` | 65 Tests bestanden; einschließlich Transkript nach dem zwölften Aufgabenfeld und unveränderter Zeilenumbrüche |
-| Frontend und Backend `npm run lint` | bestanden |
-| Frontend und Backend `npm run format:check` | bestanden |
-| Frontend und Backend `npm run build` | bestanden |
-| Gezielte Playwright-Prüfung in Chromium, Firefox und WebKit | 6 Fälle bestanden |
-| GitHub-CI für Implementierungscommit `915d1c3f1d671e5c91e451df58f89987f75a16b5` | [CI einschließlich Release-Gate](https://github.com/iqb-berlin/content-hub/actions/runs/42777481316), [NPM Audits](https://github.com/iqb-berlin/content-hub/actions/runs/42777481308) und [CodeQL](https://github.com/iqb-berlin/content-hub/actions/runs/42777477937) erfolgreich; Trivy planmäßig übersprungen |
-
-Die Komponententests prüfen beide Metadateneinstellungen, die belegten
-Transkriptvarianten, Abgrenzung anderer Metadaten, Entwicklernamen, Umschalten,
-Aufgabenwechsel mit und ohne Transkript, leere Werte und reguläre Ansichten.
-Die Browserfälle prüfen zusätzlich Speichern, Neuladen, Rücknavigation und die
-Reiterdarstellung bei 390 Pixeln Breite. Desktop- und Mobilaufnahmen wurden visuell
-geprüft.
-
-Ein früher Backend-Build und Browserlauf konnten wegen vollem Datenträger nicht
-abgeschlossen werden. Nach Bereinigung wiederherstellbarer Installationscaches
-wurden die betroffenen Prüfungen erfolgreich wiederholt. Der endgültige Browserlauf
-nutzte eine eigene native Testdatenbank, weil der lokale Docker-Dienst nicht mehr
-antwortete.
+Der HTTP-Test `reviewer-columns.e2e-spec.ts` prüft die Antwort für ein Konto
+mit reinem Review-Zugang, die Sperre von VOMD-Vorschau und Download, falsche
+Testheft- und Aufgabenkennungen sowie Konten ohne Review-Berechtigung. Die
+Browser- und Komponententests prüfen Anzeige, Einstellungen, Neuladen,
+Aufgabenwechsel und reguläre Aufgabenansichten.
 
 ## Reproduktion
 
@@ -101,11 +76,11 @@ npm run e2e -- review-navigation-metadata.spec.ts --grep 'keeps transcripts|visi
 Erwartet: die sechs Browserfälle laufen in den drei konfigurierten Browsern grün.
 Alternativ kann eine eigens angelegte, leere lokale Datenbank `contenthub_e2e`
 mit dem Testbenutzer `contenthub` verwendet werden. Für den dokumentierten Lauf
-war diese ausschließlich auf `127.0.0.1:55478` erreichbar:
+ist im Beispiel `127.0.0.1:55481` vorgesehen:
 
 ```bash
 BROWSER_E2E_USE_EXISTING_DATABASE=true \
-BROWSER_E2E_DATABASE_PORT=55478 \
+BROWSER_E2E_DATABASE_PORT=55481 \
 BROWSER_E2E_SKIP_BROWSER_INSTALL=true \
 npm run e2e -- review-navigation-metadata.spec.ts --grep 'keeps transcripts|visibility choice' --headed
 ```
@@ -113,16 +88,21 @@ npm run e2e -- review-navigation-metadata.spec.ts --grep 'keeps transcripts|visi
 In `backend/`:
 
 ```bash
-npm test -- --runInBand files.service.spec.ts
+npm test -- --runInBand files.service.spec.ts review.controller.spec.ts
 npm run lint
 npm run format:check
 npm run build
 ```
 
-Erwartet: 65 Servicetests und alle statischen Prüfungen grün. Lokale
-Browsernachweise liegen unter `frontend/playwright-report/` und
-`frontend/test-results/`; beide Verzeichnisse bleiben unversioniert.
+Für den HTTP-Test mit einer eigens dafür angelegten lokalen Testdatenbank:
 
-Keine Migration und keine neue Konfiguration erforderlich. Für vollständiges
-Verhalten müssen Frontend und Backend zusammen ausgeliefert werden: allein der
-Frontendwechsel behebt die bisherige serverseitige Kürzung nicht.
+```bash
+NODE_ENV=test DB_HOST=127.0.0.1 DB_PORT=55481 DB_USERNAME=contenthub \
+DB_PASSWORD=contenthub_dev DB_DATABASE=contenthub_e2e DB_SYNCHRONIZE=true \
+JWT_SECRET=review-e2e-only-at-least-32-characters \
+npm run test:e2e -- --runInBand reviewer-columns.e2e-spec.ts
+```
+
+Erwartet: Das Review-Konto erhält für das freigegebene Testheft ausschließlich
+die Transkriptfelder (HTTP 200). Die rohe VOMD-Vorschau und der Download liefern
+HTTP 403. Frontend und Backend gemeinsam ausliefern.

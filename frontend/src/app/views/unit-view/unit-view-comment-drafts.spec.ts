@@ -34,6 +34,7 @@ describe('Unit review comment drafts', () => {
   };
   const api = {
     getViewUnit: vi.fn(),
+    getReviewTranscripts: vi.fn().mockReturnValue(of([])),
     getReviewCommentThread: vi.fn(),
     getItemCommentThread: vi.fn(),
     getItemCommentCounts: vi.fn(),

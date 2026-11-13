@@ -5,6 +5,9 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Header,
+  NotFoundException,
+  Param,
   Post,
   Put,
   Request,
@@ -43,6 +46,7 @@ import {
 import { UuidParam } from "../common/uuid-param";
 import { ReviewManifestService } from "./review-manifest.service";
 import { ReviewReadinessService } from "./review-readiness.service";
+import { FilesService } from "../files/files.service";
 
 class ReviewMemberDto {
   @IsIn(["user", "credential"]) kind!: "user" | "credential";
@@ -110,6 +114,7 @@ export class ReviewController {
     @InjectRepository(ApAccessConfig)
     private readonly configs: Repository<ApAccessConfig>,
     private readonly readiness: ReviewReadinessService,
+    private readonly files: FilesService,
   ) {}
 
   @Get("capabilities")
@@ -381,5 +386,23 @@ export class ReviewController {
     if (!access.canReview)
       throw new ForbiddenException("Review ist deaktiviert oder nicht erlaubt");
     return this.manifest.getManifest(apId);
+  }
+
+  @Get("review/booklets/:bookletId/units/:unitId/transcripts")
+  @Header("Cache-Control", "private, no-store")
+  async getTranscripts(
+    @UuidParam("apId") apId: string,
+    @Param("bookletId") bookletId: string,
+    @Param("unitId") unitId: string,
+    @Request() req: any,
+  ) {
+    const manifest = await this.getReview(apId, req);
+    const booklet = manifest.booklets.find(
+      (entry) => !entry.legacy && entry.id === bookletId,
+    );
+    if (!booklet?.units.some((unit) => unit.id === unitId)) {
+      throw new NotFoundException("Aufgabe ist nicht Teil dieses Testhefts.");
+    }
+    return this.files.getReviewTranscripts(apId, unitId);
   }
 }

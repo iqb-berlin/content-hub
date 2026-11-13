@@ -98,6 +98,23 @@ async function installContent(page: Page) {
           },
         });
   });
+  const transcripts = [
+    {
+      id: 'iqb_transcript',
+      label: 'Hörsequenz Transkript',
+      value: 'Erste Zeile des Hörtexts.\nZweite Zeile des Hörtexts.',
+    },
+    {
+      id: 'k6',
+      label: 'Transkript zur Aufgabe',
+      value: 'Bearbeiteter Hörtext aus einem älteren Profil.',
+    },
+  ];
+  await page.route(
+    `**/api/view/ap/${apId}/review/booklets/review-navigation/units/*/transcripts`,
+    (route) =>
+      route.fulfill({ json: route.request().url().includes('/review-u1/') ? transcripts : [] }),
+  );
   await page.route(`**/api/ap/${apId}/files/review-metadata-*/preview`, (route) =>
     route.fulfill({
       json: {
@@ -106,20 +123,7 @@ async function installContent(page: Page) {
           unitProfiles: [
             { id: 'iqb_author', label: 'Entwickler:in', value: 'Elsa Mignon (EM)' },
             { id: 'subject', label: 'Fach', value: 'Deutsch' },
-            ...(route.request().url().includes('review-u1')
-              ? [
-                  {
-                    id: 'iqb_transcript',
-                    label: 'Hörsequenz Transkript',
-                    value: 'Erste Zeile des Hörtexts.\nZweite Zeile des Hörtexts.',
-                  },
-                  {
-                    id: 'k6',
-                    label: 'Transkript zur Aufgabe',
-                    value: 'Bearbeiteter Hörtext aus einem älteren Profil.',
-                  },
-                ]
-              : []),
+            ...(route.request().url().includes('review-u1') ? transcripts : []),
           ],
         },
       },

@@ -12,6 +12,7 @@ import {
   User,
 } from "../src/database/entities";
 import { UnitParserService } from "../src/files/unit-parser.service";
+import { parseVomd } from "../src/files/unit-file-parsing";
 import { ReviewManifestService } from "../src/review/review-manifest.service";
 import { mkdtemp, writeFile, rm } from "fs/promises";
 import { tmpdir } from "os";
@@ -88,6 +89,8 @@ describe("Published reviewer column boundary (HTTP)", () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(UnitParserService)
       .useValue({
+        parseVomd: (value: string) =>
+          parseVomd(value, false, { error: jest.fn() }),
         getItemRowKeysFromFiles: async () => new Set(["U_I"]),
         getItemListFromFiles: async () => ({
           items: [structuredClone(item)],
@@ -200,7 +203,65 @@ describe("Published reviewer column boundary (HTTP)", () => {
       const filePath = join(temp, name);
       await writeFile(
         filePath,
-        name === "P.html" ? "<html>Player</html>" : "SECRET_RAW",
+        name === "P.html"
+          ? "<html>Player</html>"
+          : name === "U.vomd"
+            ? JSON.stringify({
+                profiles: [
+                  {
+                    entries: [
+                      ...Array.from({ length: 13 }, (_, i) => ({
+                        id: `hidden-${i}`,
+                        label: "Hidden",
+                        value: "SECRET_METADATA",
+                      })),
+                      {
+                        id: "custom",
+                        label: "Transkript",
+                        value: "SECRET_CUSTOM",
+                      },
+                      {
+                        id: "k6",
+                        label: "Nebengeräusche",
+                        value: "SECRET_NOISE",
+                      },
+                      {
+                        id: "iqb_transcript",
+                        label: "Transkript",
+                        value: "Zeile 1\nZeile 2",
+                      },
+                      {
+                        id: "iqb_copyright_original",
+                        label: "Transkript Original / Text Original",
+                        value: "Originaltext der Leseaufgabe",
+                      },
+                      {
+                        id: "k6",
+                        label: "Transkript zur Aufgabe",
+                        value: "Legacy-Hörtext",
+                      },
+                      {
+                        id: "iqb_final_transcript",
+                        label: "Transkript zur Aufgabe",
+                        value: "  ",
+                      },
+                    ],
+                  },
+                ],
+                items: [
+                  {
+                    id: "I",
+                    profiles: [
+                      {
+                        entries: [
+                          { id: "iqb_transcript", value: "SECRET_ITEM" },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              })
+            : "SECRET_RAW",
       );
       const file = await db.getRepository(ApFile).save({
         apId,
@@ -321,6 +382,101 @@ describe("Published reviewer column boundary (HTTP)", () => {
       `/api/ap/${apId}/items?filter=Secret`,
     ]) {
       await request(server).get(path).set(headers("reader")).expect(403);
+    }
+  });
+
+  it("releases only booklet transcripts to review participants when metadata and reviewer columns are hidden", async () => {
+    await patch(true);
+    await publish();
+    const configRepo = db.getRepository(ApAccessConfig);
+    const config = await configRepo.findOneByOrFail({
+      id: configId,
+    });
+    const manifests = app.get(ReviewManifestService);
+    const manifest = jest.spyOn(manifests, "getManifest").mockResolvedValue({
+      booklets: [
+        {
+          id: "B",
+          name: "Booklet",
+          children: [],
+          units: [
+            {
+              id: "U",
+              name: "",
+              occurrenceId: "one",
+              linkId: "one",
+              blockPath: [],
+            },
+          ],
+        },
+      ],
+      units: [],
+      issues: [],
+    });
+    const reviewPath = `/api/view/ap/${apId}/review/booklets/B/units`;
+    const transcriptPath = `${reviewPath}/U/transcripts`;
+    try {
+      await request(server)
+        .get(transcriptPath)
+        .set(headers("reviewer"))
+        .expect(403);
+      await configRepo.update(configId, {
+        featureConfig: {
+          ...config.featureConfig,
+          enableReview: true,
+          hideReviewMetadata: true,
+        },
+      });
+      const response = await request(server)
+        .get(transcriptPath)
+        .set(headers("reviewer"))
+        .expect(200);
+      expect(response.headers["cache-control"]).toContain("no-store");
+      expect(response.body).toEqual([
+        {
+          id: "iqb_transcript",
+          label: "Transkript",
+          value: "Zeile 1\nZeile 2",
+        },
+        {
+          id: "iqb_copyright_original",
+          label: "Transkript Original / Text Original",
+          value: "Originaltext der Leseaufgabe",
+        },
+        { id: "k6", label: "Transkript zur Aufgabe", value: "Legacy-Hörtext" },
+      ]);
+      await request(server)
+        .get(transcriptPath)
+        .set(headers("reader"))
+        .expect(403);
+      await request(server)
+        .get(transcriptPath)
+        .set(headers("credential"))
+        .expect(403);
+      await request(server)
+        .get(`${reviewPath}/unknown/transcripts`)
+        .set(headers("reviewer"))
+        .expect(404);
+      await request(server)
+        .get(transcriptPath.replace("/booklets/B/", "/booklets/unknown/"))
+        .set(headers("reviewer"))
+        .expect(404);
+      const ordinary = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(headers("reviewer"))
+        .expect(200);
+      expect(
+        ordinary.body.dependencies.map((entry: { type: string }) => entry.type),
+      ).toEqual(["PLAYER"]);
+      for (const action of ["preview", "download"]) {
+        await request(server)
+          .get(`/api/ap/${apId}/files/${fileIds["U.vomd"]}/${action}`)
+          .set(headers("reviewer"))
+          .expect(403);
+      }
+    } finally {
+      manifest.mockRestore();
+      await configRepo.save(config);
     }
   });
 

@@ -1140,37 +1140,6 @@ describe("FilesService", () => {
       );
     });
 
-    it("returns all VOMD unit fields including transcripts after the twelfth entry", async () => {
-      const entries = [
-        ...Array.from({ length: 20 }, (_, index) => ({
-          id: `field-${index}`,
-          value: `Wert ${index}`,
-        })),
-        {
-          id: "iqb_transcript",
-          label: [{ lang: "de", value: "Transkript" }],
-          value: "Erste Zeile\nZweite Zeile",
-        },
-      ];
-      repo.findOne.mockResolvedValueOnce({
-        ...mockFile,
-        originalName: "unit.vomd",
-        filePath: "/uploads/acp-1/unit.vomd",
-      });
-      (fs.readFile as jest.Mock).mockResolvedValueOnce(
-        JSON.stringify({ profiles: [{ entries }] }),
-      );
-
-      const preview = await service.getPreviewForAcp(acpId, "file-1");
-      const structured = preview.structuredData as any;
-      expect(structured.unitProfiles).toHaveLength(21);
-      expect(structured.unitProfiles[20]).toEqual({
-        id: "iqb_transcript",
-        label: "Transkript",
-        value: "Erste Zeile\nZweite Zeile",
-      });
-    });
-
     it("returns all VOCS variables and codes without preview truncation", async () => {
       const variables = Array.from({ length: 25 }, (_, variableIndex) => ({
         id: `VAR_${variableIndex + 1}`,

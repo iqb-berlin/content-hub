@@ -33,6 +33,7 @@ describe("unit view access in capability responses", () => {
           }),
         } as any,
         {} as any,
+        {} as any,
       );
       const access = await controller.getCapabilities("ap", {
         apAccessLevel,
@@ -82,6 +83,7 @@ describe("ReviewController stale memberships", () => {
         {} as any,
         { manager, findOne: async () => config } as any,
         { check: jest.fn() } as any,
+        {} as any,
       );
       const result = await controller.configure(
         "ap",
@@ -147,6 +149,7 @@ describe("ReviewController stale memberships", () => {
         {} as any,
         { manager, findOne: async () => config } as any,
         { check: jest.fn().mockResolvedValue({ status: "READY" }) } as any,
+        {} as any,
       );
       await expect(
         controller.configure(
@@ -187,6 +190,7 @@ describe("ReviewController stale memberships", () => {
       {} as any,
       { manager, findOne: async () => config } as any,
       readiness as any,
+      {} as any,
     );
 
     await expect(
@@ -230,6 +234,7 @@ describe("deleting review groups", () => {
         {} as any,
         { manager, findOne: async () => config } as any,
         {} as any,
+        {} as any,
       );
       const dto = {
         configVersion: 1,
@@ -270,6 +275,7 @@ describe("deleting review groups", () => {
       { assert: jest.fn() } as any,
       {} as any,
       { manager, findOne: async () => config } as any,
+      {} as any,
       {} as any,
     );
     await expect(
@@ -315,6 +321,7 @@ describe.each(["hideReviewMetadata", "hideReviewDeveloperNames"])(
           capabilities as any,
           {} as any,
           { manager, findOne: async () => config } as any,
+          {} as any,
           {} as any,
         );
         const result = await controller.configure(

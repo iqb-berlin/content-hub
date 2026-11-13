@@ -58,8 +58,20 @@ describe('UnitViewComponent', () => {
     metadataByUnit?: Record<string, FilePreviewVomdData['unitProfiles']>,
   ) {
     const api = {
+      getReviewTranscripts: (_apId: string, _bookletId: string, unitId: string) =>
+        of(
+          (metadataByUnit?.[unitId] ?? [])
+            .filter(
+              (entry) =>
+                ['iqb_transcript', 'iqb_final_transcript', 'iqb_copyright_original'].includes(
+                  entry.id,
+                ) ||
+                (entry.id === 'k6' && entry.label === 'Transkript zur Aufgabe'),
+            )
+            .filter((entry) => entry.value.trim()),
+        ),
       appendAuthToken: (url: string) => url,
-      getViewUnit: (_acpId: string, unitId: string) =>
+      getViewUnit: (_apId: string, unitId: string) =>
         of({
           id: unitId,
           name: 'Aufgabe',
@@ -71,7 +83,7 @@ describe('UnitViewComponent', () => {
             ...(metadataByUnit ? [{ type: 'METADATA', fileId: unitId }] : []),
           ],
         }),
-      getFilePreview: (_acpId: string, fileId: string) =>
+      getFilePreview: (_apId: string, fileId: string) =>
         of({ structuredData: { type: 'vomd', unitProfiles: metadataByUnit?.[fileId] || [] } }),
     };
     vi.stubGlobal(
@@ -93,6 +105,7 @@ describe('UnitViewComponent', () => {
     const fixture = TestBed.createComponent(UnitViewComponent);
     fixture.componentRef.setInput('apId', 'ap');
     fixture.componentRef.setInput('unitId', 'u1');
+    fixture.componentRef.setInput('bookletId', 'booklet-1');
     fixture.componentRef.setInput('embedded', true);
     fixture.componentRef.setInput('reviewMode', true);
     fixture.componentRef.setInput('featureConfigOverride', {});
@@ -871,6 +884,7 @@ describe('UnitViewComponent', () => {
       appendAuthToken: vi.fn((url: string) => url),
       getApStartPage: vi.fn().mockReturnValue(of({ featureConfig: {} })),
       getViewUnit: vi.fn((_apId: string, unitId: string) => unitResponses[unitId]),
+      getReviewTranscripts: vi.fn().mockReturnValue(of([])),
       getFilePreview: vi.fn().mockReturnValue(
         of({
           fileId: 'metadata-u1',

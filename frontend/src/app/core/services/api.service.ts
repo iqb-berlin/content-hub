@@ -46,6 +46,7 @@ import {
   ValidateUnitsResponse,
   ValidationResult,
   FilePreviewResponse,
+  FilePreviewVomdData,
   FileDeletionResponse,
   ItemCollectionsPayload,
   ItemCollectionRowsMutation,
@@ -230,6 +231,17 @@ export class ApiService {
   }
   getReview(apId: string): Observable<any> {
     return this.http.get(`${this.API}/view/ap/${apId}/review`);
+  }
+  getReviewTranscripts(
+    apId: string,
+    bookletId: string,
+    unitId: string,
+  ): Observable<FilePreviewVomdData['unitProfiles']> {
+    const booklet = encodeURIComponent(bookletId);
+    const unit = encodeURIComponent(unitId);
+    return this.http.get<FilePreviewVomdData['unitProfiles']>(
+      `${this.API}/view/ap/${apId}/review/booklets/${booklet}/units/${unit}/transcripts`,
+    );
   }
   getReviewConfig(apId: string): Observable<any> {
     return this.http.get(`${this.API}/view/ap/${apId}/review/config`);
