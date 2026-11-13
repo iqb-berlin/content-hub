@@ -226,6 +226,35 @@ describe('FilesComponent validation lifecycle', () => {
     expect(fixture.nativeElement.textContent).not.toContain('AP-weite Prüfung: OK');
   });
 
+  it('shows the pending AP result after the manual file check fails', async () => {
+    const pending = new Subject<ValidationResult>();
+    const { fixture, api } = await setup(pending);
+    api.validateUnitFiles.mockReturnValue(throwError(() => new Error('File check failed')));
+    const root = fixture.nativeElement as HTMLElement;
+    const button = Array.from(root.querySelectorAll('button')).find((entry) =>
+      entry.textContent?.includes('Dateien prüfen'),
+    );
+    button?.click();
+    pending.next(consistency('error'));
+    pending.complete();
+    await refresh(fixture);
+
+    expect(root.textContent).toContain('Die Dateiprüfung konnte nicht abgeschlossen werden.');
+    expect(root.textContent).toContain(message);
+    expect(api.getApConsistency).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores an older AP request that fails after the manual file check succeeds', async () => {
+    const pending = new Subject<ValidationResult>();
+    const { fixture } = await setup(pending);
+    fixture.componentInstance.validateFiles();
+    pending.error(new Error('Stale request failed'));
+    await refresh(fixture);
+
+    expect(fixture.componentInstance.consistencyError).toBe('');
+    expect(fixture.nativeElement.textContent).toContain(message);
+  });
+
   it.each(['cancel', 'skip'] as const)(
     'preserves AP messages when an upload is %s',
     async (action) => {

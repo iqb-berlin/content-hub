@@ -777,6 +777,7 @@ export class FilesComponent implements OnInit, OnDestroy {
   lastValidationSummary: UploadValidationSummary | null = null;
   consistencyError = '';
   private consistencyResult: ValidationResult | null = null;
+  private consistencyVersion = 0;
   private validationVersion = 0;
   lastConflictSummary: { conflicts: number; replaced: number; skipped: number } | null = null;
   selectedPreviewFile: ApFile | null = null;
@@ -951,16 +952,16 @@ export class FilesComponent implements OnInit, OnDestroy {
   }
 
   private loadApConsistency() {
-    const version = ++this.validationVersion;
+    const version = ++this.consistencyVersion;
     this.consistencyError = '';
     this.api.getApConsistency(this.apId).subscribe({
       next: (result) => {
-        if (version !== this.validationVersion) return;
+        if (version !== this.consistencyVersion) return;
         this.consistencyResult = result;
       },
       error: () => {
-        if (version !== this.validationVersion) return;
-        this.consistencyError = 'Die AP-weite Prüfung konnte nicht geladen werden.';
+        if (version !== this.consistencyVersion) return;
+        this.consistencyError ||= 'Die AP-weite Prüfung konnte nicht geladen werden.';
       },
     });
   }
@@ -1176,6 +1177,7 @@ export class FilesComponent implements OnInit, OnDestroy {
           this.lastValidationSummary = null;
           this.consistencyResult = null;
           this.consistencyError = '';
+          this.consistencyVersion += 1;
           this.validationVersion += 1;
           this.validating = false;
         }
@@ -1262,6 +1264,8 @@ export class FilesComponent implements OnInit, OnDestroy {
     this.api.validateUnitFiles(this.apId).subscribe({
       next: ({ unitResults, validationSummary }) => {
         if (version !== this.validationVersion) return;
+        this.consistencyVersion += 1;
+        this.consistencyError = '';
         this.validationResults = unitResults;
         this.lastValidationSummary = validationSummary;
         this.load();
@@ -1712,6 +1716,7 @@ export class FilesComponent implements OnInit, OnDestroy {
     deletedFileIds: string[],
     validationSummary?: UploadValidationSummary | null,
   ) {
+    this.consistencyVersion += 1;
     this.validationVersion += 1;
     this.validating = false;
     this.validationResults = [];
