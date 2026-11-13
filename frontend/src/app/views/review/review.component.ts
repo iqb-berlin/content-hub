@@ -405,7 +405,8 @@ interface ReviewConfig {
           </label>
           <p>
             Blendet den gesamten Metadaten-Reiter in der Testheft-Prüfansicht für alle
-            Review-Teilnehmenden aus. Die Einstellung gilt nach dem Speichern.
+            Review-Teilnehmenden aus. Hörtranskripte bleiben im Reviewbereich sichtbar. Die
+            Einstellung gilt nach dem Speichern.
           </p>
           <label>
             <input

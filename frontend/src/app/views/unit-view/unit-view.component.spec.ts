@@ -5,7 +5,7 @@ import { of, Subject } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
-import { FeatureConfig, UnitViewData } from '../../core/models/api.models';
+import { FeatureConfig, FilePreviewVomdData, UnitViewData } from '../../core/models/api.models';
 import { UnitViewComponent } from './unit-view.component';
 
 vi.mock('../comment-thread/item-comment-thread.component', async () => {
@@ -55,20 +55,36 @@ describe('UnitViewComponent', () => {
       pages: [{ alwaysVisible: true }, {}, {}],
     }),
     codingScheme?: unknown,
+    metadataByUnit?: Record<string, FilePreviewVomdData['unitProfiles']>,
   ) {
     const api = {
+      getReviewTranscripts: (_apId: string, _bookletId: string, unitId: string) =>
+        of(
+          (metadataByUnit?.[unitId] ?? [])
+            .filter(
+              (entry) =>
+                ['iqb_transcript', 'iqb_final_transcript', 'iqb_copyright_original'].includes(
+                  entry.id,
+                ) ||
+                (entry.id === 'k6' && entry.label === 'Transkript zur Aufgabe'),
+            )
+            .filter((entry) => entry.value.trim()),
+        ),
       appendAuthToken: (url: string) => url,
-      getViewUnit: () =>
+      getViewUnit: (_apId: string, unitId: string) =>
         of({
-          id: 'u1',
+          id: unitId,
           name: 'Aufgabe',
           items: [],
           codingScheme,
           dependencies: [
             { type: 'PLAYER', downloadUrl: '/player' },
             { type: 'UNIT_DEFINITION', downloadUrl: '/definition' },
+            ...(metadataByUnit ? [{ type: 'METADATA', fileId: unitId }] : []),
           ],
         }),
+      getFilePreview: (_apId: string, fileId: string) =>
+        of({ structuredData: { type: 'vomd', unitProfiles: metadataByUnit?.[fileId] || [] } }),
     };
     vi.stubGlobal(
       'fetch',
@@ -89,6 +105,7 @@ describe('UnitViewComponent', () => {
     const fixture = TestBed.createComponent(UnitViewComponent);
     fixture.componentRef.setInput('apId', 'ap');
     fixture.componentRef.setInput('unitId', 'u1');
+    fixture.componentRef.setInput('bookletId', 'booklet-1');
     fixture.componentRef.setInput('embedded', true);
     fixture.componentRef.setInput('reviewMode', true);
     fixture.componentRef.setInput('featureConfigOverride', {});
@@ -667,6 +684,127 @@ describe('UnitViewComponent', () => {
     expect(component.showMetadata).toBe(true);
   });
 
+  const transcriptMetadata = [
+    { id: 'iqb_transcript', label: 'Hörsequenz Transkript', value: 'Erste Zeile\nZweite Zeile' },
+    { id: 'iqb_final_transcript', label: 'Transkript zur Aufgabe', value: 'Bearbeiteter Hörtext' },
+    {
+      id: 'iqb_copyright_original',
+      label: 'Transkript Original / Text Original',
+      value: 'Originaler Hörtext',
+    },
+    { id: 'k6', label: 'Transkript zur Aufgabe', value: 'Hörtext aus älterem Profil' },
+  ];
+  const otherMetadata = [
+    { id: 'iqb_author', label: 'Entwickler:in', value: 'EM' },
+    { id: 'subject', label: 'Fach', value: 'Deutsch' },
+    { id: 'k6', label: 'Nebengeräusche', value: 'Vogelstimmen' },
+    { id: 'note', label: 'Hinweise zum Transkript', value: 'Interner Hinweis' },
+    { id: 'iqb_copyright', label: 'Quellenangaben', value: 'Quellenvermerk' },
+  ];
+
+  it.each([true, false])(
+    'shows only transcript fields in their own review tab (hideReviewMetadata: %s)',
+    async (hideReviewMetadata) => {
+      const { fixture, component } = await playerFixture(undefined, undefined, {
+        u1: [...otherMetadata, ...transcriptMetadata],
+      });
+      fixture.componentRef.setInput('featureConfigOverride', {
+        hideReviewMetadata,
+        hideReviewDeveloperNames: true,
+      });
+      fixture.detectChanges();
+      const tabs = Array.from(
+        fixture.nativeElement.querySelectorAll('.panel-tabs button'),
+      ) as HTMLButtonElement[];
+      tabs.find((tab) => tab.textContent?.trim() === 'Hörtranskripte')!.click();
+      fixture.detectChanges();
+      const transcripts = fixture.nativeElement.querySelector('.transcript-dl') as HTMLElement;
+      expect(transcripts.querySelectorAll('dd')).toHaveLength(4);
+      expect(transcripts.querySelector('dd')?.textContent).toBe('Erste Zeile\nZweite Zeile');
+      for (const entry of transcriptMetadata)
+        expect(transcripts.textContent).toContain(entry.value);
+      for (const entry of otherMetadata) expect(transcripts.textContent).not.toContain(entry.value);
+      expect(component.showMetadata).toBe(!hideReviewMetadata);
+      if (!hideReviewMetadata) {
+        tabs.find((tab) => tab.textContent?.trim() === 'Metadaten')!.click();
+        fixture.detectChanges();
+        const metadata = fixture.nativeElement.querySelector('.meta-dl').textContent;
+        expect(metadata).toContain('Deutsch');
+        expect(metadata).toContain('Vogelstimmen');
+        expect(metadata).not.toContain('EM');
+        for (const entry of transcriptMetadata) expect(metadata).not.toContain(entry.value);
+      }
+    },
+  );
+
+  it('keeps transcripts accessible when toggling metadata and clears them across unit changes', async () => {
+    const { fixture, component } = await playerFixture(undefined, undefined, {
+      u1: [...transcriptMetadata, ...otherMetadata],
+      u2: [{ id: 'iqb_transcript', label: 'Transkript', value: 'Zweiter Hörtext' }],
+      u3: otherMetadata,
+    });
+    const openTranscripts = () => {
+      const tabs = Array.from(
+        fixture.nativeElement.querySelectorAll('.panel-tabs button'),
+      ) as HTMLButtonElement[];
+      tabs.find((tab) => tab.textContent?.trim() === 'Hörtranskripte')!.click();
+      fixture.detectChanges();
+    };
+    for (const hideReviewMetadata of [true, false, true]) {
+      fixture.componentRef.setInput('featureConfigOverride', { hideReviewMetadata });
+      fixture.detectChanges();
+      openTranscripts();
+      expect(fixture.nativeElement.querySelector('.transcript-dl').textContent).toContain(
+        'Bearbeiteter Hörtext',
+      );
+    }
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    openTranscripts();
+    const transcripts = fixture.nativeElement.querySelector('.transcript-dl').textContent;
+    expect(transcripts).toContain('Zweiter Hörtext');
+    expect(transcripts).not.toContain('Bearbeiteter Hörtext');
+    fixture.componentRef.setInput('unitId', 'u3');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.activeTab).toBe('comments');
+    expect(fixture.nativeElement.querySelector('.transcript-dl')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Hörtranskripte');
+    expect(fixture.nativeElement.textContent).not.toContain('Zweiter Hörtext');
+  });
+
+  it('does not show an empty transcript tab', async () => {
+    const { fixture } = await playerFixture(undefined, undefined, {
+      u1: [{ id: 'iqb_transcript', label: 'Transkript', value: '  \n ' }, ...otherMetadata],
+    });
+    expect(fixture.nativeElement.textContent).not.toContain('Hörtranskripte');
+  });
+
+  it.each([true, false])(
+    'keeps the ordinary metadata setting for transcript fields (showMetadata: %s)',
+    async (showMetadata) => {
+      const { fixture, component } = await playerFixture(undefined, undefined, {
+        u1: [...transcriptMetadata, ...otherMetadata],
+      });
+      fixture.componentRef.setInput('reviewMode', false);
+      fixture.componentRef.setInput('featureConfigOverride', {
+        showMetadata,
+        showCodingScheme: true,
+      });
+      fixture.detectChanges();
+      component.panelVisible = true;
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).not.toContain('Hörtranskripte');
+      const metadata = fixture.nativeElement.querySelector('.meta-dl') as HTMLElement | null;
+      if (showMetadata) {
+        expect(metadata?.textContent).toContain('Originaler Hörtext');
+        expect(metadata?.textContent).toContain('Deutsch');
+      } else expect(metadata).toBeNull();
+    },
+  );
+
   it.each([true, false])(
     'filters developer metadata only in Review (reviewMode: %s)',
     async (reviewMode) => {
@@ -746,6 +884,7 @@ describe('UnitViewComponent', () => {
       appendAuthToken: vi.fn((url: string) => url),
       getApStartPage: vi.fn().mockReturnValue(of({ featureConfig: {} })),
       getViewUnit: vi.fn((_apId: string, unitId: string) => unitResponses[unitId]),
+      getReviewTranscripts: vi.fn().mockReturnValue(of([])),
       getFilePreview: vi.fn().mockReturnValue(
         of({
           fileId: 'metadata-u1',

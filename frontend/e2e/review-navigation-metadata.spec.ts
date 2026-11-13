@@ -75,7 +75,11 @@ async function installContent(page: Page) {
         dependencies: [
           { type: 'PLAYER', downloadUrl: '/review-test/player' },
           { type: 'UNIT_DEFINITION', downloadUrl: `/review-test/${id}` },
-          { type: 'METADATA', fileId: 'review-metadata', downloadUrl: '/review-test/metadata' },
+          {
+            type: 'METADATA',
+            fileId: `review-metadata-${id}`,
+            downloadUrl: '/review-test/metadata',
+          },
         ],
       },
     });
@@ -94,7 +98,24 @@ async function installContent(page: Page) {
           },
         });
   });
-  await page.route(`**/api/ap/${apId}/files/review-metadata/preview`, (route) =>
+  const transcripts = [
+    {
+      id: 'iqb_transcript',
+      label: 'Hörsequenz Transkript',
+      value: 'Erste Zeile des Hörtexts.\nZweite Zeile des Hörtexts.',
+    },
+    {
+      id: 'k6',
+      label: 'Transkript zur Aufgabe',
+      value: 'Bearbeiteter Hörtext aus einem älteren Profil.',
+    },
+  ];
+  await page.route(
+    `**/api/view/ap/${apId}/review/booklets/review-navigation/units/*/transcripts`,
+    (route) =>
+      route.fulfill({ json: route.request().url().includes('/review-u1/') ? transcripts : [] }),
+  );
+  await page.route(`**/api/ap/${apId}/files/review-metadata-*/preview`, (route) =>
     route.fulfill({
       json: {
         structuredData: {
@@ -102,6 +123,7 @@ async function installContent(page: Page) {
           unitProfiles: [
             { id: 'iqb_author', label: 'Entwickler:in', value: 'Elsa Mignon (EM)' },
             { id: 'subject', label: 'Fach', value: 'Deutsch' },
+            ...(route.request().url().includes('review-u1') ? transcripts : []),
           ],
         },
       },
@@ -445,7 +467,7 @@ test('synchronizes initial totals, both navigation directions, display modes and
   expect(errors).toEqual([]);
 });
 
-test('persists hiding the metadata tab across reload and task changes and can restore it', async ({
+test('keeps transcripts visible while hiding metadata across reload and task changes', async ({
   page,
   request,
 }, testInfo) => {
@@ -479,6 +501,17 @@ test('persists hiding the metadata tab across reload and task changes and can re
     await expect(page.getByRole('button', { name: 'Kodierung', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Metadaten', exact: true })).toHaveCount(0);
     await expect(page.locator('.meta-dl')).toHaveCount(0);
+    const transcriptsTab = page.getByRole('button', { name: 'Hörtranskripte', exact: true });
+    await transcriptsTab.click();
+    const transcripts = page.locator('.transcript-dl');
+    await expect(transcripts).toContainText('Erste Zeile des Hörtexts.');
+    await expect(transcripts.locator('dd').first()).toHaveText(
+      'Erste Zeile des Hörtexts.\nZweite Zeile des Hörtexts.',
+      { useInnerText: true },
+    );
+    await expect(transcripts).toContainText('Bearbeiteter Hörtext aus einem älteren Profil.');
+    await expect(transcripts).not.toContainText('Deutsch');
+    await expect(transcripts).not.toContainText('Elsa Mignon');
     await page.screenshot({
       path: testInfo.outputPath('review-metadata-tab-hidden.png'),
       fullPage: true,
@@ -488,10 +521,22 @@ test('persists hiding the metadata tab across reload and task changes and can re
       page.getByRole('heading', { name: 'Aufgabe 2 (review-u2)', exact: true }),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Metadaten', exact: true })).toHaveCount(0);
+    await expect(transcriptsTab).toHaveCount(0);
+    await expect(transcripts).toHaveCount(0);
+    await expect(page.locator('app-unit-view')).not.toContainText('Erste Zeile des Hörtexts.');
+    await page.getByRole('button', { name: '← Zurück', exact: true }).click();
+    await transcriptsTab.click();
+    await expect(transcripts).toContainText('Erste Zeile des Hörtexts.');
+    await page.reload();
+    await transcriptsTab.click();
+    await expect(transcripts).toContainText('Erste Zeile des Hörtexts.');
+    await expect(page.getByRole('button', { name: 'Metadaten', exact: true })).toHaveCount(0);
 
     await page.goto(`/view/${apId}/unit/review-u1`);
     await page.getByRole('button', { name: 'Zusatzdaten anzeigen', exact: true }).click();
     await expect(page.locator('.meta-dl')).toContainText('Deutsch');
+    await expect(page.locator('.meta-dl')).toContainText('Erste Zeile des Hörtexts.');
+    await expect(transcriptsTab).toHaveCount(0);
 
     await page.goto(`/view/${apId}/review/manage`);
     await setting.uncheck();
@@ -504,6 +549,21 @@ test('persists hiding the metadata tab across reload and task changes and can re
     await page.goto(reviewUrl);
     await page.getByRole('button', { name: 'Metadaten', exact: true }).click();
     await expect(page.locator('.meta-dl')).toContainText('Deutsch');
+    await expect(page.locator('.meta-dl')).not.toContainText('Erste Zeile des Hörtexts.');
+    await transcriptsTab.click();
+    await expect(transcripts).toContainText('Erste Zeile des Hörtexts.');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await transcriptsTab.scrollIntoViewIfNeeded();
+    await expect(transcriptsTab).toBeInViewport();
+    for (const button of await page.locator('.panel-tabs button').all()) {
+      const box = await button.boundingBox();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    }
+    await page.screenshot({
+      path: testInfo.outputPath('review-transcripts-mobile.png'),
+      fullPage: true,
+    });
   } finally {
     const current = await (await request.get(configUrl, { headers })).json();
     const restored = await request.put(configUrl, {

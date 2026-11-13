@@ -252,6 +252,17 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
               Kommentare
             </button>
           }
+          @if (reviewTranscripts.length) {
+            <button
+              class="tab"
+              type="button"
+              [class.active]="activeTab === 'transcripts'"
+              [attr.aria-pressed]="activeTab === 'transcripts'"
+              (click)="activeTab = 'transcripts'"
+            >
+              Hörtranskripte
+            </button>
+          }
           @if (showMetadata) {
             <button
               class="tab"
@@ -288,6 +299,9 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         </div>
 
         <div class="panel-content">
+          @if (reviewTranscriptError) {
+            <p class="help-text" role="status">{{ reviewTranscriptError }}</p>
+          }
           @if (activeTab === 'comments') {
             @if (commentScopeOptions.length) {
               @if (commentScopeOptions.length > 1) {
@@ -374,7 +388,16 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
             }
           }
 
-          @if (activeTab === 'metadata') {
+          @if (activeTab === 'transcripts' && reviewTranscripts.length) {
+            <dl class="meta-dl transcript-dl">
+              @for (entry of reviewTranscripts; track $index) {
+                <dt>{{ entry.label || entry.id }}</dt>
+                <dd>{{ entry.value }}</dd>
+              }
+            </dl>
+          }
+
+          @if (activeTab === 'metadata' && showMetadata) {
             @if (metadataLoading) {
               <p class="help-text">Aufgabenmetadaten werden geladen...</p>
             } @else if (visibleUnitMetadata.length) {
@@ -732,6 +755,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
 
       .panel-tabs {
         display: flex;
+        flex-wrap: wrap;
         flex: none;
         gap: 0;
         border-bottom: 1px solid var(--color-border);
@@ -772,6 +796,16 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
       .meta-dl dd {
         margin: 0;
         overflow-wrap: anywhere;
+      }
+      .transcript-dl {
+        display: block;
+      }
+      .transcript-dl dt {
+        margin-bottom: 6px;
+      }
+      .transcript-dl dd {
+        margin-bottom: 16px;
+        white-space: pre-wrap;
       }
 
       h4 {
@@ -953,7 +987,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   // Panel state
   panelVisible = false;
   panelMode: 'split' | 'overlay' = 'split';
-  activeTab: 'comments' | 'metadata' | 'coding' | 'richtext' = 'metadata';
+  activeTab: 'comments' | 'transcripts' | 'metadata' | 'coding' | 'richtext' = 'metadata';
   isNarrowLayout = false;
   reviewPanelCollapsed = false;
   reviewPanelWidth = 360;
@@ -998,6 +1032,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   codingFilterText = '';
   showAllCodingVariables = false;
   unitMetadata: FilePreviewVomdData['unitProfiles'] = [];
+  reviewTranscripts: FilePreviewVomdData['unitProfiles'] = [];
+  reviewTranscriptError = '';
   metadataLoading = false;
   metadataError = '';
   codingSchemeAsText: ReviewCodingAsText[] | null = null;
@@ -1075,6 +1111,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private featureConfigRequest: Subscription | null = null;
   private unitRequest: Subscription | null = null;
   private metadataRequest: Subscription | null = null;
+  private transcriptsRequest: Subscription | null = null;
   private commentItemsRequest: Subscription | null = null;
   private commentItemsLoadToken = 0;
   private unitAbortController: AbortController | null = null;
@@ -1119,8 +1156,16 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   get visibleUnitMetadata(): FilePreviewVomdData['unitProfiles'] {
-    if (!this.reviewMode || !this.hideReviewDeveloperNames) return this.unitMetadata;
+    if (!this.reviewMode) return this.unitMetadata;
     return this.unitMetadata.filter((entry) => {
+      if (
+        this.reviewTranscripts.some(
+          (text) =>
+            text.id === entry.id && text.label === entry.label && text.value === entry.value,
+        )
+      )
+        return false;
+      if (!this.hideReviewDeveloperNames) return true;
       const normalize = (value: string) =>
         value
           .toLowerCase()
@@ -1234,6 +1279,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (changes['apId'] || changes['unitId']) this.loadUnit();
+    else if (changes['reviewMode'] || changes['bookletId']) this.loadReviewTranscripts();
   }
 
   private loadFeatureConfig() {
@@ -1367,6 +1413,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.clearPlayerRefresh();
     this.codingFilterText = '';
     this.showAllCodingVariables = false;
+    this.loadReviewTranscripts();
     this.unitRequest = this.api.getViewUnit(this.apId, this.unitId).subscribe((u) => {
       if (requestToken !== this.unitLoadToken) return;
       this.unit = u;
@@ -1405,6 +1452,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.featureConfigRequest?.unsubscribe();
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
+    this.transcriptsRequest?.unsubscribe();
     this.unitAbortController?.abort();
     this.clearPlayerRefresh();
     this.stopReviewPanelResize();
@@ -1744,6 +1792,26 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .catch(() => {
         if (token !== this.unitLoadToken) return;
         this.definitionContent = null;
+      });
+  }
+
+  private loadReviewTranscripts() {
+    this.transcriptsRequest?.unsubscribe();
+    this.reviewTranscripts = [];
+    this.reviewTranscriptError = '';
+    if (this.activeTab === 'transcripts') this.activeTab = 'comments';
+    if (!this.reviewMode || !this.bookletId || !this.apId || !this.unitId) return;
+    this.transcriptsRequest = this.api
+      .getReviewTranscripts(this.apId, this.bookletId, this.unitId)
+      .subscribe({
+        next: (transcripts) => {
+          this.reviewTranscripts = transcripts;
+          this.changeDetector.markForCheck();
+        },
+        error: () => {
+          this.reviewTranscriptError = 'Hörtranskripte konnten nicht geladen werden.';
+          this.changeDetector.markForCheck();
+        },
       });
   }
 

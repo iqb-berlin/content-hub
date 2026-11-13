@@ -78,7 +78,7 @@ describe('stateful button audit', () => {
 
   it.each([
     ['../ap-manager/files/file-preview-panel.component.ts', 'Vorschauformat', 3],
-    ['../views/unit-view/unit-view.component.ts', 'Zusatzdaten', 4],
+    ['../views/unit-view/unit-view.component.ts', 'Zusatzdaten', 5],
   ])('keeps %s as a native button group with exclusive pressed state', (file, label, count) => {
     const source = productionSources[file];
     expect(source).toContain(`role="group" aria-label="${label}"`);
