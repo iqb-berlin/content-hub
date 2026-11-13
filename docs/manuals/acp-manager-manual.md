@@ -2,7 +2,7 @@
 
 ## Ziel und Zielgruppe
 
-Dieses Handbuch richtet sich an Personen mit der AP-Rolle `ACP_MANAGER`. Es beschreibt die
+Dieses Handbuch richtet sich an Personen mit der AP-Rolle `AP_MANAGER`. Es beschreibt die
 typischen Arbeitsablaeufe in der Anwendung aus Sicht der Paketverantwortlichen:
 
 - AP oeffnen und ueberblicken
@@ -41,7 +41,7 @@ Nach erfolgreicher Anmeldung oeffnen Sie die AP-Liste ueber:
 
 - den Navigationspunkt `APs`, sofern er fuer Ihr Konto sichtbar ist,
 - die Startseite, falls dort eine Schaltflaeche `Verwalten` sichtbar ist, oder
-- direkt ueber `/acps`.
+- direkt ueber `/aps`.
 
 ### 2. AP auswaehlen
 
@@ -136,7 +136,7 @@ diese Aenderungen mit `Änderungen speichern` in derselben Zeile.
 
 Wichtig:
 
-- App-Admins koennen `ACP_MANAGER` vergeben und entziehen.
+- App-Admins koennen `AP_MANAGER` vergeben und entziehen.
 - Nicht-adminische AP-Manager koennen in der Praxis in der Regel nur `READ_ONLY` vergeben.
 - Entfernen Sie Rollen, wenn ein AP nicht mehr betreut oder eingesehen werden soll.
 
@@ -207,6 +207,15 @@ Die Ergebnisse zeigen:
 - `OK`
 - `Fehler`
 - `Nicht geprueft`
+
+Die Spalte `Validierung` bewertet jede Datei fuer sich. Fehler bei Booklets oder
+Verweisen im gesamten AP stehen getrennt unter `AP-weite Prüfung`. Oeffnen Sie
+`Hinweise zur AP-weiten Prüfung`, um die Meldungen und ihre Fundstellen zu sehen.
+Eine fehlerfreie Datei kann deshalb `OK` anzeigen, obwohl im AP noch ein
+Booklet- oder Referenzfehler besteht. Mit `Dateien prüfen` werden auch bereits
+gespeicherte Dateiergebnisse neu berechnet.
+Die AP-weiten Hinweise werden beim Oeffnen der Dateiseite neu geladen und nach
+dem Loeschen von Dateien aktualisiert.
 
 Falls Unit-Dateien unvollstaendig sind, sehen Sie zusaetzlich Hinweise zu fehlenden Bestandteilen,
 zum Beispiel:
@@ -461,7 +470,7 @@ werden.
 
 Oeffnen Sie unter `Inhalte` auf der AP-Uebersicht den `Item-Explorer`, `Aufgaben ansehen`
 oder ein vorhandenes Testheft. Dort kontrollieren Sie die Inhalte fachlich. Die Lesesicht
-des APs ist unter `/view/:acpId` erreichbar; setzen Sie anstelle von `:acpId` die ID des APs ein.
+des APs ist unter `/view/:apId` erreichbar; setzen Sie anstelle von `:apId` die ID des APs ein.
 
 Auf der Startseite des APs finden Sie je nach Konfiguration:
 

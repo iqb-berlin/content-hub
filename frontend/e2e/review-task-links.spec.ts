@@ -2,8 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { journeyBookletId, journeyUnitName } from '../../test-fixtures/browser-journey-package';
 import { installOidcSession } from './oidc-test-session';
 
-const acpId = '10000000-0000-4000-8000-000000000307';
-const baseUrl = `/view/${acpId}/sequence/${journeyBookletId}?kind=booklet`;
+const apId = '10000000-0000-4000-8000-000000000307';
+const baseUrl = `/view/${apId}/sequence/${journeyBookletId}?kind=booklet`;
 
 async function expectPosition(page: Page, position: number, total = 3) {
   await expect(page.locator('.nav-info strong')).toHaveText(`${position} von ${total}`);
@@ -94,7 +94,7 @@ test('keeps the review panel resizable and the workspace usable on narrow screen
 test('keeps all workspace tools inside narrow screens when downloads are enabled', async ({
   page,
 }) => {
-  await page.route(`**/api/view/acp/${acpId}`, async (route) => {
+  await page.route(`**/api/view/ap/${apId}`, async (route) => {
     const response = await route.fetch();
     const data = await response.json();
     await route.fulfill({
@@ -196,7 +196,7 @@ test('copies an exact repeated occurrence into a new tab and survives reload', a
   page.on('pageerror', (error) => errors.push(error.message));
   // All content, manifest parsing and permissions come from the isolated backend.
   const sequenceResponse = page.waitForResponse((response) =>
-    response.url().includes(`/api/view/acp/${acpId}/sequences/${journeyBookletId}?`),
+    response.url().includes(`/api/view/ap/${apId}/sequences/${journeyBookletId}?`),
   );
   await page.goto(baseUrl);
   const booklet = await (await sequenceResponse).json();
@@ -250,7 +250,7 @@ test('synchronizes next, previous, task list and browser history without refetch
 }) => {
   let sequenceRequests = 0;
   page.on('request', (request) => {
-    if (request.url().includes(`/api/view/acp/${acpId}/sequences/${journeyBookletId}?`)) {
+    if (request.url().includes(`/api/view/ap/${apId}/sequences/${journeyBookletId}?`)) {
       sequenceRequests += 1;
     }
   });
@@ -286,7 +286,7 @@ test('clears the task selection on booklet switch and restores it through browse
   await page.getByRole('button', { name: /^Testheft wechseln, aktuell/ }).click();
   await page.locator('.booklet-list-item').filter({ hasText: 'review-other' }).click();
   await expectPosition(page, 1, 1);
-  await expect(page).toHaveURL(`/view/${acpId}/sequence/review-other?kind=booklet`);
+  await expect(page).toHaveURL(`/view/${apId}/sequence/review-other?kind=booklet`);
   await page.goBack();
   await expectPosition(page, 3);
   await page.reload();

@@ -117,16 +117,16 @@ export class ItemExplorerComponent implements OnInit, OnDestroy, ItemExplorerShe
     const query = this.route.snapshot.queryParamMap;
     const unitId = query?.get('unitId') || '';
     const itemId = query?.get('itemId') || '';
-    const acpId = this.route.snapshot.paramMap.get('acpId') || '';
+    const apId = this.route.snapshot.paramMap.get('apId') || '';
     if (unitId && itemId) {
-      this.feature.init(acpId, {
+      this.feature.init(apId, {
         unitId,
         itemId,
         open: query?.get('comments') === 'open',
         openCoding: query?.get('coding') === 'open',
       });
     } else {
-      this.feature.init(acpId);
+      this.feature.init(apId);
     }
   }
 

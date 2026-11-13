@@ -146,7 +146,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         <app-item-comment-thread
           [drafts]="commentDrafts"
           [sessionToken]="commentSessionToken"
-          [acpId]="acpId"
+          [apId]="apId"
           [targetType]="'UNIT'"
           [unitId]="unitId"
           [unitName]="unit.name"
@@ -336,7 +336,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                   <app-item-comment-thread
                     [drafts]="commentDrafts"
                     [sessionToken]="commentSessionToken"
-                    [acpId]="acpId"
+                    [apId]="apId"
                     [targetType]="'ITEM'"
                     [unitId]="unitId"
                     [unitName]="unit.name"
@@ -354,7 +354,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                 <app-item-comment-thread
                   [drafts]="commentDrafts"
                   [sessionToken]="commentSessionToken"
-                  [acpId]="acpId"
+                  [apId]="apId"
                   [targetType]="'BOOKLET'"
                   [bookletId]="bookletId"
                   [bookletName]="bookletName"
@@ -366,7 +366,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                 <app-item-comment-thread
                   [drafts]="commentDrafts"
                   [sessionToken]="commentSessionToken"
-                  [acpId]="acpId"
+                  [apId]="apId"
                   [targetType]="'UNIT'"
                   [unitId]="unitId"
                   [unitName]="unit.name"
@@ -961,7 +961,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
 export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('playerFrame') playerFrame!: ElementRef<HTMLIFrameElement>;
 
-  @Input() acpId = '';
+  @Input() apId = '';
   @Input() unitId = '';
   @Input() bookletId = '';
   @Input() bookletName = '';
@@ -1008,11 +1008,11 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private readonly selectedCommentItems = new Map<string, string>();
 
   get selectedCommentItemId(): string {
-    return this.selectedCommentItems.get(`${this.acpId}\u0000${this.unitId}`) || '';
+    return this.selectedCommentItems.get(`${this.apId}\u0000${this.unitId}`) || '';
   }
 
   set selectedCommentItemId(value: string) {
-    this.selectedCommentItems.set(`${this.acpId}\u0000${this.unitId}`, value);
+    this.selectedCommentItems.set(`${this.apId}\u0000${this.unitId}`, value);
   }
 
   get commentScopeOptions(): { value: ReviewCommentScope; label: string }[] {
@@ -1246,7 +1246,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         this.changeDetector.markForCheck();
       }
     });
-    this.acpId = this.acpId || this.route.snapshot.paramMap.get('acpId') || '';
+    this.apId = this.apId || this.route.snapshot.paramMap.get('apId') || '';
     this.unitId = this.unitId || this.route.snapshot.paramMap.get('unitId') || '';
 
     this.onWindowResize();
@@ -1273,12 +1273,12 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       } else this.loadFeatureConfig();
     }
 
-    if (changes['acpId'] || changes['unitId']) this.loadUnit();
+    if (changes['apId'] || changes['unitId']) this.loadUnit();
   }
 
   private loadFeatureConfig() {
     this.featureConfigRequest?.unsubscribe();
-    this.featureConfigRequest = this.api.getAcpStartPage(this.acpId).subscribe((data) => {
+    this.featureConfigRequest = this.api.getApStartPage(this.apId).subscribe((data) => {
       this.applyFeatureConfig(data?.featureConfig || {});
     });
   }
@@ -1344,7 +1344,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.commentItemsLoading = true;
     // Counts include every canonical target, even without comments, and do not
     // require Item Explorer access. Raw unit metadata alone may omit file items.
-    this.commentItemsRequest = this.api.getItemCommentCounts(this.acpId).subscribe({
+    this.commentItemsRequest = this.api.getItemCommentCounts(this.apId).subscribe({
       next: (snapshot) => {
         if (token !== this.commentItemsLoadToken) return;
         const ids = new Set(
@@ -1373,7 +1373,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   private loadUnit() {
     this.stopReviewPanelResize();
-    if (!this.acpId || !this.unitId) return;
+    if (!this.apId || !this.unitId) return;
     const requestToken = ++this.unitLoadToken;
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
@@ -1408,13 +1408,13 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.clearPlayerRefresh();
     this.codingFilterText = '';
     this.showAllCodingVariables = false;
-    this.unitRequest = this.api.getViewUnit(this.acpId, this.unitId).subscribe((u) => {
+    this.unitRequest = this.api.getViewUnit(this.apId, this.unitId).subscribe((u) => {
       if (requestToken !== this.unitLoadToken) return;
       this.unit = u;
       this.loadCommentItems();
       this.breadcrumbs = [
         { label: 'Content Hub', route: ['/'] },
-        { label: 'AP', route: ['/view', this.acpId] },
+        { label: 'AP', route: ['/view', this.apId] },
         { label: u.name },
       ];
 
@@ -1732,7 +1732,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   downloadUnit() {
-    const url = `/api/acp/${this.acpId}/files?unitId=${this.unitId}&format=zip`;
+    const url = `/api/ap/${this.apId}/files?unitId=${this.unitId}&format=zip`;
     window.open(this.api.appendAuthToken(url), '_blank');
   }
 
@@ -1795,7 +1795,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     if (!metadataDep?.fileId) return;
 
     this.metadataLoading = true;
-    this.metadataRequest = this.api.getFilePreview(this.acpId, metadataDep.fileId).subscribe({
+    this.metadataRequest = this.api.getFilePreview(this.apId, metadataDep.fileId).subscribe({
       next: (preview) => {
         if (token !== this.unitLoadToken) return;
         const structuredData = preview.structuredData;

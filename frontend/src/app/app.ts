@@ -29,8 +29,8 @@ import { BuildVersion } from './core/models/api.models';
         @if (auth.isLoggedIn && auth.isAdmin) {
           <a routerLink="/admin/application-tokens">Token</a>
         }
-        @if (auth.isLoggedIn && auth.hasManagedAcps) {
-          <a routerLink="/acps">APs</a>
+        @if (auth.isLoggedIn && auth.hasManagedAps) {
+          <a routerLink="/aps">APs</a>
         }
         @if (auth.isLoggedIn && auth.isAdmin) {
           <a routerLink="/admin/settings">Einstellungen</a>

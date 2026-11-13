@@ -11,7 +11,7 @@ const warning = {
   requiresConfirmation: true,
   warnings: [{ code: 'BOOKLET_OCCURRENCES_SKIPPED' as const, message: 'Booklet fehlt.' }],
 };
-const context = { acpId: 'a', baseVersion: 7 };
+const context = { apId: 'a', baseVersion: 7 };
 
 describe('ItemExplorerImportService', () => {
   let api: { uploadItemParameters: ReturnType<typeof vi.fn> };

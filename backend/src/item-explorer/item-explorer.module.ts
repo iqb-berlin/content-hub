@@ -1,20 +1,20 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import {
-  Acp,
-  AcpAccessConfig,
-  AcpItemExplorerChangeLog,
-  AcpItemExplorerState,
+  Ap,
+  ApAccessConfig,
+  ApItemExplorerChangeLog,
+  ApItemExplorerState,
 } from "../database/entities";
 import { ItemExplorerStateService } from "./item-explorer-state.service";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Acp,
-      AcpAccessConfig,
-      AcpItemExplorerState,
-      AcpItemExplorerChangeLog,
+      Ap,
+      ApAccessConfig,
+      ApItemExplorerState,
+      ApItemExplorerChangeLog,
     ]),
   ],
   providers: [ItemExplorerStateService],

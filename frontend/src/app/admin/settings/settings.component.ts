@@ -113,8 +113,8 @@ const THEME_FIELDS: ThemeField[] = [
         <div class="form-group">
           <label>Default AP-Index (JSON-Objekt)</label>
           <textarea
-            [(ngModel)]="defaultAcpIndexJson"
-            name="defaultAcpIndexJson"
+            [(ngModel)]="defaultApIndexJson"
+            name="defaultApIndexJson"
             rows="12"
             class="json-editor"
           ></textarea>
@@ -255,7 +255,7 @@ export class SettingsComponent implements OnInit {
   settings: AppSettings | null = null;
   saved = false;
   error = '';
-  defaultAcpIndexJson = '{}';
+  defaultApIndexJson = '{}';
   theme: Record<string, string> = { ...DEFAULT_THEME };
   readonly themeFields = THEME_FIELDS;
   geoGebraBusy = false;
@@ -286,13 +286,13 @@ export class SettingsComponent implements OnInit {
 
     this.error = '';
 
-    let parsedDefaultAcpIndex: Record<string, unknown>;
+    let parsedDefaultApIndex: Record<string, unknown>;
     try {
-      const parsed = JSON.parse(this.defaultAcpIndexJson || '{}');
+      const parsed = JSON.parse(this.defaultApIndexJson || '{}');
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
         throw new Error('Default AP index must be a JSON object');
       }
-      parsedDefaultAcpIndex = parsed as Record<string, unknown>;
+      parsedDefaultApIndex = parsed as Record<string, unknown>;
     } catch {
       this.error = 'Standard-AP-Index muss ein gültiges JSON-Objekt sein.';
       return;
@@ -306,7 +306,7 @@ export class SettingsComponent implements OnInit {
       privacyHtml: this.settings.privacyHtml,
       accessibilityHtml: this.settings.accessibilityHtml,
       theme: { ...this.theme },
-      defaultAcpIndex: parsedDefaultAcpIndex,
+      defaultApIndex: parsedDefaultApIndex,
     };
 
     this.api.updateSettings(payload).subscribe({
@@ -392,7 +392,7 @@ export class SettingsComponent implements OnInit {
   private applySettings(settings: AppSettings) {
     this.settings = settings;
     this.theme = normalizeTheme(settings.theme);
-    this.defaultAcpIndexJson = JSON.stringify(settings.defaultAcpIndex || {}, null, 2);
+    this.defaultApIndexJson = JSON.stringify(settings.defaultApIndex || {}, null, 2);
   }
 
   private clearGeoGebraSelection() {

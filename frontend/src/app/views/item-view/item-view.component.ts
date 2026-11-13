@@ -39,7 +39,7 @@ import { ItemCommentThreadComponent } from '../comment-thread/item-comment-threa
             <option value="on">Print: Ein</option>
             <option value="on-with-ids">Print: Ein + IDs</option>
           </select>
-          <a [routerLink]="['/view', acpId, 'item-explorer']" class="btn btn-outline btn-sm"
+          <a [routerLink]="['/view', apId, 'item-explorer']" class="btn btn-outline btn-sm"
             >← Zum Item-Explorer</a
           >
         </div>
@@ -47,7 +47,7 @@ import { ItemCommentThreadComponent } from '../comment-thread/item-comment-threa
 
       @if (showCommentBtn) {
         <app-item-comment-thread
-          [acpId]="acpId"
+          [apId]="apId"
           [targetType]="'ITEM'"
           [unitId]="item.unitId"
           [itemId]="item.itemId || item.id || itemId"
@@ -198,7 +198,7 @@ import { ItemCommentThreadComponent } from '../comment-thread/item-comment-threa
 export class ItemViewComponent implements OnInit, OnDestroy {
   @ViewChild('playerFrame') playerFrame!: ElementRef<HTMLIFrameElement>;
 
-  acpId = '';
+  apId = '';
   itemId = '';
   unit: UnitViewData | null = null;
   item: any = null;
@@ -235,12 +235,12 @@ export class ItemViewComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.acpId = this.route.snapshot.paramMap.get('acpId') || '';
+    this.apId = this.route.snapshot.paramMap.get('apId') || '';
     this.itemId = this.route.snapshot.paramMap.get('itemId') || '';
 
     window.addEventListener('message', this.messageHandler);
 
-    this.api.getAcpStartPage(this.acpId).subscribe({
+    this.api.getApStartPage(this.apId).subscribe({
       next: (data) => {
         const fc = data?.featureConfig || {};
         const commentTargets = Array.isArray(fc.commentTargets) ? fc.commentTargets : [];
@@ -255,20 +255,20 @@ export class ItemViewComponent implements OnInit, OnDestroy {
       },
     });
 
-    this.api.getViewItems(this.acpId).subscribe((items) => {
+    this.api.getViewItems(this.apId).subscribe((items) => {
       this.item = items.find((i: any) => i.itemId === this.itemId || i.id === this.itemId);
       if (!this.item) {
         this.loading = false;
         return;
       }
 
-      this.api.getViewUnit(this.acpId, this.item.unitId).subscribe((u) => {
+      this.api.getViewUnit(this.apId, this.item.unitId).subscribe((u) => {
         this.unit = u;
         this.highlightItemId = this.resolveHighlightItemId(u, this.itemId, this.item?.itemId);
         this.breadcrumbs = [
           { label: 'Content Hub', route: ['/'] },
-          { label: 'AP', route: ['/view', this.acpId] },
-          { label: 'Item-Explorer', route: ['/view', this.acpId, 'item-explorer'] },
+          { label: 'AP', route: ['/view', this.apId] },
+          { label: 'Item-Explorer', route: ['/view', this.apId, 'item-explorer'] },
           { label: this.item.name || this.item.itemId || this.item.id },
         ];
 
@@ -670,7 +670,7 @@ export class ItemViewComponent implements OnInit, OnDestroy {
     const fallbackItemList = this.buildStateFallbackItemList(this.unit, currentItemId);
 
     this.api
-      .getResponseStateWithFallback(this.acpId, currentItemId, unitId, fallbackItemList)
+      .getResponseStateWithFallback(this.apId, currentItemId, unitId, fallbackItemList)
       .subscribe({
         next: (result) => {
           const data = result?.state?.responseData;

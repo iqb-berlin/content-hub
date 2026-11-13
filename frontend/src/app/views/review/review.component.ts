@@ -260,9 +260,7 @@ interface ReviewConfig {
       }
     `,
   ],
-  template: `<a class="btn btn-outline btn-sm" [routerLink]="['/view', acpId]"
-      >← Zur AP-Übersicht</a
-    >
+  template: `<a class="btn btn-outline btn-sm" [routerLink]="['/view', apId]">← Zur AP-Übersicht</a>
     <div class="page-header">
       <h1>Review</h1>
       <p>Review vorbereiten und Rückmeldungen auswerten.</p>
@@ -428,7 +426,7 @@ interface ReviewConfig {
         <h2>2. Prüfansicht testen</h2>
         <p>Testheft auswählen und die Ansicht für das Review prüfen.</p>
         @if (manifest.booklets?.length) {
-          <app-booklet-selection [acpId]="acpId" [booklets]="manifest.booklets" />
+          <app-booklet-selection [apId]="apId" [booklets]="manifest.booklets" />
         } @else {
           <p>Dieser AP enthält noch keine Testhefte.</p>
         }
@@ -734,7 +732,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
       )[type] || type
     );
   }
-  acpId = '';
+  apId = '';
   access: any;
   manifest: any;
   error = '';
@@ -774,9 +772,9 @@ export class ReviewComponent implements OnInit, OnDestroy {
     @Inject(ApiService) private api: ApiService,
   ) {}
   ngOnInit() {
-    this.acpId =
-      this.route.snapshot.paramMap.get('acpId') ||
-      this.route.parent?.snapshot.paramMap.get('acpId') ||
+    this.apId =
+      this.route.snapshot.paramMap.get('apId') ||
+      this.route.parent?.snapshot.paramMap.get('apId') ||
       '';
     this.load();
     this.readinessPoll = setInterval(() => {
@@ -794,7 +792,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
   }
   load(reloadConfig = true) {
     this.requests.add(
-      this.api.getCapabilities(this.acpId).subscribe({
+      this.api.getCapabilities(this.apId).subscribe({
         next: (access) => {
           this.access = access;
           if (!access.canManageReview && access.canReview) this.activeSection = 'analysis';
@@ -804,7 +802,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
           }
           if (access.canReview) {
             this.requests.add(
-              this.api.getReview(this.acpId).subscribe({
+              this.api.getReview(this.apId).subscribe({
                 next: (data) => (this.manifest = data),
                 error: () => (this.error = 'Review konnte nicht geladen werden.'),
               }),
@@ -821,7 +819,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
   }
   loadConfig() {
     this.requests.add(
-      this.api.getReviewConfig(this.acpId).subscribe({
+      this.api.getReviewConfig(this.apId).subscribe({
         next: (config) => {
           this.removedCategories = [];
           this.deletedCategoryIds = [];
@@ -836,7 +834,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
       }),
     );
     this.requests.add(
-      this.api.getReviewMembers(this.acpId).subscribe({
+      this.api.getReviewMembers(this.apId).subscribe({
         next: (members) => (this.members = members),
         error: () => (this.error = 'Gruppenmitglieder konnten nicht geladen werden.'),
       }),
@@ -868,7 +866,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
   loadReadiness() {
     const generation = this.readinessGeneration;
     this.requests.add(
-      this.api.getReviewReadiness(this.acpId).subscribe({
+      this.api.getReviewReadiness(this.apId).subscribe({
         next: (result) => {
           if (!this.readinessBusy && generation === this.readinessGeneration) {
             this.readiness = result;
@@ -980,7 +978,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
     this.readinessBusy = true;
     this.error = '';
     this.requests.add(
-      this.api.checkReviewReadiness(this.acpId).subscribe({
+      this.api.checkReviewReadiness(this.apId).subscribe({
         next: (readiness) => {
           this.readiness = readiness;
           this.readinessBusy = false;
@@ -994,7 +992,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
   }
   loadComments() {
     if (this.commentsRequest && !this.commentsRequest.closed) return;
-    this.commentsRequest = this.api.getVisibleReviewComments(this.acpId).subscribe({
+    this.commentsRequest = this.api.getVisibleReviewComments(this.apId).subscribe({
       next: (comments) => {
         this.comments = comments;
         this.commentsError = '';
@@ -1021,7 +1019,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
       this.readinessBusy = true;
       this.error = '';
       this.requests.add(
-        this.api.checkReviewReadiness(this.acpId).subscribe({
+        this.api.checkReviewReadiness(this.apId).subscribe({
           next: (readiness) => {
             this.readiness = readiness;
             this.readinessBusy = false;
@@ -1057,7 +1055,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
     this.error = '';
     this.requests.add(
       this.api
-        .configureReview(this.acpId, {
+        .configureReview(this.apId, {
           ...this.config,
           deletedGroupIds: this.deletedGroupIds,
           deletedCategoryIds: this.deletedCategoryIds,
@@ -1103,17 +1101,17 @@ export class ReviewComponent implements OnInit, OnDestroy {
     const filters = this.exportAll ? {} : this.displayFilters;
     const download =
       format === 'csv'
-        ? this.api.exportMyReviewCommentsCsv(this.acpId, filters)
+        ? this.api.exportMyReviewCommentsCsv(this.apId, filters)
         : format === 'xlsx'
-          ? this.api.exportMyReviewCommentsXlsx(this.acpId, filters)
-          : this.api.exportVisibleReviewComments(this.acpId, filters);
+          ? this.api.exportMyReviewCommentsXlsx(this.apId, filters)
+          : this.api.exportVisibleReviewComments(this.apId, filters);
     this.requests.add(
       download.subscribe({
         next: (blob) => {
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `review-${this.acpId}${personal ? '-mine' : ''}.${format || 'xlsx'}`;
+          link.download = `review-${this.apId}${personal ? '-mine' : ''}.${format || 'xlsx'}`;
           link.click();
           setTimeout(() => URL.revokeObjectURL(url), 1000);
         },

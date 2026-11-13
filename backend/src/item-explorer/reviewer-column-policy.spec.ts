@@ -409,8 +409,8 @@ describe("Restricted review navigation", () => {
     class ReviewController {}
     function getReview() {}
     const req = {
-      params: { acpId: "ACP" },
-      acpCapabilities: ["review:participate", "item-explorer:view"],
+      params: { apId: "AP" },
+      apCapabilities: ["review:participate", "item-explorer:view"],
     };
     const context = {
       getClass: () => ReviewController,
@@ -452,9 +452,9 @@ describe("Restricted review navigation", () => {
       class ViewsController {}
       function getSequence() {}
       const req = {
-        params: { acpId: "ACP", sequenceId: "B" },
+        params: { apId: "AP", sequenceId: "B" },
         query: { kind: "booklet" },
-        acpCapabilities: ["item-explorer:view"],
+        apCapabilities: ["item-explorer:view"],
       };
       const context = {
         getClass: () => ViewsController,

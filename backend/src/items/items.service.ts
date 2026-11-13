@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { Acp, AcpAccessConfig, AccessModel } from "../database/entities";
+import { Ap, ApAccessConfig, AccessModel } from "../database/entities";
 import { UnitParserService, VomdItemData } from "../files/unit-parser.service";
-import { getIndexUnits } from "../acp/acp-index.utils";
-import { normalizeFeatureConfig } from "../acp/feature-config.utils";
+import { getIndexUnits } from "../ap/ap-index.utils";
+import { normalizeFeatureConfig } from "../ap/feature-config.utils";
 import { ItemParameterImportPipeline } from "./item-parameter-import.pipeline";
 
 const SHOW_ONLY_ITEMS_WITH_EMPIRICAL_DIFFICULTY_KEY =
@@ -40,26 +40,26 @@ export interface ItemData {
 @Injectable()
 export class ItemsService {
   constructor(
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
-    @InjectRepository(AcpAccessConfig)
-    private readonly accessConfigRepository: Repository<AcpAccessConfig>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
+    @InjectRepository(ApAccessConfig)
+    private readonly accessConfigRepository: Repository<ApAccessConfig>,
     private readonly unitParserService: UnitParserService,
     private readonly itemParameterImportPipeline: ItemParameterImportPipeline,
   ) {}
 
   /**
-   * Extract all items from ACP-Index.
+   * Extract all items from AP-Index.
    */
-  async getItems(acpId: string): Promise<ItemData[]> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) return [];
+  async getItems(apId: string): Promise<ItemData[]> {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) return [];
 
-    const index = acp.acpIndex as any;
+    const index = ap.apIndex as any;
     const units = getIndexUnits(index);
     const items: ItemData[] = [];
     const parsedItemList =
-      await this.unitParserService.getItemListFromFiles(acpId);
+      await this.unitParserService.getItemListFromFiles(apId);
     const fileRowsByItem = new Map<string, VomdItemData[]>();
     for (const fileRow of parsedItemList?.items || []) {
       const key = `${fileRow.unitId}\u0000${fileRow.itemId}`;
@@ -115,7 +115,7 @@ export class ItemsService {
           continue;
         }
 
-        const props = acp.itemProperties?.[itemId] || {};
+        const props = ap.itemProperties?.[itemId] || {};
 
         items.push({
           itemId,
@@ -175,8 +175,8 @@ export class ItemsService {
   /**
    * Get a single item by ID.
    */
-  async getItem(acpId: string, itemId: string): Promise<ItemData | null> {
-    const items = await this.getItems(acpId);
+  async getItem(apId: string, itemId: string): Promise<ItemData | null> {
+    const items = await this.getItems(apId);
     return items.find((i) => i.itemId === itemId) || null;
   }
 
@@ -184,12 +184,12 @@ export class ItemsService {
    * Get items filtered and sorted.
    */
   async getFilteredItems(
-    acpId: string,
+    apId: string,
     filter?: string,
     sortBy?: string,
     sortDir?: "asc" | "desc",
   ): Promise<ItemData[]> {
-    let items = await this.getItems(acpId);
+    let items = await this.getItems(apId);
 
     if (filter) {
       const term = filter.toLowerCase();
@@ -217,7 +217,7 @@ export class ItemsService {
    * Upload empirical item difficulties from a CSV buffer.
    */
   async uploadEmpiricalDifficulties(
-    acpId: string,
+    apId: string,
     fileBuffer: Buffer,
     options: {
       persist?: boolean;
@@ -225,7 +225,7 @@ export class ItemsService {
       confirmWarnings?: boolean;
     } = {},
   ) {
-    return this.uploadItemParameters(acpId, fileBuffer, {
+    return this.uploadItemParameters(apId, fileBuffer, {
       ...options,
       requireEmpiricalDifficulty: true,
     });
@@ -237,7 +237,7 @@ export class ItemsService {
    * a 1:n property of one stable Explorer row.
    */
   async uploadItemParameters(
-    acpId: string,
+    apId: string,
     fileBuffer: Buffer,
     options: {
       persist?: boolean;
@@ -246,15 +246,14 @@ export class ItemsService {
       confirmWarnings?: boolean;
     } = {},
   ) {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) throw new NotFoundException("AP not found");
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) throw new NotFoundException("AP not found");
 
-    const itemList = await this.unitParserService.getItemListFromFiles(acpId);
+    const itemList = await this.unitParserService.getItemListFromFiles(apId);
     const result = this.itemParameterImportPipeline.execute({
       fileBuffer,
       items: itemList.items || [],
-      itemProperties:
-        options.itemPropertiesOverride || acp.itemProperties || {},
+      itemProperties: options.itemPropertiesOverride || ap.itemProperties || {},
       requireEmpiricalDifficulty: options.requireEmpiricalDifficulty,
       confirmWarnings: options.confirmWarnings,
     });
@@ -264,8 +263,8 @@ export class ItemsService {
       result.requiresConfirmation !== true &&
       options.persist !== false
     ) {
-      acp.itemProperties = result.nextItemProperties;
-      await this.acpRepository.save(acp);
+      ap.itemProperties = result.nextItemProperties;
+      await this.apRepository.save(ap);
     }
 
     return result;
@@ -332,17 +331,17 @@ export class ItemsService {
    * Clears all empirical item difficulties from the database
    */
   async clearEmpiricalDifficulties(
-    acpId: string,
+    apId: string,
     options: {
       persist?: boolean;
       itemPropertiesOverride?: Record<string, Record<string, unknown>>;
     } = {},
   ) {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) throw new NotFoundException("AP not found");
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) throw new NotFoundException("AP not found");
 
     const props = this.cloneItemProperties(
-      options.itemPropertiesOverride || acp.itemProperties || {},
+      options.itemPropertiesOverride || ap.itemProperties || {},
     );
     let isUpdated = false;
 
@@ -354,22 +353,22 @@ export class ItemsService {
     }
 
     if (isUpdated && options.persist !== false) {
-      acp.itemProperties = props;
-      await this.acpRepository.save(acp);
+      ap.itemProperties = props;
+      await this.apRepository.save(ap);
     }
 
     return { success: true, nextItemProperties: props };
   }
 
-  async getItemTags(acpId: string): Promise<Record<string, string[]>> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) throw new NotFoundException("AP not found");
-    return this.extractTags(acp.itemProperties || {});
+  async getItemTags(apId: string): Promise<Record<string, string[]>> {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) throw new NotFoundException("AP not found");
+    return this.extractTags(ap.itemProperties || {});
   }
 
-  async canUseItemTags(acpId: string): Promise<boolean> {
+  async canUseItemTags(apId: string): Promise<boolean> {
     const config = await this.accessConfigRepository.findOne({
-      where: { acpId },
+      where: { apId },
     });
     const featureConfig = (config?.featureConfig || {}) as Record<
       string,
@@ -378,9 +377,9 @@ export class ItemsService {
     return Boolean(featureConfig.enableItemListTags);
   }
 
-  async canUseItemList(acpId: string): Promise<boolean> {
+  async canUseItemList(apId: string): Promise<boolean> {
     const config = await this.accessConfigRepository.findOne({
-      where: { acpId },
+      where: { apId },
     });
     const featureConfig = (config?.featureConfig || {}) as Record<
       string,
@@ -390,15 +389,15 @@ export class ItemsService {
   }
 
   async ensureShowOnlyItemsWithEmpiricalDifficulty(
-    acpId: string,
+    apId: string,
   ): Promise<boolean> {
     let config = await this.accessConfigRepository.findOne({
-      where: { acpId },
+      where: { apId },
     });
 
     if (!config) {
       config = this.accessConfigRepository.create({
-        acpId,
+        apId,
         accessModel: AccessModel.PRIVATE,
         allowRegistered: false,
         featureConfig: normalizeFeatureConfig({

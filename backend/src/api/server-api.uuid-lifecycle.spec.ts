@@ -30,7 +30,7 @@ describe("Server API UUID request lifecycle", () => {
       validateToken: jest.fn().mockResolvedValue({
         id: "test-client",
         scopes: ["files.read"],
-        allowedAcpIds: null,
+        allowedApIds: null,
       }),
       hasScopes: jest
         .fn()
@@ -76,7 +76,7 @@ describe("Server API UUID request lifecycle", () => {
 
   it("returns 401 before UUID parsing when authentication is missing", async () => {
     await request(app.getHttpServer())
-      .get("/api/server/acp/not-a-uuid/files")
+      .get("/api/server/ap/not-a-uuid/files")
       .expect(401);
 
     expect(authService.validateToken).not.toHaveBeenCalled();
@@ -85,7 +85,7 @@ describe("Server API UUID request lifecycle", () => {
 
   it("returns 400 for a malformed UUID after successful authentication", async () => {
     await request(app.getHttpServer())
-      .get("/api/server/acp/not-a-uuid/files")
+      .get("/api/server/ap/not-a-uuid/files")
       .set("x-server-token", "valid-token")
       .expect(400);
 
@@ -95,7 +95,7 @@ describe("Server API UUID request lifecycle", () => {
 
   it("accepts a non-v4 UUID and lets the service return 404", async () => {
     await request(app.getHttpServer())
-      .get(`/api/server/acp/${version5Uuid}/files`)
+      .get(`/api/server/ap/${version5Uuid}/files`)
       .set("x-server-token", "valid-token")
       .expect(404);
 

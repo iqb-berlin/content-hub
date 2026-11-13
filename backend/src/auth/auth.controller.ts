@@ -78,7 +78,7 @@ export class AuthController {
   ) {
     const clientId = this.extractClientId(req);
     return this.authService.credentialLogin(
-      credentialLoginDto.acpId,
+      credentialLoginDto.apId,
       credentialLoginDto.username,
       credentialLoginDto.password,
       clientId,

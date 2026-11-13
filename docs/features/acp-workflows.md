@@ -50,13 +50,13 @@ Role assignment happens separately from the access model.
 
 Typical patterns:
 
-- app admin assigns `ACP_MANAGER` to project maintainers,
+- app admin assigns `AP_MANAGER` to project maintainers,
 - managers or admins assign `READ_ONLY` to internal reviewers,
 - credential viewers are handled through the credential list rather than AP role assignment.
 
 Important rule:
 
-- non-admin managers can assign `READ_ONLY`, but only app admins can assign or remove `ACP_MANAGER`.
+- non-admin managers can assign `READ_ONLY`, but only app admins can assign or remove `AP_MANAGER`.
 
 ## 4. Build or Import the AP-Index
 

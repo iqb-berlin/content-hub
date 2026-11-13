@@ -58,14 +58,14 @@ describe("ServerApiAuditInterceptor", () => {
 
   it("logs successful requests", async () => {
     reflector.getAllAndOverride.mockReturnValue({
-      action: "acp.files.read",
+      action: "ap.files.read",
       resourceType: "file",
     });
 
     const req = Object.assign(createServerApiRequest({ id: "client-1" }), {
       method: "GET",
-      originalUrl: "/server/acp/acp-1/files/file-1",
-      params: { acpId: "acp-1", fileId: "file-1" },
+      originalUrl: "/server/ap/ap-1/files/file-1",
+      params: { apId: "ap-1", fileId: "file-1" },
       query: { verbose: "1" },
     });
     const res = { statusCode: 200 };
@@ -79,10 +79,10 @@ describe("ServerApiAuditInterceptor", () => {
     expect(auditService.log).toHaveBeenCalledWith(
       expect.objectContaining({
         clientId: "client-1",
-        action: "acp.files.read",
+        action: "ap.files.read",
         method: "GET",
-        path: "/server/acp/acp-1/files/file-1",
-        acpId: "acp-1",
+        path: "/server/ap/ap-1/files/file-1",
+        apId: "ap-1",
         resourceId: "file-1",
         success: true,
         statusCode: 200,
@@ -92,14 +92,14 @@ describe("ServerApiAuditInterceptor", () => {
 
   it("logs failed requests and rethrows the error", async () => {
     reflector.getAllAndOverride.mockReturnValue({
-      action: "acp.files.write",
+      action: "ap.files.write",
       resourceType: "file",
     });
 
     const req = Object.assign(createServerApiRequest({ id: "client-2" }), {
       method: "POST",
-      url: "/server/acp/acp-1/files/upload",
-      params: { acpId: "acp-1" },
+      url: "/server/ap/ap-1/files/upload",
+      params: { apId: "ap-1" },
       query: {},
     });
     const res = { statusCode: 500 };
@@ -116,7 +116,7 @@ describe("ServerApiAuditInterceptor", () => {
     expect(auditService.log).toHaveBeenCalledWith(
       expect.objectContaining({
         clientId: "client-2",
-        action: "acp.files.write",
+        action: "ap.files.write",
         success: false,
         statusCode: 500,
         details: expect.objectContaining({
@@ -130,7 +130,7 @@ describe("ServerApiAuditInterceptor", () => {
     "preserves the request result when audit persistence fails (success: %s)",
     async (success) => {
       reflector.getAllAndOverride.mockReturnValue({
-        action: "acp.files.read",
+        action: "ap.files.read",
         resourceType: "file",
       });
       const failure = new Error("audit unavailable");

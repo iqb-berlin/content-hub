@@ -5,10 +5,10 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as request from "supertest";
 import {
-  AcpFile,
-  AcpUserRole,
-  AcpItemPreference,
-  AcpItemRowNumber,
+  ApFile,
+  ApUserRole,
+  ApItemPreference,
+  ApItemRowNumber,
   User,
 } from "../src/database/entities";
 import { buildPatchPersonalItemPreferenceRowQuery } from "../src/views/personal-item-preferences.query";
@@ -38,12 +38,12 @@ describe("ContentPool API (e2e)", () => {
   let authToken: string;
   let credentialToken: string;
   let credentialId: string;
-  let acpFileRepository: Repository<AcpFile>;
-  let itemPreferenceRepository: Repository<AcpItemPreference>;
-  let itemRowNumberRepository: Repository<AcpItemRowNumber>;
+  let apFileRepository: Repository<ApFile>;
+  let itemPreferenceRepository: Repository<ApItemPreference>;
+  let itemRowNumberRepository: Repository<ApItemRowNumber>;
   let itemRowNumberingService: ItemRowNumberingService;
 
-  let acpId: string;
+  let apId: string;
   let snapshotId: string;
 
   const uniqueSuffix = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
@@ -55,7 +55,7 @@ describe("ContentPool API (e2e)", () => {
   const baseIndex = {
     packageId: testPackageId,
     version: "0.5.0",
-    name: [{ lang: "de", value: "E2E ACP" }],
+    name: [{ lang: "de", value: "E2E AP" }],
     description: [{ lang: "de", value: "E2E Description" }],
     status: "IN_DEVELOPMENT",
     assessmentParts: [
@@ -146,14 +146,14 @@ describe("ContentPool API (e2e)", () => {
     const userRepo = moduleFixture.get<Repository<User>>(
       getRepositoryToken(User),
     );
-    itemPreferenceRepository = moduleFixture.get<Repository<AcpItemPreference>>(
-      getRepositoryToken(AcpItemPreference),
+    itemPreferenceRepository = moduleFixture.get<Repository<ApItemPreference>>(
+      getRepositoryToken(ApItemPreference),
     );
-    acpFileRepository = moduleFixture.get<Repository<AcpFile>>(
-      getRepositoryToken(AcpFile),
+    apFileRepository = moduleFixture.get<Repository<ApFile>>(
+      getRepositoryToken(ApFile),
     );
-    itemRowNumberRepository = moduleFixture.get<Repository<AcpItemRowNumber>>(
-      getRepositoryToken(AcpItemRowNumber),
+    itemRowNumberRepository = moduleFixture.get<Repository<ApItemRowNumber>>(
+      getRepositoryToken(ApItemRowNumber),
     );
     itemRowNumberingService = moduleFixture.get<ItemRowNumberingService>(
       ItemRowNumberingService,
@@ -193,61 +193,59 @@ describe("ContentPool API (e2e)", () => {
     await request(server).get("/api/auth/context").expect(404);
   });
 
-  it("creates ACP and baseline index", async () => {
+  it("creates AP and baseline index", async () => {
     const createRes = await request(server)
-      .post("/api/acp")
+      .post("/api/ap")
       .set("Authorization", `Bearer ${authToken}`)
       .send({
         packageId: testPackageId,
-        name: "E2E ACP",
+        name: "E2E AP",
         description: "E2E Description",
       })
       .expect(201);
 
-    acpId = createRes.body.id;
+    apId = createRes.body.id;
     const adminId = app.get(JwtService).decode(authToken).sub;
-    await app
-      .get<Repository<AcpUserRole>>(getRepositoryToken(AcpUserRole))
-      .save({
-        acpId,
-        userId: adminId,
-        role: "ACP_MANAGER" as any,
-        capabilities: [
-          "review:participate",
-          "review:manage",
-          "item-explorer:view",
-          "item-explorer:edit",
-        ],
-      });
+    await app.get<Repository<ApUserRole>>(getRepositoryToken(ApUserRole)).save({
+      apId,
+      userId: adminId,
+      role: "AP_MANAGER" as any,
+      capabilities: [
+        "review:participate",
+        "review:manage",
+        "item-explorer:view",
+        "item-explorer:edit",
+      ],
+    });
     expect(createRes.body.packageId).toBe(testPackageId);
 
     const accessConfigRes = await request(server)
-      .get(`/api/acp/${acpId}/access`)
+      .get(`/api/ap/${apId}/access`)
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
     expect(accessConfigRes.body.accessModel).toBe("PRIVATE");
 
     await request(server)
-      .put(`/api/acp/${acpId}/index`)
+      .put(`/api/ap/${apId}/index`)
       .set("Authorization", `Bearer ${authToken}`)
       .send(baseIndex)
       .expect(200);
   });
 
   it("serializes concurrent stable row-number assignments", async () => {
-    await itemRowNumberRepository.delete({ acpId });
+    await itemRowNumberRepository.delete({ apId });
     const rowA = `${uniqueSuffix}-row-a`;
     const rowB = `${uniqueSuffix}-row-b`;
 
     await Promise.all([
-      itemRowNumberingService.assignNumbers(acpId, [
+      itemRowNumberingService.assignNumbers(apId, [
         {
           rowKey: rowA,
           itemId: "UNIT_1_ITEM_2",
           unitId: "UNIT_1",
         },
       ]),
-      itemRowNumberingService.assignNumbers(acpId, [
+      itemRowNumberingService.assignNumbers(apId, [
         {
           rowKey: rowB,
           itemId: "UNIT_1_ITEM_1",
@@ -257,7 +255,7 @@ describe("ContentPool API (e2e)", () => {
     ]);
 
     const persisted = await itemRowNumberRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { rowNumber: "ASC" },
     });
     expect(persisted.map((entry) => entry.rowKey).sort()).toEqual(
@@ -269,14 +267,14 @@ describe("ContentPool API (e2e)", () => {
 
   it("enforces row-key and row-number uniqueness in PostgreSQL", async () => {
     const [existing] = await itemRowNumberRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { rowNumber: "ASC" },
       take: 1,
     });
 
     await expect(
       itemRowNumberRepository.insert({
-        acpId,
+        apId,
         rowKey: `${uniqueSuffix}-duplicate-hash`,
         rowKeyHash: existing.rowKeyHash,
         rowNumber: 100,
@@ -284,7 +282,7 @@ describe("ContentPool API (e2e)", () => {
     ).rejects.toThrow();
     await expect(
       itemRowNumberRepository.insert({
-        acpId,
+        apId,
         rowKey: `${uniqueSuffix}-duplicate-number`,
         rowKeyHash: "f".repeat(64),
         rowNumber: existing.rowNumber,
@@ -294,14 +292,14 @@ describe("ContentPool API (e2e)", () => {
 
   it("rolls back recalculation when the caller transaction fails", async () => {
     const before = await itemRowNumberRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { rowNumber: "ASC" },
     });
 
     await expect(
       itemRowNumberRepository.manager.transaction(async (manager) => {
         await itemRowNumberingService.recalculateNumbers(
-          acpId,
+          apId,
           [
             {
               rowKey: `${uniqueSuffix}-replacement`,
@@ -316,7 +314,7 @@ describe("ContentPool API (e2e)", () => {
     ).rejects.toThrow("force rollback");
 
     const after = await itemRowNumberRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { rowNumber: "ASC" },
     });
     expect(
@@ -324,10 +322,10 @@ describe("ContentPool API (e2e)", () => {
     ).toEqual(before.map(({ rowKey, rowNumber }) => ({ rowKey, rowNumber })));
   });
 
-  it("holds ACP file rows against concurrent deletion during recalculation", async () => {
-    const sourceFile = await acpFileRepository.save(
-      acpFileRepository.create({
-        acpId,
+  it("holds AP file rows against concurrent deletion during recalculation", async () => {
+    const sourceFile = await apFileRepository.save(
+      apFileRepository.create({
+        apId,
         filePath: `/tmp/${uniqueSuffix}-source.xml`,
         originalName: `${uniqueSuffix}-source.xml`,
         fileType: "application/xml",
@@ -346,7 +344,7 @@ describe("ContentPool API (e2e)", () => {
     });
 
     const recalculation = itemRowNumberingService.recalculateNumbers(
-      acpId,
+      apId,
       [
         {
           rowKey: `${uniqueSuffix}-locked-recalculation`,
@@ -357,10 +355,10 @@ describe("ContentPool API (e2e)", () => {
       undefined,
       async (manager) => {
         await manager
-          .getRepository(AcpFile)
+          .getRepository(ApFile)
           .createQueryBuilder("file")
           .setLock("pessimistic_read")
-          .where("file.acpId = :acpId", { acpId })
+          .where("file.apId = :apId", { apId })
           .getMany();
         signalFileLockAcquired();
         await holdFileLock;
@@ -370,9 +368,9 @@ describe("ContentPool API (e2e)", () => {
     await fileLockAcquired;
     try {
       await expect(
-        acpFileRepository.manager.transaction(async (manager) => {
+        apFileRepository.manager.transaction(async (manager) => {
           await manager.query("SET LOCAL lock_timeout = '200ms'");
-          await manager.getRepository(AcpFile).delete({ id: sourceFile.id });
+          await manager.getRepository(ApFile).delete({ id: sourceFile.id });
         }),
       ).rejects.toThrow(/lock timeout/i);
     } finally {
@@ -381,13 +379,13 @@ describe("ContentPool API (e2e)", () => {
     }
 
     await expect(
-      acpFileRepository.delete({ id: sourceFile.id }),
+      apFileRepository.delete({ id: sourceFile.id }),
     ).resolves.toEqual(expect.objectContaining({ affected: 1 }));
   });
 
   it("covers public access and core read-only views", async () => {
     await request(server)
-      .put(`/api/acp/${acpId}/access`)
+      .put(`/api/ap/${apId}/access`)
       .set("Authorization", `Bearer ${authToken}`)
       .send({
         accessModel: "PUBLIC",
@@ -395,38 +393,38 @@ describe("ContentPool API (e2e)", () => {
       })
       .expect(200);
 
-    const publicList = await request(server).get("/api/view/acp").expect(200);
+    const publicList = await request(server).get("/api/view/ap").expect(200);
     expect(Array.isArray(publicList.body)).toBe(true);
-    expect(publicList.body.some((entry: any) => entry.id === acpId)).toBe(true);
+    expect(publicList.body.some((entry: any) => entry.id === apId)).toBe(true);
 
     const startRes = await request(server)
-      .get(`/api/view/acp/${acpId}`)
+      .get(`/api/view/ap/${apId}`)
       .expect(200);
-    expect(startRes.body.id).toBe(acpId);
+    expect(startRes.body.id).toBe(apId);
 
     const unitsRes = await request(server)
-      .get(`/api/view/acp/${acpId}/units`)
+      .get(`/api/view/ap/${apId}/units`)
       .expect(200);
     expect(unitsRes.body).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: "U1" })]),
     );
 
     const itemsRes = await request(server)
-      .get(`/api/view/acp/${acpId}/items`)
+      .get(`/api/view/ap/${apId}/items`)
       .expect(200);
     expect(itemsRes.body).toEqual(
       expect.arrayContaining([expect.objectContaining({ itemId: "U1_I1" })]),
     );
 
     const sequencesRes = await request(server)
-      .get(`/api/view/acp/${acpId}/sequences`)
+      .get(`/api/view/ap/${apId}/sequences`)
       .expect(200);
     expect(sequencesRes.body).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: "M1" })]),
     );
 
     const sequenceRes = await request(server)
-      .get(`/api/view/acp/${acpId}/sequences/M1`)
+      .get(`/api/view/ap/${apId}/sequences/M1`)
       .expect(200);
     expect(sequenceRes.body.units).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: "U1" })]),
@@ -441,7 +439,7 @@ describe("ContentPool API (e2e)", () => {
     ).toISOString();
 
     await request(server)
-      .put(`/api/acp/${acpId}/access`)
+      .put(`/api/ap/${apId}/access`)
       .set("Authorization", `Bearer ${authToken}`)
       .send({
         accessModel: "CREDENTIALS_LIST",
@@ -452,11 +450,11 @@ describe("ContentPool API (e2e)", () => {
       .expect(200);
 
     const reviewConfig = await request(server)
-      .get(`/api/view/acp/${acpId}/review/config`)
+      .get(`/api/view/ap/${apId}/review/config`)
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
     await request(server)
-      .put(`/api/view/acp/${acpId}/review/config`)
+      .put(`/api/view/ap/${apId}/review/config`)
       .set("Authorization", `Bearer ${authToken}`)
       .send({
         enableReview: true,
@@ -467,7 +465,7 @@ describe("ContentPool API (e2e)", () => {
       .expect(200);
 
     const credentialRes = await request(server)
-      .post(`/api/acp/${acpId}/access/credentials/single`)
+      .post(`/api/ap/${apId}/access/credentials/single`)
       .set("Authorization", `Bearer ${authToken}`)
       .send({
         username: credentialUsername,
@@ -480,7 +478,7 @@ describe("ContentPool API (e2e)", () => {
     const loginRes = await request(server)
       .post("/api/auth/credential-login")
       .send({
-        acpId,
+        apId,
         username: credentialUsername,
         password: credentialPassword,
       })
@@ -490,12 +488,12 @@ describe("ContentPool API (e2e)", () => {
     expect(credentialToken).toBeDefined();
 
     await request(server)
-      .get(`/api/view/acp/${acpId}`)
+      .get(`/api/view/ap/${apId}`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
 
     await request(server)
-      .get(`/api/view/acp/${acpId}/items`)
+      .get(`/api/view/ap/${apId}/items`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
   });
@@ -505,7 +503,7 @@ describe("ContentPool API (e2e)", () => {
     const query = buildPatchPersonalItemPreferenceRowQuery("credential_id");
     const executePatch = async (rowData: Record<string, unknown> | null) =>
       itemPreferenceRepository.query(query, [
-        acpId,
+        apId,
         "item-explorer",
         null,
         credentialId,
@@ -524,7 +522,7 @@ describe("ContentPool API (e2e)", () => {
     await executePatch(insertedRow);
 
     let record = await itemPreferenceRepository.findOneByOrFail({
-      acpId,
+      apId,
       viewId: "item-explorer",
       credentialId,
     });
@@ -538,7 +536,7 @@ describe("ContentPool API (e2e)", () => {
     await executePatch(updatedRow);
 
     record = await itemPreferenceRepository.findOneByOrFail({
-      acpId,
+      apId,
       viewId: "item-explorer",
       credentialId,
     });
@@ -551,7 +549,7 @@ describe("ContentPool API (e2e)", () => {
     await executePatch(null);
 
     record = await itemPreferenceRepository.findOneByOrFail({
-      acpId,
+      apId,
       viewId: "item-explorer",
       credentialId,
     });
@@ -563,7 +561,7 @@ describe("ContentPool API (e2e)", () => {
     await itemPreferenceRepository.query(
       buildPatchPersonalItemPreferenceRowQuery("credential_id"),
       [
-        acpId,
+        apId,
         "item-explorer",
         null,
         credentialId,
@@ -580,7 +578,7 @@ describe("ContentPool API (e2e)", () => {
     );
 
     const created = await request(server)
-      .post(`/api/view/acp/${acpId}/items/collections`)
+      .post(`/api/view/ap/${apId}/items/collections`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .send({ name: "Concurrency" })
       .expect(201);
@@ -588,11 +586,11 @@ describe("ContentPool API (e2e)", () => {
 
     const updates = await Promise.all([
       request(server)
-        .patch(`/api/view/acp/${acpId}/items/collections/${collectionId}`)
+        .patch(`/api/view/ap/${apId}/items/collections/${collectionId}`)
         .set("Authorization", `Bearer ${credentialToken}`)
         .send({ baseVersion: 1, name: "First" }),
       request(server)
-        .patch(`/api/view/acp/${acpId}/items/collections/${collectionId}`)
+        .patch(`/api/view/ap/${apId}/items/collections/${collectionId}`)
         .set("Authorization", `Bearer ${credentialToken}`)
         .send({ baseVersion: 1, name: "Second" }),
     ]);
@@ -601,7 +599,7 @@ describe("ContentPool API (e2e)", () => {
       200, 409,
     ]);
     const record = await itemPreferenceRepository.findOneByOrFail({
-      acpId,
+      apId,
       viewId: "item-explorer",
       credentialId,
     });
@@ -613,7 +611,7 @@ describe("ContentPool API (e2e)", () => {
     );
 
     const userCollections = await request(server)
-      .get(`/api/view/acp/${acpId}/items/collections`)
+      .get(`/api/view/ap/${apId}/items/collections`)
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
     expect(userCollections.body.collections).toEqual([]);
@@ -628,17 +626,17 @@ describe("ContentPool API (e2e)", () => {
           AND "view_id" = 'item-explorer'
           AND "credential_id" = $2
       `,
-      [acpId, credentialId],
+      [apId, credentialId],
     );
 
     const created = await request(server)
-      .post(`/api/view/acp/${acpId}/items/collections`)
+      .post(`/api/view/ap/${apId}/items/collections`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .send({ name: "Repaired" })
       .expect(201);
 
     const record = await itemPreferenceRepository.findOneByOrFail({
-      acpId,
+      apId,
       viewId: "item-explorer",
       credentialId,
     });
@@ -667,17 +665,17 @@ describe("ContentPool API (e2e)", () => {
           WHERE "credential_id" IS NOT NULL
         DO UPDATE SET "preferences" = '[]'::jsonb
       `,
-      [acpId, viewId, credentialId, credentialUsername],
+      [apId, viewId, credentialId, credentialUsername],
     );
 
     await request(server)
-      .put(`/api/view/acp/${acpId}/items/preferences`)
+      .put(`/api/view/ap/${apId}/items/preferences`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .send({ viewId, ui: { filterText: "persisted" } })
       .expect(200);
 
     const loaded = await request(server)
-      .get(`/api/view/acp/${acpId}/items/preferences`)
+      .get(`/api/view/ap/${apId}/items/preferences`)
       .query({ viewId })
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
@@ -688,7 +686,7 @@ describe("ContentPool API (e2e)", () => {
     });
 
     const record = await itemPreferenceRepository.findOneByOrFail({
-      acpId,
+      apId,
       viewId,
       credentialId,
     });
@@ -697,7 +695,7 @@ describe("ContentPool API (e2e)", () => {
 
   it("covers comment export", async () => {
     await request(server)
-      .post(`/api/acp/${acpId}/comments`)
+      .post(`/api/ap/${apId}/comments`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .send({
         targetType: "ITEM",
@@ -707,7 +705,7 @@ describe("ContentPool API (e2e)", () => {
       .expect(201);
 
     const mineRes = await request(server)
-      .get(`/api/acp/${acpId}/comments/mine`)
+      .get(`/api/ap/${apId}/comments/mine`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
     expect(mineRes.body).toEqual(
@@ -721,7 +719,7 @@ describe("ContentPool API (e2e)", () => {
     );
 
     const exportJsonRes = await request(server)
-      .get(`/api/acp/${acpId}/comments/export`)
+      .get(`/api/ap/${apId}/comments/export`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
 
@@ -729,7 +727,7 @@ describe("ContentPool API (e2e)", () => {
     expect(exportJsonRes.body.length).toBeGreaterThanOrEqual(1);
 
     const exportXlsxRes = await request(server)
-      .get(`/api/acp/${acpId}/comments/export.xlsx`)
+      .get(`/api/ap/${apId}/comments/export.xlsx`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
 
@@ -740,7 +738,7 @@ describe("ContentPool API (e2e)", () => {
 
   it("shares an item thread while keeping edits author-only", async () => {
     const rootRes = await request(server)
-      .post(`/api/acp/${acpId}/review/comments`)
+      .post(`/api/ap/${apId}/review/comments`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .send({
         unitId: "U1",
@@ -760,7 +758,7 @@ describe("ContentPool API (e2e)", () => {
     });
 
     const managerThreadRes = await request(server)
-      .get(`/api/acp/${acpId}/review/comments`)
+      .get(`/api/ap/${apId}/review/comments`)
       .query({ unitId: "U1", itemId: "U1_I1" })
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
@@ -772,13 +770,13 @@ describe("ContentPool API (e2e)", () => {
     );
 
     await request(server)
-      .patch(`/api/acp/${acpId}/review/comments/${rootRes.body.id}`)
+      .patch(`/api/ap/${apId}/review/comments/${rootRes.body.id}`)
       .set("Authorization", `Bearer ${authToken}`)
       .send({ commentText: "Manager overwrite", version: 1 })
       .expect(403);
 
     const updatedRootRes = await request(server)
-      .patch(`/api/acp/${acpId}/review/comments/${rootRes.body.id}`)
+      .patch(`/api/ap/${apId}/review/comments/${rootRes.body.id}`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .send({ commentText: "Shared root updated", version: 1 })
       .expect(200);
@@ -788,7 +786,7 @@ describe("ContentPool API (e2e)", () => {
     });
 
     const replyRes = await request(server)
-      .post(`/api/acp/${acpId}/review/comments`)
+      .post(`/api/ap/${apId}/review/comments`)
       .set("Authorization", `Bearer ${authToken}`)
       .send({
         unitId: "U1",
@@ -800,7 +798,7 @@ describe("ContentPool API (e2e)", () => {
     expect(replyRes.body.parentCommentId).toBe(rootRes.body.id);
 
     const participantThreadRes = await request(server)
-      .get(`/api/acp/${acpId}/review/comments`)
+      .get(`/api/ap/${apId}/review/comments`)
       .query({ unitId: "U1", itemId: "U1_I1" })
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
@@ -816,7 +814,7 @@ describe("ContentPool API (e2e)", () => {
     );
 
     const countsRes = await request(server)
-      .get(`/api/acp/${acpId}/review/comments/counts`)
+      .get(`/api/ap/${apId}/review/comments/counts`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
     expect(countsRes.body.counts).toEqual(
@@ -826,7 +824,7 @@ describe("ContentPool API (e2e)", () => {
     );
 
     const managerMineCsv = await request(server)
-      .get(`/api/acp/${acpId}/review/comments/export/mine.csv`)
+      .get(`/api/ap/${apId}/review/comments/export/mine.csv`)
       .set("Authorization", `Bearer ${authToken}`)
       .buffer(true)
       .parse((res, callback) => {
@@ -840,16 +838,16 @@ describe("ContentPool API (e2e)", () => {
     expect(managerMineText).not.toContain("Shared root updated");
 
     await request(server)
-      .get(`/api/acp/${acpId}/review/comments/export/all.xlsx`)
+      .get(`/api/ap/${apId}/review/comments/export/all.xlsx`)
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
     await request(server)
-      .get(`/api/acp/${acpId}/review/comments/export/all.xlsx`)
+      .get(`/api/ap/${apId}/review/comments/export/all.xlsx`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(403);
 
     const personalExportRes = await request(server)
-      .get(`/api/acp/${acpId}/comments/export`)
+      .get(`/api/ap/${apId}/comments/export`)
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
     expect(personalExportRes.body).toEqual(
@@ -867,7 +865,7 @@ describe("ContentPool API (e2e)", () => {
     );
 
     const exportRes = await request(server)
-      .get(`/api/acp/${acpId}/comments/export`)
+      .get(`/api/ap/${apId}/comments/export`)
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
     expect(exportRes.body).toEqual(
@@ -887,7 +885,7 @@ describe("ContentPool API (e2e)", () => {
     );
 
     const legacyDeleteRes = await request(server)
-      .delete(`/api/acp/${acpId}/comments`)
+      .delete(`/api/ap/${apId}/comments`)
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
     expect(legacyDeleteRes.body).toEqual(
@@ -900,7 +898,7 @@ describe("ContentPool API (e2e)", () => {
     expect(legacyDeleteRes.body.retainedCount).toBeGreaterThanOrEqual(3);
 
     const threadAfterLegacyDelete = await request(server)
-      .get(`/api/acp/${acpId}/review/comments`)
+      .get(`/api/ap/${apId}/review/comments`)
       .query({ unitId: "U1", itemId: "I1" })
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
@@ -912,13 +910,13 @@ describe("ContentPool API (e2e)", () => {
     );
 
     await request(server)
-      .delete(`/api/acp/${acpId}/review/comments/${rootRes.body.id}`)
+      .delete(`/api/ap/${apId}/review/comments/${rootRes.body.id}`)
       .query({ version: 2 })
       .set("Authorization", `Bearer ${credentialToken}`)
       .expect(200);
 
     const tombstoneThreadRes = await request(server)
-      .get(`/api/acp/${acpId}/review/comments`)
+      .get(`/api/ap/${apId}/review/comments`)
       .query({ unitId: "U1", itemId: "U1_I1" })
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
@@ -942,7 +940,7 @@ describe("ContentPool API (e2e)", () => {
 
   it("covers snapshot restore scenario", async () => {
     const snapshotRes = await request(server)
-      .post(`/api/acp/${acpId}/snapshots`)
+      .post(`/api/ap/${apId}/snapshots`)
       .set("Authorization", `Bearer ${authToken}`)
       .send({ changelog: "baseline" })
       .expect(201);
@@ -965,13 +963,13 @@ describe("ContentPool API (e2e)", () => {
     };
 
     await request(server)
-      .put(`/api/acp/${acpId}/index`)
+      .put(`/api/ap/${apId}/index`)
       .set("Authorization", `Bearer ${authToken}`)
       .send(modifiedIndex)
       .expect(200);
 
     const changedIndexRes = await request(server)
-      .get(`/api/acp/${acpId}/index`)
+      .get(`/api/ap/${apId}/index`)
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
 
@@ -980,12 +978,12 @@ describe("ContentPool API (e2e)", () => {
     );
 
     await request(server)
-      .post(`/api/acp/${acpId}/snapshots/${snapshotId}/restore`)
+      .post(`/api/ap/${apId}/snapshots/${snapshotId}/restore`)
       .set("Authorization", `Bearer ${authToken}`)
       .expect(201);
 
     const restoredIndexRes = await request(server)
-      .get(`/api/acp/${acpId}/index`)
+      .get(`/api/ap/${apId}/index`)
       .set("Authorization", `Bearer ${authToken}`)
       .expect(200);
 

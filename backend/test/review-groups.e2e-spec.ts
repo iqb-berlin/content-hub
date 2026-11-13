@@ -4,13 +4,13 @@ import { JwtService } from "@nestjs/jwt";
 import { DataSource } from "typeorm";
 import * as request from "supertest";
 import {
-  Acp,
-  AcpFile,
-  AcpItemRowNumber,
+  Ap,
+  ApFile,
+  ApItemRowNumber,
   CommentTargetType,
-  AcpAccessConfig,
-  AcpUserRole,
-  AcpCredential,
+  ApAccessConfig,
+  ApUserRole,
+  ApCredential,
   User,
   Comment,
 } from "../src/database/entities";
@@ -36,13 +36,13 @@ import { ItemExplorerStateService } from "../src/item-explorer/item-explorer-sta
 describe("Review visibility, groups and synchronization API", () => {
   jest.setTimeout(60000);
   let app: INestApplication, db: DataSource, server: any;
-  let acpId: string, configId: string, config: any;
+  let apId: string, configId: string, config: any;
   let manager: string;
   const actors: { token: string; id: string; kind: "user" | "credential" }[] =
     [];
   const headers = (token: string) => ({ Authorization: `Bearer ${token}` });
-  const api = () => `/api/acp/${acpId}/review/comments`;
-  const configApi = () => `/api/view/acp/${acpId}/review/config`;
+  const api = () => `/api/ap/${apId}/review/comments`;
+  const configApi = () => `/api/view/ap/${apId}/review/config`;
   const item = { targetType: "ITEM", unitId: "U", itemId: "I" };
   async function saveConfig(changes: any = {}) {
     const response = await request(server)
@@ -177,14 +177,14 @@ describe("Review visibility, groups and synchronization API", () => {
     } finally {
       await triggerRunner.release();
     }
-    const acp = await db.getRepository(Acp).save({
+    const ap = await db.getRepository(Ap).save({
       packageId: `review-${Date.now()}`,
       name: "Review groups",
-      acpIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
+      apIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
     });
-    acpId = acp.id;
-    const row = await db.getRepository(AcpAccessConfig).save({
-      acpId,
+    apId = ap.id;
+    const row = await db.getRepository(ApAccessConfig).save({
+      apId,
       accessModel: "CREDENTIALS_LIST" as any,
       featureConfig: {
         enableReview: true,
@@ -198,7 +198,7 @@ describe("Review visibility, groups and synchronization API", () => {
     for (let i = 0; i < 5; i++) {
       const isCredential = i === 2 || i === 3;
       if (isCredential) {
-        const credential = await db.getRepository(AcpCredential).save({
+        const credential = await db.getRepository(ApCredential).save({
           accessConfigId: configId,
           username: `review-${i}`,
           passwordHash: "unused",
@@ -211,17 +211,17 @@ describe("Review visibility, groups and synchronization API", () => {
             sub: credential.id,
             username: credential.username,
             type: "credential",
-            acpId,
+            apId,
           }),
         });
       } else {
         const user = await db
           .getRepository(User)
           .save({ username: `review-${i}-${Date.now()}`, isAppAdmin: i === 4 });
-        await db.getRepository(AcpUserRole).save({
-          acpId,
+        await db.getRepository(ApUserRole).save({
+          apId,
           userId: user.id,
-          role: i === 4 ? ("ACP_MANAGER" as any) : ("READ_ONLY" as any),
+          role: i === 4 ? ("AP_MANAGER" as any) : ("READ_ONLY" as any),
           capabilities:
             i === 4
               ? ["review:manage", "review:participate"]
@@ -279,12 +279,12 @@ describe("Review visibility, groups and synchronization API", () => {
         .send({ ...saved, [setting]: false })
         .expect(409);
       expect(
-        (await db.getRepository(AcpAccessConfig).findOneByOrFail({ acpId }))
+        (await db.getRepository(ApAccessConfig).findOneByOrFail({ apId }))
           .featureConfig[setting],
       ).toBe(true);
       for (const actor of actors) {
         const start = await request(server)
-          .get(`/api/view/acp/${acpId}`)
+          .get(`/api/view/ap/${apId}`)
           .set(headers(actor.token))
           .expect(200);
         expect(start.body.featureConfig[setting]).toBe(true);
@@ -297,25 +297,25 @@ describe("Review visibility, groups and synchronization API", () => {
   it.each(["hideReviewMetadata", "hideReviewDeveloperNames"])(
     "protects %s from stale and unauthorized general access updates",
     async (setting) => {
-      const isolatedAcp = await db.getRepository(Acp).save({
+      const isolatedAp = await db.getRepository(Ap).save({
         packageId: `review-access-${setting}-${Date.now()}`,
         name: "Review visibility ownership",
-        acpIndex: {},
+        apIndex: {},
       });
-      const repository = db.getRepository(AcpAccessConfig);
+      const repository = db.getRepository(ApAccessConfig);
       await repository.save({
-        acpId: isolatedAcp.id,
+        apId: isolatedAp.id,
         accessModel: "PUBLIC" as any,
         featureConfig: { enableReview: true, showMetadata: true },
       });
-      await db.getRepository(AcpUserRole).save({
-        acpId: isolatedAcp.id,
+      await db.getRepository(ApUserRole).save({
+        apId: isolatedAp.id,
         userId: actors[0].id,
-        role: "ACP_MANAGER" as any,
+        role: "AP_MANAGER" as any,
         capabilities: [],
       });
-      const accessUrl = `/api/acp/${isolatedAcp.id}/access`;
-      const reviewUrl = `/api/view/acp/${isolatedAcp.id}/review/config`;
+      const accessUrl = `/api/ap/${isolatedAp.id}/access`;
+      const reviewUrl = `/api/view/ap/${isolatedAp.id}/review/config`;
       const staleAccess = await request(server)
         .get(accessUrl)
         .set(headers(actors[0].token))
@@ -329,7 +329,7 @@ describe("Review visibility, groups and synchronization API", () => {
         .set(headers(manager))
         .send({ ...initial.body, [setting]: true })
         .expect(200);
-      const saved = await repository.findOneByOrFail({ acpId: isolatedAcp.id });
+      const saved = await repository.findOneByOrFail({ apId: isolatedAp.id });
 
       for (const token of [actors[0].token, manager]) {
         for (const incoming of [undefined, false, "false", null, [true]]) {
@@ -355,7 +355,7 @@ describe("Review visibility, groups and synchronization API", () => {
         .expect(200);
       expect(current.body).toEqual(hidden.body);
       const stored = await repository.findOneByOrFail({
-        acpId: isolatedAcp.id,
+        apId: isolatedAp.id,
       });
       expect(stored.reviewConfigVersion).toBe(saved.reviewConfigVersion);
       expect(stored.reviewRevision).toBe(saved.reviewRevision);
@@ -394,7 +394,7 @@ describe("Review visibility, groups and synchronization API", () => {
         .expect(200);
       expect(snapshot.body.comments).toHaveLength(1);
     }
-    const before = await db.getRepository(Comment).find({ where: { acpId } });
+    const before = await db.getRepository(Comment).find({ where: { apId } });
     await request(server)
       .put(configApi())
       .set(headers(manager))
@@ -420,13 +420,13 @@ describe("Review visibility, groups and synchronization API", () => {
             .expect(200)
         ).body.comments,
       ).toHaveLength(4);
-    expect(await db.getRepository(Comment).find({ where: { acpId } })).toEqual(
+    expect(await db.getRepository(Comment).find({ where: { apId } })).toEqual(
       before,
     );
     await saveConfig({ visibilityMode: "PRIVATE" });
   });
 
-  it("creates ACP-specific groups independently of grants", async () => {
+  it("creates AP-specific groups independently of grants", async () => {
     await saveConfig({
       visibilityMode: "GROUP",
       groups: [
@@ -455,15 +455,15 @@ describe("Review visibility, groups and synchronization API", () => {
     }
   });
 
-  it("cannot bypass sharing confirmation through general ACP feature settings", async () => {
+  it("cannot bypass sharing confirmation through general AP feature settings", async () => {
     const current = await request(server)
-      .get(`/api/acp/${acpId}/access`)
+      .get(`/api/ap/${apId}/access`)
       .set(headers(manager))
       .expect(200);
     expect(current.body).not.toHaveProperty("reviewRevision");
     expect(current.body).not.toHaveProperty("reviewGroups");
     const result = await request(server)
-      .put(`/api/acp/${acpId}/access`)
+      .put(`/api/ap/${apId}/access`)
       .set(headers(manager))
       .send({
         accessModel: "CREDENTIALS_LIST",
@@ -484,7 +484,7 @@ describe("Review visibility, groups and synchronization API", () => {
       ungroupedVisibilityMode: "PRIVATE",
     });
     const memberList = await request(server)
-      .get(`/api/view/acp/${acpId}/review/members`)
+      .get(`/api/view/ap/${apId}/review/members`)
       .set(headers(manager))
       .expect(200);
     expect(memberList.body).toHaveLength(5);
@@ -654,7 +654,7 @@ describe("Review visibility, groups and synchronization API", () => {
     expect(all).toContain(config.groups[0].id);
     expect(all).toContain(config.groups[1].id);
     expect(all).toContain("B-secret");
-    const before = await db.getRepository(Comment).find({ where: { acpId } });
+    const before = await db.getRepository(Comment).find({ where: { apId } });
     await saveConfig({
       groups: config.groups.map((group: any, index: number) => ({
         ...group,
@@ -665,7 +665,7 @@ describe("Review visibility, groups and synchronization API", () => {
     for (const actor of [actors[0], actors[2]]) {
       const own = (
         await request(server)
-          .get(`/api/acp/${acpId}/comments/mine`)
+          .get(`/api/ap/${apId}/comments/mine`)
           .set(headers(actor.token))
           .expect(200)
       ).body;
@@ -687,7 +687,7 @@ describe("Review visibility, groups and synchronization API", () => {
         await readExport(actor.token, `${api()}/export/mine.xlsx`),
       ).not.toContain(config.groups[0].id);
     }
-    expect(await db.getRepository(Comment).find({ where: { acpId } })).toEqual(
+    expect(await db.getRepository(Comment).find({ where: { apId } })).toEqual(
       before,
     );
     const runner = db.createQueryRunner();
@@ -753,7 +753,7 @@ describe("Review visibility, groups and synchronization API", () => {
       Number(
         (
           await db
-            .getRepository(AcpAccessConfig)
+            .getRepository(ApAccessConfig)
             .findOneByOrFail({ id: configId })
         ).reviewRevision,
       ),
@@ -775,7 +775,7 @@ describe("Review visibility, groups and synchronization API", () => {
         .expect(200);
     }
     await request(server)
-      .get(`/api/view/acp/${acpId}/review`)
+      .get(`/api/view/ap/${apId}/review`)
       .set(headers(actors[0].token))
       .expect(403);
     await request(server)
@@ -784,7 +784,7 @@ describe("Review visibility, groups and synchronization API", () => {
       .set(headers(manager))
       .expect(200);
     await request(server)
-      .get(`/api/view/acp/${acpId}/review`)
+      .get(`/api/view/ap/${apId}/review`)
       .set(headers(manager))
       .expect(200);
   });
@@ -822,14 +822,14 @@ describe("Review visibility, groups and synchronization API", () => {
       .set(headers(voter.token))
       .send({ value: "UP" })
       .expect(404);
-    const otherAcp = await db
-      .getRepository(Acp)
+    const otherAp = await db
+      .getRepository(Ap)
       .save({ packageId: `vote-other-${Date.now()}`, name: "Other" });
     const foreign = await db.getRepository(Comment).save({
-      acpId: otherAcp.id,
+      apId: otherAp.id,
       targetType: "ITEM" as any,
       targetId: "I",
-      commentText: "Other ACP",
+      commentText: "Other AP",
     });
     await request(server)
       .put(`${api()}/${foreign.id}/vote`)
@@ -840,7 +840,7 @@ describe("Review visibility, groups and synchronization API", () => {
       (
         await db.query(
           `SELECT review_revision FROM acp_access_configs WHERE acp_id = $1`,
-          [acpId],
+          [apId],
         )
       )[0].review_revision;
     const revisionBefore = await revisions();
@@ -896,7 +896,7 @@ describe("Review visibility, groups and synchronization API", () => {
       ),
     ).toMatchObject({ upvotes: 0, downvotes: 1, myVote: "DOWN" });
     await db
-      .getRepository(AcpCredential)
+      .getRepository(ApCredential)
       .update(credential.id, { username: "renamed-voter" });
     expect(
       (await thread(credential.token)).body.comments.find(
@@ -904,8 +904,8 @@ describe("Review visibility, groups and synchronization API", () => {
       ).myVote,
     ).toBe("DOWN");
     await db
-      .getRepository(AcpUserRole)
-      .update({ acpId, userId: voter.id }, { capabilities: ["review:manage"] });
+      .getRepository(ApUserRole)
+      .update({ apId, userId: voter.id }, { capabilities: ["review:manage"] });
     await request(server)
       .put(voteApi)
       .set(headers(voter.token))
@@ -916,9 +916,9 @@ describe("Review visibility, groups and synchronization API", () => {
         .canVote,
     ).toBe(false);
     await db
-      .getRepository(AcpUserRole)
+      .getRepository(ApUserRole)
       .update(
-        { acpId, userId: voter.id },
+        { apId, userId: voter.id },
         { capabilities: ["review:participate"] },
       );
     await saveConfig({ visibilityMode: "PRIVATE" });
@@ -1066,10 +1066,10 @@ describe("Review visibility, groups and synchronization API", () => {
           expect(body.current).toMatchObject({ upvotes: 2, canVote: false }),
         );
       const row = await db
-        .getRepository(AcpAccessConfig)
-        .findOneByOrFail({ acpId });
-      await db.getRepository(AcpAccessConfig).update(
-        { acpId },
+        .getRepository(ApAccessConfig)
+        .findOneByOrFail({ apId });
+      await db.getRepository(ApAccessConfig).update(
+        { apId },
         {
           featureConfig: {
             ...row.featureConfig,
@@ -1084,7 +1084,7 @@ describe("Review visibility, groups and synchronization API", () => {
         .set(headers(manager))
         .send({ value: "UP" })
         .expect(403);
-      await db.getRepository(AcpAccessConfig).save(row);
+      await db.getRepository(ApAccessConfig).save(row);
     },
   );
 
@@ -1103,13 +1103,13 @@ describe("Review visibility, groups and synchronization API", () => {
       await limited.initialize();
       const directory = await mkdtemp(join(tmpdir(), "review-pool-"));
       try {
-        const acp = await limited.getRepository(Acp).save({
+        const ap = await limited.getRepository(Ap).save({
           packageId: `pool-${poolSize}-${Date.now()}`,
           name: "Real catalog",
-          acpIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
+          apIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
         });
-        await limited.getRepository(AcpAccessConfig).save({
-          acpId: acp.id,
+        await limited.getRepository(ApAccessConfig).save({
+          apId: ap.id,
           accessModel: "REGISTERED" as any,
           featureConfig: {
             enableReview: true,
@@ -1130,8 +1130,8 @@ describe("Review visibility, groups and synchronization API", () => {
         for (const [originalName, content] of Object.entries(files)) {
           const filePath = join(directory, originalName);
           await writeFile(filePath, content);
-          await limited.getRepository(AcpFile).save({
-            acpId: acp.id,
+          await limited.getRepository(ApFile).save({
+            apId: ap.id,
             originalName,
             filePath,
             fileSize: content.length,
@@ -1139,12 +1139,12 @@ describe("Review visibility, groups and synchronization API", () => {
         }
         // All sources are real services. Their default repositories use the same
         // constrained pool, so any escaped transaction query fails this test.
-        const catalog = new FileCatalogCache(limited.getRepository(AcpFile));
+        const catalog = new FileCatalogCache(limited.getRepository(ApFile));
         const parser = new UnitParserService(
-          limited.getRepository(AcpFile),
-          limited.getRepository(Acp),
-          limited.getRepository(AcpAccessConfig),
-          new ItemRowNumberingService(limited.getRepository(AcpItemRowNumber)),
+          limited.getRepository(ApFile),
+          limited.getRepository(Ap),
+          limited.getRepository(ApAccessConfig),
+          new ItemRowNumberingService(limited.getRepository(ApItemRowNumber)),
           app.get(ItemExplorerStateService),
           catalog,
           new ItemListParser(),
@@ -1153,13 +1153,13 @@ describe("Review visibility, groups and synchronization API", () => {
         );
         const service = new CommentsService(
           limited.getRepository(Comment),
-          new ReviewPolicyService(limited.getRepository(AcpAccessConfig)),
+          new ReviewPolicyService(limited.getRepository(ApAccessConfig)),
           parser,
           catalog,
-          limited.getRepository(Acp),
+          limited.getRepository(Ap),
           new ReviewManifestService(
-            limited.getRepository(Acp),
-            limited.getRepository(AcpFile),
+            limited.getRepository(Ap),
+            limited.getRepository(ApFile),
           ),
         );
         const actor = () => ({
@@ -1180,14 +1180,14 @@ describe("Review visibility, groups and synchronization API", () => {
           };
           const results = await Promise.all(
             Array.from({ length: Math.max(2, poolSize) }, () =>
-              service.getReviewThread(acp.id, target, actor()),
+              service.getReviewThread(ap.id, target, actor()),
             ),
           );
           expect(
             results.every((result) => result.target.targetType === targetType),
           ).toBe(true);
           const comment = await service.createReviewComment(
-            acp.id,
+            ap.id,
             { ...target, commentText: "Root" },
             {
               userId: actors[0].id,
@@ -1198,7 +1198,7 @@ describe("Review visibility, groups and synchronization API", () => {
           );
           const states = await Promise.all(
             Array.from({ length: Math.max(2, poolSize) }, () =>
-              service.setVote(acp.id, comment.id, "UP", actor()),
+              service.setVote(ap.id, comment.id, "UP", actor()),
             ),
           );
           expect(
@@ -1210,11 +1210,11 @@ describe("Review visibility, groups and synchronization API", () => {
         // Review reads and votes must never create persistent row numbers.
         expect(
           await limited
-            .getRepository(AcpItemRowNumber)
-            .count({ where: { acpId: acp.id } }),
+            .getRepository(ApItemRowNumber)
+            .count({ where: { apId: ap.id } }),
         ).toBe(0);
         if (poolSize === 2) {
-          // Hold the ACP lock taken by Explorer publication. A review must still
+          // Hold the AP lock taken by Explorer publication. A review must still
           // finish while holding its configuration lock, even with no row numbers.
           const publishing = limited.createQueryRunner();
           await publishing.connect();
@@ -1222,12 +1222,12 @@ describe("Review visibility, groups and synchronization API", () => {
           let reading: Promise<unknown> | undefined;
           let deadline: ReturnType<typeof setTimeout> | undefined;
           try {
-            await publishing.manager.findOne(Acp, {
-              where: { id: acp.id },
+            await publishing.manager.findOne(Ap, {
+              where: { id: ap.id },
               lock: { mode: "pessimistic_write" },
             });
             reading = service.getReviewThread(
-              acp.id,
+              ap.id,
               { targetType: CommentTargetType.ITEM, unitId: "U", itemId: "I" },
               actor(),
             );
@@ -1235,7 +1235,7 @@ describe("Review visibility, groups and synchronization API", () => {
               reading,
               new Promise((_, reject) => {
                 deadline = setTimeout(
-                  () => reject(new Error("Review waits for Explorer ACP lock")),
+                  () => reject(new Error("Review waits for Explorer AP lock")),
                   2000,
                 );
               }),
@@ -1243,7 +1243,7 @@ describe("Review visibility, groups and synchronization API", () => {
             await (
               app.get(ItemExplorerStateService) as any
             ).applyPublishedStateToDomain(
-              acp.id,
+              ap.id,
               {
                 itemProperties: { I: { note: "Published concurrently" } },
                 metadataColumns: {
@@ -1254,14 +1254,14 @@ describe("Review visibility, groups and synchronization API", () => {
                 },
               },
               {
-                acpRepository: publishing.manager.getRepository(Acp),
+                apRepository: publishing.manager.getRepository(Ap),
                 accessConfigRepository:
-                  publishing.manager.getRepository(AcpAccessConfig),
+                  publishing.manager.getRepository(ApAccessConfig),
               },
             );
             await publishing.commitTransaction();
             expect(
-              (await limited.getRepository(Acp).findOneByOrFail({ id: acp.id }))
+              (await limited.getRepository(Ap).findOneByOrFail({ id: ap.id }))
                 .itemProperties,
             ).toEqual({ I: { note: "Published concurrently" } });
           } finally {
@@ -1274,20 +1274,20 @@ describe("Review visibility, groups and synchronization API", () => {
         }
         // The normal Explorer parser still persists missing numbers. Review
         // queries then reuse those numbers without changing them.
-        await parser.getItemListFromFiles(acp.id);
+        await parser.getItemListFromFiles(ap.id);
         const persisted = await limited
-          .getRepository(AcpItemRowNumber)
-          .find({ where: { acpId: acp.id } });
+          .getRepository(ApItemRowNumber)
+          .find({ where: { apId: ap.id } });
         expect(persisted.length).toBeGreaterThan(0);
         await service.getReviewThread(
-          acp.id,
+          ap.id,
           { targetType: CommentTargetType.ITEM, unitId: "U", itemId: "I" },
           actor(),
         );
         expect(
           await limited
-            .getRepository(AcpItemRowNumber)
-            .find({ where: { acpId: acp.id } }),
+            .getRepository(ApItemRowNumber)
+            .find({ where: { apId: ap.id } }),
         ).toEqual(persisted);
       } finally {
         await limited.destroy();
@@ -1300,7 +1300,7 @@ describe("Review visibility, groups and synchronization API", () => {
     const q = db.createQueryRunner();
     await q.connect();
     const schema = `vote_migration_${Date.now()}`;
-    const acp = "10000000-0000-4000-8000-000000000001",
+    const ap = "10000000-0000-4000-8000-000000000001",
       comment = "10000000-0000-4000-8000-000000000002";
     try {
       await q.query(`CREATE SCHEMA "${schema}"`);
@@ -1311,18 +1311,16 @@ describe("Review visibility, groups and synchronization API", () => {
       await q.query(
         `CREATE TABLE comments (id uuid PRIMARY KEY, acp_id uuid, deleted_at timestamptz)`,
       );
-      await q.query(`INSERT INTO acp_access_configs(acp_id) VALUES ($1)`, [
-        acp,
-      ]);
+      await q.query(`INSERT INTO acp_access_configs(acp_id) VALUES ($1)`, [ap]);
       await q.query(`INSERT INTO comments(id, acp_id) VALUES ($1, $2)`, [
         comment,
-        acp,
+        ap,
       ]);
       const migration = new CommentVotes1789500000000();
       await migration.up(q);
       const insert = `INSERT INTO comment_votes(comment_id, user_id, value) VALUES ($1, $2, 'UP')`;
       await q.startTransaction();
-      await q.query(insert, [comment, acp]);
+      await q.query(insert, [comment, ap]);
       expect(
         (await q.query(`SELECT review_revision FROM acp_access_configs`))[0]
           .review_revision,
@@ -1334,10 +1332,10 @@ describe("Review visibility, groups and synchronization API", () => {
           .review_revision,
       ).toBe("0");
       await expect(q.query(insert, [comment, null])).rejects.toThrow();
-      await q.query(insert, [comment, acp]);
-      await expect(q.query(insert, [comment, acp])).rejects.toThrow();
+      await q.query(insert, [comment, ap]);
+      await expect(q.query(insert, [comment, ap])).rejects.toThrow();
       await expect(
-        q.query(`UPDATE comment_votes SET credential_id = $1`, [acp]),
+        q.query(`UPDATE comment_votes SET credential_id = $1`, [ap]),
       ).rejects.toThrow();
       await expect(
         q.query(`UPDATE comment_votes SET value = 'INVALID'`),
@@ -1592,24 +1590,24 @@ describe("Review visibility, groups and synchronization API", () => {
   it.each(["legacy", "review"] as const)(
     "keeps the category label in a %s export while its last assignment is removed",
     async (format) => {
-      const acp = await db.getRepository(Acp).save({
+      const ap = await db.getRepository(Ap).save({
         packageId: `category-export-${format}-${Date.now()}`,
         name: "Category export snapshot",
-        acpIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
+        apIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
       });
       const category = {
         id: "10000000-0000-4000-8000-000000000239",
         name: "Snapshot category",
         archived: false,
       };
-      await db.getRepository(AcpAccessConfig).save({
-        acpId: acp.id,
+      await db.getRepository(ApAccessConfig).save({
+        apId: ap.id,
         accessModel: "PRIVATE" as any,
         featureConfig: { commentVisibilityMode: "PRIVATE" },
         commentCategories: [category],
       });
       await db.getRepository(Comment).save({
-        acpId: acp.id,
+        apId: ap.id,
         userId: actors[4].id,
         targetType: CommentTargetType.UNIT,
         targetId: "U",
@@ -1629,9 +1627,9 @@ describe("Review visibility, groups and synchronization API", () => {
       const readingComments = new Promise<void>((resolve) => {
         commentsRead = resolve;
       });
-      const originalFind = CommentsService.prototype.findByAcp;
+      const originalFind = CommentsService.prototype.findByAp;
       const find = jest
-        .spyOn(CommentsService.prototype, "findByAcp")
+        .spyOn(CommentsService.prototype, "findByAp")
         .mockImplementationOnce(async function (
           this: CommentsService,
           id: string,
@@ -1661,11 +1659,9 @@ describe("Review visibility, groups and synchronization API", () => {
         const service = app.get(CommentsService);
         exporting =
           format === "legacy"
-            ? service
-                .exportComments(acp.id)
-                .then((rows) => JSON.stringify(rows))
+            ? service.exportComments(ap.id).then((rows) => JSON.stringify(rows))
             : service
-                .exportReviewCommentsCsv(acp.id, {
+                .exportReviewCommentsCsv(ap.id, {
                   userId: actors[4].id,
                   isManager: true,
                   visible: true,
@@ -1674,18 +1670,18 @@ describe("Review visibility, groups and synchronization API", () => {
         await Promise.all([readingCategories, readingComments]);
         let committed = false;
         writer = (async () => {
-          // The same ACP lock serializes real comment and category writes.
+          // The same AP lock serializes real comment and category writes.
           await q.query(
             `SELECT id FROM acp_access_configs WHERE acp_id = $1 FOR UPDATE`,
-            [acp.id],
+            [ap.id],
           );
           await q.query(
             `UPDATE comments SET category_id = NULL WHERE acp_id = $1`,
-            [acp.id],
+            [ap.id],
           );
           await q.query(
             `UPDATE acp_access_configs SET comment_categories = '[]' WHERE acp_id = $1`,
-            [acp.id],
+            [ap.id],
           );
           await q.commitTransaction();
           committed = true;
@@ -1711,8 +1707,8 @@ describe("Review visibility, groups and synchronization API", () => {
         expect(
           (
             await db
-              .getRepository(AcpAccessConfig)
-              .findOneByOrFail({ acpId: acp.id })
+              .getRepository(ApAccessConfig)
+              .findOneByOrFail({ apId: ap.id })
           ).commentCategories,
         ).toEqual([]);
       } finally {
@@ -1722,7 +1718,7 @@ describe("Review visibility, groups and synchronization API", () => {
         find.mockRestore();
         if (q.isTransactionActive) await q.rollbackTransaction();
         await q.release();
-        await db.getRepository(Acp).delete(acp.id);
+        await db.getRepository(Ap).delete(ap.id);
       }
     },
   );

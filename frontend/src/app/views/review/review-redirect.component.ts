@@ -15,18 +15,18 @@ export class ReviewRedirectComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const acpId =
-      this.route.snapshot.paramMap.get('acpId') ||
-      this.route.parent?.snapshot.paramMap.get('acpId') ||
+    const apId =
+      this.route.snapshot.paramMap.get('apId') ||
+      this.route.parent?.snapshot.paramMap.get('apId') ||
       '';
-    this.api.getCapabilities(acpId).subscribe({
+    this.api.getCapabilities(apId).subscribe({
       next: (access) => {
         const target = access?.canManageReview
-          ? ['/view', acpId, 'review', 'manage']
-          : ['/view', acpId];
+          ? ['/view', apId, 'review', 'manage']
+          : ['/view', apId];
         void this.router.navigate(target, { replaceUrl: true });
       },
-      error: () => void this.router.navigate(['/view', acpId], { replaceUrl: true }),
+      error: () => void this.router.navigate(['/view', apId], { replaceUrl: true }),
     });
   }
 }

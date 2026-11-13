@@ -221,7 +221,7 @@ export class UsersComponent implements OnInit {
   private mapDeleteError(err: any): string {
     const message = String(err?.error?.message || '');
 
-    if (message.includes('would have no ACP_MANAGER')) {
+    if (message.includes('would have no AP_MANAGER')) {
       return 'Löschen nicht möglich: Diese Person ist in mindestens einem AP der letzte AP-Manager.';
     }
 

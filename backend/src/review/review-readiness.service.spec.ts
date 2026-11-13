@@ -19,6 +19,7 @@ function setup(overrides: Record<string, any> = {}) {
         invalidFiles: 0,
         semanticValid: true,
         semanticIssueCount: 0,
+        semanticIssues: [],
         timestamp: "2026-09-14T12:00:00.000Z",
       },
     }),
@@ -55,7 +56,7 @@ function setup(overrides: Record<string, any> = {}) {
   Object.assign(validation, overrides.validation);
   Object.assign(unitParser, overrides.unitParser);
   Object.assign(manifest, overrides.manifest);
-  const acp = { acpIndex: { version: "1" } };
+  const ap = { apIndex: { version: "1" } };
   let snapshot: any = null;
   const snapshots = {
     findOne: jest.fn(async () => snapshot),
@@ -64,7 +65,7 @@ function setup(overrides: Record<string, any> = {}) {
     }),
   };
   return {
-    acp,
+    ap,
     uploadedFile,
     files,
     snapshots,
@@ -74,23 +75,56 @@ function setup(overrides: Record<string, any> = {}) {
       validation as any,
       unitParser as any,
       manifest as any,
-      { findOne: async () => acp } as any,
+      { findOne: async () => ap } as any,
       snapshots as any,
     ),
   };
 }
 
 describe("ReviewReadinessService", () => {
-  it("reports a technically complete ACP as ready", async () => {
+  it("reports a technically complete AP as ready", async () => {
     const { service } = setup();
 
-    await expect(service.check("acp-1")).resolves.toMatchObject({
+    await expect(service.check("ap-1")).resolves.toMatchObject({
       status: "READY",
       blockers: [],
       warnings: [],
       summary: { bookletCount: 1, unitCount: 1 },
     });
   });
+
+  it.each([
+    ["error", "BLOCKED"],
+    ["warning", "WARNING"],
+  ])(
+    "preserves AP-wide %s issues after file validation is separated",
+    async (severity, status) => {
+      const { service, validation } = setup();
+      const response = await validation.autoValidateUploadedFiles();
+      const issue = {
+        severity,
+        message: "AP reference requires attention",
+        path: "assessmentParts[0].scales[0].typeParameters.items[0].id",
+      };
+      Object.assign(response.summary, {
+        semanticValid: severity !== "error",
+        semanticIssueCount: 1,
+        semanticIssues: [issue],
+      });
+
+      const result = await service.check("ap-1");
+
+      expect(result.status).toBe(status);
+      expect(result[severity === "error" ? "blockers" : "warnings"]).toContain(
+        `${issue.message} (${issue.path})`,
+      );
+      expect(result.summary).toMatchObject({ validFiles: 1, invalidFiles: 0 });
+      expect(response.files[0].validationResult).toEqual({
+        valid: true,
+        issues: [],
+      });
+    },
+  );
 
   it("blocks missing referenced units without considering unrelated Unit files", async () => {
     const { service } = setup({
@@ -111,7 +145,7 @@ describe("ReviewReadinessService", () => {
       },
     });
 
-    const result = await service.check("acp-1");
+    const result = await service.check("ap-1");
     expect(result.status).toBe("BLOCKED");
     expect(result.blockers).toContain(
       "Für die referenzierte Unit „unit-1“ wurde keine Unit-Datei gefunden.",
@@ -138,7 +172,7 @@ describe("ReviewReadinessService", () => {
       },
     });
 
-    const result = await service.check("acp-1");
+    const result = await service.check("ap-1");
     expect(result.status).toBe("WARNING");
     expect(result.warnings).toContain(
       "Unit „Unit 1“: Metadaten „metadata.vomd“ fehlen.",
@@ -148,19 +182,19 @@ describe("ReviewReadinessService", () => {
 
 describe("persisted readiness", () => {
   it("loads the saved result and detects changes to files, index, and rules", async () => {
-    const { service, acp, uploadedFile } = setup();
-    expect(await service.getLast("acp-1")).toBeNull();
-    const result = await service.check("acp-1");
-    expect(await service.getLast("acp-1")).toEqual(result);
+    const { service, ap, uploadedFile } = setup();
+    expect(await service.getLast("ap-1")).toBeNull();
+    const result = await service.check("ap-1");
+    expect(await service.getLast("ap-1")).toEqual(result);
     uploadedFile.checksum = "v2";
-    expect((await service.getLast("acp-1"))?.stale).toBe(true);
-    await service.check("acp-1");
-    expect((await service.getLast("acp-1"))?.stale).toBe(false);
-    acp.acpIndex.version = "2";
-    expect((await service.getLast("acp-1"))?.stale).toBe(true);
-    await service.check("acp-1");
+    expect((await service.getLast("ap-1"))?.stale).toBe(true);
+    await service.check("ap-1");
+    expect((await service.getLast("ap-1"))?.stale).toBe(false);
+    ap.apIndex.version = "2";
+    expect((await service.getLast("ap-1"))?.stale).toBe(true);
+    await service.check("ap-1");
     (service as any).rulesVersion = "new-rules";
-    expect((await service.getLast("acp-1"))?.stale).toBe(true);
+    expect((await service.getLast("ap-1"))?.stale).toBe(true);
   });
   it("marks a result stale when content changes during validation", async () => {
     const { service, validation, uploadedFile } = setup();
@@ -169,7 +203,7 @@ describe("persisted readiness", () => {
       uploadedFile.checksum = "changed-during-check";
       return response;
     });
-    expect((await service.check("acp-1")).stale).toBe(true);
-    expect((await service.getLast("acp-1"))?.stale).toBe(true);
+    expect((await service.check("ap-1")).stale).toBe(true);
+    expect((await service.getLast("ap-1"))?.stale).toBe(true);
   });
 });

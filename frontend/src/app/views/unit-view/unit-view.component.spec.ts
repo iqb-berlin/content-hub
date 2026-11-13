@@ -11,7 +11,7 @@ import { UnitViewComponent } from './unit-view.component';
 vi.mock('../comment-thread/item-comment-thread.component', async () => {
   const { Component } = await import('@angular/core');
   class ItemCommentThreadStub {
-    acpId = '';
+    apId = '';
     targetType = '';
     unitId = '';
     bookletId = '';
@@ -27,7 +27,7 @@ vi.mock('../comment-thread/item-comment-thread.component', async () => {
     template:
       '<div class="comment-thread-stub" [attr.data-target-type]="targetType" [attr.data-unit-id]="unitId" [attr.data-booklet-id]="bookletId"></div>',
     inputs: [
-      'acpId',
+      'apId',
       'targetType',
       'unitId',
       'unitName',
@@ -91,7 +91,7 @@ describe('UnitViewComponent', () => {
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(UnitViewComponent);
-    fixture.componentRef.setInput('acpId', 'acp');
+    fixture.componentRef.setInput('apId', 'ap');
     fixture.componentRef.setInput('unitId', 'u1');
     fixture.componentRef.setInput('embedded', true);
     fixture.componentRef.setInput('reviewMode', true);
@@ -869,8 +869,8 @@ describe('UnitViewComponent', () => {
     };
     const api = {
       appendAuthToken: vi.fn((url: string) => url),
-      getAcpStartPage: vi.fn().mockReturnValue(of({ featureConfig: {} })),
-      getViewUnit: vi.fn((_acpId: string, unitId: string) => unitResponses[unitId]),
+      getApStartPage: vi.fn().mockReturnValue(of({ featureConfig: {} })),
+      getViewUnit: vi.fn((_apId: string, unitId: string) => unitResponses[unitId]),
       getFilePreview: vi.fn().mockReturnValue(
         of({
           fileId: 'metadata-u1',
@@ -945,7 +945,7 @@ describe('UnitViewComponent', () => {
     }).compileComponents();
 
     const fixture = TestBed.createComponent(UnitViewComponent);
-    fixture.componentRef.setInput('acpId', 'acp-1');
+    fixture.componentRef.setInput('apId', 'ap-1');
     fixture.componentRef.setInput('unitId', 'u1');
     fixture.componentRef.setInput('bookletId', 'booklet-1');
     fixture.componentRef.setInput('embedded', true);
@@ -968,15 +968,15 @@ describe('UnitViewComponent', () => {
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
-    expect(api.getAcpStartPage).not.toHaveBeenCalled();
-    expect(api.getViewUnit).toHaveBeenCalledWith('acp-1', 'u1');
+    expect(api.getApStartPage).not.toHaveBeenCalled();
+    expect(api.getViewUnit).toHaveBeenCalledWith('ap-1', 'u1');
     expect(fixture.nativeElement.querySelector('app-breadcrumb')).toBeNull();
     expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Aufgabe 1');
     expect(component.showMetadata).toBe(true);
     expect(component.showCodingScheme).toBe(true);
     expect(component.showCommentBtn).toBe(true);
     expect(component.showBookletCommentBtn).toBe(true);
-    expect(api.getFilePreview).toHaveBeenCalledWith('acp-1', 'metadata-u1');
+    expect(api.getFilePreview).toHaveBeenCalledWith('ap-1', 'metadata-u1');
     expect(fetchMock).toHaveBeenCalledWith('/coding-u1', {
       signal: expect.any(AbortSignal),
     });
@@ -1104,7 +1104,7 @@ describe('UnitViewComponent', () => {
     fixture.detectChanges();
     expect(component.codingFilterText).toBe('');
     expect(component.showAllCodingVariables).toBe(false);
-    expect(api.getViewUnit).toHaveBeenLastCalledWith('acp-1', 'u2');
+    expect(api.getViewUnit).toHaveBeenLastCalledWith('ap-1', 'u2');
     expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Aufgabe 2');
     (fixture.nativeElement.querySelectorAll('.panel-tabs .tab')[0] as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -1114,7 +1114,7 @@ describe('UnitViewComponent', () => {
       ],
     ).toBe('u2');
 
-    // Returning to ordinary booklet navigation must restore the ACP's hidden
+    // Returning to ordinary booklet navigation must restore the AP's hidden
     // metadata and coding settings even after review data has been loaded.
     fixture.componentRef.setInput('reviewMode', false);
     fixture.detectChanges();

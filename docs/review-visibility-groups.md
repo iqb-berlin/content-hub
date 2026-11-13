@@ -87,7 +87,7 @@ reicht nicht aus; eigene und schreibgeschützte Legacy-Kommentare sind ausgeschl
 Die Regel gilt für Booklet-, Unit-, Item- und Kodierungskommentare sowie Antworten.
 Eigene Kommentare zeigen die beiden Zähler ohne Bewertungsaktionen.
 
-`PUT /acp/:acpId/review/comments/:commentId/vote` mit `{ "value": "UP" }` oder
+`PUT /ap/:apId/review/comments/:commentId/vote` mit `{ "value": "UP" }` oder
 `{ "value": "DOWN" }` setzt oder wechselt die eigene Stimme. `DELETE` auf demselben
 Pfad entfernt sie. Ein erneuter Klick auf die aktive Bewertung entfernt diese.
 Beide Operationen sind idempotent und erfordern dieselben Rechte. Unsichtbare,
@@ -135,11 +135,11 @@ Entwurf seine Gruppe, bleibt der Text erhalten und verlangt eine erneute explizi
 Gruppenwahl. Bearbeitungsentwürfe zu nicht mehr zugänglichen Kommentaren bleiben
 zum Kopieren erhalten, ohne den alten Kommentar erneut in die Übersicht einzufügen.
 
-- `GET/PUT /view/acp/:acpId/review/config`: Management-Konfiguration.
-- `GET /view/acp/:acpId/review/members`: verfügbare AP-Mitglieder, nur Management.
-- `GET /acp/:acpId/review/comments`: sichtbarer Ziel-Snapshot und ETag.
-- `GET /acp/:acpId/review/comments/visible`: sichtbare Gesamtübersicht.
-- `GET /acp/:acpId/review/comments/export/visible.xlsx`: sichtbare Kommentare,
+- `GET/PUT /view/ap/:apId/review/config`: Management-Konfiguration.
+- `GET /view/ap/:apId/review/members`: verfügbare AP-Mitglieder, nur Management.
+- `GET /ap/:apId/review/comments`: sichtbarer Ziel-Snapshot und ETag.
+- `GET /ap/:apId/review/comments/visible`: sichtbare Gesamtübersicht.
+- `GET /ap/:apId/review/comments/export/visible.xlsx`: sichtbare Kommentare,
   einschließlich Autor, Gruppen-ID, Ziel, Zeitstempeln und Thread-Zuordnung.
 - Bestehende persönliche CSV-/XLSX-Exporte bleiben persönliche Exporte und
   berücksichtigen zusätzlich Gruppenentzug. Management-Gesamtexporte enthalten

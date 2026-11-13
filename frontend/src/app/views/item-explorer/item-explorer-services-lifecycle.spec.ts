@@ -91,7 +91,7 @@ describe('Explorer service provider lifecycle', () => {
     expect(a.table).not.toBe(b.table);
     expect(a.imports).not.toBe(b.imports);
     a.responseStates.connect(() => ({
-      acpId: 'a',
+      apId: 'a',
       selectedItem: null,
       isCorrectSolutionActive: false,
       previewReady: false,
@@ -109,10 +109,10 @@ describe('Explorer service provider lifecycle', () => {
     a.player.applyAssets({ unit: { id: 'u' }, srcDoc: 'frame A', definition: '{}' });
     a.player.onPagingModeChange();
     b.player.applyAssets({ unit: { id: 'u' }, srcDoc: 'frame B', definition: '{}' });
-    a.comments.configure({ acpId: 'a', identity: 'user-a', loggedIn: true, canExport: false });
+    a.comments.configure({ apId: 'a', identity: 'user-a', loggedIn: true, canExport: false });
     a.comments.itemCommentsEnabled = true;
     a.comments.syncItemCommentCountSession();
-    a.draft.configure({ acpId: 'a', canEdit: true, canPublish: true });
+    a.draft.configure({ apId: 'a', canEdit: true, canPublish: true });
     a.draft.queueDraftPatch('UI_UPDATE', { ui: {} });
     const flushed = a.draft.flushDraftPatch();
     const completed = vi.fn();

@@ -17,11 +17,11 @@ test.afterEach(async ({ page }, testInfo) => {
   });
 });
 
-const ACP = '10000000-0000-4000-8000-000000000201';
+const AP = '10000000-0000-4000-8000-000000000201';
 const MANAGER = '10000000-0000-4000-8000-000000000002';
 const VIEWER = '10000000-0000-4000-8000-000000000003';
-const threadUrl = `**/api/acp/${ACP}/review/comments?*`;
-const countsUrl = `**/api/acp/${ACP}/review/comments/counts`;
+const threadUrl = `**/api/ap/${AP}/review/comments?*`;
+const countsUrl = `**/api/ap/${AP}/review/comments/counts`;
 const snapshot = (comments: object[] = []) => ({
   revision: 'test',
   target: { unitId: 'MDB007', itemId: '01' },
@@ -40,7 +40,7 @@ const ownComment = {
 
 async function open(page: Page, selectItem = true) {
   await installOidcSession(page, MANAGER, 'e2e-manager');
-  await page.goto(`/view/${ACP}/item-explorer`);
+  await page.goto(`/view/${AP}/item-explorer`);
   const filter = page.getByLabel('Nach Kommentarstatus filtern');
   await expect
     .poll(
@@ -140,7 +140,7 @@ test('keeps edit and reply forms when a poll removes their comment and preserves
     loads += 1;
     return route.fulfill({ json: snapshot(comments) });
   });
-  await page.route(`**/api/acp/${ACP}/review/comments/${ownComment.id}`, (route) =>
+  await page.route(`**/api/ap/${AP}/review/comments/${ownComment.id}`, (route) =>
     route.fulfill({ status: 409, json: { message: 'Versionskonflikt aus UI-Test' } }),
   );
   const panel = await open(page);
@@ -206,7 +206,7 @@ test('drops a delayed old-session save without clearing the new users draft', as
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route(`**/api/acp/${ACP}/review/comments`, async (route) => {
+  await page.route(`**/api/ap/${AP}/review/comments`, async (route) => {
     await gate;
     await route.fulfill({ json: { id: ownComment.id } }).catch(() => {});
   });

@@ -33,8 +33,8 @@ breiteres Rollenmodell. Ein Rollback ist daher kein Ersatz für einen Rechteentz
 - Persönliche Präferenzen und Listen bleiben mit Lesezugriff bearbeitbar.
 - Review-Lesen erfordert Teilnahme oder Management; eigene Mutationen erfordern
   Teilnahme. Ownership-Prüfungen bleiben bestehen.
-- `/view/acp/:acpId/review` liefert alle Booklets des AP über das Manifest aus #59.
-  `/view/:acpId/review` bietet den Einstieg und die Aktivierung für Verantwortliche.
+- `/view/ap/:apId/review` liefert alle Booklets des AP über das Manifest aus #59.
+  `/view/:apId/review` bietet den Einstieg und die Aktivierung für Verantwortliche.
 - Bestehende Kommentar-APIs einschließlich `/comments` bleiben verfügbar, prüfen
   aber explizite Review-Grants. Bestehende Kommentierungs-Features bleiben getrennt
   von der Aktivierung des neuen Review-Einstiegs: Item-/Aufgabenkommentare bleiben
@@ -50,7 +50,7 @@ breiteres Rollenmodell. Ein Rollback ist daher kein Ersatz für einen Rechteentz
 
 ## Import
 
-`POST /api/acp/:id/access/credentials/file` erhält multipart `file`, `profile`
+`POST /api/ap/:id/access/credentials/file` erhält multipart `file`, `profile`
 und optional ein JSON-Array als Textfeld `capabilities`. Queryparameter:
 `mode=replace|append|upsert`, optional `preview=true`. Maximale Dateigröße: 1 MiB.
 

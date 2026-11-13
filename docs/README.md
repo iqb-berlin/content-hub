@@ -16,20 +16,23 @@ Earlier documentation used Assessment Content Package (ACP) and ACP-Index. These
 refer to the same package and index. The terminology change does not migrate data or
 change the supported index format.
 
-Existing technical identifiers remain unchanged for compatibility:
+Code and new API contracts use AP identifiers. Existing integrations can continue
+using their ACP contracts during the transition:
 
-| Product term | Existing technical identifiers |
-| --- | --- |
-| AP | `Acp`, `acp`, `acpId`, `acp_id`, `/acps`, `/api/acp`, `/api/server/acp` |
-| AP-Index | `acpIndex`, `defaultAcpIndex`, `acp-index` schema identifiers |
-| AP-Manager | `ACP_MANAGER` role value |
-| AP read permission | `acp.read` API scope |
+| Product term | Canonical identifier | Legacy integration alias |
+| --- | --- | --- |
+| AP | `Ap`, `apId`, `/aps`, `/api/ap`, `/api/server/ap` | `acpId`, `/acps`, `/api/acp`, `/api/server/acp` |
+| AP-Index | `apIndex`, `defaultApIndex` | `acpIndex`, `defaultAcpIndex` |
+| AP-Manager | `AP_MANAGER` | `ACP_MANAGER` |
+| AP read permission | `ap.read` | `acp.read` |
 
-Use the documented technical names in requests, configuration, code and database
-operations. The [schema URL](https://iqb-specifications.github.io/acp-index/) and
-existing documentation filenames such as `acp-workflows.md` and `acp-manager-manual.md`
-also remain valid. Historical concepts, implementation plans, release notes and test
-evidence retain the terminology used when they were written.
+See [AP API compatibility](features/ap-api-compatibility.md) for request/response
+selection, shared endpoints and migration examples. Physical database identifiers,
+stored role/scope values, migration history and external AP-Index schema URLs are
+preserved. Existing rows, snapshots, tokens and files need no data migration.
+The [external schema URL](https://iqb-specifications.github.io/acp-index/) and
+historical documentation filenames remain valid. Historical release notes and
+test evidence retain the names used when they were written.
 
 ## Concepts
 

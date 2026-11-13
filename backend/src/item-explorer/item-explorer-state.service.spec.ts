@@ -3,15 +3,15 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { ConflictException } from "@nestjs/common";
 import { ItemExplorerStateService } from "./item-explorer-state.service";
 import {
-  Acp,
-  AcpAccessConfig,
-  AcpItemExplorerChangeLog,
-  AcpItemExplorerState,
+  Ap,
+  ApAccessConfig,
+  ApItemExplorerChangeLog,
+  ApItemExplorerState,
 } from "../database/entities";
 
 describe("ItemExplorerStateService", () => {
   let service: ItemExplorerStateService;
-  let acpRepo: any;
+  let apRepo: any;
   let accessConfigRepo: any;
   let stateRepo: any;
   let changeLogRepo: any;
@@ -26,12 +26,12 @@ describe("ItemExplorerStateService", () => {
   };
 
   const buildStateRecord = (
-    overrides: Partial<AcpItemExplorerState> = {},
-  ): AcpItemExplorerState => {
+    overrides: Partial<ApItemExplorerState> = {},
+  ): ApItemExplorerState => {
     const now = new Date("2026-04-19T10:00:00.000Z");
     return {
       id: "state-1",
-      acpId: "acp-1",
+      apId: "ap-1",
       publishedState: JSON.parse(JSON.stringify(baseSharedState)),
       draftState: JSON.parse(JSON.stringify(baseSharedState)),
       status: "CLEAN",
@@ -43,11 +43,11 @@ describe("ItemExplorerStateService", () => {
       createdAt: now,
       updatedAt: now,
       ...overrides,
-    } as AcpItemExplorerState;
+    } as ApItemExplorerState;
   };
 
   beforeEach(async () => {
-    acpRepo = {
+    apRepo = {
       findOne: jest.fn(),
       save: jest.fn(),
     };
@@ -67,10 +67,10 @@ describe("ItemExplorerStateService", () => {
     };
     transactionManager = {
       getRepository: jest.fn((entity) => {
-        if (entity === Acp) return acpRepo;
-        if (entity === AcpAccessConfig) return accessConfigRepo;
-        if (entity === AcpItemExplorerState) return stateRepo;
-        if (entity === AcpItemExplorerChangeLog) return changeLogRepo;
+        if (entity === Ap) return apRepo;
+        if (entity === ApAccessConfig) return accessConfigRepo;
+        if (entity === ApItemExplorerState) return stateRepo;
+        if (entity === ApItemExplorerChangeLog) return changeLogRepo;
         throw new Error(`Unexpected repository: ${String(entity)}`);
       }),
     };
@@ -81,17 +81,17 @@ describe("ItemExplorerStateService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ItemExplorerStateService,
-        { provide: getRepositoryToken(Acp), useValue: acpRepo },
+        { provide: getRepositoryToken(Ap), useValue: apRepo },
         {
-          provide: getRepositoryToken(AcpAccessConfig),
+          provide: getRepositoryToken(ApAccessConfig),
           useValue: accessConfigRepo,
         },
         {
-          provide: getRepositoryToken(AcpItemExplorerState),
+          provide: getRepositoryToken(ApItemExplorerState),
           useValue: stateRepo,
         },
         {
-          provide: getRepositoryToken(AcpItemExplorerChangeLog),
+          provide: getRepositoryToken(ApItemExplorerChangeLog),
           useValue: changeLogRepo,
         },
       ],
@@ -100,16 +100,16 @@ describe("ItemExplorerStateService", () => {
     service = module.get<ItemExplorerStateService>(ItemExplorerStateService);
   });
 
-  it("initializes state for existing ACP and returns published state for read-only viewers", async () => {
+  it("initializes state for existing AP and returns published state for read-only viewers", async () => {
     stateRepo.findOne.mockResolvedValue(null);
-    acpRepo.findOne.mockResolvedValue({
-      id: "acp-1",
+    apRepo.findOne.mockResolvedValue({
+      id: "ap-1",
       itemProperties: {
         unit1_item1: { tags: ["A"], empiricalDifficulty: 1.2, excluded: true },
       },
     });
     accessConfigRepo.findOne.mockResolvedValue({
-      acpId: "acp-1",
+      apId: "ap-1",
       featureConfig: {
         metadataColumns: {
           visible: ["subject"],
@@ -124,7 +124,7 @@ describe("ItemExplorerStateService", () => {
       createdAt: new Date("2026-04-19T10:01:00.000Z"),
     }));
 
-    const envelope = await service.getStateForViewer("acp-1", false);
+    const envelope = await service.getStateForViewer("ap-1", false);
 
     expect(envelope.canEdit).toBe(false);
     expect(envelope.canPublish).toBe(false);
@@ -164,7 +164,7 @@ describe("ItemExplorerStateService", () => {
     stateRepo.findOne.mockResolvedValue(record);
     const normalizeSpy = jest.spyOn(service as any, "normalizeStatePayload");
 
-    const first = await service.getItemListStateProjection("acp-1", true);
+    const first = await service.getItemListStateProjection("ap-1", true);
 
     expect(first).toEqual({
       activeItemProperties: {
@@ -179,11 +179,11 @@ describe("ItemExplorerStateService", () => {
     expect(normalizeSpy).toHaveBeenCalledTimes(2);
 
     first.activeItemProperties.draft.empiricalDifficulty = 99;
-    const second = await service.getItemListStateProjection("acp-1", true);
+    const second = await service.getItemListStateProjection("ap-1", true);
     expect(second.activeItemProperties.draft.empiricalDifficulty).toBe(1.5);
     expect(normalizeSpy).toHaveBeenCalledTimes(2);
 
-    const readOnly = await service.getItemListStateProjection("acp-1", false);
+    const readOnly = await service.getItemListStateProjection("ap-1", false);
     expect(readOnly).toEqual({
       activeItemProperties: {
         published: { empiricalDifficulty: 0.5 },
@@ -195,7 +195,7 @@ describe("ItemExplorerStateService", () => {
       publishedVersion: 5,
     });
 
-    const envelope = await service.getStateForViewer("acp-1", true);
+    const envelope = await service.getStateForViewer("ap-1", true);
     expect(envelope.activeState.ui).toEqual({
       filterText: "draft filter",
     });
@@ -207,14 +207,14 @@ describe("ItemExplorerStateService", () => {
       buildStateRecord({ version: 8, publishedVersion: 5 }),
     );
 
-    await expect(service.getStateVersionForViewer("acp-1", true)).resolves.toBe(
+    await expect(service.getStateVersionForViewer("ap-1", true)).resolves.toBe(
       8,
     );
-    await expect(
-      service.getStateVersionForViewer("acp-1", false),
-    ).resolves.toBe(5);
+    await expect(service.getStateVersionForViewer("ap-1", false)).resolves.toBe(
+      5,
+    );
     expect(stateRepo.findOne).toHaveBeenCalledWith({
-      where: { acpId: "acp-1" },
+      where: { apId: "ap-1" },
       select: {
         version: true,
         publishedVersion: true,
@@ -222,17 +222,17 @@ describe("ItemExplorerStateService", () => {
     });
   });
 
-  it("returns state created by a concurrent initializer after locking the ACP", async () => {
+  it("returns state created by a concurrent initializer after locking the AP", async () => {
     const concurrentlyCreated = buildStateRecord();
     stateRepo.findOne
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(concurrentlyCreated);
-    acpRepo.findOne.mockResolvedValue({ id: "acp-1", itemProperties: {} });
+    apRepo.findOne.mockResolvedValue({ id: "ap-1", itemProperties: {} });
 
-    const envelope = await service.getStateForViewer("acp-1", false);
+    const envelope = await service.getStateForViewer("ap-1", false);
 
-    expect(acpRepo.findOne).toHaveBeenCalledWith({
-      where: { id: "acp-1" },
+    expect(apRepo.findOne).toHaveBeenCalledWith({
+      where: { id: "ap-1" },
       lock: { mode: "pessimistic_write" },
     });
     expect(envelope.version).toBe(1);
@@ -247,7 +247,7 @@ describe("ItemExplorerStateService", () => {
     const operation = jest.fn().mockResolvedValue("done");
 
     await expect(
-      service.runWithLockedCleanState("acp-1", operation),
+      service.runWithLockedCleanState("ap-1", operation),
     ).resolves.toBe("done");
 
     expect(operation).toHaveBeenCalledWith(
@@ -258,7 +258,7 @@ describe("ItemExplorerStateService", () => {
       transactionManager,
     );
     expect(stateRepo.findOne).toHaveBeenLastCalledWith({
-      where: { acpId: "acp-1" },
+      where: { apId: "ap-1" },
       lock: { mode: "pessimistic_write" },
     });
   });
@@ -268,7 +268,7 @@ describe("ItemExplorerStateService", () => {
     const operation = jest.fn();
 
     await expect(
-      service.runWithLockedCleanState("acp-1", operation),
+      service.runWithLockedCleanState("ap-1", operation),
     ).rejects.toThrow(ConflictException);
     expect(operation).not.toHaveBeenCalled();
   });
@@ -276,7 +276,7 @@ describe("ItemExplorerStateService", () => {
   it("rejects an unlocked published-state snapshot while a draft is pending", async () => {
     stateRepo.findOne.mockResolvedValue(buildStateRecord({ status: "DIRTY" }));
 
-    await expect(service.getCleanPublishedState("acp-1")).rejects.toThrow(
+    await expect(service.getCleanPublishedState("ap-1")).rejects.toThrow(
       ConflictException,
     );
   });
@@ -288,7 +288,7 @@ describe("ItemExplorerStateService", () => {
     const operation = jest.fn();
 
     await expect(
-      service.runWithLockedCleanState("acp-1", operation, 7),
+      service.runWithLockedCleanState("ap-1", operation, 7),
     ).rejects.toThrow(ConflictException);
     expect(operation).not.toHaveBeenCalled();
   });
@@ -298,7 +298,7 @@ describe("ItemExplorerStateService", () => {
 
     await expect(
       service.patchDraft(
-        "acp-1",
+        "ap-1",
         { ui: { filterText: "x" } },
         {
           baseVersion: 6,
@@ -322,7 +322,7 @@ describe("ItemExplorerStateService", () => {
 
     await expect(
       service.patchDraft(
-        "acp-1",
+        "ap-1",
         { ui: { filterText: "new" } },
         { baseVersion: 4 },
       ),
@@ -330,7 +330,7 @@ describe("ItemExplorerStateService", () => {
 
     expect(stateRepo.manager.transaction).toHaveBeenCalledTimes(1);
     expect(stateRepo.findOne).toHaveBeenLastCalledWith({
-      where: { acpId: "acp-1" },
+      where: { apId: "ap-1" },
       lock: { mode: "pessimistic_write" },
     });
     expect(stateRepo.save).not.toHaveBeenCalled();
@@ -347,14 +347,14 @@ describe("ItemExplorerStateService", () => {
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const envelope = await service.patchDraft(
-      "acp-1",
+      "ap-1",
       { tags: { item1: ["tag-x"] } },
       {
         baseVersion: 1,
         actor: {
           userId: "11111111-1111-4111-8111-111111111111",
           username: "alice",
-          role: "ACP_MANAGER",
+          role: "AP_MANAGER",
         },
         changeType: "TAGS_CHANGED",
       },
@@ -365,10 +365,10 @@ describe("ItemExplorerStateService", () => {
     expect(stateRepo.manager.transaction).toHaveBeenCalledTimes(1);
     expect(changeLogRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        acpId: "acp-1",
+        apId: "ap-1",
         changeType: "TAGS_CHANGED",
         actorUsername: "alice",
-        actorRole: "ACP_MANAGER",
+        actorRole: "AP_MANAGER",
       }),
     );
     expect(changeLogRepo.save).toHaveBeenCalledTimes(1);
@@ -384,7 +384,7 @@ describe("ItemExplorerStateService", () => {
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const envelope = await service.patchDraft(
-      "acp-1",
+      "ap-1",
       {
         metadataColumns: {
           visible: [],
@@ -414,7 +414,7 @@ describe("ItemExplorerStateService", () => {
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const envelope = await service.patchDraft(
-      "acp-1",
+      "ap-1",
       {
         metadataColumns: {
           visible: ["custom"],
@@ -460,7 +460,7 @@ describe("ItemExplorerStateService", () => {
     widths[longMetadataKey] = 333;
 
     const envelope = await service.patchDraft(
-      "acp-1",
+      "ap-1",
       {
         metadataColumns: {
           layout: {
@@ -490,7 +490,7 @@ describe("ItemExplorerStateService", () => {
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const envelope = await service.patchDraft(
-      "acp-1",
+      "ap-1",
       {
         metadataColumns: {
           visible: [],
@@ -521,7 +521,7 @@ describe("ItemExplorerStateService", () => {
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const envelope = await service.patchDraft(
-      "acp-1",
+      "ap-1",
       {
         itemPropertiesPatch: {
           item1: {
@@ -571,7 +571,7 @@ describe("ItemExplorerStateService", () => {
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const envelope = await service.patchDraft(
-      "acp-1",
+      "ap-1",
       {
         itemPropertiesPatch: {
           item1: { previewTargetId: "   " },
@@ -611,7 +611,7 @@ describe("ItemExplorerStateService", () => {
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const envelope = await service.patchDraft(
-      "acp-1",
+      "ap-1",
       {
         itemPropertiesPatch: {
           item1: { excluded: false },
@@ -660,7 +660,7 @@ describe("ItemExplorerStateService", () => {
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const envelope = await service.patchDraft(
-      "acp-1",
+      "ap-1",
       {
         tags: {
           "uuid-1": [],
@@ -747,9 +747,9 @@ describe("ItemExplorerStateService", () => {
     });
 
     stateRepo.findOne.mockResolvedValue(record);
-    acpRepo.findOne.mockResolvedValue({ id: "acp-1", itemProperties: {} });
+    apRepo.findOne.mockResolvedValue({ id: "ap-1", itemProperties: {} });
     accessConfigRepo.findOne.mockResolvedValue({
-      acpId: "acp-1",
+      apId: "ap-1",
       featureConfig: {
         itemExplorerReducedView: {
           enabled: true,
@@ -763,12 +763,12 @@ describe("ItemExplorerStateService", () => {
     }));
     changeLogRepo.save.mockResolvedValue(undefined);
 
-    const envelope = await service.saveDraft("acp-1", {
+    const envelope = await service.saveDraft("ap-1", {
       baseVersion: 3,
-      actor: { username: "bob", role: "ACP_MANAGER" },
+      actor: { username: "bob", role: "AP_MANAGER" },
     });
 
-    expect(acpRepo.save).toHaveBeenCalledWith(
+    expect(apRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({
         itemProperties: draftState.itemProperties,
       }),
@@ -818,16 +818,16 @@ describe("ItemExplorerStateService", () => {
       ...entity,
       updatedAt: new Date("2026-04-19T12:30:00.000Z"),
     }));
-    acpRepo.findOne.mockResolvedValue({ id: "acp-1", itemProperties: {} });
-    acpRepo.save.mockImplementation(async (entity: any) => entity);
+    apRepo.findOne.mockResolvedValue({ id: "ap-1", itemProperties: {} });
+    apRepo.save.mockImplementation(async (entity: any) => entity);
     accessConfigRepo.findOne.mockResolvedValue(null);
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const envelope = await service.publishItemPropertiesImmediately(
-      "acp-1",
+      "ap-1",
       { item1: { empiricalDifficulty: 0.8 } },
       {
-        actor: { username: "alice", role: "ACP_MANAGER" },
+        actor: { username: "alice", role: "AP_MANAGER" },
         changeType: "CSV_UPLOAD_EMPIRICAL_DIFFICULTY",
         baseVersion: 4,
       },
@@ -835,10 +835,10 @@ describe("ItemExplorerStateService", () => {
 
     expect(stateRepo.manager.transaction).toHaveBeenCalledTimes(1);
     expect(stateRepo.findOne).toHaveBeenCalledWith({
-      where: { acpId: "acp-1" },
+      where: { apId: "ap-1" },
       lock: { mode: "pessimistic_write" },
     });
-    expect(acpRepo.save).toHaveBeenCalledWith(
+    expect(apRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({
         itemProperties: { item1: { empiricalDifficulty: 0.8 } },
       }),
@@ -862,14 +862,14 @@ describe("ItemExplorerStateService", () => {
     const record = buildStateRecord({ version: 4, publishedVersion: 2 });
     stateRepo.findOne.mockResolvedValue(record);
     stateRepo.save.mockImplementation(async (entity: any) => entity);
-    acpRepo.findOne.mockResolvedValue({ id: "acp-1", itemProperties: {} });
-    acpRepo.save.mockImplementation(async (entity: any) => entity);
+    apRepo.findOne.mockResolvedValue({ id: "ap-1", itemProperties: {} });
+    apRepo.save.mockImplementation(async (entity: any) => entity);
     accessConfigRepo.findOne.mockResolvedValue(null);
     changeLogRepo.save.mockRejectedValue(new Error("audit write failed"));
 
     await expect(
       service.publishItemPropertiesImmediately(
-        "acp-1",
+        "ap-1",
         { item1: { empiricalDifficulty: 0.8 } },
         {
           changeType: "CSV_UPLOAD_EMPIRICAL_DIFFICULTY",
@@ -911,13 +911,13 @@ describe("ItemExplorerStateService", () => {
       ...entity,
       updatedAt: new Date("2026-04-19T12:45:00.000Z"),
     }));
-    acpRepo.findOne.mockResolvedValue({ id: "acp-1", itemProperties: {} });
-    acpRepo.save.mockImplementation(async (entity: any) => entity);
+    apRepo.findOne.mockResolvedValue({ id: "ap-1", itemProperties: {} });
+    apRepo.save.mockImplementation(async (entity: any) => entity);
     accessConfigRepo.findOne.mockResolvedValue(null);
     changeLogRepo.save.mockResolvedValue(undefined);
 
     const result = await service.publishTagsImmediately(
-      "acp-1",
+      "ap-1",
       {
         item1: [" new ", "new"],
         item2: [],
@@ -945,7 +945,7 @@ describe("ItemExplorerStateService", () => {
         tags: [],
       },
     });
-    expect(acpRepo.save).toHaveBeenCalledWith(
+    expect(apRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({
         itemProperties: result.state.publishedState.itemProperties,
       }),
@@ -961,10 +961,10 @@ describe("ItemExplorerStateService", () => {
     );
 
     await expect(
-      service.publishTagsImmediately("acp-1", { item1: ["new"] }),
+      service.publishTagsImmediately("ap-1", { item1: ["new"] }),
     ).rejects.toThrow(ConflictException);
 
-    expect(acpRepo.save).not.toHaveBeenCalled();
+    expect(apRepo.save).not.toHaveBeenCalled();
     expect(stateRepo.save).not.toHaveBeenCalled();
     expect(changeLogRepo.save).not.toHaveBeenCalled();
   });
@@ -991,9 +991,9 @@ describe("ItemExplorerStateService", () => {
     }));
     changeLogRepo.save.mockResolvedValue(undefined);
 
-    const envelope = await service.discardDraft("acp-1", {
+    const envelope = await service.discardDraft("ap-1", {
       baseVersion: 5,
-      actor: { username: "carol", role: "ACP_MANAGER" },
+      actor: { username: "carol", role: "AP_MANAGER" },
     });
 
     expect(envelope.status).toBe("CLEAN");
@@ -1015,7 +1015,7 @@ describe("ItemExplorerStateService", () => {
         username: "admin",
         isAppAdmin: true,
       },
-      "acp-1",
+      "ap-1",
     );
     expect(appAdminActor.role).toBe("APP_ADMIN");
 
@@ -1023,11 +1023,11 @@ describe("ItemExplorerStateService", () => {
       {
         sub: "u-manager",
         username: "manager",
-        acpRoles: [{ acpId: "acp-1", role: "ACP_MANAGER" }],
+        apRoles: [{ apId: "ap-1", role: "AP_MANAGER" }],
       },
-      "acp-1",
+      "ap-1",
     );
-    expect(managerActor.role).toBe("ACP_MANAGER");
+    expect(managerActor.role).toBe("AP_MANAGER");
 
     const credentialActor = service.resolveActor(
       {
@@ -1035,7 +1035,7 @@ describe("ItemExplorerStateService", () => {
         username: "credential",
         type: "credential",
       },
-      "acp-1",
+      "ap-1",
     );
     expect(credentialActor.role).toBe("CREDENTIAL");
   });

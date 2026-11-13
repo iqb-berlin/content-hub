@@ -31,7 +31,7 @@ describe('ItemExplorerDraftService', () => {
       discardItemExplorerDraft: vi.fn().mockReturnValue(of(envelope(3, 'CLEAN'))),
     };
     service = new ItemExplorerDraftService(api as any);
-    service.configure({ acpId: 'a', canEdit: true, canPublish: true });
+    service.configure({ apId: 'a', canEdit: true, canPublish: true });
     service.acceptEnvelope(envelope(1, 'CLEAN'));
   });
   afterEach(() => {

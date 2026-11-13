@@ -4,10 +4,10 @@ import { installOidcSession } from './oidc-test-session';
 
 test.use({ actionTimeout: 15_000 });
 
-const credentialAcp = '10000000-0000-4000-8000-000000000001';
-const unitAcp = '10000000-0000-4000-8000-000000000303';
+const credentialAp = '10000000-0000-4000-8000-000000000001';
+const unitAp = '10000000-0000-4000-8000-000000000303';
 const managerId = '10000000-0000-4000-8000-000000000002';
-const explorerAcps: Record<string, string> = {
+const explorerAps: Record<string, string> = {
   chromium: '10000000-0000-4000-8000-000000000304',
   firefox: '10000000-0000-4000-8000-000000000305',
   webkit: '10000000-0000-4000-8000-000000000306',
@@ -16,32 +16,32 @@ const explorerAcps: Record<string, string> = {
 test('credential login rejects a bad password and survives reload after a valid login', async ({
   page,
 }) => {
-  await page.goto(`/credential-login/${credentialAcp}`);
+  await page.goto(`/credential-login/${credentialAp}`);
   await page.getByLabel('Benutzername').fill('e2e-reviewer');
   await page.getByLabel('Kennwort').fill('incorrect-password');
   await page.getByRole('button', { name: 'Zugang öffnen' }).click();
   await expect(page.locator('.alert-error')).toBeVisible();
-  await expect(page).toHaveURL(`/credential-login/${credentialAcp}`);
+  await expect(page).toHaveURL(`/credential-login/${credentialAp}`);
 
   await page.getByLabel('Kennwort').fill('Reviewer-E2E-123!');
   await page.getByRole('button', { name: 'Zugang öffnen' }).click();
-  await expect(page).toHaveURL(`/view/${credentialAcp}`);
+  await expect(page).toHaveURL(`/view/${credentialAp}`);
   await expect(page.getByRole('link', { name: /Item-Explorer/ })).toBeVisible();
   await page.reload();
-  await expect(page).toHaveURL(`/view/${credentialAcp}`);
+  await expect(page).toHaveURL(`/view/${credentialAp}`);
   await expect(page.getByRole('link', { name: /Item-Explorer/ })).toBeVisible();
 });
 
 test('unit navigation renders real ASPECT content and applies display modes', async ({ page }) => {
   await installOidcSession(page, managerId, 'e2e-manager');
-  await page.goto(`/view/${unitAcp}/units`);
+  await page.goto(`/view/${unitAp}/units`);
   await expect(page.getByRole('heading', { name: 'Aufgaben' })).toBeVisible();
   await page
     .locator('tbody tr')
     .filter({ hasText: journeyUnitName })
     .getByRole('link', { name: 'Ansehen' })
     .click();
-  await expect(page).toHaveURL(`/view/${unitAcp}/unit/${journeyUnitId}`);
+  await expect(page).toHaveURL(`/view/${unitAp}/unit/${journeyUnitId}`);
   const player = page.frameLocator('iframe.player-iframe');
   await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();
   await player.getByRole('radio', { name: 'zum See', exact: true }).check();
@@ -66,7 +66,7 @@ test('item preview omits player arrows and explorer navigation keeps selection a
   page,
 }, testInfo) => {
   await installOidcSession(page, managerId, 'e2e-manager');
-  await page.goto(`/view/${unitAcp}/item-explorer`);
+  await page.goto(`/view/${unitAp}/item-explorer`);
   const choiceRow = page.locator('#item-explorer-row-journey-choice');
   await choiceRow.click();
   const player = page.frameLocator('iframe.player-iframe');
@@ -124,13 +124,13 @@ test('regular multi-page flow retains answers and captures the selected item con
   page,
 }, testInfo) => {
   await installOidcSession(page, managerId, 'e2e-manager');
-  await page.route(`**/api/view/acp/${unitAcp}`, async (route) => {
+  await page.route(`**/api/view/ap/${unitAp}`, async (route) => {
     const response = await route.fetch();
     const json = await response.json();
     json.featureConfig = { ...json.featureConfig, enableItemExplorerConditionalVisibility: true };
     await route.fulfill({ response, json });
   });
-  await page.goto(`/view/${unitAcp}/item-explorer`);
+  await page.goto(`/view/${unitAp}/item-explorer`);
   const transportRow = page.locator('#item-explorer-row-journey-transport');
   await transportRow.click();
   const player = page.frameLocator('iframe.player-iframe');
@@ -207,10 +207,10 @@ test('coding draft, publish and reader perspective remain consistent', async ({
   page,
   browser,
 }, testInfo) => {
-  const acpId = explorerAcps[testInfo.project.name];
-  expect(acpId).toBeTruthy();
+  const apId = explorerAps[testInfo.project.name];
+  expect(apId).toBeTruthy();
   await installOidcSession(page, managerId, 'e2e-manager');
-  await page.goto(`/view/${acpId}/item-explorer`);
+  await page.goto(`/view/${apId}/item-explorer`);
   await expect(page.locator('tbody tr')).toHaveCount(2);
   await page.locator('#item-explorer-row-journey-choice').click();
   await expect(page.locator('iframe.player-iframe')).toBeVisible();
@@ -249,10 +249,10 @@ test('coding draft, publish and reader perspective remain consistent', async ({
       ? undefined
       : reader.waitForResponse(
           (response) =>
-            response.url().includes(`/api/view/acp/${acpId}/item-explorer/state`) && response.ok(),
+            response.url().includes(`/api/view/ap/${apId}/item-explorer/state`) && response.ok(),
         );
     if (reload) await reader.reload();
-    else await reader.goto(`/view/${acpId}/item-explorer`);
+    else await reader.goto(`/view/${apId}/item-explorer`);
     const data = responsePromise ? await (await responsePromise).json() : undefined;
     await expect(reader.locator('tbody tr')).toHaveCount(2);
     await reader.locator('#item-explorer-row-journey-choice').click();

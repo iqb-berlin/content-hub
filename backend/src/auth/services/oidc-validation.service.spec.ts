@@ -66,7 +66,7 @@ describe("OidcValidationService", () => {
       displayName: "OIDC User",
       oidcSub: "oidc-sub-1",
       isAppAdmin: true,
-      acpRoles: [],
+      apRoles: [],
     };
 
     userRepository.findOne.mockResolvedValue(existingUser);
@@ -92,7 +92,7 @@ describe("OidcValidationService", () => {
       displayName: "OIDC User 2",
       oidcSub: "oidc-sub-2",
       isAppAdmin: false,
-      acpRoles: [],
+      apRoles: [],
     };
 
     userRepository.findOne.mockResolvedValue(existingUser);
@@ -124,7 +124,7 @@ describe("OidcValidationService", () => {
       displayName: "Linked User",
       oidcSub: undefined,
       isAppAdmin: true,
-      acpRoles: [],
+      apRoles: [],
     };
 
     userRepository.findOne
@@ -162,7 +162,7 @@ describe("OidcValidationService", () => {
     userRepository.create.mockImplementationOnce((entity) => ({
       ...entity,
       id: "user-new",
-      acpRoles: [],
+      apRoles: [],
     }));
     userRepository.save.mockImplementationOnce(async (entity) => entity);
 

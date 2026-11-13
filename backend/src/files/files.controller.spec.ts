@@ -16,7 +16,7 @@ describe("FilesController", () => {
 
   const baseFile = {
     id: "file-1",
-    acpId: "acp-1",
+    apId: "ap-1",
     originalName: "unit-1.xml",
     fileType: "application/xml",
     fileSize: 123,
@@ -39,15 +39,15 @@ describe("FilesController", () => {
         buffer: Buffer.from("sequence-zip"),
       }),
       createFilesZip: jest.fn().mockResolvedValue({
-        fileName: "acp-acp-1-selected-files.zip",
+        fileName: "ap-ap-1-selected-files.zip",
         buffer: Buffer.from("files-zip"),
       }),
-      findByAcp: jest.fn().mockResolvedValue([baseFile]),
-      findByIdForAcp: jest.fn().mockResolvedValue(baseFile),
+      findByAp: jest.fn().mockResolvedValue([baseFile]),
+      findByIdForAp: jest.fn().mockResolvedValue(baseFile),
       uploadMultiple: jest.fn().mockResolvedValue([baseFile]),
       deleteAll: jest.fn().mockResolvedValue(undefined),
-      deleteForAcp: jest.fn().mockResolvedValue(undefined),
-      deleteManyForAcp: jest.fn().mockResolvedValue(["file-1", "file-2"]),
+      deleteForAp: jest.fn().mockResolvedValue(undefined),
+      deleteManyForAp: jest.fn().mockResolvedValue(["file-1", "file-2"]),
       cleanupReferencesAfterFileMutation: jest.fn().mockResolvedValue({
         cleanupReport: { removed: 1 },
         responseStateCleanup: {
@@ -62,17 +62,17 @@ describe("FilesController", () => {
         deletedStates: 1,
         keptStates: 1,
       }),
-      getPreviewForAcp: jest.fn().mockResolvedValue({
+      getPreviewForAp: jest.fn().mockResolvedValue({
         fileId: "file-1",
         originalName: "unit-1.xml",
         extension: "xml",
         mode: "structured",
         truncated: false,
       }),
-      downloadForAcp: jest
+      downloadForAp: jest
         .fn()
         .mockResolvedValue({ buffer: Buffer.from("file-body") }),
-      getValidationResultForAcp: jest.fn().mockResolvedValue({ valid: true }),
+      getValidationResultForAp: jest.fn().mockResolvedValue({ valid: true }),
       isUnitDependencyFile: jest.fn().mockResolvedValue(false),
     };
 
@@ -98,6 +98,11 @@ describe("FilesController", () => {
     };
 
     validationService = {
+      validateApConsistency: jest.fn().mockResolvedValue({
+        valid: false,
+        issues: [{ severity: "error", message: "Booklet fehlt" }],
+        timestamp: "2026-11-05T12:00:00.000Z",
+      }),
       autoValidateUploadedFiles: jest.fn().mockResolvedValue({
         files: [baseFile],
         summary: { totalFiles: 1 },
@@ -121,7 +126,7 @@ describe("FilesController", () => {
         status: "running",
       }),
       downloadArchive: jest.fn().mockResolvedValue({
-        fileName: "acp-acp-1-selected-files.zip",
+        fileName: "ap-ap-1-selected-files.zip",
         buffer: Buffer.from("job-archive"),
       }),
       ensureJobExists: jest.fn().mockResolvedValue(undefined),
@@ -151,10 +156,10 @@ describe("FilesController", () => {
         publishedVersion: 3,
       }),
       getStateVersionForViewer: jest.fn(
-        async (_acpId: string, canEdit: boolean) => (canEdit ? 4 : 3),
+        async (_apId: string, canEdit: boolean) => (canEdit ? 4 : 3),
       ),
       runWithLockedCleanState: jest.fn(
-        async (_acpId: string, operation: (state: any, manager: any) => any) =>
+        async (_apId: string, operation: (state: any, manager: any) => any) =>
           operation(
             {
               status: "CLEAN",
@@ -172,18 +177,18 @@ describe("FilesController", () => {
       validationService,
       fileProcessingJobsService,
       itemExplorerStateService,
-      { resolve: jest.fn(async (req) => req.acpCapabilities || []) } as any,
+      { resolve: jest.fn(async (req) => req.apCapabilities || []) } as any,
     );
   });
 
   it("rejects ZIP requests with both unitId and sequenceId", async () => {
     await expect(
       controller.findAll(
-        "acp-1",
+        "ap-1",
         "zip",
         "unit-1",
         "seq-1",
-        { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+        { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
         {} as any,
       ),
     ).rejects.toThrow(BadRequestException);
@@ -192,11 +197,11 @@ describe("FilesController", () => {
   it("rejects ZIP requests without unitId and sequenceId", async () => {
     await expect(
       controller.findAll(
-        "acp-1",
+        "ap-1",
         "zip",
         undefined,
         undefined,
-        { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+        { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
         {} as any,
       ),
     ).rejects.toThrow(BadRequestException);
@@ -212,11 +217,11 @@ describe("FilesController", () => {
 
     await expect(
       controller.findAll(
-        "acp-1",
+        "ap-1",
         "zip",
         "unit-1",
         undefined,
-        { acpAccessLevel: "PUBLIC" },
+        { apAccessLevel: "PUBLIC" },
         {} as any,
       ),
     ).rejects.toThrow(ForbiddenException);
@@ -226,15 +231,15 @@ describe("FilesController", () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.findAll(
-      "acp-1",
+      "ap-1",
       "zip",
       "unit-1",
       undefined,
-      { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+      { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
       res,
     );
 
-    expect(filesService.createUnitZip).toHaveBeenCalledWith("acp-1", "unit-1");
+    expect(filesService.createUnitZip).toHaveBeenCalledWith("ap-1", "unit-1");
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Type",
       "application/zip",
@@ -249,19 +254,19 @@ describe("FilesController", () => {
   it("forwards explicit booklet downloads without changing the legacy download route", async () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
     await controller.findAll(
-      "acp-1",
+      "ap-1",
       "zip",
       undefined,
       "seq-1",
       {
-        acpAccessLevel: "MANAGER",
-        acpCapabilities: ["item-explorer:edit"],
+        apAccessLevel: "MANAGER",
+        apCapabilities: ["item-explorer:edit"],
         query: { kind: "booklet" },
       },
       res,
     );
     expect(filesService.createSequenceZip).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "seq-1",
       "booklet",
     );
@@ -272,16 +277,16 @@ describe("FilesController", () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.findAll(
-      "acp-1",
+      "ap-1",
       "zip",
       undefined,
       "seq-1",
-      { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+      { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
       res,
     );
 
     expect(filesService.createSequenceZip).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "seq-1",
     );
     expect(res.send).toHaveBeenCalled();
@@ -297,11 +302,11 @@ describe("FilesController", () => {
 
     await expect(
       controller.findAll(
-        "acp-1",
+        "ap-1",
         undefined,
         undefined,
         undefined,
-        { acpAccessLevel: "PUBLIC" },
+        { apAccessLevel: "PUBLIC" },
         {} as any,
       ),
     ).rejects.toThrow(ForbiddenException);
@@ -309,11 +314,11 @@ describe("FilesController", () => {
 
   it("returns file listing", async () => {
     const result = await controller.findAll(
-      "acp-1",
+      "ap-1",
       undefined,
       undefined,
       undefined,
-      { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+      { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
       {} as any,
     );
 
@@ -321,12 +326,12 @@ describe("FilesController", () => {
   });
 
   it("deletes all files and returns cleanup + validation summary", async () => {
-    const result = await controller.deleteAll("acp-1");
+    const result = await controller.deleteAll("ap-1");
 
-    expect(filesService.deleteAll).toHaveBeenCalledWith("acp-1");
+    expect(filesService.deleteAll).toHaveBeenCalledWith("ap-1");
     expect(
       filesService.cleanupReferencesAfterFileMutation,
-    ).toHaveBeenCalledWith("acp-1");
+    ).toHaveBeenCalledWith("ap-1");
     expect(result).toEqual({
       message: "All files deleted successfully",
       cleanupReport: { removed: 1 },
@@ -340,17 +345,17 @@ describe("FilesController", () => {
   });
 
   it("bulk deletes selected files and returns cleanup + validation summary", async () => {
-    const result = await controller.bulkDelete("acp-1", {
+    const result = await controller.bulkDelete("ap-1", {
       fileIds: ["file-1", "file-2"],
     });
 
-    expect(filesService.deleteManyForAcp).toHaveBeenCalledWith("acp-1", [
+    expect(filesService.deleteManyForAp).toHaveBeenCalledWith("ap-1", [
       "file-1",
       "file-2",
     ]);
     expect(
       filesService.cleanupReferencesAfterFileMutation,
-    ).toHaveBeenCalledWith("acp-1");
+    ).toHaveBeenCalledWith("ap-1");
     expect(result).toEqual({
       message: "Files deleted successfully",
       deletedCount: 2,
@@ -369,12 +374,12 @@ describe("FilesController", () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.bulkDownload(
-      "acp-1",
+      "ap-1",
       { fileIds: ["file-1", "file-2"] },
       res,
     );
 
-    expect(filesService.createFilesZip).toHaveBeenCalledWith("acp-1", [
+    expect(filesService.createFilesZip).toHaveBeenCalledWith("ap-1", [
       "file-1",
       "file-2",
     ]);
@@ -384,33 +389,30 @@ describe("FilesController", () => {
     );
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="acp-acp-1-selected-files.zip"',
+      'attachment; filename="ap-ap-1-selected-files.zip"',
     );
     expect(res.send).toHaveBeenCalledWith(Buffer.from("files-zip"));
   });
 
-  it("downloads all ACP files when no selection is provided", async () => {
+  it("downloads all AP files when no selection is provided", async () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
-    await controller.bulkDownload("acp-1", {}, res);
+    await controller.bulkDownload("ap-1", {}, res);
 
-    expect(filesService.createFilesZip).toHaveBeenCalledWith(
-      "acp-1",
-      undefined,
-    );
+    expect(filesService.createFilesZip).toHaveBeenCalledWith("ap-1", undefined);
     expect(res.send).toHaveBeenCalledWith(Buffer.from("files-zip"));
   });
 
   it("starts an asynchronous ZIP creation job for bulk download", async () => {
     const result = await controller.startBulkDownloadJob(
-      "acp-1",
+      "ap-1",
       { fileIds: ["file-1", "file-2"] },
       { user: { sub: "user-1" } },
     );
 
     expect(
       fileProcessingJobsService.createAndStartDownloadJob,
-    ).toHaveBeenCalledWith("acp-1", ["file-1", "file-2"], {
+    ).toHaveBeenCalledWith("ap-1", ["file-1", "file-2"], {
       createdByUserId: "user-1",
     });
     expect(result).toEqual({
@@ -423,10 +425,10 @@ describe("FilesController", () => {
   it("downloads the generated ZIP archive of a completed job", async () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
-    await controller.downloadJobArchive("acp-1", "job-download-1", res);
+    await controller.downloadJobArchive("ap-1", "job-download-1", res);
 
     expect(fileProcessingJobsService.downloadArchive).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "job-download-1",
     );
     expect(res.setHeader).toHaveBeenCalledWith(
@@ -435,13 +437,27 @@ describe("FilesController", () => {
     );
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="acp-acp-1-selected-files.zip"',
+      'attachment; filename="ap-ap-1-selected-files.zip"',
     );
     expect(res.send).toHaveBeenCalledWith(Buffer.from("job-archive"));
   });
 
+  it("loads current AP consistency without revalidating or saving files", async () => {
+    const result = await controller.getConsistency("ap-1");
+
+    expect(result).toMatchObject({
+      valid: false,
+      issues: [{ severity: "error", message: "Booklet fehlt" }],
+    });
+    expect(validationService.validateApConsistency).toHaveBeenCalledWith(
+      "ap-1",
+    );
+    expect(validationService.autoValidateUploadedFiles).not.toHaveBeenCalled();
+    expect(unitParserService.validateUnitFiles).not.toHaveBeenCalled();
+  });
+
   it("validates units and returns validation summary", async () => {
-    const result = await controller.validateUnits("acp-1");
+    const result = await controller.validateUnits("ap-1");
 
     expect(result).toEqual({
       unitResults: [{ unitId: "u-1", valid: true }],
@@ -458,16 +474,16 @@ describe("FilesController", () => {
     });
 
     await expect(
-      controller.getItemList("acp-1", { acpAccessLevel: "PUBLIC" }, undefined),
+      controller.getItemList("ap-1", { apAccessLevel: "PUBLIC" }, undefined),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it("returns item list for managers", async () => {
     const result = await controller.getItemList(
-      "acp-1",
+      "ap-1",
       {
-        acpAccessLevel: "MANAGER",
-        acpCapabilities: ["item-explorer:edit"],
+        apAccessLevel: "MANAGER",
+        apCapabilities: ["item-explorer:edit"],
       },
       undefined,
     );
@@ -479,7 +495,7 @@ describe("FilesController", () => {
     });
     expect(filesService.getFeatureConfig).not.toHaveBeenCalled();
     expect(unitParserService.getItemListFromFiles).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.objectContaining({
         itemPropertiesOverride: {},
         publishedItemPropertiesOverride: {},
@@ -491,7 +507,7 @@ describe("FilesController", () => {
 
   it("exposes item-list server timing diagnostics", async () => {
     unitParserService.getItemListFromFiles.mockImplementationOnce(
-      async (_acpId: string, options: any) => {
+      async (_apId: string, options: any) => {
         options.onDiagnostics({
           cacheStatus: "hit",
           rowCacheStatus: "hit",
@@ -508,8 +524,8 @@ describe("FilesController", () => {
     const res = { setHeader: jest.fn() } as any;
 
     await controller.getItemList(
-      "acp-1",
-      { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+      "ap-1",
+      { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
       undefined,
       res,
     );
@@ -533,13 +549,13 @@ describe("FilesController", () => {
     });
 
     await controller.getItemList(
-      "acp-1",
-      { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+      "ap-1",
+      { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
       undefined,
     );
 
     expect(unitParserService.getItemListFromFiles).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.objectContaining({
         itemPropertiesOverride: { draft: {} },
         publishedItemPropertiesOverride: { published: {} },
@@ -561,15 +577,15 @@ describe("FilesController", () => {
     });
 
     const result = await controller.getItemList(
-      "acp-1",
-      { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+      "ap-1",
+      { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
       "read-only",
     );
 
     expect(result.itemExplorerStateVersion).toBe(5);
     expect(
       itemExplorerStateService.getItemListStateProjection,
-    ).toHaveBeenCalledWith("acp-1", false);
+    ).toHaveBeenCalledWith("ap-1", false);
   });
 
   it.each(["READ_ONLY", "CREDENTIAL"])(
@@ -584,14 +600,14 @@ describe("FilesController", () => {
         }),
       );
       const req = {
-        acpAccessLevel: level,
-        acpCapabilities: ["item-explorer:edit"],
+        apAccessLevel: level,
+        apCapabilities: ["item-explorer:edit"],
       };
       expect(
-        (await controller.getItemList("acp-1", req)).itemExplorerStateVersion,
+        (await controller.getItemList("ap-1", req)).itemExplorerStateVersion,
       ).toBe(4);
       expect(
-        (await controller.getItemList("acp-1", req, "read-only"))
+        (await controller.getItemList("ap-1", req, "read-only"))
           .itemExplorerStateVersion,
       ).toBe(3);
       expect(filesService.getFeatureConfig).not.toHaveBeenCalled();
@@ -601,23 +617,23 @@ describe("FilesController", () => {
   it.each(["review:participate", "review:manage"])(
     "allows active %s player access without exposing drafts or arbitrary files",
     async (grant) => {
-      const req = { acpAccessLevel: "READ_ONLY", acpCapabilities: [grant] };
+      const req = { apAccessLevel: "READ_ONLY", apCapabilities: [grant] };
       filesService.getFeatureConfig.mockResolvedValue({
         enableReview: true,
         enableUnitView: false,
         allowFileDownload: false,
       });
-      await controller.getUnitView("acp-1", "unit-1", req);
+      await controller.getUnitView("ap-1", "unit-1", req);
       expect(
         itemExplorerStateService.getStateVersionForViewer,
-      ).toHaveBeenCalledWith("acp-1", false);
+      ).toHaveBeenCalledWith("ap-1", false);
       filesService.isUnitDependencyFile.mockResolvedValue(true);
       const res = { setHeader: jest.fn(), send: jest.fn() } as any;
-      await controller.download("acp-1", "file-1", undefined, req, res);
+      await controller.download("ap-1", "file-1", undefined, req, res);
       expect(res.send).toHaveBeenCalledWith(Buffer.from("file-body"));
       filesService.isUnitDependencyFile.mockResolvedValue(false);
       await expect(
-        controller.download("acp-1", "file-1", undefined, req, res),
+        controller.download("ap-1", "file-1", undefined, req, res),
       ).rejects.toThrow(ForbiddenException);
       filesService.getFeatureConfig.mockResolvedValue({
         enableReview: false,
@@ -626,21 +642,21 @@ describe("FilesController", () => {
       });
       filesService.isUnitDependencyFile.mockResolvedValue(true);
       await expect(
-        controller.getUnitView("acp-1", "unit-1", req),
+        controller.getUnitView("ap-1", "unit-1", req),
       ).rejects.toThrow(ForbiddenException);
       await expect(
-        controller.download("acp-1", "file-1", undefined, req, res),
+        controller.download("ap-1", "file-1", undefined, req, res),
       ).rejects.toThrow(ForbiddenException);
     },
   );
 
   it("delegates row-number recalculation to the published item-list workflow", async () => {
-    const result = await controller.recalculateItemRowNumbers("acp-1");
+    const result = await controller.recalculateItemRowNumbers("ap-1");
 
     expect(result).toEqual({ renumberedCount: 1 });
     expect(
       unitParserService.recalculatePublishedItemRowNumbers,
-    ).toHaveBeenCalledWith("acp-1");
+    ).toHaveBeenCalledWith("ap-1");
     expect(unitParserService.getItemListFromFiles).not.toHaveBeenCalled();
   });
 
@@ -649,7 +665,7 @@ describe("FilesController", () => {
       new ConflictException("Draft pending"),
     );
 
-    await expect(controller.recalculateItemRowNumbers("acp-1")).rejects.toThrow(
+    await expect(controller.recalculateItemRowNumbers("ap-1")).rejects.toThrow(
       ConflictException,
     );
     expect(unitParserService.getItemListFromFiles).not.toHaveBeenCalled();
@@ -665,8 +681,8 @@ describe("FilesController", () => {
 
     await expect(
       controller.getItemList(
-        "acp-1",
-        { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+        "ap-1",
+        { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
         "read-only",
       ),
     ).resolves.toBeDefined();
@@ -682,9 +698,9 @@ describe("FilesController", () => {
 
     await expect(
       controller.getUnitView(
-        "acp-1",
+        "ap-1",
         "unit-1",
-        { acpAccessLevel: "PUBLIC" },
+        { apAccessLevel: "PUBLIC" },
         undefined,
       ),
     ).rejects.toThrow(ForbiddenException);
@@ -699,16 +715,16 @@ describe("FilesController", () => {
 
     await expect(
       controller.getUnitView(
-        "acp-1",
+        "ap-1",
         "unit-1",
-        { acpAccessLevel: "PUBLIC" },
+        { apAccessLevel: "PUBLIC" },
         undefined,
       ),
     ).resolves.toEqual({ unitId: "u-1" });
     const unitViewCall =
       unitParserService.getUnitViewFromFiles.mock.calls.at(-1);
     expect(unitViewCall?.slice(0, 3)).toEqual([
-      "acp-1",
+      "ap-1",
       "unit-1",
       expect.any(Function),
     ]);
@@ -717,16 +733,16 @@ describe("FilesController", () => {
 
   it("uses the active Explorer version for manager unit-view caching", async () => {
     await controller.getUnitView(
-      "acp-1",
+      "ap-1",
       "unit-1",
-      { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+      { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
       undefined,
     );
 
     const unitViewCall =
       unitParserService.getUnitViewFromFiles.mock.calls.at(-1);
     expect(unitViewCall?.slice(0, 3)).toEqual([
-      "acp-1",
+      "ap-1",
       "unit-1",
       expect.any(Function),
     ]);
@@ -743,9 +759,9 @@ describe("FilesController", () => {
 
     await expect(
       controller.getUnitView(
-        "acp-1",
+        "ap-1",
         "unit-1",
-        { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+        { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
         "read-only",
       ),
     ).rejects.toThrow(ForbiddenException);
@@ -760,19 +776,19 @@ describe("FilesController", () => {
     });
 
     await expect(
-      controller.findOne("acp-1", "file-1", { acpAccessLevel: "PUBLIC" }),
+      controller.findOne("ap-1", "file-1", { apAccessLevel: "PUBLIC" }),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it("uploads files with conflict strategy and returns stored file metadata", async () => {
     const payload = await controller.upload(
-      "acp-1",
+      "ap-1",
       [{ originalname: "unit-1.xml" } as any],
       "overwrite",
     );
 
     expect(filesService.uploadMultiple).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       [{ originalname: "unit-1.xml" }],
       { conflictStrategy: "overwrite" },
     );
@@ -783,13 +799,13 @@ describe("FilesController", () => {
 
   it("starts upload processing as background job", async () => {
     const result = await controller.processUpload(
-      "acp-1",
+      "ap-1",
       { fileIds: ["file-1"], runCleanup: true },
       { user: { sub: "user-1" } },
     );
 
     expect(fileProcessingJobsService.createAndStartJob).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       ["file-1"],
       {
         createdByUserId: "user-1",
@@ -808,34 +824,34 @@ describe("FilesController", () => {
       { fileName: "unit-1.xml", decision: "skip" },
     ]);
     await controller.upload(
-      "acp-1",
+      "ap-1",
       [{ originalname: "bundle.zip" } as any],
       undefined,
       decisions,
     );
     expect(filesService.uploadMultiple).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       [{ originalname: "bundle.zip" }],
       { conflictStrategy: undefined, conflictDecisions: decisions },
     );
   });
 
   it("returns processing job snapshot", async () => {
-    await expect(
-      controller.getProcessingJob("acp-1", "job-1"),
-    ).resolves.toEqual({
-      id: "job-1",
-      jobType: "upload-process",
-      status: "running",
-    });
+    await expect(controller.getProcessingJob("ap-1", "job-1")).resolves.toEqual(
+      {
+        id: "job-1",
+        jobType: "upload-process",
+        status: "running",
+      },
+    );
     expect(fileProcessingJobsService.getJobSnapshot).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "job-1",
     );
   });
 
   it("streams processing job events", async () => {
-    const stream = await controller.streamProcessingJob("acp-1", "job-1");
+    const stream = await controller.streamProcessingJob("ap-1", "job-1");
 
     await expect(lastValueFrom(stream.pipe(take(1)))).resolves.toEqual({
       data: {
@@ -845,14 +861,14 @@ describe("FilesController", () => {
       },
     });
     expect(fileProcessingJobsService.ensureJobExists).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "job-1",
     );
     expect(fileProcessingJobsService.streamJob).toHaveBeenCalledWith("job-1");
   });
 
   it("syncs index from files", async () => {
-    await expect(controller.syncIndex("acp-1")).resolves.toEqual({
+    await expect(controller.syncIndex("ap-1")).resolves.toEqual({
       unitsAdded: 1,
       unitsUpdated: 0,
       dependenciesLinked: 0,
@@ -862,9 +878,9 @@ describe("FilesController", () => {
 
   it("returns preview data for managers", async () => {
     await expect(
-      controller.getPreview("acp-1", "file-1", {
-        acpAccessLevel: "MANAGER",
-        acpCapabilities: ["item-explorer:edit"],
+      controller.getPreview("ap-1", "file-1", {
+        apAccessLevel: "MANAGER",
+        apCapabilities: ["item-explorer:edit"],
       }),
     ).resolves.toEqual(
       expect.objectContaining({
@@ -873,10 +889,7 @@ describe("FilesController", () => {
       }),
     );
 
-    expect(filesService.getPreviewForAcp).toHaveBeenCalledWith(
-      "acp-1",
-      "file-1",
-    );
+    expect(filesService.getPreviewForAp).toHaveBeenCalledWith("ap-1", "file-1");
   });
 
   it("blocks preview access when file download and unit view access are disabled", async () => {
@@ -889,7 +902,7 @@ describe("FilesController", () => {
     filesService.isUnitDependencyFile.mockResolvedValueOnce(false);
 
     await expect(
-      controller.getPreview("acp-1", "file-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getPreview("ap-1", "file-1", { apAccessLevel: "PUBLIC" }),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -904,10 +917,10 @@ describe("FilesController", () => {
 
     await expect(
       controller.download(
-        "acp-1",
+        "ap-1",
         "file-1",
         undefined,
-        { acpAccessLevel: "PUBLIC" },
+        { apAccessLevel: "PUBLIC" },
         {
           setHeader: jest.fn(),
           send: jest.fn(),
@@ -927,10 +940,10 @@ describe("FilesController", () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.download(
-      "acp-1",
+      "ap-1",
       "file-1",
       undefined,
-      { acpAccessLevel: "PUBLIC" },
+      { apAccessLevel: "PUBLIC" },
       res,
     );
 
@@ -951,10 +964,10 @@ describe("FilesController", () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.download(
-      "acp-1",
+      "ap-1",
       "file-1",
       undefined,
-      { acpAccessLevel: "PUBLIC" },
+      { apAccessLevel: "PUBLIC" },
       res,
     );
 
@@ -965,15 +978,15 @@ describe("FilesController", () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.download(
-      "acp-1",
+      "ap-1",
       "file-1",
       undefined,
-      { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+      { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
       res,
     );
 
     expect(filesService.getFeatureConfig).not.toHaveBeenCalled();
-    expect(filesService.downloadForAcp).toHaveBeenCalledWith("acp-1", "file-1");
+    expect(filesService.downloadForAp).toHaveBeenCalledWith("ap-1", "file-1");
   });
 
   it("returns 304 for a matching private file ETag", async () => {
@@ -985,12 +998,12 @@ describe("FilesController", () => {
     } as any;
 
     await controller.download(
-      "acp-1",
+      "ap-1",
       "file-1",
       undefined,
       {
-        acpAccessLevel: "MANAGER",
-        acpCapabilities: ["item-explorer:edit"],
+        apAccessLevel: "MANAGER",
+        apCapabilities: ["item-explorer:edit"],
         headers: { "if-none-match": '"file-1-123-"' },
       },
       res,
@@ -998,7 +1011,7 @@ describe("FilesController", () => {
 
     expect(res.status).toHaveBeenCalledWith(304);
     expect(res.end).toHaveBeenCalled();
-    expect(filesService.downloadForAcp).not.toHaveBeenCalled();
+    expect(filesService.downloadForAp).not.toHaveBeenCalled();
   });
 
   it.each([['W/"file-1-123-"'], ['"different", W/"file-1-123-"'], ["*"]])(
@@ -1012,12 +1025,12 @@ describe("FilesController", () => {
       } as any;
 
       await controller.download(
-        "acp-1",
+        "ap-1",
         "file-1",
         undefined,
         {
-          acpAccessLevel: "MANAGER",
-          acpCapabilities: ["item-explorer:edit"],
+          apAccessLevel: "MANAGER",
+          apCapabilities: ["item-explorer:edit"],
           headers: { "if-none-match": ifNoneMatch },
         },
         res,
@@ -1025,7 +1038,7 @@ describe("FilesController", () => {
 
       expect(res.status).toHaveBeenCalledWith(304);
       expect(res.end).toHaveBeenCalled();
-      expect(filesService.downloadForAcp).not.toHaveBeenCalled();
+      expect(filesService.downloadForAp).not.toHaveBeenCalled();
     },
   );
 
@@ -1033,10 +1046,10 @@ describe("FilesController", () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.download(
-      "acp-1",
+      "ap-1",
       "file-1",
       "inline",
-      { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+      { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
       res,
     );
 
@@ -1049,22 +1062,22 @@ describe("FilesController", () => {
   it("rejects invalid content disposition", async () => {
     await expect(
       controller.download(
-        "acp-1",
+        "ap-1",
         "file-1",
         "sideways",
-        { acpAccessLevel: "MANAGER", acpCapabilities: ["item-explorer:edit"] },
+        { apAccessLevel: "MANAGER", apCapabilities: ["item-explorer:edit"] },
         { setHeader: jest.fn(), send: jest.fn() } as any,
       ),
     ).rejects.toThrow(BadRequestException);
   });
 
   it("deletes a single file and returns cleanup + validation summary", async () => {
-    const result = await controller.delete("acp-1", "file-1");
+    const result = await controller.delete("ap-1", "file-1");
 
-    expect(filesService.deleteForAcp).toHaveBeenCalledWith("acp-1", "file-1");
+    expect(filesService.deleteForAp).toHaveBeenCalledWith("ap-1", "file-1");
     expect(
       filesService.cleanupReferencesAfterFileMutation,
-    ).toHaveBeenCalledWith("acp-1");
+    ).toHaveBeenCalledWith("ap-1");
     expect(result).toEqual({
       message: "File deleted successfully",
       cleanupReport: { removed: 1 },
@@ -1078,11 +1091,11 @@ describe("FilesController", () => {
   });
 
   it("returns per-file validation results", async () => {
-    await expect(controller.getValidation("acp-1", "file-1")).resolves.toEqual({
+    await expect(controller.getValidation("ap-1", "file-1")).resolves.toEqual({
       valid: true,
     });
-    expect(filesService.getValidationResultForAcp).toHaveBeenCalledWith(
-      "acp-1",
+    expect(filesService.getValidationResultForAp).toHaveBeenCalledWith(
+      "ap-1",
       "file-1",
     );
   });

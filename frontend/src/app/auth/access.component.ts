@@ -6,7 +6,7 @@ import { AccessReason } from '../core/services/access.service';
 import { ApiService } from '../core/services/api.service';
 import { Subject, catchError, map, of, switchMap, takeUntil } from 'rxjs';
 
-type AccessContext = 'admin' | 'acp' | 'view' | 'manage' | null;
+type AccessContext = 'admin' | 'ap' | 'view' | 'manage' | null;
 
 @Component({
   selector: 'app-access',
@@ -28,7 +28,7 @@ type AccessContext = 'admin' | 'acp' | 'view' | 'manage' | null;
           }
 
           @if (showCredentialButton) {
-            <a [routerLink]="['/credential-login', acpId]" class="btn btn-outline">
+            <a [routerLink]="['/credential-login', apId]" class="btn btn-outline">
               Mit AP-Zugang anmelden
             </a>
           }
@@ -82,8 +82,8 @@ export class AccessComponent implements OnInit, OnDestroy {
   reason: AccessReason = 'insufficient_rights';
   context: AccessContext = null;
   nextUrl = '';
-  acpId = '';
-  acpName = '';
+  apId = '';
+  apName = '';
   private readonly destroyed$ = new Subject<void>();
 
   title = 'Kein Zugriff';
@@ -102,7 +102,7 @@ export class AccessComponent implements OnInit, OnDestroy {
   }
 
   get showCredentialButton(): boolean {
-    return this.reason === 'login_required' && !!this.acpId;
+    return this.reason === 'login_required' && !!this.apId;
   }
 
   get showRetryButton(): boolean {
@@ -116,18 +116,18 @@ export class AccessComponent implements OnInit, OnDestroy {
           const reason = params.get('reason');
           const context = params.get('context');
           const next = params.get('next');
-          const acpId = params.get('acpId');
+          const apId = params.get('apId') ?? params.get('acpId');
 
           this.reason = this.parseReason(reason);
           this.context = this.parseContext(context);
           this.nextUrl = this.normalizeNextUrl(next);
-          this.acpId = acpId?.trim() || '';
+          this.apId = apId?.trim() || '';
 
-          this.acpName = '';
+          this.apName = '';
           this.applyTexts();
-          return this.reason === 'login_required' && this.acpId
-            ? this.api.getPublicAcps().pipe(
-                map((acps) => acps.find((acp) => acp.id === this.acpId)?.name?.trim() || ''),
+          return this.reason === 'login_required' && this.apId
+            ? this.api.getPublicAps().pipe(
+                map((aps) => aps.find((ap) => ap.id === this.apId)?.name?.trim() || ''),
                 catchError(() => of('')),
               )
             : of('');
@@ -135,7 +135,7 @@ export class AccessComponent implements OnInit, OnDestroy {
         takeUntil(this.destroyed$),
       )
       .subscribe((name) => {
-        this.acpName = name;
+        this.apName = name;
         this.applyTexts();
       });
   }
@@ -165,8 +165,8 @@ export class AccessComponent implements OnInit, OnDestroy {
       case 'login_required':
         this.title = 'Anmeldung erforderlich';
         this.subtitle = 'Bitte melden Sie sich an, um auf diese Seite zuzugreifen.';
-        this.detail = this.acpId
-          ? `Für ${this.acpName ? `das Paket "${this.acpName}"` : 'dieses Paket'} kann je nach Konfiguration ein separater AP-Zugang erforderlich sein.`
+        this.detail = this.apId
+          ? `Für ${this.apName ? `das Paket "${this.apName}"` : 'dieses Paket'} kann je nach Konfiguration ein separater AP-Zugang erforderlich sein.`
           : '';
         break;
       case 'session_expired':
@@ -202,7 +202,8 @@ export class AccessComponent implements OnInit, OnDestroy {
   }
 
   private parseContext(value: string | null): AccessContext {
-    if (value === 'admin' || value === 'acp' || value === 'view' || value === 'manage') {
+    if (value === 'acp') return 'ap';
+    if (value === 'admin' || value === 'ap' || value === 'view' || value === 'manage') {
       return value;
     }
     return null;

@@ -11,7 +11,7 @@ export class ItemExplorerCommentsService implements OnDestroy {
   private readonly countsChanged = new Subject<void>();
   readonly countsChanged$ = this.countsChanged.asObservable();
   private stopVisibilityWatch: (() => void) | null = null;
-  private acpId = '';
+  private apId = '';
   private identity: string | null = null;
   private loggedIn = false;
   private canExport = false;
@@ -21,12 +21,12 @@ export class ItemExplorerCommentsService implements OnDestroy {
   ) {}
 
   configure(context: {
-    acpId: string;
+    apId: string;
     identity: string | null;
     loggedIn: boolean;
     canExport: boolean;
   }): void {
-    this.acpId = context.acpId;
+    this.apId = context.apId;
     this.identity = context.identity;
     this.loggedIn = context.loggedIn;
     this.canExport = context.canExport;
@@ -112,7 +112,7 @@ export class ItemExplorerCommentsService implements OnDestroy {
   }
 
   refreshItemComments(refreshSelectedThread = true): void {
-    if (this.destroyed || (!this.itemCommentsEnabled && !this.codingCommentsEnabled) || !this.acpId)
+    if (this.destroyed || (!this.itemCommentsEnabled && !this.codingCommentsEnabled) || !this.apId)
       return;
     const token = ++this.itemCommentCountsRequestToken;
     const stateVersion = this.itemCommentCountStateVersion;
@@ -120,7 +120,7 @@ export class ItemExplorerCommentsService implements OnDestroy {
     this.itemCommentCountsLoading = true;
     this.itemCommentCountsError = '';
     this.api
-      .getItemCommentCounts(this.acpId)
+      .getItemCommentCounts(this.apId)
       .pipe(timeout(10_000), takeUntil(this.destroy$))
       .subscribe({
         next: (snapshot) => {
@@ -168,23 +168,23 @@ export class ItemExplorerCommentsService implements OnDestroy {
 
   exportMyCommentsCsv(): void {
     this.downloadCommentExport(
-      this.api.exportMyReviewCommentsCsv(this.acpId),
-      `comments-${this.acpId}-mine.csv`,
+      this.api.exportMyReviewCommentsCsv(this.apId),
+      `comments-${this.apId}-mine.csv`,
     );
   }
 
   exportMyCommentsXlsx(): void {
     this.downloadCommentExport(
-      this.api.exportMyReviewCommentsXlsx(this.acpId),
-      `comments-${this.acpId}-mine.xlsx`,
+      this.api.exportMyReviewCommentsXlsx(this.apId),
+      `comments-${this.apId}-mine.xlsx`,
     );
   }
 
   exportAllCommentsXlsx(): void {
     if (!this.canExportAllComments) return;
     this.downloadCommentExport(
-      this.api.exportAllReviewCommentsXlsx(this.acpId),
-      `comments-${this.acpId}-all.xlsx`,
+      this.api.exportAllReviewCommentsXlsx(this.apId),
+      `comments-${this.apId}-all.xlsx`,
     );
   }
 

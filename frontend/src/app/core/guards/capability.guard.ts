@@ -6,7 +6,7 @@ import { ApiService } from '../services/api.service';
 export const explorerCapabilityGuard = ((route) => {
   const api = inject(ApiService);
   const router = inject(Router);
-  const id = route.paramMap.get('acpId') || route.parent?.paramMap.get('acpId') || '';
+  const id = route.paramMap.get('apId') || route.parent?.paramMap.get('apId') || '';
   return api.getCapabilities(id).pipe(
     map((access) => (access.canViewExplorer ? true : router.createUrlTree(['/view', id]))),
     catchError(() => of(router.createUrlTree(['/view', id]))),
@@ -16,7 +16,7 @@ export const explorerCapabilityGuard = ((route) => {
 export const reviewManageGuard = ((route) => {
   const api = inject(ApiService);
   const router = inject(Router);
-  const id = route.paramMap.get('acpId') || route.parent?.paramMap.get('acpId') || '';
+  const id = route.paramMap.get('apId') || route.parent?.paramMap.get('apId') || '';
   return api.getCapabilities(id).pipe(
     map((access) => (access.canManageReview ? true : router.createUrlTree(['/view', id]))),
     catchError(() => of(router.createUrlTree(['/view', id]))),

@@ -37,9 +37,9 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException("Not authenticated");
     }
 
-    const routeUuid = params.acpId || params.id;
+    const routeUuid = params.apId || params.id;
     if (routeUuid) {
-      assertUuidParam(routeUuid, params.acpId ? "AP ID" : "Resource ID");
+      assertUuidParam(routeUuid, params.apId ? "AP ID" : "Resource ID");
     }
 
     // Check if user is App Admin - App Admins have access to everything
@@ -48,32 +48,32 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    // Check ACP-specific roles (ACP_MANAGER or READ_ONLY)
-    const acpId = params.id || params.acpId;
-    if (user.acpRoles && acpId) {
-      const acpRole = user.acpRoles.find((role: any) => role.acpId === acpId);
+    // Check AP-specific roles (AP_MANAGER or READ_ONLY)
+    const apId = params.id || params.apId;
+    if (user.apRoles && apId) {
+      const apRole = user.apRoles.find((role: any) => role.apId === apId);
 
-      this.logger.log(`Checking ACP roles for ACP ID: ${acpId}`);
+      this.logger.log(`Checking AP roles for AP ID: ${apId}`);
       this.logger.log(
-        `User ACP roles: ${JSON.stringify(user.acpRoles, null, 2)}`,
+        `User AP roles: ${JSON.stringify(user.apRoles, null, 2)}`,
       );
-      this.logger.log(`Found ACP role: ${JSON.stringify(acpRole)}`);
+      this.logger.log(`Found AP role: ${JSON.stringify(apRole)}`);
 
-      // ACP_MANAGER can access ACP_MANAGER-protected endpoints
+      // AP_MANAGER can access AP_MANAGER-protected endpoints
       if (
-        requiredRoles.includes("ACP_MANAGER") &&
-        acpRole?.role === "ACP_MANAGER"
+        requiredRoles.includes("AP_MANAGER") &&
+        apRole?.role === "AP_MANAGER"
       ) {
-        this.logger.log("Access granted: User is ACP Manager for this ACP");
+        this.logger.log("Access granted: User is AP Manager for this AP");
         return true;
       }
 
       // READ_ONLY users can access READ_ONLY-protected endpoints
       if (
         requiredRoles.includes("READ_ONLY") &&
-        (acpRole?.role === "READ_ONLY" || acpRole?.role === "ACP_MANAGER")
+        (apRole?.role === "READ_ONLY" || apRole?.role === "AP_MANAGER")
       ) {
-        this.logger.log("Access granted: User has read access for this ACP");
+        this.logger.log("Access granted: User has read access for this AP");
         return true;
       }
     }

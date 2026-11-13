@@ -116,7 +116,7 @@ export class ReviewerColumnPolicy {
   }
 
   allowsField(field: string): boolean {
-    // Studio comments have their own ACP feature flag in the source parser;
+    // Studio comments have their own AP feature flag in the source parser;
     // table column selection does not control this read-only preview section.
     if (field === "studioComments") return true;
     return (
@@ -336,7 +336,7 @@ export class ReviewerColumnPolicy {
         result[key] = [];
         continue;
       }
-      if (key === "acpIndex" || key === "validationResult") continue;
+      if (key === "apIndex" || key === "validationResult") continue;
       if (key === "itemProperties") {
         result[key] = Object.fromEntries(
           Object.entries(record(entry)).map(([id, item]) => [

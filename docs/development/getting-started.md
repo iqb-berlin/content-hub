@@ -114,7 +114,7 @@ After booting the stack, verify:
 
 - run the Angular app locally or with Docker,
 - use the browser against `/api`,
-- confirm access flow behavior with `/access`, `/login`, and `/view/:acpId`.
+- confirm access flow behavior with `/access`, `/login`, and `/view/:apId`.
 
 ### Working on backend-only changes
 
@@ -130,7 +130,7 @@ The usual happy path is:
 2. configure access,
 3. upload files,
 4. inspect validation results,
-5. browse the AP through `/view/:acpId`,
+5. browse the AP through `/view/:apId`,
 6. create snapshots before risky changes.
 
 ## Local Identity and Login Notes

@@ -4,7 +4,7 @@ import { MulterModule } from "@nestjs/platform-express";
 import { AdminService } from "./admin.service";
 import { AdminController } from "./admin.controller";
 import {
-  Acp,
+  Ap,
   AppSettings,
   ApplicationToken,
   ServerApiAuditLog,
@@ -14,7 +14,7 @@ import { AuthModule } from "../auth/auth.module";
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Acp,
+      Ap,
       AppSettings,
       ApplicationToken,
       ServerApiAuditLog,

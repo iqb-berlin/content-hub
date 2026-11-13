@@ -10,7 +10,7 @@ import {
   responseVisibilityDefinition,
 } from './fixtures/conditional-visibility';
 
-const ACP_ID = '10000000-0000-4000-8000-000000000101';
+const AP_ID = '10000000-0000-4000-8000-000000000101';
 const playerHtml = readFileSync(join(__dirname, '../tmp/aspect-3.0.1.html'), 'utf8');
 const rowA = '#item-explorer-row-regression-item-uuid-1';
 const rowB = '#item-explorer-row-regression-item-uuid-2';
@@ -24,7 +24,7 @@ async function openPreview(
   } = {},
 ) {
   await installOidcSession(page, '10000000-0000-4000-8000-000000000002', 'e2e-manager');
-  await page.route(`**/api/view/acp/${ACP_ID}`, async (route) => {
+  await page.route(`**/api/view/ap/${AP_ID}`, async (route) => {
     const response = await route.fetch();
     const json = await response.json();
     json.featureConfig = {
@@ -39,7 +39,7 @@ async function openPreview(
   ];
   // Other suites publish a V2 override for row A. Keep the synthetic definition's
   // mapping consistent in reads AND draft writes, including their response envelopes.
-  await page.route(`**/api/view/acp/${ACP_ID}/item-explorer/state*`, async (route) => {
+  await page.route(`**/api/view/ap/${AP_ID}/item-explorer/state*`, async (route) => {
     const response = await route.fetch();
     const json = await response.json();
     for (const state of [json.activeState, json.draftState, json.publishedState]) {
@@ -50,7 +50,7 @@ async function openPreview(
     }
     await route.fulfill({ response, json });
   });
-  await page.route(`**/api/acp/${ACP_ID}/item-explorer/draft`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/item-explorer/draft`, async (route) => {
     const body = route.request().postDataJSON();
     for (const [rowKey, target] of targets) {
       body.patch.itemProperties = {
@@ -60,12 +60,12 @@ async function openPreview(
     }
     await route.continue({ postData: JSON.stringify(body) });
   });
-  await page.route(`**/api/acp/${ACP_ID}/items/*/response-state/with-fallback`, (route) =>
+  await page.route(`**/api/ap/${AP_ID}/items/*/response-state/with-fallback`, (route) =>
     route.fulfill({
       json: { state: options.saved ? { responseData: options.saved } : null, isFallback: false },
     }),
   );
-  await page.route(`**/api/acp/${ACP_ID}/files/unit-view/u1*`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/files/unit-view/u1*`, async (route) => {
     const response = await route.fetch();
     const json = await response.json();
     json.dependencies = [
@@ -88,7 +88,7 @@ async function openPreview(
   await page.route('**/api/visibility-fixture/definition*', (route) =>
     route.fulfill({ json: options.definition || conditionalVisibilityDefinition() }),
   );
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await expect(page.locator(rowA)).toBeVisible();
 }
 

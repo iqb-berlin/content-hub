@@ -7,7 +7,7 @@ describe("CompleteCommentLifecycle migration", () => {
   const migration = new CompleteCommentLifecycle1789300000000() as any;
   const base = {
     id: "comment-1",
-    acp_id: "acp-1",
+    acp_id: "ap-1",
     booklet_id: null,
     unit_id: null,
     item_id: null,
@@ -163,7 +163,7 @@ describe("CompleteCommentLifecycle migration", () => {
     });
   });
 
-  it("loads referenced booklet definitions from the ACP file catalog", async () => {
+  it("loads referenced booklet definitions from the AP file catalog", async () => {
     const queryRunner = {
       query: jest.fn().mockResolvedValue([
         {
@@ -182,7 +182,7 @@ describe("CompleteCommentLifecycle migration", () => {
 
     const definitions = await migration.loadBookletDefinitions(
       queryRunner,
-      "acp-1",
+      "ap-1",
       {
         assessmentParts: [
           {
@@ -200,7 +200,7 @@ describe("CompleteCommentLifecycle migration", () => {
     expect(definitions.has("unreferenced.xml")).toBe(false);
     expect(queryRunner.query).toHaveBeenCalledWith(
       expect.stringContaining('FROM "acp_files"'),
-      ["acp-1"],
+      ["ap-1"],
     );
   });
 
@@ -288,7 +288,7 @@ describe("CompleteCommentLifecycle migration", () => {
         { original_name: "metadata.json", file_path: metadataPath },
       ];
       const queryRunner = { query: jest.fn().mockResolvedValue(files) };
-      expect(await migration.loadItemTargets(queryRunner, "acp-1")).toEqual([
+      expect(await migration.loadItemTargets(queryRunner, "ap-1")).toEqual([
         { unitId: "u2", itemId: "i1" },
       ]);
       const backfill = {
@@ -296,7 +296,7 @@ describe("CompleteCommentLifecycle migration", () => {
           if (sql.includes('FROM "acp"'))
             return [
               {
-                id: "acp-1",
+                id: "ap-1",
                 acp_index: {
                   units: [{ id: "u1", items: [{ id: "i1" }] }],
                 },
@@ -327,15 +327,15 @@ describe("CompleteCommentLifecycle migration", () => {
       );
       queryRunner.query.mockResolvedValueOnce([files[0]]);
       await expect(
-        migration.loadItemTargets(queryRunner, "acp-1"),
+        migration.loadItemTargets(queryRunner, "ap-1"),
       ).rejects.toThrow("Missing item metadata");
       await writeFile(metadataPath, '{"items": "invalid"}');
       await expect(
-        migration.loadItemTargets(queryRunner, "acp-1"),
+        migration.loadItemTargets(queryRunner, "ap-1"),
       ).rejects.toThrow("Invalid item metadata");
       await rm(metadataPath);
       await expect(
-        migration.loadItemTargets(queryRunner, "acp-1"),
+        migration.loadItemTargets(queryRunner, "ap-1"),
       ).rejects.toThrow();
     } finally {
       await rm(directory, { recursive: true, force: true });

@@ -32,7 +32,7 @@ deployment infrastructure:
 An AP is the center of the system. It has:
 
 - a stable `packageId` and display metadata,
-- an `acpIndex` JSON payload,
+- an `apIndex` JSON payload,
 - uploaded files stored on disk with metadata in the database,
 - access configuration and optional credential lists,
 - snapshots for rollback and comparison,
@@ -48,8 +48,8 @@ without forcing everything into relational tables.
 
 1. A user opens the Angular app.
 2. The frontend fetches public settings from `/api/view/settings`.
-3. The user navigates to `/view/:acpId`.
-4. The backend `AcpAccessGuard` decides whether access is allowed based on:
+3. The user navigates to `/view/:apId`.
+4. The backend `ApAccessGuard` decides whether access is allowed based on:
    public visibility, AP role, app-admin rights, or credential token.
 5. Feature flags in the AP access configuration determine which read-only features
    are available to non-managers.
@@ -57,8 +57,8 @@ without forcing everything into relational tables.
 ### 2. Management workflow
 
 1. A manager or admin authenticates.
-2. Angular route guards protect `/acps`, `/admin/*`, and `/manage/:acpId/*`.
-3. The backend exposes manager-only endpoints under `/api/acp/:id/...`.
+2. Angular route guards protect `/aps`, `/admin/*`, and `/manage/:apId/*`.
+3. The backend exposes manager-only endpoints under `/api/ap/:id/...`.
 4. Managers upload files, sync the AP-Index, configure access, edit explorer drafts,
    create snapshots, and export comments or index data.
 

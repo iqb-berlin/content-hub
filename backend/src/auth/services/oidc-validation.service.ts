@@ -98,7 +98,7 @@ export class OidcValidationService {
 
       let user = await this.userRepository.findOne({
         where: { oidcSub: sub },
-        relations: ["acpRoles", "acpRoles.acp"],
+        relations: ["apRoles", "apRoles.ap"],
       });
 
       if (!user) {
@@ -106,7 +106,7 @@ export class OidcValidationService {
         // bind this OIDC identity to that account to avoid duplicate users/role drift.
         const existingByUsername = await this.userRepository.findOne({
           where: { username: baseUsername },
-          relations: ["acpRoles", "acpRoles.acp"],
+          relations: ["apRoles", "apRoles.ap"],
         });
 
         if (existingByUsername && !existingByUsername.oidcSub) {
@@ -153,9 +153,9 @@ export class OidcValidationService {
         type: "oidc",
         authType: "oidc",
         oidcSub: sub,
-        acpRoles: (user.acpRoles || []).map((role) => ({
-          acpId: role.acpId,
-          acpName: role.acp?.name,
+        apRoles: (user.apRoles || []).map((role) => ({
+          apId: role.apId,
+          apName: role.ap?.name,
           role: role.role,
         })),
       };

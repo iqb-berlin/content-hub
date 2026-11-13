@@ -3,15 +3,10 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { SnapshotsService } from "./snapshots.service";
-import {
-  AcpSnapshot,
-  AcpSnapshotFile,
-  Acp,
-  AcpFile,
-} from "../database/entities";
+import { ApSnapshot, ApSnapshotFile, Ap, ApFile } from "../database/entities";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { TEST_UUIDS, createAcpFixture } from "../testing/test-fixtures";
+import { TEST_UUIDS, createApFixture } from "../testing/test-fixtures";
 
 jest.mock("fs/promises", () => ({
   access: jest.fn(),
@@ -22,24 +17,24 @@ jest.mock("fs/promises", () => ({
 }));
 
 describe("SnapshotsService", () => {
-  const acpId = TEST_UUIDS.acp;
-  const unknownAcpId = TEST_UUIDS.unknownAcp;
+  const apId = TEST_UUIDS.ap;
+  const unknownApId = TEST_UUIDS.unknownAp;
   let service: SnapshotsService;
   let snapshotRepo: any;
   let snapshotFileRepo: any;
-  let acpRepo: any;
+  let apRepo: any;
   let fileRepo: any;
   let configService: any;
 
-  const mockAcp = createAcpFixture({
-    acpIndex: { packageId: "test", version: "1.0", units: [{ id: "u1" }] },
+  const mockAp = createApFixture({
+    apIndex: { packageId: "test", version: "1.0", units: [{ id: "u1" }] },
   });
 
   const mockSnapshot = {
     id: "snap-1",
-    acpId: acpId,
+    apId: apId,
     versionNumber: 1,
-    acpIndexSnapshot: {
+    apIndexSnapshot: {
       packageId: "test",
       version: "1.0",
       units: [{ id: "u1" }],
@@ -65,8 +60,8 @@ describe("SnapshotsService", () => {
         .fn()
         .mockImplementation((entities) => Promise.resolve(entities)),
     };
-    acpRepo = {
-      findOne: jest.fn().mockResolvedValue(mockAcp),
+    apRepo = {
+      findOne: jest.fn().mockResolvedValue(mockAp),
       save: jest.fn().mockImplementation((entity) => Promise.resolve(entity)),
     };
     fileRepo = {
@@ -98,13 +93,13 @@ describe("SnapshotsService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SnapshotsService,
-        { provide: getRepositoryToken(AcpSnapshot), useValue: snapshotRepo },
+        { provide: getRepositoryToken(ApSnapshot), useValue: snapshotRepo },
         {
-          provide: getRepositoryToken(AcpSnapshotFile),
+          provide: getRepositoryToken(ApSnapshotFile),
           useValue: snapshotFileRepo,
         },
-        { provide: getRepositoryToken(Acp), useValue: acpRepo },
-        { provide: getRepositoryToken(AcpFile), useValue: fileRepo },
+        { provide: getRepositoryToken(Ap), useValue: apRepo },
+        { provide: getRepositoryToken(ApFile), useValue: fileRepo },
         { provide: ConfigService, useValue: configService },
       ],
     }).compile();
@@ -112,9 +107,9 @@ describe("SnapshotsService", () => {
     service = module.get<SnapshotsService>(SnapshotsService);
   });
 
-  describe("findByAcp", () => {
+  describe("findByAp", () => {
     it("should return snapshots ordered by version descending", async () => {
-      const result = await service.findByAcp(acpId);
+      const result = await service.findByAp(apId);
       expect(result).toHaveLength(1);
       expect(snapshotRepo.find).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -123,20 +118,20 @@ describe("SnapshotsService", () => {
       );
     });
 
-    it("should reject an unknown ACP before querying snapshots", async () => {
-      acpRepo.findOne.mockResolvedValue(null);
+    it("should reject an unknown AP before querying snapshots", async () => {
+      apRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.findByAcp(unknownAcpId)).rejects.toThrow(
+      await expect(service.findByAp(unknownApId)).rejects.toThrow(
         NotFoundException,
       );
       expect(snapshotRepo.find).not.toHaveBeenCalled();
     });
 
-    it("should reject a malformed ACP ID before querying repositories", async () => {
+    it("should reject a malformed AP ID before querying repositories", async () => {
       await expect(
-        service.findByAcp("__coding-box-connection-test__"),
+        service.findByAp("__coding-box-connection-test__"),
       ).rejects.toThrow(BadRequestException);
-      expect(acpRepo.findOne).not.toHaveBeenCalled();
+      expect(apRepo.findOne).not.toHaveBeenCalled();
       expect(snapshotRepo.find).not.toHaveBeenCalled();
     });
   });
@@ -151,7 +146,7 @@ describe("SnapshotsService", () => {
           snapshotFiles: [],
         }); // findById after save
 
-      await service.create(acpId, "Test changelog");
+      await service.create(apId, "Test changelog");
       expect(snapshotRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           versionNumber: 3,
@@ -165,7 +160,7 @@ describe("SnapshotsService", () => {
         .mockResolvedValueOnce(null) // no latest snapshot
         .mockResolvedValueOnce({ ...mockSnapshot, snapshotFiles: [] }); // findById after save
 
-      await service.create(acpId);
+      await service.create(apId);
       expect(snapshotRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           versionNumber: 1,
@@ -178,7 +173,7 @@ describe("SnapshotsService", () => {
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ ...mockSnapshot, snapshotFiles: [] });
 
-      await service.create(acpId);
+      await service.create(apId);
       expect(snapshotFileRepo.create).toHaveBeenCalled();
       expect(snapshotFileRepo.save).toHaveBeenCalled();
     });
@@ -190,11 +185,11 @@ describe("SnapshotsService", () => {
         snapshotFiles: [],
       });
 
-      await service.create(acpId);
+      await service.create(apId);
 
       const snapshotDir = path.join(
         "/tmp/uploads-test",
-        acpId,
+        apId,
         "snapshots",
         "new-snap",
       );
@@ -209,22 +204,22 @@ describe("SnapshotsService", () => {
       );
     });
 
-    it("should throw NotFoundException for unknown ACP", async () => {
-      acpRepo.findOne.mockResolvedValue(null);
-      await expect(service.create(unknownAcpId)).rejects.toThrow(
+    it("should throw NotFoundException for unknown AP", async () => {
+      apRepo.findOne.mockResolvedValue(null);
+      await expect(service.create(unknownApId)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it("should reject malformed ACP IDs before creating a snapshot", async () => {
+    it("should reject malformed AP IDs before creating a snapshot", async () => {
       await expect(service.create("bad")).rejects.toThrow(BadRequestException);
-      expect(acpRepo.findOne).not.toHaveBeenCalled();
+      expect(apRepo.findOne).not.toHaveBeenCalled();
       expect(snapshotRepo.save).not.toHaveBeenCalled();
     });
   });
 
   describe("restore", () => {
-    it("should restore ACP-Index and file references from snapshot", async () => {
+    it("should restore AP-Index and file references from snapshot", async () => {
       const snapshotWithFiles = {
         ...mockSnapshot,
         snapshotFiles: [
@@ -239,20 +234,20 @@ describe("SnapshotsService", () => {
         ],
       };
       snapshotRepo.findOne.mockResolvedValue(snapshotWithFiles);
-      acpRepo.findOne.mockResolvedValue({ ...mockAcp });
+      apRepo.findOne.mockResolvedValue({ ...mockAp });
 
       await service.restore("snap-1");
-      expect(acpRepo.save).toHaveBeenCalledWith(
+      expect(apRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
-          acpIndex: snapshotWithFiles.acpIndexSnapshot,
+          apIndex: snapshotWithFiles.apIndexSnapshot,
         }),
       );
       expect(fileRepo.delete).toHaveBeenCalledWith({
-        acpId: acpId,
+        apId: apId,
       });
       expect(fileRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          acpId: acpId,
+          apId: apId,
           originalName: "f1.json",
         }),
       );
@@ -274,7 +269,7 @@ describe("SnapshotsService", () => {
         ],
       };
       snapshotRepo.findOne.mockResolvedValue(snapshotWithMissingFile);
-      acpRepo.findOne.mockResolvedValue({ ...mockAcp });
+      apRepo.findOne.mockResolvedValue({ ...mockAp });
       (fs.access as jest.Mock).mockRejectedValueOnce(new Error("ENOENT"));
 
       await expect(service.restore("snap-1")).rejects.toThrow(
@@ -308,7 +303,7 @@ describe("SnapshotsService", () => {
       snapshotRepo.findOne.mockImplementation((query: any) => {
         if (query?.where?.id === "snap-2")
           return Promise.resolve(currentSnapshot);
-        if (query?.where?.acpId === acpId && query?.where?.versionNumber) {
+        if (query?.where?.apId === apId && query?.where?.versionNumber) {
           return Promise.resolve(previousSnapshot);
         }
         return Promise.resolve(null);
@@ -344,11 +339,11 @@ describe("SnapshotsService", () => {
         }),
       );
       expect(fs.rm).toHaveBeenCalledWith(
-        path.join("/tmp/uploads-test", acpId, "snapshots", "snap-1"),
+        path.join("/tmp/uploads-test", apId, "snapshots", "snap-1"),
         { recursive: true, force: true },
       );
       expect(fs.rm).toHaveBeenCalledWith(
-        path.join("/tmp/uploads-test", acpId, "snapshot-restore", "snap-1"),
+        path.join("/tmp/uploads-test", apId, "snapshot-restore", "snap-1"),
         { recursive: true, force: true },
       );
     });
@@ -359,7 +354,7 @@ describe("SnapshotsService", () => {
         snapshotFiles: [],
       });
       snapshotRepo.remove.mockImplementation(async (entity: any) => {
-        entity.acpId = undefined;
+        entity.apId = undefined;
         entity.id = undefined;
         return entity;
       });
@@ -367,23 +362,23 @@ describe("SnapshotsService", () => {
       await service.delete("snap-1");
 
       expect(fs.rm).toHaveBeenCalledWith(
-        path.join("/tmp/uploads-test", acpId, "snapshots", "snap-1"),
+        path.join("/tmp/uploads-test", apId, "snapshots", "snap-1"),
         { recursive: true, force: true },
       );
       expect(fs.rm).toHaveBeenCalledWith(
-        path.join("/tmp/uploads-test", acpId, "snapshot-restore", "snap-1"),
+        path.join("/tmp/uploads-test", apId, "snapshot-restore", "snap-1"),
         { recursive: true, force: true },
       );
     });
   });
 
   describe("diffWithCurrent", () => {
-    it("should compare snapshot against current ACP state", async () => {
+    it("should compare snapshot against current AP state", async () => {
       const snapshot = {
         ...mockSnapshot,
         id: "snap-2",
         versionNumber: 2,
-        acpIndexSnapshot: { packageId: "test", version: "1.0" },
+        apIndexSnapshot: { packageId: "test", version: "1.0" },
         snapshotFiles: [
           { originalName: "same.xml", checksum: "111" },
           { originalName: "changed.xml", checksum: "old" },
@@ -394,9 +389,9 @@ describe("SnapshotsService", () => {
         if (query?.where?.id === "snap-2") return Promise.resolve(snapshot);
         return Promise.resolve(mockSnapshot);
       });
-      acpRepo.findOne.mockResolvedValue({
-        ...mockAcp,
-        acpIndex: { packageId: "test", version: "2.0" },
+      apRepo.findOne.mockResolvedValue({
+        ...mockAp,
+        apIndex: { packageId: "test", version: "2.0" },
       });
       fileRepo.find.mockResolvedValue([
         { originalName: "same.xml", checksum: "111" },

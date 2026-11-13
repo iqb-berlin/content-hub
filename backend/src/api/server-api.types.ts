@@ -1,17 +1,17 @@
-import { Request } from "express";
+import type { ApCompatibilityRequest } from "../common/ap-compatibility.middleware";
 import { ServerApiScope } from "./server-api-scopes";
 
 export interface AuthenticatedServerApiClient {
   id: string;
   scopes: string[];
-  allowedAcpIds: string[] | null;
+  allowedApIds: string[] | null;
 }
 
-export interface ServerApiRequest extends Request {
+export interface ServerApiRequest extends ApCompatibilityRequest {
   serverApiClient?: AuthenticatedServerApiClient;
 }
 
-export interface AuthenticatedServerApiRequest extends Request {
+export interface AuthenticatedServerApiRequest extends ApCompatibilityRequest {
   serverApiClient: AuthenticatedServerApiClient;
 }
 
@@ -19,5 +19,5 @@ export interface ServerApiCapabilities {
   clientId: string;
   scopes: string[];
   capabilities: Record<ServerApiScope, boolean>;
-  allowedAcpIds: string[] | null;
+  allowedApIds: string[] | null;
 }

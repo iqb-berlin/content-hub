@@ -1,3 +1,4 @@
+import { normalizeApScope } from "../common/ap-contract";
 import {
   BadRequestException,
   ConflictException,
@@ -13,12 +14,12 @@ import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
 import {
-  Acp,
+  Ap,
   AppSettings,
   ApplicationToken,
   ServerApiAuditLog,
 } from "../database/entities";
-import { DEFAULT_ACP_INDEX_VERSION } from "../acp/acp-index.utils";
+import { DEFAULT_AP_INDEX_VERSION } from "../ap/ap-index.utils";
 import { ALL_SERVER_API_SCOPE_SET } from "../api/server-api-scopes";
 import {
   generateServerApiToken,
@@ -37,19 +38,19 @@ export interface CreateApplicationTokenInput {
   name: string;
   scopes: string[];
   expiresAt?: string | null;
-  allowedAcpIds?: string[] | null;
+  allowedApIds?: string[] | null;
 }
 
 export interface ListApplicationTokensOptions {
   limit?: number;
   offset?: number;
-  allowedAcpId?: string;
+  allowedApId?: string;
 }
 
 export interface ApplicationTokenActorConstraints {
-  allowedAcpIds?: string[];
-  requireExclusiveAcp?: boolean;
-  auditAcpId?: string;
+  allowedApIds?: string[];
+  requireExclusiveAp?: boolean;
+  auditApId?: string;
   auditPath?: string;
 }
 
@@ -58,7 +59,7 @@ export interface ApplicationTokenSummary {
   name: string;
   tokenPrefix: string;
   scopes: string[];
-  allowedAcpIds: string[] | null;
+  allowedApIds: string[] | null;
   active: boolean;
   expiresAt: Date | null;
   lastUsedAt: Date | null;
@@ -91,8 +92,8 @@ export class AdminService {
     private readonly applicationTokenRepository: Repository<ApplicationToken>,
     @InjectRepository(ServerApiAuditLog)
     private readonly auditRepository: Repository<ServerApiAuditLog>,
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
   ) {}
 
   async getSettings(): Promise<AppSettings> {
@@ -101,8 +102,8 @@ export class AdminService {
       settings = this.settingsRepository.create({
         theme: {},
         language: "de",
-        defaultAcpIndex: {
-          version: DEFAULT_ACP_INDEX_VERSION,
+        defaultApIndex: {
+          version: DEFAULT_AP_INDEX_VERSION,
           assessmentParts: [],
         },
         geoGebraBundle: null,
@@ -130,8 +131,8 @@ export class AdminService {
     if (data.privacyHtml !== undefined) settings.privacyHtml = data.privacyHtml;
     if (data.accessibilityHtml !== undefined)
       settings.accessibilityHtml = data.accessibilityHtml;
-    if (data.defaultAcpIndex !== undefined)
-      settings.defaultAcpIndex = data.defaultAcpIndex;
+    if (data.defaultApIndex !== undefined)
+      settings.defaultApIndex = data.defaultApIndex;
     return this.settingsRepository.save(settings);
   }
 
@@ -140,10 +141,10 @@ export class AdminService {
   ): Promise<PaginatedApplicationTokens> {
     const limit = this.normalizeApplicationTokenListLimit(options.limit);
     const offset = this.normalizeApplicationTokenListOffset(options.offset);
-    const where = options.allowedAcpId
+    const where = options.allowedApId
       ? {
-          allowedAcpIds: Raw((alias) => `${alias} @> :allowedAcpIds`, {
-            allowedAcpIds: JSON.stringify([options.allowedAcpId]),
+          allowedApIds: Raw((alias) => `${alias} @> :allowedApIds`, {
+            allowedApIds: JSON.stringify([options.allowedApId]),
           }),
         }
       : {};
@@ -168,8 +169,8 @@ export class AdminService {
   ): Promise<CreatedApplicationTokenResponse> {
     const name = this.normalizeApplicationTokenName(data.name);
     const scopes = this.normalizeApplicationTokenScopes(data.scopes);
-    const allowedAcpIds = await this.normalizeApplicationTokenAllowedAcpIds(
-      data.allowedAcpIds,
+    const allowedApIds = await this.normalizeApplicationTokenAllowedApIds(
+      data.allowedApIds,
       constraints,
     );
     const expiresAt = this.parseApplicationTokenExpiresAt(data.expiresAt);
@@ -196,7 +197,7 @@ export class AdminService {
             tokenHash: hashServerApiToken(token),
             tokenPrefix: getServerApiTokenDisplayPrefix(token),
             scopes,
-            allowedAcpIds,
+            allowedApIds,
             active: true,
             expiresAt,
             lastUsedAt: null,
@@ -210,12 +211,12 @@ export class AdminService {
             action: "application-token.create",
             method: "POST",
             path: auditPath,
-            acpId: constraints.auditAcpId,
+            apId: constraints.auditApId,
             actorUserId: createdByUserId,
             token: savedToken,
             details: {
               scopes: savedToken.scopes,
-              allowedAcpIds: savedToken.allowedAcpIds || null,
+              allowedApIds: savedToken.allowedApIds || null,
               expiresAt: savedToken.expiresAt?.toISOString() || null,
             },
             auditRepository,
@@ -265,7 +266,7 @@ export class AdminService {
         path:
           constraints.auditPath ||
           `/api/admin/application-tokens/${saved.id}/revoke`,
-        acpId: constraints.auditAcpId,
+        apId: constraints.auditApId,
         actorUserId: revokedByUserId,
         token: saved,
       });
@@ -512,7 +513,7 @@ export class AdminService {
     const scopes = Array.from(
       new Set<string>(
         scopesInput
-          .map((scope: unknown) => String(scope || "").trim())
+          .map((scope: unknown) => normalizeApScope(String(scope || "").trim()))
           .filter((scope: string) => scope.length > 0),
       ),
     );
@@ -535,15 +536,15 @@ export class AdminService {
     return scopes;
   }
 
-  private async normalizeApplicationTokenAllowedAcpIds(
-    allowedAcpIdsInput: unknown,
+  private async normalizeApplicationTokenAllowedApIds(
+    allowedApIdsInput: unknown,
     constraints: ApplicationTokenActorConstraints,
   ): Promise<string[] | null> {
-    const normalizedConstraintIds = this.normalizeConstraintAcpIds(
-      constraints.allowedAcpIds,
+    const normalizedConstraintIds = this.normalizeConstraintApIds(
+      constraints.allowedApIds,
     );
 
-    if (allowedAcpIdsInput === undefined || allowedAcpIdsInput === null) {
+    if (allowedApIdsInput === undefined || allowedApIdsInput === null) {
       if (normalizedConstraintIds) {
         throw new ForbiddenException(
           "AP managers can only create AP-limited application tokens",
@@ -552,19 +553,19 @@ export class AdminService {
       return null;
     }
 
-    if (!Array.isArray(allowedAcpIdsInput)) {
-      throw new BadRequestException("allowedAcpIds must be an array or null");
+    if (!Array.isArray(allowedApIdsInput)) {
+      throw new BadRequestException("allowedApIds must be an array or null");
     }
 
-    const allowedAcpIds = Array.from(
+    const allowedApIds = Array.from(
       new Set<string>(
-        allowedAcpIdsInput
-          .map((acpId: unknown) => String(acpId || "").trim())
-          .filter((acpId: string) => acpId.length > 0),
+        allowedApIdsInput
+          .map((apId: unknown) => String(apId || "").trim())
+          .filter((apId: string) => apId.length > 0),
       ),
     );
 
-    if (!allowedAcpIds.length) {
+    if (!allowedApIds.length) {
       if (normalizedConstraintIds) {
         throw new ForbiddenException(
           "AP managers can only create AP-limited application tokens",
@@ -573,7 +574,7 @@ export class AdminService {
       return null;
     }
 
-    const invalidIds = allowedAcpIds.filter((acpId) => !isUuid(acpId));
+    const invalidIds = allowedApIds.filter((apId) => !isUuid(apId));
     if (invalidIds.length) {
       throw new BadRequestException(
         `Invalid AP IDs for application token: ${invalidIds.join(", ")}`,
@@ -582,8 +583,8 @@ export class AdminService {
 
     if (normalizedConstraintIds) {
       const allowedConstraintSet = new Set(normalizedConstraintIds);
-      const forbiddenIds = allowedAcpIds.filter(
-        (acpId) => !allowedConstraintSet.has(acpId),
+      const forbiddenIds = allowedApIds.filter(
+        (apId) => !allowedConstraintSet.has(apId),
       );
       if (forbiddenIds.length) {
         throw new ForbiddenException(
@@ -592,30 +593,30 @@ export class AdminService {
       }
     }
 
-    const existingAcps = await this.acpRepository.find({
-      where: { id: In(allowedAcpIds) },
+    const existingAps = await this.apRepository.find({
+      where: { id: In(allowedApIds) },
       select: ["id"],
     });
-    const existingIds = new Set(existingAcps.map((acp) => acp.id));
-    const missingIds = allowedAcpIds.filter((acpId) => !existingIds.has(acpId));
+    const existingIds = new Set(existingAps.map((ap) => ap.id));
+    const missingIds = allowedApIds.filter((apId) => !existingIds.has(apId));
     if (missingIds.length) {
       throw new BadRequestException(
         `Unknown AP IDs for application token: ${missingIds.join(", ")}`,
       );
     }
 
-    return allowedAcpIds;
+    return allowedApIds;
   }
 
-  private normalizeConstraintAcpIds(acpIds?: string[]): string[] | null {
-    if (!acpIds) {
+  private normalizeConstraintApIds(apIds?: string[]): string[] | null {
+    if (!apIds) {
       return null;
     }
     return Array.from(
       new Set(
-        acpIds
-          .map((acpId) => String(acpId || "").trim())
-          .filter((acpId) => acpId.length > 0),
+        apIds
+          .map((apId) => String(apId || "").trim())
+          .filter((apId) => apId.length > 0),
       ),
     );
   }
@@ -624,30 +625,30 @@ export class AdminService {
     token: ApplicationToken,
     constraints: ApplicationTokenActorConstraints,
   ): void {
-    const constraintAcpIds = this.normalizeConstraintAcpIds(
-      constraints.allowedAcpIds,
+    const constraintApIds = this.normalizeConstraintApIds(
+      constraints.allowedApIds,
     );
-    if (!constraintAcpIds) {
+    if (!constraintApIds) {
       return;
     }
 
-    const tokenAcpIds = Array.isArray(token.allowedAcpIds)
-      ? token.allowedAcpIds
+    const tokenApIds = Array.isArray(token.allowedApIds)
+      ? token.allowedApIds
       : null;
-    if (!tokenAcpIds?.length) {
+    if (!tokenApIds?.length) {
       throw new ForbiddenException(
         "AP managers cannot manage global application tokens",
       );
     }
 
-    const constraintSet = new Set(constraintAcpIds);
-    const hasAllowedAcp = tokenAcpIds.some((acpId) => constraintSet.has(acpId));
+    const constraintSet = new Set(constraintApIds);
+    const hasAllowedAp = tokenApIds.some((apId) => constraintSet.has(apId));
     const isExclusive =
-      tokenAcpIds.length === 1 && constraintSet.has(tokenAcpIds[0]);
+      tokenApIds.length === 1 && constraintSet.has(tokenApIds[0]);
 
     if (
-      !hasAllowedAcp ||
-      (constraints.requireExclusiveAcp !== false && !isExclusive)
+      !hasAllowedAp ||
+      (constraints.requireExclusiveAp !== false && !isExclusive)
     ) {
       throw new ForbiddenException(
         "Application token is not exclusively owned by this AP",
@@ -683,8 +684,8 @@ export class AdminService {
       name: token.name,
       tokenPrefix: token.tokenPrefix,
       scopes: Array.isArray(token.scopes) ? [...token.scopes] : [],
-      allowedAcpIds: Array.isArray(token.allowedAcpIds)
-        ? [...token.allowedAcpIds]
+      allowedApIds: Array.isArray(token.allowedApIds)
+        ? [...token.allowedApIds]
         : null,
       active: token.active,
       expiresAt: token.expiresAt || null,
@@ -727,7 +728,7 @@ export class AdminService {
     action,
     method,
     path,
-    acpId,
+    apId,
     actorUserId,
     token,
     details,
@@ -737,7 +738,7 @@ export class AdminService {
     action: string;
     method: string;
     path: string;
-    acpId?: string;
+    apId?: string;
     actorUserId?: string;
     token: ApplicationToken;
     details?: Record<string, unknown>;
@@ -753,7 +754,7 @@ export class AdminService {
           action,
           method,
           path,
-          acpId,
+          apId,
           resourceId: token.id,
           success: true,
           details: {

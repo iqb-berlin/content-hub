@@ -2,22 +2,22 @@ import { SemanticValidator } from "./semantic-validator";
 
 describe("SemanticValidator", () => {
   let validator: SemanticValidator;
-  let acpRepository: { findOne: jest.Mock };
+  let apRepository: { findOne: jest.Mock };
   let fileRepository: { find: jest.Mock };
 
   beforeEach(() => {
-    acpRepository = { findOne: jest.fn() };
+    apRepository = { findOne: jest.fn() };
     fileRepository = { find: jest.fn() };
     validator = new SemanticValidator(
-      acpRepository as any,
+      apRepository as any,
       fileRepository as any,
     );
   });
 
-  it("returns error when ACP is missing", async () => {
-    acpRepository.findOne.mockResolvedValue(null);
+  it("returns error when AP is missing", async () => {
+    apRepository.findOne.mockResolvedValue(null);
 
-    const result = await validator.validate("acp-1");
+    const result = await validator.validate("ap-1");
 
     expect(result).toEqual({
       valid: false,
@@ -26,9 +26,9 @@ describe("SemanticValidator", () => {
   });
 
   it("collects semantic issues for missing files, unit refs and duplicate item ids", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      acpIndex: {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
         assessmentParts: [
           {
             id: "part-1",
@@ -56,7 +56,7 @@ describe("SemanticValidator", () => {
 
     fileRepository.find.mockResolvedValue([{ originalName: "present.xml" }]);
 
-    const result = await validator.validate("acp-1");
+    const result = await validator.validate("ap-1");
 
     expect(result.valid).toBe(false);
     expect(result.issues).toEqual(
@@ -81,10 +81,10 @@ describe("SemanticValidator", () => {
     );
   });
 
-  it("returns valid result when ACP references are consistent", async () => {
-    acpRepository.findOne.mockResolvedValue({
-      id: "acp-1",
-      acpIndex: {
+  it("returns valid result when AP references are consistent", async () => {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
         assessmentParts: [
           {
             id: "part-1",
@@ -108,7 +108,7 @@ describe("SemanticValidator", () => {
 
     fileRepository.find.mockResolvedValue([{ originalName: "unit.xml" }]);
 
-    const result = await validator.validate("acp-1");
+    const result = await validator.validate("ap-1");
 
     expect(result).toEqual({ valid: true, issues: [] });
   });

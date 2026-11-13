@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { apScopeStorage } from "../ap-storage";
 
 @Entity("application_tokens")
 export class ApplicationToken {
@@ -20,11 +21,15 @@ export class ApplicationToken {
   @Column({ name: "token_prefix", length: 32 })
   tokenPrefix!: string;
 
-  @Column({ type: "jsonb", default: () => "'[]'::jsonb" })
+  @Column({
+    type: "jsonb",
+    default: () => "'[]'::jsonb",
+    transformer: apScopeStorage,
+  })
   scopes!: string[];
 
   @Column({ name: "allowed_acp_ids", type: "jsonb", nullable: true })
-  allowedAcpIds?: string[] | null;
+  allowedApIds?: string[] | null;
 
   @Column({ default: true })
   active!: boolean;

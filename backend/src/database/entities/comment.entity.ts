@@ -9,9 +9,9 @@ import {
   UpdateDateColumn,
   Index,
 } from "typeorm";
-import { Acp } from "./acp.entity";
+import { Ap } from "./ap.entity";
 import { User } from "./user.entity";
-import { AcpCredential } from "./acp-credential.entity";
+import { ApCredential } from "./ap-credential.entity";
 
 export enum CommentTargetType {
   BOOKLET = "BOOKLET",
@@ -22,15 +22,15 @@ export enum CommentTargetType {
 }
 
 @Entity("comments")
-@Index("IDX_comments_item_target", ["acpId", "unitId", "itemId"])
-@Index("IDX_comments_booklet_target", ["acpId", "bookletId"])
+@Index("IDX_comments_item_target", ["apId", "unitId", "itemId"])
+@Index("IDX_comments_booklet_target", ["apId", "bookletId"])
 @Index("IDX_comments_parent", ["parentCommentId"])
 export class Comment {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
   @Column({ name: "acp_id" })
-  acpId!: string;
+  apId!: string;
 
   @Column({ name: "user_id", nullable: true })
   userId?: string;
@@ -90,9 +90,9 @@ export class Comment {
   @Column({ name: "legacy_read_only", type: "boolean", default: false })
   legacyReadOnly!: boolean;
 
-  @ManyToOne(() => Acp, (acp) => acp.comments, { onDelete: "CASCADE" })
+  @ManyToOne(() => Ap, (ap) => ap.comments, { onDelete: "CASCADE" })
   @JoinColumn({ name: "acp_id" })
-  acp!: Acp;
+  ap!: Ap;
 
   @ManyToOne(() => User, (user) => user.comments, {
     onDelete: "SET NULL",
@@ -101,12 +101,12 @@ export class Comment {
   @JoinColumn({ name: "user_id" })
   user?: User;
 
-  @ManyToOne(() => AcpCredential, {
+  @ManyToOne(() => ApCredential, {
     nullable: true,
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: "credential_id" })
-  credential?: AcpCredential;
+  credential?: ApCredential;
 
   @ManyToOne(() => Comment, (comment) => comment.replies, {
     onDelete: "SET NULL",

@@ -8,7 +8,7 @@ import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
-import { User, AcpCredential, AcpAccessConfig } from "../database/entities";
+import { User, ApCredential, ApAccessConfig } from "../database/entities";
 
 export interface JwtPayload {
   sub: string;
@@ -16,6 +16,8 @@ export interface JwtPayload {
   isAppAdmin: boolean;
   type: "credential" | "oidc";
   authType?: "oidc";
+  apId?: string;
+  /** Legacy claim retained for tokens issued before the AP naming transition. */
   acpId?: string;
 }
 
@@ -47,26 +49,26 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(AcpCredential)
-    private readonly credentialRepository: Repository<AcpCredential>,
-    @InjectRepository(AcpAccessConfig)
-    private readonly accessConfigRepository: Repository<AcpAccessConfig>,
+    @InjectRepository(ApCredential)
+    private readonly credentialRepository: Repository<ApCredential>,
+    @InjectRepository(ApAccessConfig)
+    private readonly accessConfigRepository: Repository<ApAccessConfig>,
     private readonly jwtService: JwtService,
   ) {}
 
   async credentialLogin(
-    acpId: string,
+    apId: string,
     username: string,
     password: string,
     clientId = "unknown",
   ) {
     const normalizedClientId = this.normalizeClientId(clientId);
-    this.enforceCredentialLoginRateLimit(acpId, username, normalizedClientId);
+    this.enforceCredentialLoginRateLimit(apId, username, normalizedClientId);
 
     try {
-      // Find active access config for this ACP with credentials
+      // Find active access config for this AP with credentials
       const accessConfig = await this.accessConfigRepository.findOne({
-        where: { acpId, accessModel: "CREDENTIALS_LIST" as any },
+        where: { apId, accessModel: "CREDENTIALS_LIST" as any },
       });
 
       if (!accessConfig) {
@@ -112,25 +114,25 @@ export class AuthService {
         throw new UnauthorizedException("Invalid credentials");
       }
 
-      this.clearCredentialLoginRateLimit(acpId, username, normalizedClientId);
+      this.clearCredentialLoginRateLimit(apId, username, normalizedClientId);
 
       const payload: JwtPayload = {
         sub: credential.id,
         username: credential.username,
         isAppAdmin: false,
         type: "credential",
-        acpId,
+        apId,
       };
 
       return {
-        accessToken: this.jwtService.sign(payload),
-        acpId,
+        accessToken: this.jwtService.sign({ ...payload, acpId: apId }),
+        apId,
         username: credential.username,
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         this.registerFailedCredentialLoginAttempt(
-          acpId,
+          apId,
           username,
           normalizedClientId,
         );
@@ -142,7 +144,7 @@ export class AuthService {
   async getProfile(userId: string) {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ["acpRoles", "acpRoles.acp"],
+      relations: ["apRoles", "apRoles.ap"],
     });
     if (!user) {
       throw new UnauthorizedException("User not found");
@@ -152,9 +154,9 @@ export class AuthService {
       username: user.username,
       displayName: user.displayName,
       isAppAdmin: user.isAppAdmin,
-      acpRoles: user.acpRoles.map((role) => ({
-        acpId: role.acpId,
-        acpName: role.acp?.name,
+      apRoles: user.apRoles.map((role) => ({
+        apId: role.apId,
+        apName: role.ap?.name,
         role: role.role,
       })),
     };
@@ -176,7 +178,7 @@ export class AuthService {
         username: userInfo.username,
         displayName: userInfo.displayName || userInfo.username,
         isAppAdmin: userInfo.isAppAdmin,
-        acpRoles: userInfo.acpRoles || [],
+        apRoles: userInfo.apRoles || [],
       },
     };
   }
@@ -242,22 +244,22 @@ export class AuthService {
   }
 
   private credentialLoginRateLimitKey(
-    acpId: string,
+    apId: string,
     username: string,
     clientId: string,
   ): string {
-    return `${acpId}:${username.toLowerCase()}:${clientId}`;
+    return `${apId}:${username.toLowerCase()}:${clientId}`;
   }
 
   private enforceCredentialLoginRateLimit(
-    acpId: string,
+    apId: string,
     username: string,
     clientId: string,
   ): void {
     const now = Date.now();
     this.pruneCredentialLoginAttempts(now);
 
-    const key = this.credentialLoginRateLimitKey(acpId, username, clientId);
+    const key = this.credentialLoginRateLimitKey(apId, username, clientId);
     const attempt = this.credentialLoginAttempts.get(key);
     if (!attempt) {
       return;
@@ -276,12 +278,12 @@ export class AuthService {
   }
 
   private registerFailedCredentialLoginAttempt(
-    acpId: string,
+    apId: string,
     username: string,
     clientId: string,
   ): void {
     const now = Date.now();
-    const key = this.credentialLoginRateLimitKey(acpId, username, clientId);
+    const key = this.credentialLoginRateLimitKey(apId, username, clientId);
     const current = this.credentialLoginAttempts.get(key);
 
     if (
@@ -307,11 +309,11 @@ export class AuthService {
   }
 
   private clearCredentialLoginRateLimit(
-    acpId: string,
+    apId: string,
     username: string,
     clientId: string,
   ): void {
-    const key = this.credentialLoginRateLimitKey(acpId, username, clientId);
+    const key = this.credentialLoginRateLimitKey(apId, username, clientId);
     this.credentialLoginAttempts.delete(key);
   }
 

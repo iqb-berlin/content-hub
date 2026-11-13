@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
-import { Acp, AcpFile } from "../database/entities";
+import { Ap, ApFile } from "../database/entities";
 import { FilesService } from "../files/files.service";
 import { SnapshotsService } from "../snapshots/snapshots.service";
 import { assertUuidParam } from "../common/uuid-param";
@@ -15,13 +15,13 @@ import { assertUuidParam } from "../common/uuid-param";
 export type ConflictStrategy = "reject" | "overwrite" | "merge";
 export type IndexUpdateStrategy = "overwrite" | "merge";
 export type FileConflictStrategy = "reject" | "overwrite" | "keep-both";
-export type AllowedAcpIds = string[] | null | undefined;
+export type AllowedApIds = string[] | null | undefined;
 
-export interface ServerImportAcpPayload {
+export interface ServerImportApPayload {
   packageId: string;
   name: string;
   description?: string;
-  acpIndex: Record<string, any>;
+  apIndex: Record<string, any>;
   expectedUpdatedAt?: string;
 }
 
@@ -34,18 +34,18 @@ export interface ReplaceCodingSchemeOptions {
 @Injectable()
 export class ServerApiService {
   constructor(
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
     private readonly filesService: FilesService,
     private readonly snapshotsService: SnapshotsService,
   ) {}
 
   /**
-   * List all ACPs available for server-to-server transfer.
+   * List all APs available for server-to-server transfer.
    */
-  async listAcps(allowedAcpIds?: AllowedAcpIds): Promise<
+  async listAps(allowedApIds?: AllowedApIds): Promise<
     {
       id: string;
       packageId: string;
@@ -54,89 +54,89 @@ export class ServerApiService {
       updatedAt: string;
     }[]
   > {
-    const acps = await this.acpRepository.find({
-      where: this.getAllowedAcpWhere(allowedAcpIds),
+    const aps = await this.apRepository.find({
+      where: this.getAllowedApWhere(allowedApIds),
       order: { updatedAt: "DESC" },
     });
-    return acps.map((acp) => ({
-      id: acp.id,
-      packageId: acp.packageId,
-      name: acp.name,
-      version: (acp.acpIndex as any)?.version || "0.0.0",
-      updatedAt: acp.updatedAt.toISOString(),
+    return aps.map((ap) => ({
+      id: ap.id,
+      packageId: ap.packageId,
+      name: ap.name,
+      version: (ap.apIndex as any)?.version || "0.0.0",
+      updatedAt: ap.updatedAt.toISOString(),
     }));
   }
 
   /**
-   * Get full ACP data for transfer (ACP-Index + file list).
+   * Get full AP data for transfer (AP-Index + file list).
    */
-  async getAcpTransferData(
-    acpId: string,
-    allowedAcpIds?: AllowedAcpIds,
+  async getApTransferData(
+    apId: string,
+    allowedApIds?: AllowedApIds,
   ): Promise<any> {
-    this.assertAcpAllowed(acpId, allowedAcpIds);
-    const acp = await this.getAcpOrFail(acpId);
-    const files = await this.listFiles(acpId, allowedAcpIds);
+    this.assertApAllowed(apId, allowedApIds);
+    const ap = await this.getApOrFail(apId);
+    const files = await this.listFiles(apId, allowedApIds);
 
     return {
-      id: acp.id,
-      packageId: acp.packageId,
-      name: acp.name,
-      description: acp.description,
-      updatedAt: acp.updatedAt.toISOString(),
-      acpIndex: acp.acpIndex,
+      id: ap.id,
+      packageId: ap.packageId,
+      name: ap.name,
+      description: ap.description,
+      updatedAt: ap.updatedAt.toISOString(),
+      apIndex: ap.apIndex,
       files,
     };
   }
 
-  async getAcpIndex(
-    acpId: string,
-    allowedAcpIds?: AllowedAcpIds,
+  async getApIndex(
+    apId: string,
+    allowedApIds?: AllowedApIds,
   ): Promise<{
-    acpId: string;
+    apId: string;
     packageId: string;
     updatedAt: string;
-    acpIndex: Record<string, unknown>;
+    apIndex: Record<string, unknown>;
   }> {
-    this.assertAcpAllowed(acpId, allowedAcpIds);
-    const acp = await this.getAcpOrFail(acpId);
+    this.assertApAllowed(apId, allowedApIds);
+    const ap = await this.getApOrFail(apId);
     return {
-      acpId: acp.id,
-      packageId: acp.packageId,
-      updatedAt: acp.updatedAt.toISOString(),
-      acpIndex: (acp.acpIndex || {}) as Record<string, unknown>,
+      apId: ap.id,
+      packageId: ap.packageId,
+      updatedAt: ap.updatedAt.toISOString(),
+      apIndex: (ap.apIndex || {}) as Record<string, unknown>,
     };
   }
 
-  async updateAcpIndex(
-    acpId: string,
-    acpIndex: Record<string, any>,
+  async updateApIndex(
+    apId: string,
+    apIndex: Record<string, any>,
     strategyInput?: string,
     expectedUpdatedAt?: string,
-    allowedAcpIds?: AllowedAcpIds,
+    allowedApIds?: AllowedApIds,
   ): Promise<{
-    acpId: string;
+    apId: string;
     packageId: string;
     updatedAt: string;
     conflictStrategy: IndexUpdateStrategy;
   }> {
-    if (!acpIndex || typeof acpIndex !== "object" || Array.isArray(acpIndex)) {
-      throw new BadRequestException("acpIndex must be an object");
+    if (!apIndex || typeof apIndex !== "object" || Array.isArray(apIndex)) {
+      throw new BadRequestException("apIndex must be an object");
     }
 
-    this.assertAcpAllowed(acpId, allowedAcpIds);
-    const acp = await this.getAcpOrFail(acpId);
-    this.assertExpectedUpdatedAt(acp, expectedUpdatedAt);
+    this.assertApAllowed(apId, allowedApIds);
+    const ap = await this.getApOrFail(apId);
+    this.assertExpectedUpdatedAt(ap, expectedUpdatedAt);
 
     const strategy = this.resolveIndexUpdateStrategy(strategyInput);
-    acp.acpIndex =
+    ap.apIndex =
       strategy === "merge"
-        ? this.deepMergeObjects(acp.acpIndex as Record<string, any>, acpIndex)
-        : acpIndex;
+        ? this.deepMergeObjects(ap.apIndex as Record<string, any>, apIndex)
+        : apIndex;
 
-    const saved = await this.acpRepository.save(acp);
+    const saved = await this.apRepository.save(ap);
     return {
-      acpId: saved.id,
+      apId: saved.id,
       packageId: saved.packageId,
       updatedAt: saved.updatedAt.toISOString(),
       conflictStrategy: strategy,
@@ -144,8 +144,8 @@ export class ServerApiService {
   }
 
   async listFiles(
-    acpId: string,
-    allowedAcpIds?: AllowedAcpIds,
+    apId: string,
+    allowedApIds?: AllowedApIds,
   ): Promise<
     Array<{
       id: string;
@@ -157,19 +157,19 @@ export class ServerApiService {
       downloadUrl: string;
     }>
   > {
-    this.assertAcpAllowed(acpId, allowedAcpIds);
-    await this.getAcpOrFail(acpId);
+    this.assertApAllowed(apId, allowedApIds);
+    await this.getApOrFail(apId);
     const files = await this.fileRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { originalName: "ASC" },
     });
     return files.map((file) => this.toTransferFileMeta(file));
   }
 
   async getFile(
-    acpId: string,
+    apId: string,
     fileId: string,
-    allowedAcpIds?: AllowedAcpIds,
+    allowedApIds?: AllowedApIds,
   ): Promise<{
     id: string;
     originalName: string;
@@ -179,12 +179,12 @@ export class ServerApiService {
     uploadedAt: string;
     downloadUrl: string;
   }> {
-    this.assertAcpAllowed(acpId, allowedAcpIds);
-    this.assertValidAcpId(acpId);
+    this.assertApAllowed(apId, allowedApIds);
+    this.assertValidApId(apId);
     assertUuidParam(fileId, "File ID");
 
     const file = await this.fileRepository.findOne({
-      where: { id: fileId, acpId },
+      where: { id: fileId, apId },
     });
     if (!file) {
       throw new NotFoundException("File not found");
@@ -193,21 +193,21 @@ export class ServerApiService {
   }
 
   async downloadFile(
-    acpId: string,
+    apId: string,
     fileId: string,
-    allowedAcpIds?: AllowedAcpIds,
-  ): Promise<{ buffer: Buffer; file: AcpFile }> {
-    this.assertAcpAllowed(acpId, allowedAcpIds);
-    await this.getAcpOrFail(acpId);
+    allowedApIds?: AllowedApIds,
+  ): Promise<{ buffer: Buffer; file: ApFile }> {
+    this.assertApAllowed(apId, allowedApIds);
+    await this.getApOrFail(apId);
     assertUuidParam(fileId, "File ID");
-    return this.filesService.downloadForAcp(acpId, fileId);
+    return this.filesService.downloadForAp(apId, fileId);
   }
 
   async uploadFiles(
-    acpId: string,
+    apId: string,
     files: Express.Multer.File[],
     conflictStrategyInput?: string,
-    allowedAcpIds?: AllowedAcpIds,
+    allowedApIds?: AllowedApIds,
   ): Promise<
     Array<{
       id: string;
@@ -219,8 +219,8 @@ export class ServerApiService {
       downloadUrl: string;
     }>
   > {
-    this.assertAcpAllowed(acpId, allowedAcpIds);
-    await this.getAcpOrFail(acpId);
+    this.assertApAllowed(apId, allowedApIds);
+    await this.getApOrFail(apId);
 
     const conflictStrategy = this.resolveFileConflictStrategy(
       conflictStrategyInput,
@@ -229,11 +229,11 @@ export class ServerApiService {
       throw new BadRequestException("At least one file is required");
     }
 
-    const existingFiles = await this.fileRepository.find({ where: { acpId } });
+    const existingFiles = await this.fileRepository.find({ where: { apId } });
     const existingNames = new Set(
       existingFiles.map((file) => this.normalizeFileName(file.originalName)),
     );
-    const uploaded = await this.filesService.uploadMultiple(acpId, files, {
+    const uploaded = await this.filesService.uploadMultiple(apId, files, {
       conflictStrategy,
     });
     const deletedAny =
@@ -243,7 +243,7 @@ export class ServerApiService {
       );
 
     if (deletedAny) {
-      await this.filesService.cleanupReferencesAfterFileMutation(acpId, {
+      await this.filesService.cleanupReferencesAfterFileMutation(apId, {
         skipValidation: true,
       });
     }
@@ -252,12 +252,12 @@ export class ServerApiService {
   }
 
   async replaceCodingSchemeFiles(
-    acpId: string,
+    apId: string,
     files: Express.Multer.File[],
     options: ReplaceCodingSchemeOptions = {},
-    allowedAcpIds?: AllowedAcpIds,
+    allowedApIds?: AllowedApIds,
   ): Promise<{
-    acpId: string;
+    apId: string;
     packageId: string;
     updatedAt: string;
     replacedFiles: Array<{
@@ -280,12 +280,12 @@ export class ServerApiService {
       throw new BadRequestException("At least one file is required");
     }
 
-    this.assertAcpAllowed(acpId, allowedAcpIds);
-    const acp = await this.getAcpOrFail(acpId);
-    this.assertExpectedUpdatedAt(acp, options.expectedUpdatedAt);
+    this.assertApAllowed(apId, allowedApIds);
+    const ap = await this.getApOrFail(apId);
+    this.assertExpectedUpdatedAt(ap, options.expectedUpdatedAt);
 
-    const existingFiles = await this.fileRepository.find({ where: { acpId } });
-    const existingByLowerName = new Map<string, AcpFile[]>();
+    const existingFiles = await this.fileRepository.find({ where: { apId } });
+    const existingByLowerName = new Map<string, ApFile[]>();
     for (const existing of existingFiles) {
       const key = existing.originalName.toLowerCase();
       const bucket = existingByLowerName.get(key) || [];
@@ -339,7 +339,7 @@ export class ServerApiService {
         }) as Express.Multer.File,
     );
     const replacedFiles = await this.filesService.uploadMultiple(
-      acpId,
+      apId,
       uploadPayloads,
       {
         conflictStrategy: "overwrite",
@@ -347,7 +347,7 @@ export class ServerApiService {
       },
     );
 
-    await this.filesService.cleanupReferencesAfterFileMutation(acpId, {
+    await this.filesService.cleanupReferencesAfterFileMutation(apId, {
       skipValidation: true,
     });
 
@@ -357,16 +357,16 @@ export class ServerApiService {
       options.sourceClientId,
     );
     const snapshot = await this.snapshotsService.create(
-      acpId,
+      apId,
       resolvedChangelog,
     );
-    acp.updatedAt = new Date();
-    const savedAcp = await this.acpRepository.save(acp);
+    ap.updatedAt = new Date();
+    const savedAp = await this.apRepository.save(ap);
 
     return {
-      acpId: savedAcp.id,
-      packageId: savedAcp.packageId,
-      updatedAt: savedAcp.updatedAt.toISOString(),
+      apId: savedAp.id,
+      packageId: savedAp.packageId,
+      updatedAt: savedAp.updatedAt.toISOString(),
       replacedFiles: replacedFiles.map((file) => this.toTransferFileMeta(file)),
       snapshot: {
         id: snapshot.id,
@@ -378,15 +378,15 @@ export class ServerApiService {
   }
 
   /**
-   * Receive ACP data from an external application.
-   * Creates or updates an ACP with configurable conflict strategy.
+   * Receive AP data from an external application.
+   * Creates or updates an AP with configurable conflict strategy.
    */
-  async receiveAcp(
-    data: ServerImportAcpPayload,
+  async receiveAp(
+    data: ServerImportApPayload,
     conflictStrategyInput?: string,
-    allowedAcpIds?: AllowedAcpIds,
+    allowedApIds?: AllowedApIds,
   ): Promise<{
-    acp: Acp;
+    ap: Ap;
     operation: "created" | "updated";
     conflictStrategy: ConflictStrategy;
   }> {
@@ -397,41 +397,41 @@ export class ServerApiService {
       throw new BadRequestException("name is required");
     }
     if (
-      !data.acpIndex ||
-      typeof data.acpIndex !== "object" ||
-      Array.isArray(data.acpIndex)
+      !data.apIndex ||
+      typeof data.apIndex !== "object" ||
+      Array.isArray(data.apIndex)
     ) {
-      throw new BadRequestException("acpIndex must be an object");
+      throw new BadRequestException("apIndex must be an object");
     }
 
     const conflictStrategy = this.resolveConflictStrategy(
       conflictStrategyInput,
     );
 
-    let acp = await this.acpRepository.findOne({
+    let ap = await this.apRepository.findOne({
       where: { packageId: data.packageId },
     });
-    if (this.isAcpRestricted(allowedAcpIds)) {
-      if (!acp) {
+    if (this.isApRestricted(allowedApIds)) {
+      if (!ap) {
         throw new ForbiddenException(
           "AP-limited tokens cannot create new APs through server import",
         );
       }
-      this.assertAcpAllowed(acp.id, allowedAcpIds);
+      this.assertApAllowed(ap.id, allowedApIds);
     }
-    if (!acp) {
-      acp = this.acpRepository.create({
+    if (!ap) {
+      ap = this.apRepository.create({
         packageId: data.packageId,
         name: data.name,
         description: data.description || "",
-        acpIndex: data.acpIndex,
+        apIndex: data.apIndex,
         settings: {},
       });
-      const saved = await this.acpRepository.save(acp);
-      return { acp: saved, operation: "created", conflictStrategy };
+      const saved = await this.apRepository.save(ap);
+      return { ap: saved, operation: "created", conflictStrategy };
     }
 
-    this.assertExpectedUpdatedAt(acp, data.expectedUpdatedAt);
+    this.assertExpectedUpdatedAt(ap, data.expectedUpdatedAt);
 
     if (conflictStrategy === "reject") {
       throw new ConflictException(
@@ -439,62 +439,59 @@ export class ServerApiService {
       );
     }
 
-    acp.name = data.name;
+    ap.name = data.name;
     if (data.description !== undefined) {
-      acp.description = data.description;
+      ap.description = data.description;
     }
 
-    acp.acpIndex =
+    ap.apIndex =
       conflictStrategy === "merge"
-        ? this.deepMergeObjects(
-            acp.acpIndex as Record<string, any>,
-            data.acpIndex,
-          )
-        : data.acpIndex;
+        ? this.deepMergeObjects(ap.apIndex as Record<string, any>, data.apIndex)
+        : data.apIndex;
 
-    const saved = await this.acpRepository.save(acp);
-    return { acp: saved, operation: "updated", conflictStrategy };
+    const saved = await this.apRepository.save(ap);
+    return { ap: saved, operation: "updated", conflictStrategy };
   }
 
-  private getAllowedAcpWhere(
-    allowedAcpIds?: AllowedAcpIds,
+  private getAllowedApWhere(
+    allowedApIds?: AllowedApIds,
   ): { id: any } | Record<string, never> {
-    return this.isAcpRestricted(allowedAcpIds)
-      ? { id: In(allowedAcpIds as string[]) }
+    return this.isApRestricted(allowedApIds)
+      ? { id: In(allowedApIds as string[]) }
       : {};
   }
 
-  private assertAcpAllowed(acpId: string, allowedAcpIds?: AllowedAcpIds): void {
-    this.assertValidAcpId(acpId);
-    if (!this.isAcpRestricted(allowedAcpIds)) {
+  private assertApAllowed(apId: string, allowedApIds?: AllowedApIds): void {
+    this.assertValidApId(apId);
+    if (!this.isApRestricted(allowedApIds)) {
       return;
     }
-    if (!(allowedAcpIds as string[]).includes(acpId)) {
+    if (!(allowedApIds as string[]).includes(apId)) {
       throw new ForbiddenException(
         "Application token is not allowed to access this AP",
       );
     }
   }
 
-  private isAcpRestricted(allowedAcpIds?: AllowedAcpIds): boolean {
-    return Array.isArray(allowedAcpIds) && allowedAcpIds.length > 0;
+  private isApRestricted(allowedApIds?: AllowedApIds): boolean {
+    return Array.isArray(allowedApIds) && allowedApIds.length > 0;
   }
 
-  private async getAcpOrFail(acpId: string): Promise<Acp> {
-    this.assertValidAcpId(acpId);
+  private async getApOrFail(apId: string): Promise<Ap> {
+    this.assertValidApId(apId);
 
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
-      throw new NotFoundException(`AP with ID ${acpId} not found`);
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
+      throw new NotFoundException(`AP with ID ${apId} not found`);
     }
-    return acp;
+    return ap;
   }
 
-  private assertValidAcpId(acpId: string): void {
-    assertUuidParam(acpId, "AP ID");
+  private assertValidApId(apId: string): void {
+    assertUuidParam(apId, "AP ID");
   }
 
-  private toTransferFileMeta(file: AcpFile): {
+  private toTransferFileMeta(file: ApFile): {
     id: string;
     originalName: string;
     fileType?: string;
@@ -510,11 +507,11 @@ export class ServerApiService {
       fileSize: Number(file.fileSize),
       checksum: file.checksum,
       uploadedAt: file.uploadedAt.toISOString(),
-      downloadUrl: `/api/server/acp/${file.acpId}/files/${file.id}/download`,
+      downloadUrl: `/api/server/ap/${file.apId}/files/${file.id}/download`,
     };
   }
 
-  private assertExpectedUpdatedAt(acp: Acp, expectedUpdatedAt?: string): void {
+  private assertExpectedUpdatedAt(ap: Ap, expectedUpdatedAt?: string): void {
     if (!expectedUpdatedAt) {
       return;
     }
@@ -526,7 +523,7 @@ export class ServerApiService {
       );
     }
 
-    if (acp.updatedAt.toISOString() !== parsed.toISOString()) {
+    if (ap.updatedAt.toISOString() !== parsed.toISOString()) {
       throw new ConflictException(
         "AP was modified since the expected version timestamp",
       );
