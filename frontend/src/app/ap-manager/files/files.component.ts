@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { filter, firstValueFrom, map, tap } from 'rxjs';
@@ -10,6 +10,7 @@ import {
   FileUploadResponse,
   UploadValidationSummary,
   UnitFileValidationResult,
+  ValidationResult,
 } from '../../core/models/api.models';
 import { ApiService } from '../../core/services/api.service';
 import { ApManagerContextComponent } from '../shared/ap-manager-context.component';
@@ -26,6 +27,10 @@ interface UploadConflictEntry {
 type FileValidationState = 'ok' | 'error' | 'unchecked';
 type FileValidationFilter = 'all' | FileValidationState;
 type DeleteDialogMode = 'single' | 'selected' | 'all';
+type ApValidationSummary = Pick<
+  UploadValidationSummary,
+  'semanticValid' | 'semanticIssueCount' | 'semanticIssues'
+>;
 
 @Component({
   selector: 'app-files',
@@ -175,24 +180,59 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
       </div>
     }
 
-    @if (lastValidationSummary) {
+    @if (consistencyError) {
+      <div class="alert alert-warning">{{ consistencyError }}</div>
+    }
+    @if (apValidationSummary; as apSummary) {
       <div
         class="alert"
-        [class.alert-success]="lastValidationSummary.invalidFiles === 0"
-        [class.alert-warning]="lastValidationSummary.invalidFiles > 0"
+        [class.alert-success]="
+          !lastValidationSummary?.invalidFiles && apSummary.semanticIssueCount === 0
+        "
+        [class.alert-warning]="
+          (lastValidationSummary?.invalidFiles ?? 0) > 0 || apSummary.semanticIssueCount > 0
+        "
       >
-        Auto-Validierung: {{ lastValidationSummary.validFiles }} von
-        {{ lastValidationSummary.totalFiles }} Datei(en) ohne Fehler.
-        @if (lastValidationSummary.invalidFiles > 0) {
-          <span> {{ lastValidationSummary.invalidFiles }} Datei(en) enthalten Fehler.</span>
+        @if (lastValidationSummary) {
+          Auto-Validierung: {{ lastValidationSummary.validFiles }} von
+          {{ lastValidationSummary.totalFiles }} Datei(en) ohne Fehler.
+          @if (lastValidationSummary.invalidFiles > 0) {
+            <span> {{ lastValidationSummary.invalidFiles }} Datei(en) enthalten Fehler.</span>
+          }
         }
         <div style="margin-top:6px">
-          AP-Semantik:
-          {{ lastValidationSummary.semanticValid ? 'OK' : 'Fehler/Warnungen vorhanden' }} ({{
-            lastValidationSummary.semanticIssueCount
+          AP-weite Prüfung:
+          {{
+            apSummary.semanticIssueCount === 0
+              ? 'OK'
+              : apSummary.semanticValid
+                ? 'Warnungen vorhanden'
+                : 'Fehler vorhanden'
           }}
-          Issue(s))
+          ({{ apSummary.semanticIssueCount }} Hinweis(e))
         </div>
+        @if (apSummary.semanticIssues?.length) {
+          <details class="ap-validation-issues">
+            <summary>Hinweise zur AP-weiten Prüfung</summary>
+            @for (issue of apSummary.semanticIssues; track issueTrack(issue, $index)) {
+              <div class="ap-validation-issue">
+                <strong
+                  >{{
+                    issue.severity === 'error'
+                      ? 'Fehler'
+                      : issue.severity === 'warning'
+                        ? 'Warnung'
+                        : 'Hinweis'
+                  }}:</strong
+                >
+                {{ issue.message }}
+                @if (issue.path) {
+                  <code>{{ issue.path }}</code>
+                }
+              </div>
+            }
+          </details>
+        }
       </div>
     }
 
@@ -544,6 +584,14 @@ type DeleteDialogMode = 'single' | 'selected' | 'all';
         gap: 4px;
         min-width: 320px;
       }
+      .ap-validation-issues,
+      .ap-validation-issue {
+        margin-top: 8px;
+        overflow-wrap: anywhere;
+      }
+      .ap-validation-issue code {
+        display: block;
+      }
       .file-validation-issue {
         display: flex;
         gap: 6px;
@@ -727,6 +775,10 @@ export class FilesComponent implements OnInit, OnDestroy {
   validationResults: UnitFileValidationResult[] = [];
   lastSyncReport: any = null;
   lastValidationSummary: UploadValidationSummary | null = null;
+  consistencyError = '';
+  private consistencyResult: ValidationResult | null = null;
+  private consistencyVersion = 0;
+  private validationVersion = 0;
   lastConflictSummary: { conflicts: number; replaced: number; skipped: number } | null = null;
   selectedPreviewFile: ApFile | null = null;
   selectedPreview: FilePreviewResponse | null = null;
@@ -752,8 +804,8 @@ export class FilesComponent implements OnInit, OnDestroy {
   deleteDialogError = '';
 
   constructor(
-    private route: ActivatedRoute,
-    private api: ApiService,
+    @Inject(ActivatedRoute) private route: ActivatedRoute,
+    @Inject(ApiService) private api: ApiService,
   ) {}
 
   get isBusy(): boolean {
@@ -886,6 +938,32 @@ export class FilesComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.apId = this.route.parent?.snapshot.paramMap.get('apId') || '';
     this.load();
+    this.loadApConsistency();
+  }
+
+  get apValidationSummary(): ApValidationSummary | null {
+    if (this.lastValidationSummary) return this.lastValidationSummary;
+    if (!this.consistencyResult) return null;
+    return {
+      semanticValid: this.consistencyResult.valid,
+      semanticIssueCount: this.consistencyResult.issues.length,
+      semanticIssues: this.consistencyResult.issues,
+    };
+  }
+
+  private loadApConsistency() {
+    const version = ++this.consistencyVersion;
+    this.consistencyError = '';
+    this.api.getApConsistency(this.apId).subscribe({
+      next: (result) => {
+        if (version !== this.consistencyVersion) return;
+        this.consistencyResult = result;
+      },
+      error: () => {
+        if (version !== this.consistencyVersion) return;
+        this.consistencyError ||= 'Die AP-weite Prüfung konnte nicht geladen werden.';
+      },
+    });
   }
 
   ngOnDestroy() {
@@ -1023,7 +1101,6 @@ export class FilesComponent implements OnInit, OnDestroy {
     const selectedFiles = Array.from(input.files);
     this.uploadError = null;
     this.lastSyncReport = null;
-    this.lastValidationSummary = null;
     this.lastConflictSummary = null;
     this.processingJob = null;
     this.uploadPercent = 0;
@@ -1096,6 +1173,14 @@ export class FilesComponent implements OnInit, OnDestroy {
         // A cancelled batch was rejected atomically. Earlier successful batches
         // still need indexing and validation; do not upload them again.
         if (!uploadResult) break;
+        if (uploadResult.files.length && !uploadedFilesByName.size) {
+          this.lastValidationSummary = null;
+          this.consistencyResult = null;
+          this.consistencyError = '';
+          this.consistencyVersion += 1;
+          this.validationVersion += 1;
+          this.validating = false;
+        }
         if (decisions.size) {
           const replaced = Array.from(decisions.values()).filter(
             (entry) => entry.decision === 'replace',
@@ -1160,7 +1245,10 @@ export class FilesComponent implements OnInit, OnDestroy {
         ? `${this.uploadError} Bereits gespeicherte Dateien konnten nicht vollständig verarbeitet werden: ${message}`
         : message;
       console.error('Upload Error:', err);
-      if (!this.destroyed) this.load();
+      if (!this.destroyed) {
+        this.load();
+        this.loadApConsistency();
+      }
     } finally {
       this.uploading = false;
       this.processing = false;
@@ -1170,16 +1258,23 @@ export class FilesComponent implements OnInit, OnDestroy {
   }
 
   validateFiles() {
+    const version = ++this.validationVersion;
     this.validating = true;
+    this.consistencyError = '';
     this.api.validateUnitFiles(this.apId).subscribe({
       next: ({ unitResults, validationSummary }) => {
+        if (version !== this.validationVersion) return;
+        this.consistencyVersion += 1;
+        this.consistencyError = '';
         this.validationResults = unitResults;
         this.lastValidationSummary = validationSummary;
         this.load();
         this.validating = false;
       },
       error: () => {
+        if (version !== this.validationVersion) return;
         this.validating = false;
+        this.consistencyError = 'Die Dateiprüfung konnte nicht abgeschlossen werden.';
       },
     });
   }
@@ -1315,8 +1410,8 @@ export class FilesComponent implements OnInit, OnDestroy {
         return;
       }
       this.api.deleteFile(this.apId, this.deleteDialogTarget.id).subscribe({
-        next: () => {
-          this.finishDelete([this.deleteDialogTarget!.id]);
+        next: (response) => {
+          this.finishDelete([this.deleteDialogTarget!.id], response.validationSummary);
         },
         error: (err) => {
           this.deleteDialogBusy = false;
@@ -1333,8 +1428,8 @@ export class FilesComponent implements OnInit, OnDestroy {
         return;
       }
       this.api.bulkDeleteFiles(this.apId, this.deleteDialogSelectedFileIds).subscribe({
-        next: () => {
-          this.finishDelete(this.deleteDialogSelectedFileIds);
+        next: (response) => {
+          this.finishDelete(this.deleteDialogSelectedFileIds, response.validationSummary);
         },
         error: (err) => {
           this.deleteDialogBusy = false;
@@ -1345,10 +1440,13 @@ export class FilesComponent implements OnInit, OnDestroy {
     }
 
     this.api.deleteAllFiles(this.apId).subscribe({
-      next: () => {
+      next: (response) => {
         this.validationResults = [];
         this.clearSelection();
-        this.finishDelete(this.files.map((file) => file.id));
+        this.finishDelete(
+          this.files.map((file) => file.id),
+          response.validationSummary,
+        );
       },
       error: (err) => {
         this.deleteDialogBusy = false;
@@ -1614,7 +1712,17 @@ export class FilesComponent implements OnInit, OnDestroy {
     });
   }
 
-  private finishDelete(deletedFileIds: string[]) {
+  private finishDelete(
+    deletedFileIds: string[],
+    validationSummary?: UploadValidationSummary | null,
+  ) {
+    this.consistencyVersion += 1;
+    this.validationVersion += 1;
+    this.validating = false;
+    this.validationResults = [];
+    this.lastValidationSummary = validationSummary || null;
+    this.consistencyResult = null;
+    this.consistencyError = '';
     const deletedIds = new Set(deletedFileIds);
     this.deleteDialogBusy = false;
     this.deleteDialogOpen = false;
@@ -1633,6 +1741,7 @@ export class FilesComponent implements OnInit, OnDestroy {
     }
 
     this.load();
+    if (!validationSummary) this.loadApConsistency();
   }
 
   private syncSelectionWithFiles(files: ApFile[]) {

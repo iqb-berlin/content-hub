@@ -221,6 +221,7 @@ export interface UploadValidationSummary {
   invalidFiles: number;
   semanticValid: boolean;
   semanticIssueCount: number;
+  semanticIssues?: ValidationIssue[];
   timestamp: string;
 }
 

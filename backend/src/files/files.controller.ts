@@ -137,6 +137,15 @@ export class FilesController {
     };
   }
 
+  @Get("consistency")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("AP_MANAGER")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Check AP-wide consistency without updating files" })
+  async getConsistency(@UuidParam("apId") apId: string) {
+    return this.validationService.validateApConsistency(apId);
+  }
+
   @Get("validate-units")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("AP_MANAGER")

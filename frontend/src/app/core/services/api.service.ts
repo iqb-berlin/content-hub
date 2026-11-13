@@ -44,6 +44,7 @@ import {
   ItemExplorerChangeLogEntry,
   ItemExplorerSharedState,
   ValidateUnitsResponse,
+  ValidationResult,
   FilePreviewResponse,
   FileDeletionResponse,
   ItemCollectionsPayload,
@@ -329,6 +330,9 @@ export class ApiService {
   // Files
   getFiles(apId: string): Observable<ApFile[]> {
     return this.http.get<ApFile[]>(`${this.API}/ap/${apId}/files`);
+  }
+  getApConsistency(apId: string): Observable<ValidationResult> {
+    return this.http.get<ValidationResult>(`${this.API}/ap/${apId}/files/consistency`);
   }
   uploadFiles(
     apId: string,

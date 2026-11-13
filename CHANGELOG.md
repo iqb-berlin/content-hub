@@ -6,6 +6,15 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ## [Unreleased]
 
+### Changes
+
+- Keep upload file validation separate from AP-wide consistency errors and show
+  Booklet/reference issues once in the validation summary with their source paths.
+  Preserve these AP-wide errors and warnings in review readiness checks and
+  invalidate older readiness snapshots. Refs #271.
+- Reload AP-wide validation messages when opening the files page and refresh
+  them after single, selected, or complete file deletion, including empty APs.
+
 ## [0.7.0] - Unreleased
 
 ### Changes

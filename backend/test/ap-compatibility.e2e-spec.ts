@@ -138,6 +138,43 @@ describe("AP API and legacy integration compatibility", () => {
     if (fixtureDirectory) await rm(fixtureDirectory, { recursive: true });
   });
 
+  it.each(["ap", "acp"])(
+    "loads consistency through /%s without changing saved file validation",
+    async (prefix) => {
+      const files = db.getRepository(ApFile);
+      const before = await files.findOneByOrFail({ id: fixtureFile.id });
+      const response = await request(app.getHttpServer())
+        .get(`/api/${prefix}/${apId}/files/consistency`)
+        .auth(managerToken, { type: "bearer" })
+        .expect(200);
+
+      expect(response.body).toEqual({
+        valid: true,
+        issues: [],
+        timestamp: expect.any(String),
+      });
+      const after = await files.findOneByOrFail({ id: fixtureFile.id });
+      expect(after.validationResult).toEqual(before.validationResult);
+    },
+  );
+
+  it.each(["ap", "acp"])(
+    "protects consistency checks through /%s with package-specific manager access",
+    async (prefix) => {
+      await request(app.getHttpServer())
+        .get(`/api/${prefix}/${apId}/files/consistency`)
+        .expect(401);
+      await request(app.getHttpServer())
+        .get(`/api/${prefix}/${otherId}/files/consistency`)
+        .auth(managerToken, { type: "bearer" })
+        .expect(403);
+      await request(app.getHttpServer())
+        .get(`/api/${prefix}/invalid/files/consistency`)
+        .auth(adminToken, { type: "bearer" })
+        .expect(400);
+    },
+  );
+
   it("exposes canonical fields and retains the old management response", async () => {
     const current = await request(app.getHttpServer())
       .get(`/api/ap/${apId}`)
