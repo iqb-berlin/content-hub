@@ -1909,6 +1909,13 @@ describe("CommentsService", () => {
         commentTargets: ["ITEM", "CODING"],
       },
     });
+    unitParserService.getItemListFromFiles.mockResolvedValue({
+      items: [
+        { unitId: "unit-1", itemId: "item-1" },
+        { unitId: "unit-2", itemId: "item-2" },
+      ],
+      codingSchemes: { "unit-1": { variableCodings: [] } },
+    });
     commentRepository.find.mockResolvedValue([
       {
         targetType: CommentTargetType.ITEM,
@@ -1934,6 +1941,13 @@ describe("CommentsService", () => {
       itemId: "item-1",
       count: 1,
       codingCount: 1,
+    });
+    expect(snapshot.codingUnitIds).toEqual(["unit-1"]);
+    expect(snapshot.counts).toContainEqual({
+      unitId: "unit-2",
+      itemId: "item-2",
+      count: 0,
+      codingCount: 0,
     });
   });
 

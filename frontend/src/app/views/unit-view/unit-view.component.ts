@@ -52,7 +52,7 @@ type UnitPagingMode =
   | 'view-all'
   | 'print-ids';
 
-type ReviewCommentScope = 'unit' | 'item' | 'booklet';
+type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
 
 @Component({
   selector: 'app-unit-view',
@@ -314,7 +314,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                   </select>
                 </label>
               }
-              @if (commentScope === 'item' && showItemCommentBtn) {
+              @if (commentScope === 'item' || commentScope === 'coding') {
                 @if (commentItemsLoading) {
                   <p class="help-text" role="status">Items werden geladen …</p>
                 } @else if (commentItemsError) {
@@ -326,6 +326,10 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                   >
                     Items erneut laden
                   </button>
+                } @else if (commentScope === 'coding' && !codingCommentsAvailable) {
+                  <p class="help-text" role="status">
+                    Für diese Aufgabe ist keine kommentierbare Kodierung verfügbar.
+                  </p>
                 } @else if (commentItems.length) {
                   <label class="comment-item-select">
                     Item
@@ -339,11 +343,11 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                     [drafts]="commentDrafts"
                     [sessionToken]="commentSessionToken"
                     [apId]="apId"
-                    [targetType]="'ITEM'"
+                    [targetType]="commentScope === 'coding' ? 'CODING' : 'ITEM'"
                     [unitId]="unitId"
                     [unitName]="unit.name"
                     [itemId]="selectedCommentItemId"
-                    [enabled]="showItemCommentBtn"
+                    [enabled]="true"
                     [initiallyOpen]="true"
                     [hideToggle]="true"
                   />
@@ -999,6 +1003,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   showMetadataToggle = false;
   showCommentBtn = false;
   showItemCommentBtn = false;
+  showCodingCommentBtn = false;
   showBookletCommentBtn = false;
   showDownloadBtn = false;
   showAudioVideoCodingVariables = true;
@@ -1007,6 +1012,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   commentItems: { id: string; label: string }[] = [];
   commentItemsLoading = false;
   commentItemsError = '';
+  codingCommentsAvailable = false;
   private readonly selectedCommentItems = new Map<string, string>();
 
   get selectedCommentItemId(): string {
@@ -1022,6 +1028,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       { value: 'unit', label: 'Aufgabe', enabled: this.showCommentBtn },
       { value: 'item', label: 'Item', enabled: this.showItemCommentBtn },
       { value: 'booklet', label: 'Testheft', enabled: this.showBookletCommentBtn },
+      { value: 'coding', label: 'Kodierung', enabled: this.showCodingCommentBtn },
     ];
     return scopes.filter((scope) => scope.enabled);
   }
@@ -1306,6 +1313,11 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       featureConfig.enableCommenting &&
       commentTargets.includes('ITEM')
     );
+    this.showCodingCommentBtn = !!(
+      this.reviewMode &&
+      featureConfig.enableCommenting &&
+      commentTargets.includes('CODING')
+    );
     this.showBookletCommentBtn = !!(
       this.reviewMode &&
       this.bookletId &&
@@ -1334,11 +1346,17 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.commentItems = [];
     this.commentItemsLoading = false;
     this.commentItemsError = '';
+    this.codingCommentsAvailable = false;
   }
 
   loadCommentItems() {
     this.resetCommentItems();
-    if (!this.showItemCommentBtn || !this.unit || this.unit.id !== this.unitId) return;
+    if (
+      (!this.showItemCommentBtn && !this.showCodingCommentBtn) ||
+      !this.unit ||
+      this.unit.id !== this.unitId
+    )
+      return;
     const token = this.commentItemsLoadToken;
     const unitId = this.unitId;
     const names = new Map(
@@ -1353,6 +1371,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.commentItemsRequest = this.api.getItemCommentCounts(this.apId).subscribe({
       next: (snapshot) => {
         if (token !== this.commentItemsLoadToken) return;
+        this.codingCommentsAvailable = snapshot.codingUnitIds?.includes(unitId) === true;
         const ids = new Set(
           snapshot.counts.filter((item) => item.unitId === unitId).map((item) => item.itemId),
         );

@@ -576,6 +576,7 @@ export interface CommentThreadSnapshot {
 
 export interface ItemCommentCountsSnapshot {
   revision: string;
+  codingUnitIds?: string[];
   counts: Array<{ unitId: string; itemId: string; count: number; codingCount: number }>;
 }
 

@@ -670,10 +670,11 @@ Wenn Kommentare aktiviert sind, koennen angemeldete Nutzerinnen und Nutzer Komme
 jeweiligen fachlichen Kontext anlegen. Item-Kommentare werden beim ausgewaehlten Item im
 Item-Explorer erfasst; Unit-Kommentare in der Ansicht der jeweiligen Unit.
 
-Im Review-Arbeitsplatz kann unter `Kommentarziel` zwischen `Aufgabe`, `Item` und `Testheft`
-gewechselt werden, soweit diese Ziele fuer den AP aktiviert sind. Fuer `Item` waehlen Sie
-anschliessend das gewuenschte Item der aktuellen Aufgabe aus. Die Auswahl zeigt die Item-ID
-und, soweit vorhanden, die Bezeichnung. Nicht abgesendete Kommentare bleiben beim Wechsel
+Im Review-Arbeitsplatz kann unter `Kommentarziel` zwischen `Aufgabe`, `Item`, `Testheft` und
+`Kodierung` gewechselt werden, soweit diese Ziele fuer den AP aktiviert sind. Fuer `Item` und
+`Kodierung` waehlen Sie das gewuenschte Item der aktuellen Aufgabe aus. Kodierkommentare
+setzen ein Kodierschema voraus. Die Auswahl zeigt die Item-ID und, soweit vorhanden, die
+Bezeichnung. Nicht abgesendete Kommentare bleiben beim Wechsel
 zwischen Items und Kommentarzielen erhalten. Ein separater Zugang zum Item-Explorer ist fuer
 diese Kommentierung nicht erforderlich.
 

@@ -90,6 +90,7 @@ export interface ItemCommentCount {
 
 export interface ItemCommentCountsSnapshot {
   revision: string;
+  codingUnitIds: string[];
   counts: ItemCommentCount[];
 }
 
@@ -124,6 +125,7 @@ interface ItemTargetResolution {
 interface ItemCatalogEntry {
   unitId: string;
   itemId: string;
+  hasCodingScheme: boolean;
   unitLabel: string;
   itemLabel: string;
   unitOrder: number;
@@ -576,10 +578,20 @@ export class CommentsService {
           }) ||
           left.itemId.localeCompare(right.itemId, undefined, { numeric: true }),
       );
+    const codingUnitIds = targetTypes.includes(CommentTargetType.CODING)
+      ? [
+          ...new Set(
+            catalog
+              .filter((entry) => entry.hasCodingScheme)
+              .map((entry) => entry.unitId),
+          ),
+        ].sort()
+      : [];
     return {
       revision: createHash("sha256")
-        .update(JSON.stringify([visibilityMode, result]))
+        .update(JSON.stringify([visibilityMode, result, codingUnitIds]))
         .digest("hex"),
+      codingUnitIds,
       counts: result,
     };
   }
@@ -1308,17 +1320,13 @@ export class CommentsService {
       throw new BadRequestException("unitId and itemId are required");
     }
     const itemTarget = await this.resolveItemTarget(apId, unitId, itemId);
-    if (input.targetType === CommentTargetType.CODING) {
-      const itemList = await this.unitParserService.getItemListFromFiles(
-        apId,
-        {},
-        this.transactionManager,
+    if (
+      input.targetType === CommentTargetType.CODING &&
+      !itemTarget.hasCodingScheme
+    ) {
+      throw new NotFoundException(
+        "Coding scheme not found for this item in this AP",
       );
-      if (!itemList.codingSchemes?.[itemTarget.unitId]) {
-        throw new NotFoundException(
-          "Coding scheme not found for this item in this AP",
-        );
-      }
     }
     return {
       targetType: input.targetType,
@@ -1385,7 +1393,7 @@ export class CommentsService {
     apId: string,
     unitId: string,
     requestedItemId: string,
-  ): Promise<ItemTargetResolution> {
+  ): Promise<ItemTargetResolution & { hasCodingScheme: boolean }> {
     const catalog = await this.getItemCatalog(apId);
     const unitItems = catalog.filter((item) => item.unitId === unitId);
     const exactMatches = unitItems.filter(
@@ -1480,6 +1488,11 @@ export class CommentsService {
       {},
       this.transactionManager,
     );
+    const codingUnitIds = new Set(
+      Object.entries(itemList.codingSchemes || {})
+        .filter(([, scheme]) => Boolean(scheme))
+        .map(([unitId]) => unitId),
+    );
     const indexEntries: ItemCatalogEntry[] = [];
     const indexUnits = getIndexUnits(ap?.apIndex);
     for (const [unitOrder, unit] of indexUnits.entries()) {
@@ -1493,6 +1506,7 @@ export class CommentsService {
         indexEntries.push({
           unitId: indexUnitId,
           itemId,
+          hasCodingScheme: codingUnitIds.has(indexUnitId),
           unitLabel,
           itemLabel:
             extractLabelText(item?.name || item?.label) ||
@@ -1524,9 +1538,11 @@ export class CommentsService {
     }
     const parsedUnitOrders = new Map<string, number>();
     for (const [parsedOrder, item] of (itemList.items || []).entries()) {
+      const unitId = String(item.unitId || "").trim();
       const parsedEntry = {
-        unitId: String(item.unitId || "").trim(),
+        unitId,
         itemId: String(item.itemId || "").trim(),
+        hasCodingScheme: codingUnitIds.has(unitId),
         unitLabel: String(item.unitLabel || item.unitId || "").trim(),
         itemLabel: String(item.description || item.itemId || "").trim(),
         unitOrder: 0,

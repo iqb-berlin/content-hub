@@ -64,6 +64,7 @@ describe('Unit review comment drafts', () => {
     api.getItemCommentCounts.mockReturnValue(
       of({
         revision: '1',
+        codingUnitIds: ['U'],
         counts: [
           { unitId: 'U', itemId: 'I2', count: 0, codingCount: 0 },
           { unitId: 'U', itemId: 'I1', count: 0, codingCount: 0 },
@@ -282,6 +283,31 @@ describe('Unit review comment drafts', () => {
     expect(thread()).toBeUndefined();
     expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain(
       'Für diese Aufgabe sind keine kommentierbaren Items verfügbar.',
+    );
+  });
+
+  it('keeps coding drafts separate from item drafts and handles units without a coding scheme', () => {
+    enableItemComments(['ITEM', 'CODING']);
+    expect(thread()!.targetType).toBe('ITEM');
+    thread()!.newCommentText = 'Entwurf zum Item';
+    select('.comment-scope-select select', 'coding');
+    expect(thread()!.targetType).toBe('CODING');
+    expect(thread()!.itemId).toBe('I1');
+    expect(thread()!.newCommentText).toBe('');
+    thread()!.newCommentText = 'Entwurf zur Kodierung';
+    select('.comment-scope-select select', 'item');
+    expect(thread()!.newCommentText).toBe('Entwurf zum Item');
+
+    enableItemComments(['CODING']);
+    expect(fixture.nativeElement.querySelector('.comment-scope-select')).toBeNull();
+    expect(thread()!.targetType).toBe('CODING');
+    expect(thread()!.newCommentText).toBe('Entwurf zur Kodierung');
+
+    fixture.componentRef.setInput('unitId', 'V');
+    detect();
+    expect(thread()).toBeUndefined();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain(
+      'Für diese Aufgabe ist keine kommentierbare Kodierung verfügbar.',
     );
   });
 
