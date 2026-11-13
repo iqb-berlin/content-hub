@@ -107,6 +107,22 @@ describe('authInterceptor', () => {
     expect(accessMock.redirectToAccess).not.toHaveBeenCalled();
   });
 
+  it('clears an expired optional session without redirecting a public task reader', async () => {
+    const originalUrl = `${window.location.pathname}${window.location.search}`;
+    window.history.replaceState(null, '', '/public/task/publication-id');
+    try {
+      const req = new HttpRequest('GET', '/api/auth/profile');
+      const next = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 401 })));
+      await expect(
+        firstValueFrom(runInInjectionContext(injector, () => authInterceptor(req, next as any))),
+      ).rejects.toBeInstanceOf(HttpErrorResponse);
+      expect(authMock.clearSession).toHaveBeenCalledOnce();
+      expect(accessMock.redirectToAccess).not.toHaveBeenCalled();
+    } finally {
+      window.history.replaceState(null, '', originalUrl);
+    }
+  });
+
   it('does not redirect for inline AP credential errors', async () => {
     const req = new HttpRequest('POST', '/api/auth/credential-login');
     const next = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 401 })));

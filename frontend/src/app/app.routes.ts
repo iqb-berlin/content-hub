@@ -7,6 +7,11 @@ import { itemExplorerPendingChangesGuard } from './core/guards/item-explorer-pen
 export const routes: Routes = [
   { path: 'acps', redirectTo: 'aps', pathMatch: 'full' },
   {
+    path: 'public/task/:publicationId',
+    loadComponent: () =>
+      import('./views/public-task/public-task.component').then((m) => m.PublicTaskComponent),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./views/landing/landing.component').then((m) => m.LandingComponent),
@@ -71,6 +76,13 @@ export const routes: Routes = [
     path: 'manage/:apId',
     canActivate: [apManagerGuard],
     children: [
+      {
+        path: 'publications',
+        loadComponent: () =>
+          import('./ap-manager/publications/publications.component').then(
+            (m) => m.PublicationsComponent,
+          ),
+      },
       {
         path: '',
         loadComponent: () =>
