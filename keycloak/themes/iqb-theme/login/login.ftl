@@ -1,3 +1,6 @@
+<#-- Modified for IQB ContentPool / Content Hub: login labels, styling, form behavior,
+     and accessibility. Adapted from Keycloak login templates (Apache-2.0).
+     See ../LICENSE.txt and ../NOTICE.md for license and provenance information. -->
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
     <#if section = "header">

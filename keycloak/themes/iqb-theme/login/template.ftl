@@ -1,3 +1,6 @@
+<#-- Modified for IQB ContentPool / Content Hub: page layout, product branding,
+     resource links, and accessibility. Adapted from Keycloak login templates
+     (Apache-2.0). See ../LICENSE.txt and ../NOTICE.md for license and provenance. -->
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
 <html class="${properties.kcHtmlClass!} login-pf" lang="${locale.currentLanguageTag}">

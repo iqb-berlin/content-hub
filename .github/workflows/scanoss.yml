@@ -1,0 +1,98 @@
+name: External code provenance
+
+# External API calls are deliberate release checks, not automatic PR/weekly traffic.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scanoss-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scanoss:
+    name: SCANOSS external code matches
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: compliance/scanoss-requirements.txt
+      - name: Install SCANOSS
+        run: python -m pip install -r compliance/scanoss-requirements.txt
+      - name: Test report validation
+        run: python -m unittest discover -s scripts -p test_scanoss_summary.py
+      - name: Prepare tracked scan input
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/scanoss-source" dist/scanoss
+          git rev-parse HEAD > dist/scanoss/revision.txt
+          scanoss-py version > dist/scanoss/tool-version.txt
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/scanoss-source"
+          git ls-files > dist/scanoss/scanned-files.txt
+          printf 'full\n' > dist/scanoss/mode.txt
+          printf 'Scan prepared but not completed.\n' > dist/scanoss/status.txt
+
+      - name: Scan tracked source against SCANOSS
+        id: scan
+        env:
+          SCANOSS_API_URL: ${{ vars.SCANOSS_API_URL || 'https://api.osskb.org' }}
+          SCANOSS_API_KEY: ${{ secrets.SCANOSS_API_KEY }}
+        run: |
+          set -euo pipefail
+          scan_args=(
+            scan --skip-settings-file --threads 1 --timeout 60 --retry 0
+            --apiurl "$SCANOSS_API_URL"
+            --output dist/scanoss/results.json
+          )
+          if [[ -n "$SCANOSS_API_KEY" ]]; then
+            scan_args+=(--key "$SCANOSS_API_KEY")
+          fi
+          scan_args+=("$RUNNER_TEMP/scanoss-source")
+          set +e
+          scanoss-py "${scan_args[@]}" \
+            2>&1 | tee dist/scanoss/scan.log
+          scan_exit=${PIPESTATUS[0]}
+          printf '%s\n' "$scan_exit" > dist/scanoss/exit-code.txt
+          set -e
+
+          if (( scan_exit != 0 )); then
+            printf 'Configured SCANOSS API did not complete the scan; evidence incomplete.\n' \
+              > dist/scanoss/status.txt
+            echo "status=incomplete" >> "$GITHUB_OUTPUT"
+            exit "$scan_exit"
+          fi
+
+          python scripts/summarize-scanoss.py dist/scanoss/results.json \
+            > dist/scanoss/summary.md
+          cat dist/scanoss/summary.md >> "$GITHUB_STEP_SUMMARY"
+          printf 'Scan completed successfully.\n' > dist/scanoss/status.txt
+          echo "status=complete" >> "$GITHUB_OUTPUT"
+
+      - name: Report incomplete scan
+        if: always() && steps.scan.outputs.status == 'incomplete'
+        run: |
+          echo "::warning title=SCANOSS API unavailable::The configured SCANOSS API did not complete this scan. Evidence remains incomplete; retry later or use complete reviewed local evidence for this commit."
+          {
+            echo "## SCANOSS scan incomplete"
+            echo
+            echo "> [!WARNING]"
+            echo "> The configured SCANOSS API did not complete the scan."
+            echo "> This is not a clean scan result. Retry later; local scans use the same API and its limits."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload scan evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: scanoss-code-provenance
+          path: dist/scanoss/
+          if-no-files-found: warn
+          retention-days: 30
