@@ -1480,6 +1480,7 @@ export class CommentsService {
     const itemList = await this.unitParserService.getItemListFromFiles(
       apId,
       {
+        includeStudioItemComments: false,
         onDiagnostics: (diagnostics) => {
           cacheable = diagnostics.cacheable;
         },

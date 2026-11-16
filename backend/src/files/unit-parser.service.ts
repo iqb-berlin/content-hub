@@ -570,6 +570,7 @@ export class UnitParserService {
       publishedItemPropertiesOverride?: Record<string, Record<string, unknown>>;
       activeStateSignature?: string;
       publishedStateSignature?: string;
+      includeStudioItemComments?: boolean;
       onDiagnostics?: (diagnostics: ItemListLoadDiagnostics) => void;
     } = {},
     manager?: EntityManager,
@@ -605,6 +606,9 @@ export class UnitParserService {
       apId,
       options.itemPropertiesOverride === undefined,
     );
+    if (options.includeStudioItemComments === false) {
+      sourceContext.normalizedFeatureConfig.showStudioItemComments = false;
+    }
     const activeParse = await this.parseItemListFromContext(
       apId,
       sourceContext,

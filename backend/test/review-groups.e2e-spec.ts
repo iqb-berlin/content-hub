@@ -1105,17 +1105,29 @@ describe("Review visibility, groups and synchronization API", () => {
     },
   );
 
-  it("restores coding comments after a temporary scheme read failure with the same file signature", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "review-coding-"));
-    const catalog = new FileCatalogCache(db.getRepository(ApFile));
-    const parser = realItemParser(db, catalog);
-    const parserSpy = jest
-      .spyOn(app.get(UnitParserService), "getItemListFromFiles")
-      .mockImplementation(parser.getItemListFromFiles.bind(parser));
-    try {
+  describe("Review comment catalog with real files", () => {
+    let directory: string;
+    let catalog: FileCatalogCache;
+    let parserSpy: jest.SpyInstance;
+
+    beforeEach(async () => {
+      directory = await mkdtemp(join(tmpdir(), "review-coding-"));
+      catalog = new FileCatalogCache(db.getRepository(ApFile));
+      const parser = realItemParser(db, catalog);
+      parserSpy = jest
+        .spyOn(app.get(UnitParserService), "getItemListFromFiles")
+        .mockImplementation(parser.getItemListFromFiles.bind(parser));
+    });
+
+    afterEach(async () => {
+      parserSpy.mockRestore();
+      await rm(directory, { recursive: true, force: true });
+    });
+
+    async function createCodingFixture(withMissingStudioFile = false) {
       const ap = await db.getRepository(Ap).save({
-        packageId: `review-coding-recovery-${Date.now()}`,
-        name: "Coding recovery",
+        packageId: `review-coding-catalog-${Date.now()}`,
+        name: "Coding comments",
         apIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
       });
       await db.getRepository(ApAccessConfig).save({
@@ -1124,6 +1136,7 @@ describe("Review visibility, groups and synchronization API", () => {
         featureConfig: {
           enableReview: true,
           enableCommenting: true,
+          showStudioItemComments: withMissingStudioFile,
           commentTargets: [CommentTargetType.CODING],
         },
       });
@@ -1136,7 +1149,11 @@ describe("Review visibility, groups and synchronization API", () => {
       });
       const files = {
         "U.xml":
-          "<Unit><Id>U</Id><Reference>U.vomd</Reference><CodingSchemeRef>U.vocs</CodingSchemeRef></Unit>",
+          "<Unit><Id>U</Id><Reference>U.vomd</Reference><CodingSchemeRef>U.vocs</CodingSchemeRef>" +
+          (withMissingStudioFile
+            ? "<UnitCommentsRef>U.vouc</UnitCommentsRef>"
+            : "") +
+          "</Unit>",
         "U.vomd": JSON.stringify({
           profiles: [],
           items: [{ id: "I", variableId: "I", profiles: [] }],
@@ -1161,8 +1178,19 @@ describe("Review visibility, groups and synchronization API", () => {
         targetId: "U_I",
         commentText: "Existing coding comment",
       });
-      const signature = (await catalog.get(ap.id)).signature;
-      const threadPath = `/api/ap/${ap.id}/review/comments`;
+      return {
+        apId: ap.id,
+        reviewer,
+        target,
+        comment,
+        threadPath: `/api/ap/${ap.id}/review/comments`,
+      };
+    }
+
+    it("restores coding comments after a temporary scheme read failure with the same file signature", async () => {
+      const { apId, reviewer, target, comment, threadPath } =
+        await createCodingFixture();
+      const signature = (await catalog.get(apId)).signature;
       const schemePath = join(directory, "U.vocs");
       const unavailablePath = join(directory, "U.vocs.unavailable");
       await rename(schemePath, unavailablePath);
@@ -1181,7 +1209,7 @@ describe("Review visibility, groups and synchronization API", () => {
         await rename(unavailablePath, schemePath);
       }
 
-      expect((await catalog.get(ap.id)).signature).toBe(signature);
+      expect((await catalog.get(apId)).signature).toBe(signature);
       const recovered = await request(server)
         .get(`${threadPath}/counts`)
         .set(headers(reviewer.token))
@@ -1200,10 +1228,27 @@ describe("Review visibility, groups and synchronization API", () => {
           commentText: comment.commentText,
         }),
       ]);
-    } finally {
-      parserSpy.mockRestore();
-      await rm(directory, { recursive: true, force: true });
-    }
+    });
+
+    it("reuses the review comment catalog when a referenced Studio comments file is missing", async () => {
+      const { reviewer, threadPath } = await createCodingFixture(true);
+      const countsPath = `${threadPath}/counts`;
+      const first = await request(server)
+        .get(countsPath)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(first.body.codingUnitIds).toEqual(["U"]);
+      expect(first.body.counts).toEqual([
+        { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+      ]);
+
+      const second = await request(server)
+        .get(countsPath)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(second.body).toEqual(first.body);
+      expect(parserSpy).toHaveBeenCalledTimes(1);
+    });
   });
 
   it.each([1, 2, 10])(
