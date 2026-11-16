@@ -108,6 +108,7 @@ describe("Review visibility, groups and synchronization API", () => {
           items: [{ unitId: "U", itemId: "I" }],
           codingSchemes: { U: {} },
         }),
+        invalidateFileCaches: () => undefined,
       })
       .compile();
     app = module.createNestApplication();
@@ -1109,22 +1110,41 @@ describe("Review visibility, groups and synchronization API", () => {
     let directory: string;
     let catalog: FileCatalogCache;
     let parserSpy: jest.SpyInstance;
+    let invalidateFileCachesSpy: jest.SpyInstance;
+    const itemFiles = {
+      "U.vomd": JSON.stringify({
+        profiles: [],
+        items: [{ id: "I", variableId: "I", profiles: [] }],
+      }),
+      "U.vocs": '{"variableCodings":[]}',
+    };
 
     beforeEach(async () => {
       directory = await mkdtemp(join(tmpdir(), "review-coding-"));
       catalog = new FileCatalogCache(db.getRepository(ApFile));
       const parser = realItemParser(db, catalog);
+      const parserProvider = app.get(UnitParserService);
       parserSpy = jest
-        .spyOn(app.get(UnitParserService), "getItemListFromFiles")
+        .spyOn(parserProvider, "getItemListFromFiles")
         .mockImplementation(parser.getItemListFromFiles.bind(parser));
+      invalidateFileCachesSpy = jest
+        .spyOn(parserProvider, "invalidateFileCaches")
+        .mockImplementation(parser.invalidateFileCaches.bind(parser));
     });
 
     afterEach(async () => {
       parserSpy.mockRestore();
+      invalidateFileCachesSpy.mockRestore();
       await rm(directory, { recursive: true, force: true });
     });
 
-    async function createCodingFixture(withMissingStudioFile = false) {
+    async function createCodingFixture({
+      withMissingStudioFile = false,
+      missingFile,
+    }: {
+      withMissingStudioFile?: boolean;
+      missingFile?: keyof typeof itemFiles;
+    } = {}) {
       const ap = await db.getRepository(Ap).save({
         packageId: `review-coding-catalog-${Date.now()}`,
         name: "Coding comments",
@@ -1154,13 +1174,10 @@ describe("Review visibility, groups and synchronization API", () => {
             ? "<UnitCommentsRef>U.vouc</UnitCommentsRef>"
             : "") +
           "</Unit>",
-        "U.vomd": JSON.stringify({
-          profiles: [],
-          items: [{ id: "I", variableId: "I", profiles: [] }],
-        }),
-        "U.vocs": '{"variableCodings":[]}',
+        ...itemFiles,
       };
       for (const [originalName, content] of Object.entries(files)) {
+        if (originalName === missingFile) continue;
         const filePath = join(directory, originalName);
         await writeFile(filePath, content);
         await db.getRepository(ApFile).save({
@@ -1231,7 +1248,9 @@ describe("Review visibility, groups and synchronization API", () => {
     });
 
     it("reuses the review comment catalog when a referenced Studio comments file is missing", async () => {
-      const { reviewer, threadPath } = await createCodingFixture(true);
+      const { reviewer, threadPath } = await createCodingFixture({
+        withMissingStudioFile: true,
+      });
       const countsPath = `${threadPath}/counts`;
       const first = await request(server)
         .get(countsPath)
@@ -1249,6 +1268,50 @@ describe("Review visibility, groups and synchronization API", () => {
       expect(second.body).toEqual(first.body);
       expect(parserSpy).toHaveBeenCalledTimes(1);
     });
+
+    it.each(["U.vocs", "U.vomd"] as const)(
+      "caches the review catalog while %s is absent and rebuilds it after upload",
+      async (missingFile) => {
+        const { apId, reviewer, threadPath } = await createCodingFixture({
+          missingFile,
+        });
+        const signature = (await catalog.get(apId)).signature;
+        const countsPath = `${threadPath}/counts`;
+        const first = await request(server)
+          .get(countsPath)
+          .set(headers(reviewer.token))
+          .expect(200);
+        expect(first.body.codingUnitIds).toEqual([]);
+        expect(first.body.counts).toEqual([
+          { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+        ]);
+        const cached = await request(server)
+          .get(countsPath)
+          .set(headers(reviewer.token))
+          .expect(200);
+        expect(cached.body).toEqual(first.body);
+        expect(parserSpy).toHaveBeenCalledTimes(1);
+
+        const upload = await request(server)
+          .post(`/api/ap/${apId}/files/upload`)
+          .set(headers(manager))
+          .attach("files", Buffer.from(itemFiles[missingFile]), missingFile)
+          .expect(201);
+        expect(upload.body.files).toEqual([
+          expect.objectContaining({ originalName: missingFile }),
+        ]);
+        expect((await catalog.get(apId)).signature).not.toBe(signature);
+
+        const rebuilt = await request(server)
+          .get(countsPath)
+          .set(headers(reviewer.token))
+          .set("If-None-Match", first.headers.etag)
+          .expect(200);
+        expect(rebuilt.body.codingUnitIds).toEqual(["U"]);
+        expect(rebuilt.body.counts).toEqual(first.body.counts);
+        expect(parserSpy).toHaveBeenCalledTimes(2);
+      },
+    );
   });
 
   it.each([1, 2, 10])(

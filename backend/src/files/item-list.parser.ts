@@ -150,6 +150,8 @@ export class ItemListParser {
           continue;
         }
 
+        // Uploading missing metadata or a missing scheme changes the source
+        // signature. A failed read of a registered file needs a retry.
         const vomdFileName = parsed.metadataRef;
         if (!vomdFileName) continue;
         const vomdFile = allFiles.find(
@@ -163,7 +165,6 @@ export class ItemListParser {
               `Referenced item metadata file is missing: ${vomdFileName}`,
             );
           }
-          cacheable = false;
           continue;
         }
 
@@ -202,8 +203,6 @@ export class ItemListParser {
                 `Could not parse coding scheme ${parsed.codingSchemeRef}`,
               );
             }
-          } else {
-            cacheable = false;
           }
         }
 
