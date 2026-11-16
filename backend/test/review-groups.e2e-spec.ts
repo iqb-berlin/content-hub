@@ -4,9 +4,11 @@ import { JwtService } from "@nestjs/jwt";
 import { DataSource } from "typeorm";
 import * as request from "supertest";
 import {
+  AccessModel,
   Ap,
   ApFile,
   ApItemRowNumber,
+  ApRole,
   CommentTargetType,
   ApAccessConfig,
   ApUserRole,
@@ -21,7 +23,7 @@ import { ReviewManifestService } from "../src/review/review-manifest.service";
 import { ReviewReadinessService } from "../src/review/review-readiness.service";
 import { UnitParserService } from "../src/files/unit-parser.service";
 
-import { mkdtemp, writeFile, rm } from "fs/promises";
+import { mkdtemp, rename, writeFile, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { CommentsService } from "../src/comments/comments.service";
@@ -53,6 +55,21 @@ describe("Review visibility, groups and synchronization API", () => {
     config = response.body;
     return config;
   }
+
+  function realItemParser(dataSource: DataSource, catalog: FileCatalogCache) {
+    return new UnitParserService(
+      dataSource.getRepository(ApFile),
+      dataSource.getRepository(Ap),
+      dataSource.getRepository(ApAccessConfig),
+      new ItemRowNumberingService(dataSource.getRepository(ApItemRowNumber)),
+      app.get(ItemExplorerStateService),
+      catalog,
+      new ItemListParser(),
+      new NumberedItemListCache(),
+      app.get(UnitViewResolver),
+    );
+  }
+
   beforeAll(async () => {
     if (
       process.env.NODE_ENV !== "test" ||
@@ -1088,6 +1105,107 @@ describe("Review visibility, groups and synchronization API", () => {
     },
   );
 
+  it("restores coding comments after a temporary scheme read failure with the same file signature", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "review-coding-"));
+    const catalog = new FileCatalogCache(db.getRepository(ApFile));
+    const parser = realItemParser(db, catalog);
+    const parserSpy = jest
+      .spyOn(app.get(UnitParserService), "getItemListFromFiles")
+      .mockImplementation(parser.getItemListFromFiles.bind(parser));
+    try {
+      const ap = await db.getRepository(Ap).save({
+        packageId: `review-coding-recovery-${Date.now()}`,
+        name: "Coding recovery",
+        apIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
+      });
+      await db.getRepository(ApAccessConfig).save({
+        apId: ap.id,
+        accessModel: AccessModel.REGISTERED,
+        featureConfig: {
+          enableReview: true,
+          enableCommenting: true,
+          commentTargets: [CommentTargetType.CODING],
+        },
+      });
+      const reviewer = actors[0];
+      await db.getRepository(ApUserRole).save({
+        apId: ap.id,
+        userId: reviewer.id,
+        role: ApRole.READ_ONLY,
+        capabilities: ["review:participate"],
+      });
+      const files = {
+        "U.xml":
+          "<Unit><Id>U</Id><Reference>U.vomd</Reference><CodingSchemeRef>U.vocs</CodingSchemeRef></Unit>",
+        "U.vomd": JSON.stringify({
+          profiles: [],
+          items: [{ id: "I", variableId: "I", profiles: [] }],
+        }),
+        "U.vocs": '{"variableCodings":[]}',
+      };
+      for (const [originalName, content] of Object.entries(files)) {
+        const filePath = join(directory, originalName);
+        await writeFile(filePath, content);
+        await db.getRepository(ApFile).save({
+          apId: ap.id,
+          originalName,
+          filePath,
+          fileSize: Buffer.byteLength(content),
+        });
+      }
+      const target = { ...item, targetType: CommentTargetType.CODING };
+      const comment = await db.getRepository(Comment).save({
+        ...target,
+        apId: ap.id,
+        userId: reviewer.id,
+        targetId: "U_I",
+        commentText: "Existing coding comment",
+      });
+      const signature = (await catalog.get(ap.id)).signature;
+      const threadPath = `/api/ap/${ap.id}/review/comments`;
+      const schemePath = join(directory, "U.vocs");
+      const unavailablePath = join(directory, "U.vocs.unavailable");
+      await rename(schemePath, unavailablePath);
+      let partialEtag: string;
+      try {
+        const partial = await request(server)
+          .get(`${threadPath}/counts`)
+          .set(headers(reviewer.token))
+          .expect(200);
+        expect(partial.body.codingUnitIds).toEqual([]);
+        expect(partial.body.counts).toEqual([
+          { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+        ]);
+        partialEtag = partial.headers.etag;
+      } finally {
+        await rename(unavailablePath, schemePath);
+      }
+
+      expect((await catalog.get(ap.id)).signature).toBe(signature);
+      const recovered = await request(server)
+        .get(`${threadPath}/counts`)
+        .set(headers(reviewer.token))
+        .set("If-None-Match", partialEtag)
+        .expect(200);
+      expect(recovered.body.codingUnitIds).toEqual(["U"]);
+      expect(recovered.headers.etag).not.toBe(partialEtag);
+      const thread = await request(server)
+        .get(threadPath)
+        .query(target)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(thread.body.comments).toEqual([
+        expect.objectContaining({
+          id: comment.id,
+          commentText: comment.commentText,
+        }),
+      ]);
+    } finally {
+      parserSpy.mockRestore();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   it.each([1, 2, 10])(
     "completes concurrent real catalog reads and votes with a pool of %i",
     async (poolSize) => {
@@ -1140,17 +1258,7 @@ describe("Review visibility, groups and synchronization API", () => {
         // All sources are real services. Their default repositories use the same
         // constrained pool, so any escaped transaction query fails this test.
         const catalog = new FileCatalogCache(limited.getRepository(ApFile));
-        const parser = new UnitParserService(
-          limited.getRepository(ApFile),
-          limited.getRepository(Ap),
-          limited.getRepository(ApAccessConfig),
-          new ItemRowNumberingService(limited.getRepository(ApItemRowNumber)),
-          app.get(ItemExplorerStateService),
-          catalog,
-          new ItemListParser(),
-          new NumberedItemListCache(),
-          app.get(UnitViewResolver),
-        );
+        const parser = realItemParser(limited, catalog);
         const service = new CommentsService(
           limited.getRepository(Comment),
           new ReviewPolicyService(limited.getRepository(ApAccessConfig)),

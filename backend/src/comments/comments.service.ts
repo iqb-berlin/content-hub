@@ -29,6 +29,7 @@ import {
 } from "../database/entities";
 import { UnitParserService } from "../files/unit-parser.service";
 import { FileCatalogCache } from "../files/file-catalog.cache";
+import { AsyncLruCache } from "../files/async-lru-cache";
 import { getAssessmentParts, getIndexUnits } from "../ap/ap-index.utils";
 import { extractLabelText } from "../files/unit-file-parsing";
 import { ReviewManifestService } from "../review/review-manifest.service";
@@ -132,6 +133,11 @@ interface ItemCatalogEntry {
   itemOrder: number;
 }
 
+interface ItemCatalog {
+  entries: ItemCatalogEntry[];
+  cacheable: boolean;
+}
+
 interface ReviewBookletCatalogEntry {
   bookletId: string;
   bookletLabel: string;
@@ -187,11 +193,9 @@ export class CommentsService {
     });
   }
 
-  private readonly itemCatalogCache = new Map<
-    string,
-    Promise<ItemCatalogEntry[]>
-  >();
-  private readonly maxItemCatalogCacheEntries = 100;
+  private readonly itemCatalogCache = new AsyncLruCache<string, ItemCatalog>(
+    100,
+  );
 
   constructor(
     @InjectRepository(Comment)
@@ -1457,35 +1461,29 @@ export class CommentsService {
     const cacheKey = `${apId}:${fileCatalog.signature}:${
       ap?.updatedAt?.toISOString() || "missing"
     }`;
-    this.deleteStaleItemCatalogEntries(apId, cacheKey);
-
-    let catalogPromise = this.itemCatalogCache.get(cacheKey);
-    if (!catalogPromise) {
-      catalogPromise = this.buildItemCatalog(apId, ap);
-      if (this.itemCatalogCache.size >= this.maxItemCatalogCacheEntries) {
-        const oldestKey = this.itemCatalogCache.keys().next().value as
-          | string
-          | undefined;
-        if (oldestKey) this.itemCatalogCache.delete(oldestKey);
-      }
-      this.itemCatalogCache.set(cacheKey, catalogPromise);
-    }
-
-    try {
-      return await catalogPromise;
-    } catch (error) {
-      this.itemCatalogCache.delete(cacheKey);
-      throw error;
-    }
+    this.itemCatalogCache.deleteWhere(
+      (key) => key.startsWith(`${apId}:`) && key !== cacheKey,
+    );
+    const { value } = await this.itemCatalogCache.getOrLoad(
+      cacheKey,
+      () => this.buildItemCatalog(apId, ap),
+      { shouldCache: (catalog) => catalog.cacheable },
+    );
+    return value.entries;
   }
 
   private async buildItemCatalog(
     apId: string,
     ap: Ap | null,
-  ): Promise<ItemCatalogEntry[]> {
+  ): Promise<ItemCatalog> {
+    let cacheable = false;
     const itemList = await this.unitParserService.getItemListFromFiles(
       apId,
-      {},
+      {
+        onDiagnostics: (diagnostics) => {
+          cacheable = diagnostics.cacheable;
+        },
+      },
       this.transactionManager,
     );
     const codingUnitIds = new Set(
@@ -1596,7 +1594,7 @@ export class CommentsService {
         if (!existing.itemLabel) existing.itemLabel = entry.itemLabel;
       }
     }
-    return [...unique.values()];
+    return { entries: [...unique.values()], cacheable };
   }
 
   private buildReviewUnitCatalog(
@@ -1735,18 +1733,6 @@ export class CommentsService {
           ? -1
           : (itemEntry?.itemOrder ?? fallbackOrder),
     };
-  }
-
-  private deleteStaleItemCatalogEntries(
-    apId: string,
-    currentKey: string,
-  ): void {
-    const prefix = `${apId}:`;
-    for (const key of this.itemCatalogCache.keys()) {
-      if (key.startsWith(prefix) && key !== currentKey) {
-        this.itemCatalogCache.delete(key);
-      }
-    }
   }
 
   private itemCatalogKey(unitId: string, itemId: string): string {

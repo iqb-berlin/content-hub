@@ -1174,7 +1174,7 @@ describe("CommentsService", () => {
 
     expect(unitParserService.getItemListFromFiles).toHaveBeenCalledWith(
       "ap-1",
-      {},
+      expect.anything(),
       commentRepository.manager,
     );
     expect(commentRepository.create).toHaveBeenCalledWith(
