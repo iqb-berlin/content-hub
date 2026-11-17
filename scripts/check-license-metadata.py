@@ -47,6 +47,18 @@ for template in ("login.ftl", "template.ftl"):
     if "Modified for IQB ContentPool / Content Hub:" not in comment:
         fail(f"Keycloak theme/{template} has no explicit modification notice")
 
+aspect = ROOT / "test-fixtures/synthetic-aspect"
+aspect_notices = json.loads((aspect / "licenses/manifest.json").read_text())
+player = aspect_notices["player"]
+if hashlib.sha256((aspect / player["file"]).read_bytes()).hexdigest() != player["sha256"]:
+    fail("ASPECT fixture changed; rebuild and notice review are required")
+if aspect_notices["reproduction"]["rebuilt_sha256"] != player["sha256"]:
+    fail("ASPECT notice evidence is not bound to the reproduced player")
+for name, expected in aspect_notices["notice_files"].items():
+    file = aspect / "licenses" / name
+    if not file.is_file() or hashlib.sha256(file.read_bytes()).hexdigest() != expected:
+        fail(f"ASPECT notice {name} is missing or changed")
+
 pom = ET.parse(ROOT / "keycloak/extensions/altcha/pom.xml")
 namespace = {"m": "http://maven.apache.org/POM/4.0.0"}
 license_node = pom.find("m:licenses/m:license", namespace)
