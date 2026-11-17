@@ -200,6 +200,7 @@ docker exec content-hub-nginx nginx -t
 - Deployment and migration runbook: [DEPLOY.md](DEPLOY.md)
 - Go/No-Go checklist: [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
 - Health check helper: `./scripts/check-health.sh`
+- Generated compliance reports: [docs/compliance.md](docs/compliance.md)
 
 ## Project Structure
 

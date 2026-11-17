@@ -101,6 +101,8 @@ For AP managers who need a task-oriented user guide, see:
 
 ### Operations
 
+- [Compliance Reports](compliance.md)
+  Generated SBOMs, license scans, similarity summaries, retention, and release evidence.
 - [Copyright and provenance follow-up, 2026-11-12](license-follow-up-2026-11-12.md)
   Current technical assessments, notice corrections and the pending human review.
 - [Releases and Promotion](operations/releases.md)
