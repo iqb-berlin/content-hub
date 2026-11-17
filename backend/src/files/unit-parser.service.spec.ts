@@ -204,7 +204,7 @@ describe("UnitParserService", () => {
     service = module.get<UnitParserService>(UnitParserService);
   });
 
-  it("gates Studio comments at the API source and invalidates cached lists when toggled", async () => {
+  it("allows callers to skip Studio comments without changing the AP setting or cached Explorer data", async () => {
     fileRepo.find.mockResolvedValue([
       ...files,
       {
@@ -245,6 +245,12 @@ describe("UnitParserService", () => {
     accessConfigRepo.findOne.mockResolvedValue({
       featureConfig: { showStudioItemComments: true },
     });
+    const withoutStudioComments = await service.getItemListFromFiles("ap-1", {
+      includeStudioItemComments: false,
+    });
+    expect(withoutStudioComments.items).toEqual(disabled.items);
+    expect(readFile).not.toHaveBeenCalledWith("/tmp/u1.vouc", "utf-8");
+
     const enabled = await service.getItemListFromFiles("ap-1");
     expect(
       enabled.items[0].studioComments?.map((comment) => comment.body),
