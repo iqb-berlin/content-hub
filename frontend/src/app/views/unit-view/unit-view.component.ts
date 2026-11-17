@@ -16,7 +16,8 @@ import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer } from '@angular/platform-browser';
-import { CodingAsText, CodingSchemeTextFactory } from '@iqb/responses';
+import { CodingAsText, CodingSchemeTextFactory, CodingTextRenderer } from '@iqb/responses';
+import type { VariableCodingData } from '@iqbspecs/coding-scheme';
 import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { FeatureConfig, FilePreviewVomdData, UnitViewData } from '../../core/models/api.models';
@@ -37,8 +38,15 @@ import {
   mergePlayerSolutionIntoDataParts,
 } from '../item-explorer/item-explorer-solution-prefill';
 import { deriveReviewSolution, ReviewSolution } from './review-solution';
+import { readReviewTaskNumbers } from './review-task-numbers';
+import {
+  buildReviewCodingLabels,
+  unnamedReviewCoding,
+  type ReviewCodingLabel,
+} from './review-coding-labels';
 
 type ReviewCodingAsText = Omit<CodingAsText, 'codes'> & {
+  variable?: VariableCodingData;
   manualInstructionText?: string;
   codes: (CodingAsText['codes'][number] & {
     manualInstructionText?: string;
@@ -483,7 +491,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
               @if (reviewSolution.unavailableVariables.length) {
                 <p>
                   Ohne eindeutige Player-Lösung:
-                  {{ reviewSolution.unavailableVariables.join(', ') }}
+                  {{ unavailableReviewCodingTitles.join(', ') }}
                 </p>
               }
               @if (solutionVisible) {
@@ -499,7 +507,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
               <input
                 type="search"
                 aria-label="Kodiervariablen filtern"
-                placeholder="ID, Name oder Code"
+                [placeholder]="reviewMode ? 'Teilaufgabe, Name oder Code' : 'ID, Name oder Code'"
                 [(ngModel)]="codingFilterText"
               />
             </label>
@@ -516,13 +524,16 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
               @for (coding of visibleCodingSchemeAsText; track coding.id) {
                 <section class="coding-variable">
                   <h4>
-                    {{ reviewMode ? coding.id : coding.label || coding.id }}
-                    @if (reviewMode && coding.label && coding.label !== coding.id) {
-                      <span> – {{ coding.label }}</span>
+                    {{ reviewMode ? reviewCodingTitle(coding) : coding.label || coding.id }}
+                    @if (reviewMode && reviewCodingSubtitle(coding); as subtitle) {
+                      <span> – {{ subtitle }}</span>
                     }
                   </h4>
-                  @if (reviewMode && coding.source) {
-                    <p class="help-text">{{ coding.source }}</p>
+                  @if (reviewMode && reviewCodingSource(coding); as source) {
+                    <p class="help-text">{{ source }}</p>
+                    @if (reviewSolverReferences(coding); as references) {
+                      <p class="help-text">Formelvariablen: {{ references }}</p>
+                    }
                   }
                   @if (reviewMode && coding.processing) {
                     <p class="help-text">{{ coding.processing }}</p>
@@ -1124,6 +1135,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private retiringResponseSource: { window: Window; sessionId: string } | null = null;
   private responseChangedAt: number | null = null;
   private playerInputDocument: Document | null = null;
+  private reviewMetadataItems: readonly unknown[] = [];
+  private reviewCodingLabels = new Map<string, ReviewCodingLabel>();
+  private reviewCodingPositions = new Map<string, number>();
   private playerDragStart: { x: number; y: number; pointerId: number } | null = null;
   private solutionRequestTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly playerInputHandler = () => {
@@ -1267,16 +1281,20 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
             this.isRelevantCodingVariable(coding),
           );
     if (this.reviewMode) {
-      visibleCodings.sort((left, right) =>
-        left.id.localeCompare(right.id, 'de', { numeric: true }),
-      );
+      visibleCodings.sort((left, right) => {
+        return (
+          this.reviewCodingTitle(left).localeCompare(this.reviewCodingTitle(right), 'de', {
+            numeric: true,
+          }) || left.id.localeCompare(right.id, 'de', { numeric: true })
+        );
+      });
     }
     const term = this.codingFilterText.trim().toLowerCase();
     if (!term) return visibleCodings;
     return visibleCodings.filter((coding) => {
       const searchableText = [
-        coding.id,
-        coding.label,
+        this.reviewMode ? this.reviewCodingCaption(coding) : coding.id,
+        this.reviewMode ? this.reviewCodingLabel(coding) : coding.label,
         (coding as any).manualInstructionText,
         ...coding.codes.flatMap((code) => [
           code.id,
@@ -1291,6 +1309,142 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         .toLowerCase();
       return searchableText.includes(term);
     });
+  }
+
+  reviewCodingTitle(coding: ReviewCodingAsText): string {
+    return (
+      this.reviewCodingLabels.get(coding.id)?.title ||
+      this.reviewCodingLabel(coding) ||
+      unnamedReviewCoding
+    );
+  }
+
+  reviewCodingSubtitle(coding: ReviewCodingAsText): string {
+    const label = this.baseReviewCodingSubtitle(coding);
+    const position = this.reviewCodingPositions.get(coding.id);
+    if (position === undefined) return label;
+    const reference = `Kodiervariable ${position}`;
+    return label ? `${label} (${reference})` : reference;
+  }
+
+  private baseReviewCodingSubtitle(coding: ReviewCodingAsText): string {
+    return this.reviewCodingLabels.get(coding.id)?.subtitle || '';
+  }
+
+  private reviewCodingCaption(
+    coding: ReviewCodingAsText,
+    subtitle = this.reviewCodingSubtitle(coding),
+  ): string {
+    const title = this.reviewCodingTitle(coding);
+    return subtitle ? `${title} – ${subtitle}` : title;
+  }
+
+  private updateReviewCodingLabels() {
+    const variables = (this.codingSchemeAsText || []).map(
+      (coding) => coding.variable || { id: coding.id, label: coding.label },
+    );
+    this.reviewCodingLabels = buildReviewCodingLabels(
+      variables,
+      Array.isArray(this.unit?.items) ? this.unit.items : [],
+      this.reviewMetadataItems,
+      readReviewTaskNumbers(this.definitionContent, variables),
+    );
+    this.reviewCodingPositions.clear();
+    if (!this.reviewMode) return;
+
+    const codings = this.availableCodingSchemeAsText;
+    const referenced = new Set(codings.flatMap((coding) => coding.variable?.deriveSources ?? []));
+    const groups = new Map<string, string[]>();
+    for (const coding of codings) {
+      if (
+        !this.isRelevantCodingVariable(coding) &&
+        !referenced.has(coding.id) &&
+        !(coding.variable && referenced.has(coding.variable.id))
+      )
+        continue;
+      const caption = this.reviewCodingCaption(coding, this.baseReviewCodingSubtitle(coding));
+      const group = groups.get(caption) ?? [];
+      group.push(coding.id);
+      groups.set(caption, group);
+    }
+    const reserved = new Set(groups.keys());
+    for (const group of groups.values()) {
+      if (group.length < 2) continue;
+      let position = 1;
+      for (const id of group) {
+        const coding = codings.find((entry) => entry.id === id)!;
+        let caption: string;
+        do {
+          this.reviewCodingPositions.set(id, position++);
+          caption = this.reviewCodingCaption(coding);
+        } while (reserved.has(caption));
+        reserved.add(caption);
+      }
+    }
+  }
+
+  reviewCodingSource(coding: ReviewCodingAsText): string {
+    const variable = coding.variable;
+    if (!variable) return '';
+    return CodingTextRenderer.sourceAsText(
+      this.reviewCodingCaption(coding),
+      variable.sourceType,
+      (variable.deriveSources ?? []).map((source) => this.reviewCodingReferenceTitle(source)),
+      variable.sourceParameters,
+    );
+  }
+
+  reviewSolverReferences(coding: ReviewCodingAsText): string {
+    const variable = coding.variable;
+    const expression = variable?.sourceParameters?.solverExpression;
+    if (variable?.sourceType !== 'SOLVER' || !expression) return '';
+
+    const references = new Map<string, string>();
+    for (const [token, content] of expression.matchAll(/\$\{([^{}]+)\}/g)) {
+      if (references.has(token)) continue;
+      const alias = content
+        .split(':', 1)[0]
+        .replace(/\s*\[\s*\d+\s*\]\s*$/, '')
+        .trim();
+      if (!alias) continue;
+      // The solver resolves aliases before falling back to an internal ID.
+      const source =
+        this.codingSchemeAsText?.find((entry) => entry.variable?.alias === alias) ??
+        this.findReviewCoding(alias);
+      if (source) references.set(token, this.reviewCodingCaption(source));
+    }
+    return Array.from(references, ([token, title]) => `${token} → ${title}`).join('; ');
+  }
+
+  get unavailableReviewCodingTitles(): string[] {
+    return [
+      ...new Set(
+        this.reviewSolution.unavailableVariables.map((aliasOrId) => {
+          // Solution notices use the text factory's alias-or-ID keys, not internal source IDs.
+          const coding = this.codingSchemeAsText?.find((entry) => entry.id === aliasOrId);
+          return coding ? this.reviewCodingCaption(coding) : 'Kodiervariable ohne Bezeichnung';
+        }),
+      ),
+    ];
+  }
+
+  private reviewCodingLabel(coding: ReviewCodingAsText): string {
+    const codingLabel = coding.label?.trim();
+    return codingLabel !== coding.id && codingLabel !== coding.variable?.id
+      ? codingLabel || ''
+      : '';
+  }
+
+  private findReviewCoding(id: string): ReviewCodingAsText | undefined {
+    return (
+      this.codingSchemeAsText?.find((entry) => entry.variable?.id === id) ??
+      this.codingSchemeAsText?.find((entry) => entry.id === id)
+    );
+  }
+
+  private reviewCodingReferenceTitle(id: string): string {
+    const coding = this.findReviewCoding(id);
+    return coding ? this.reviewCodingCaption(coding) : 'Kodiervariable ohne Bezeichnung';
   }
 
   get hiddenCodingVariableCount(): number {
@@ -1355,7 +1509,10 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (changes['apId'] || changes['unitId']) this.loadUnit();
-    else if (changes['reviewMode'] || changes['bookletId']) this.loadReviewTranscripts();
+    else {
+      if (changes['reviewMode']) this.updateReviewCodingLabels();
+      if (changes['reviewMode'] || changes['bookletId']) this.loadReviewTranscripts();
+    }
   }
 
   private loadFeatureConfig() {
@@ -1485,6 +1642,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.currentPage = 1;
     this.totalPages = 1;
     this.definitionContent = null;
+    this.reviewMetadataItems = [];
+    this.reviewCodingLabels.clear();
+    this.reviewCodingPositions.clear();
     this.unitMetadata = [];
     this.metadataLoading = false;
     this.metadataError = '';
@@ -1913,6 +2073,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .then((definition) => {
         if (token !== this.unitLoadToken) return;
         this.definitionContent = definition;
+        this.updateReviewCodingLabels();
         this.updateReviewSolution();
         this.initializePageNavigation();
         this.startPlayerIfReady();
@@ -1921,6 +2082,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       .catch(() => {
         if (token !== this.unitLoadToken) return;
         this.definitionContent = null;
+        this.updateReviewCodingLabels();
+        this.changeDetector.markForCheck();
       });
   }
 
@@ -1961,8 +2124,14 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
           return;
         }
         this.unitMetadata = structuredData.unitProfiles || [];
+        // The structured preview is capped at 20 items. A partial list must not
+        // hide conflicts from the complete AP index.
+        const items = Array.isArray(structuredData.items) ? structuredData.items : [];
+        this.reviewMetadataItems = structuredData.itemCount === items.length ? items : [];
+        this.updateReviewCodingLabels();
         this.metadataError = '';
         this.metadataLoading = false;
+        this.changeDetector.markForCheck();
       },
       error: () => {
         if (token !== this.unitLoadToken) return;
@@ -2007,7 +2176,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     try {
       const codingScheme =
         typeof rawCodingScheme === 'string' ? JSON.parse(rawCodingScheme) : rawCodingScheme;
-      const variableCodings = Array.isArray(codingScheme)
+      const variableCodings: VariableCodingData[] = Array.isArray(codingScheme)
         ? codingScheme
         : Array.isArray((codingScheme as any)?.variableCodings)
           ? (codingScheme as any).variableCodings
@@ -2023,10 +2192,13 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       codingSchemeAsText.forEach((coding, index) => {
         const rawVariable = variableCodings[index];
         if (!rawVariable) return;
-        (coding as any).manualInstructionText = rawVariable.manualInstruction;
+        Object.assign(coding, {
+          variable: rawVariable,
+          manualInstructionText: rawVariable.manualInstruction,
+        });
         coding.codes.forEach((code) => {
           const rawCode = rawVariable.codes?.find(
-            (candidate: any) =>
+            (candidate) =>
               (candidate.id === null ? 'null' : candidate.id?.toString(10)) === code.id,
           );
           code.ruleSetDescriptions ??= [];
@@ -2035,7 +2207,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
             (code as any).description = rawCode.label;
             if (
               !code.ruleSetDescriptions.length &&
-              ['RESIDUAL', 'RESIDUAL_AUTO'].includes(rawCode.type)
+              (rawCode.type === 'RESIDUAL' || rawCode.type === 'RESIDUAL_AUTO')
             ) {
               code.ruleSetDescriptions = ['Alle anderen Antworten.'];
             }
@@ -2044,11 +2216,13 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       });
       this.codingSchemeAsText = codingSchemeAsText;
       this.codingVariables = variableCodings;
+      this.updateReviewCodingLabels();
       this.updateReviewSolution();
       this.codingSchemeError = '';
     } catch {
       this.codingSchemeAsText = null;
       this.codingVariables = [];
+      this.updateReviewCodingLabels();
       this.updateReviewSolution();
       this.codingSchemeError = 'Kodierung konnte nicht gelesen werden.';
     } finally {

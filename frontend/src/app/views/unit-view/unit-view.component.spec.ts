@@ -7,6 +7,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { FeatureConfig, FilePreviewVomdData, UnitViewData } from '../../core/models/api.models';
 import { UnitViewComponent } from './unit-view.component';
+import { dhv004ReviewFixture } from './fixtures/dhv004-review.fixture';
 
 vi.mock('../comment-thread/item-comment-thread.component', async () => {
   const { Component } = await import('@angular/core');
@@ -56,6 +57,11 @@ describe('UnitViewComponent', () => {
     }),
     codingScheme?: unknown,
     metadataByUnit?: Record<string, FilePreviewVomdData['unitProfiles']>,
+    options: {
+      itemsByUnit?: Record<string, unknown[]>;
+      metadataItemsByUnit?: Record<string, FilePreviewVomdData['items']>;
+      previewsByUnit?: Record<string, Subject<any>>;
+    } = {},
   ) {
     const api = {
       getReviewTranscripts: (_apId: string, _bookletId: string, unitId: string) =>
@@ -75,16 +81,26 @@ describe('UnitViewComponent', () => {
         of({
           id: unitId,
           name: 'Aufgabe',
-          items: [],
+          items: options.itemsByUnit?.[unitId] || [],
           codingScheme,
           dependencies: [
             { type: 'PLAYER', downloadUrl: '/player' },
             { type: 'UNIT_DEFINITION', downloadUrl: '/definition' },
-            ...(metadataByUnit ? [{ type: 'METADATA', fileId: unitId }] : []),
+            ...(metadataByUnit || options.metadataItemsByUnit || options.previewsByUnit
+              ? [{ type: 'METADATA', fileId: unitId }]
+              : []),
           ],
         }),
       getFilePreview: (_apId: string, fileId: string) =>
-        of({ structuredData: { type: 'vomd', unitProfiles: metadataByUnit?.[fileId] || [] } }),
+        options.previewsByUnit?.[fileId] ||
+        of({
+          structuredData: {
+            type: 'vomd',
+            unitProfiles: metadataByUnit?.[fileId] || [],
+            items: options.metadataItemsByUnit?.[fileId] || [],
+            itemCount: options.metadataItemsByUnit?.[fileId]?.length || 0,
+          },
+        }),
     };
     vi.stubGlobal(
       'fetch',
@@ -143,6 +159,518 @@ describe('UnitViewComponent', () => {
       },
     ],
   };
+
+  function headings(fixture: { nativeElement: HTMLElement }): string[] {
+    return [...fixture.nativeElement.querySelectorAll('.coding-variable h4')].map((heading) =>
+      heading.textContent!.trim().replace(/\s+/g, ' '),
+    );
+  }
+
+  function metadataPreview(description: string) {
+    return {
+      structuredData: {
+        type: 'vomd',
+        unitProfiles: [],
+        itemCount: 1,
+        items: [{ id: 'item', variableId: 'ANSWER', description }],
+      },
+    };
+  }
+
+  it.each(['conflicting', 'duplicate'])(
+    'shows the description without a number for %s VOUD aliases',
+    async (ambiguity) => {
+      const definition = JSON.stringify({
+        type: 'aspect-unit-definition',
+        version: '4.11.0',
+        enableSectionNumbering: true,
+        pages: [
+          {
+            alwaysVisible: false,
+            sections: [
+              {
+                ignoreNumbering: false,
+                elements: [
+                  { id: 'A', alias: ambiguity === 'conflicting' ? 'X' : 'Y', type: 'radio' },
+                ],
+              },
+              { ignoreNumbering: false, elements: [{ id: 'B', alias: 'Y', type: 'radio' }] },
+            ],
+          },
+        ],
+      });
+      const scheme = {
+        variableCodings: [{ ...solutionScheme.variableCodings[0], id: 'A', alias: 'Y' }],
+      };
+      const { fixture, component } = await playerFixture(definition, scheme);
+      component.reviewCodingVisible = true;
+      fixture.changeDetectorRef.markForCheck();
+      await fixture.whenStable();
+      expect(headings(fixture)).toEqual(['Antwort']);
+      expect(component.reviewCodingSource(component.codingSchemeAsText![0])).toBe(
+        "Basisvariable 'Antwort'",
+      );
+    },
+  );
+
+  it.each([
+    ['4.7.0', 'implicit Likert row'],
+    ['4.11.0', 'implicit Likert row'],
+    ['4.7.0', 'empty alias'],
+    ['4.11.0', 'empty alias'],
+    ['4.7.0', 'geometry variable'],
+    ['4.11.0', 'geometry variable'],
+  ])('omits task numbers for a %s conflict in %s', async (version, conflict) => {
+    const duplicate =
+      conflict === 'implicit Likert row'
+        ? { type: 'likert', rows: [{ id: 'row', alias: 'G_x' }] }
+        : conflict === 'empty alias'
+          ? { id: 'G_x', alias: '', type: 'radio', isRelevantForPresentationComplete: true }
+          : {
+              id: 'g',
+              alias: 'G',
+              type: 'geometry',
+              trackedVariables: version === '4.7.0' ? ['x'] : [{ id: 'x', value: '' }],
+            };
+    const definition = JSON.stringify({
+      type: 'aspect-unit-definition',
+      version,
+      enableSectionNumbering: true,
+      pages: [
+        {
+          sections: [
+            { elements: [{ id: 'internal-answer', alias: 'G_x', type: 'radio' }] },
+            { elements: [{ id: 'table', type: 'table', elements: [duplicate] }] },
+          ],
+        },
+      ],
+    });
+    const scheme = { variableCodings: [{ ...solutionScheme.variableCodings[0], alias: 'G_x' }] };
+    const { fixture, component } = await playerFixture(definition, scheme);
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['Antwort']);
+    expect(component.reviewCodingSource(component.codingSchemeAsText![0])).toBe(
+      "Basisvariable 'Antwort'",
+    );
+  });
+
+  it.each(['4.6.0', '4.11.0'])(
+    'renders the number for an ASPECT-2.x Checkbox in format %s',
+    async (version) => {
+      const definition = JSON.stringify({
+        type: 'aspect-unit-definition',
+        version,
+        enableSectionNumbering: true,
+        pages: [
+          {
+            alwaysVisible: false,
+            sections: [
+              {
+                ignoreNumbering: false,
+                elements: [
+                  {
+                    id: 'cloze',
+                    type: 'cloze',
+                    document: {
+                      type: 'doc',
+                      content: [
+                        {
+                          type: 'paragraph',
+                          content: [
+                            {
+                              type: 'Checkbox',
+                              attrs: {
+                                model: {
+                                  id: version === '4.6.0' ? 'ANSWER' : 'internal-answer',
+                                  alias: 'ANSWER',
+                                  type: 'checkbox',
+                                  value: false,
+                                },
+                              },
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+      const scheme =
+        version === '4.6.0'
+          ? { variableCodings: [{ ...solutionScheme.variableCodings[0], id: 'ANSWER' }] }
+          : solutionScheme;
+      const { fixture, component } = await playerFixture(definition, scheme);
+      component.reviewCodingVisible = true;
+      fixture.changeDetectorRef.markForCheck();
+      await fixture.whenStable();
+      expect(headings(fixture)).toEqual(['1. – Antwort']);
+    },
+  );
+
+  it('renders original #290 beside comments and passes the exact VOUD through in both print modes', async () => {
+    const original = dhv004ReviewFixture;
+    const definition = `  ${JSON.stringify(original.definition)}\n`;
+    const before = JSON.stringify(original);
+    const { fixture, component, frame, message, postMessage } = await playerFixture(
+      definition,
+      original.codingScheme,
+      undefined,
+      {
+        itemsByUnit: { u1: original.indexItems },
+        metadataItemsByUnit: {
+          u1: original.metadataItems.map((item) => ({
+            ...item,
+            description: item.description || '',
+            metadata: {},
+          })),
+        },
+      },
+    );
+    component.activeTab = 'comments';
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    const toggle = fixture.nativeElement.querySelector(
+      '.review-coding-panel > button',
+    ) as HTMLButtonElement;
+    const comments = [...fixture.nativeElement.querySelectorAll('.panel-tabs button')].find(
+      (button: any) => button.textContent.trim() === 'Kommentare',
+    ) as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(headings(fixture)).toEqual([]);
+    toggle.click();
+    await fixture.whenStable();
+    expect(component.activeTab).toBe('comments');
+    expect(comments.getAttribute('aria-pressed')).toBe('true');
+    expect(headings(fixture)).toContain('4.');
+    expect(
+      component.reviewCodingTitle(
+        component.codingSchemeAsText!.find((entry) => entry.id === '05')!,
+      ),
+    ).toBe('4.');
+    expect(postMessage.mock.calls.some(([command]) => command.type === 'vopStartCommand')).toBe(
+      false,
+    );
+    frame.contentDocument!.body.innerHTML = '<main>99. Arbitrary player markup</main>';
+    await message({ type: 'vopReadyNotification' });
+    expect(
+      postMessage.mock.calls.find(([command]) => command.type === 'vopStartCommand')?.[0]
+        .unitDefinition,
+    ).toBe(definition);
+    for (const mode of ['view-all', 'print-ids'] as const) {
+      const previous = fixture.nativeElement.querySelector('iframe');
+      component.pagingMode = mode;
+      component.onPagingModeChange();
+      await vi.waitFor(() => {
+        expect(fixture.nativeElement.querySelector('iframe')).not.toBeNull();
+        expect(fixture.nativeElement.querySelector('iframe')).not.toBe(previous);
+      });
+      const next = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+      const send = vi.spyOn(next.contentWindow!, 'postMessage');
+      await message({ type: 'vopReadyNotification' }, next.contentWindow!);
+      expect(
+        send.mock.calls.find(([command]) => command.type === 'vopStartCommand')?.[0].unitDefinition,
+      ).toBe(definition);
+      expect(headings(fixture)).toContain('4.');
+    }
+    toggle.click();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual([]);
+    expect(comments.getAttribute('aria-pressed')).toBe('true');
+    toggle.click();
+    await fixture.whenStable();
+    expect(headings(fixture)).toContain('4.');
+    expect(JSON.stringify(original)).toBe(before);
+  });
+
+  it('updates the original caption when the definition arrives late and clears it on task change', async () => {
+    let finish!: (definition: string) => void;
+    const pending = new Promise<string>((resolve) => {
+      finish = resolve;
+    });
+    const original = dhv004ReviewFixture;
+    const { fixture, component } = await playerFixture(pending, original.codingScheme, undefined, {
+      itemsByUnit: { u1: original.indexItems },
+    });
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture).some((value) => value === '4.')).toBe(false);
+    finish(JSON.stringify(original.definition));
+    await vi.waitFor(() => expect(headings(fixture)).toContain('4.'));
+    vi.mocked(fetch).mockResolvedValue({ text: async () => '{}' } as Response);
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture).some((value) => value === '4.')).toBe(false);
+  });
+
+  it('keeps the original unnamed fallback when the audio-to-answer relation is ambiguous', async () => {
+    const definition = structuredClone(dhv004ReviewFixture.definition);
+    definition.pages[4].sections[1].visibilityRules = [];
+    const { fixture, component } = await playerFixture(
+      JSON.stringify(definition),
+      dhv004ReviewFixture.codingScheme,
+    );
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    const coding = component.codingSchemeAsText!.find((entry) => entry.id === '05')!;
+    expect(component.reviewCodingTitle(coding)).toBe('Kodierung ohne Bezeichnung');
+    expect(headings(fixture)).not.toContain('4.');
+  });
+
+  it('ignores an original VOUD arriving after the component has switched to another task', async () => {
+    let finish!: (definition: string) => void;
+    const pending = new Promise<string>((resolve) => {
+      finish = resolve;
+    });
+    const { fixture, component } = await playerFixture(pending, dhv004ReviewFixture.codingScheme);
+    vi.mocked(fetch).mockResolvedValue({ text: async () => '{}' } as Response);
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    finish(JSON.stringify(dhv004ReviewFixture.definition));
+    await fixture.whenStable();
+    expect(component.definitionContent).toBe('{}');
+    expect(headings(fixture)).toEqual(['Kodierung ohne Bezeichnung']);
+  });
+
+  it('does not let a 20-item preview conceal conflicting metadata beyond its cutoff', async () => {
+    const preview = new Subject<any>();
+    const items = Array.from({ length: 21 }, (_, index) => ({
+      sourceVariable: 'ANSWER',
+      name: index < 20 ? '4.' : '7.',
+    }));
+    const { fixture, component } = await playerFixture(undefined, solutionScheme, undefined, {
+      itemsByUnit: { u1: items },
+      previewsByUnit: { u1: preview },
+    });
+    component.reviewCodingVisible = true;
+    preview.next({
+      structuredData: {
+        type: 'vomd',
+        itemCount: 21,
+        unitProfiles: [],
+        items: items.slice(0, 20).map((item) => ({ ...item, description: item.name })),
+      },
+    });
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['Antwort']);
+  });
+
+  it('shows metadata captions before player readiness without reading the player DOM', async () => {
+    const definition = '  { "format": "another-player", "payload": "unchanged" }\n';
+    const { fixture, component, frame, message, postMessage } = await playerFixture(
+      definition,
+      solutionScheme,
+      undefined,
+      {
+        metadataItemsByUnit: {
+          u1: [
+            { id: 'item', variableReadOnlyId: 'internal-answer', description: '4.', metadata: {} },
+          ],
+        },
+      },
+    );
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['4. – Antwort']);
+    expect(postMessage.mock.calls.some(([command]) => command.type === 'vopStartCommand')).toBe(
+      false,
+    );
+
+    vi.spyOn(frame.contentDocument!, 'querySelectorAll').mockImplementation(() => {
+      throw new Error('Coding captions must not inspect a player document');
+    });
+    frame.contentDocument!.body.innerHTML = '<main>Independent player markup: question 99</main>';
+    await message({ type: 'vopReadyNotification' });
+    const start = postMessage.mock.calls.find(
+      ([command]) => command.type === 'vopStartCommand',
+    )?.[0];
+    expect(start.unitDefinition).toBe(definition);
+    expect(headings(fixture)).toEqual(['4. – Antwort']);
+
+    component.pagingMode = 'view-all';
+    component.onPagingModeChange();
+    await vi.waitFor(() => expect(fixture.nativeElement.querySelector('iframe')).not.toBe(frame));
+    expect(headings(fixture)).toEqual(['4. – Antwort']);
+  });
+
+  it('updates captions and filtering when VOMD metadata arrives after the coding scheme', async () => {
+    const preview = new Subject<any>();
+    const { fixture, component } = await playerFixture(undefined, solutionScheme, undefined, {
+      previewsByUnit: { u1: preview },
+      itemsByUnit: { u1: [{ id: 'item', sourceVariable: 'ANSWER', name: 'Indexbezeichnung' }] },
+    });
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['Indexbezeichnung – Antwort']);
+
+    preview.next(metadataPreview('4. Haltestelle'));
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['4. Haltestelle – Antwort']);
+    component.codingFilterText = 'Haltestelle';
+    expect(component.visibleCodingSchemeAsText).toHaveLength(1);
+    component.codingFilterText = 'internal-answer';
+    expect(component.visibleCodingSchemeAsText).toHaveLength(0);
+  });
+
+  it('clears old captions and ignores delayed metadata after a unit change', async () => {
+    const first = new Subject<any>();
+    const second = new Subject<any>();
+    const { fixture, component } = await playerFixture(undefined, solutionScheme, undefined, {
+      previewsByUnit: { u1: first, u2: second },
+    });
+    component.reviewCodingVisible = true;
+    first.next(metadataPreview('4.'));
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['4. – Antwort']);
+
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['Antwort']);
+    first.next(metadataPreview('99. Veraltete Antwort'));
+    second.next(metadataPreview('7.'));
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['7. – Antwort']);
+  });
+
+  it('keeps index captions if the metadata preview fails', async () => {
+    const preview = new Subject<any>();
+    const { component, fixture } = await playerFixture(undefined, solutionScheme, undefined, {
+      previewsByUnit: { u1: preview },
+      itemsByUnit: { u1: [{ sourceVariable: 'ANSWER', name: '4. Index' }] },
+    });
+    component.reviewCodingVisible = true;
+    preview.error(new Error('Unavailable metadata'));
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['4. Index – Antwort']);
+  });
+
+  it('keeps alias-based solution notices and internal-ID source references distinct', async () => {
+    const base = solutionScheme.variableCodings[0];
+    const scheme = {
+      variableCodings: [
+        { ...base, id: 'raw', alias: 'VALUE', label: 'Basis' },
+        {
+          ...base,
+          id: 'derived',
+          alias: 'raw',
+          label: 'Abgeleitet',
+          sourceType: 'COPY_VALUE',
+          deriveSources: ['raw'],
+          codeModel: 'MANUAL_ONLY',
+          codes: [{ id: 1, type: 'FULL_CREDIT', score: 1, manualInstruction: 'Manuell prüfen' }],
+        },
+      ],
+    };
+    const { component, fixture } = await playerFixture(undefined, scheme, undefined, {
+      metadataItemsByUnit: {
+        u1: [
+          { id: 'base', variableReadOnlyId: 'raw', description: '4.', metadata: {} },
+          { id: 'derived', variableId: 'raw', description: '7.', metadata: {} },
+        ],
+      },
+    });
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['4. – Basis', '7. – Abgeleitet']);
+    expect(component.unavailableReviewCodingTitles).toEqual(['4. – Basis', '7. – Abgeleitet']);
+    const derived = component.codingSchemeAsText!.find((entry) => entry.id === 'raw')!;
+    expect(component.reviewCodingSource(derived)).toBe("Kopie von Variable '4. – Basis'");
+  });
+
+  it('distinguishes unnamed sources even if another caption resembles a generated name', async () => {
+    const base = solutionScheme.variableCodings[0];
+    const { component, fixture } = await playerFixture(undefined, {
+      variableCodings: [
+        { ...base, id: 'a', alias: 'A', label: '' },
+        { ...base, id: 'b', alias: 'B', label: '' },
+        { ...base, id: 'c', alias: 'C', label: 'Kodierung ohne Bezeichnung – Kodiervariable 1' },
+        {
+          ...base,
+          id: 'sum',
+          alias: 'SUM',
+          label: 'Summe',
+          sourceType: 'SUM_SCORE',
+          deriveSources: ['b', 'a'],
+        },
+      ],
+    });
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    const titles = headings(fixture);
+    expect(new Set(titles).size).toBe(4);
+    expect(titles).toContain('Kodierung ohne Bezeichnung – Kodiervariable 2');
+    expect(titles).toContain('Kodierung ohne Bezeichnung – Kodiervariable 3');
+    const sum = component.codingSchemeAsText!.find((entry) => entry.id === 'SUM')!;
+    expect(component.reviewCodingSource(sum)).toContain(
+      "'Kodierung ohne Bezeichnung – Kodiervariable 3, Kodierung ohne Bezeichnung – Kodiervariable 2'",
+    );
+  });
+
+  it('maps solver tokens through aliases while keeping the original formula', async () => {
+    const base = solutionScheme.variableCodings[0];
+    const expression = '${ arrival[0]:0:INC } - ${departure}';
+    const { component } = await playerFixture(undefined, {
+      variableCodings: [
+        { ...base, id: 'departure', alias: 'first', label: 'Abfahrt' },
+        { ...base, id: 'internal-arrival', alias: 'arrival', label: 'Ankunft' },
+        {
+          ...base,
+          id: 'duration',
+          alias: 'duration',
+          label: 'Fahrtdauer',
+          sourceType: 'SOLVER',
+          deriveSources: ['departure', 'internal-arrival'],
+          sourceParameters: { solverExpression: expression },
+        },
+      ],
+    });
+    const formula = component.codingSchemeAsText!.find((entry) => entry.id === 'duration')!;
+    expect(component.reviewSolverReferences(formula)).toBe(
+      '${ arrival[0]:0:INC } → Ankunft; ${departure} → Abfahrt',
+    );
+    expect(component.reviewCodingSource(formula)).toContain(expression);
+  });
+
+  it('keeps duplicate captions distinct when returning to review mode', async () => {
+    const base = solutionScheme.variableCodings[0];
+    const { component, fixture } = await playerFixture(undefined, {
+      variableCodings: [
+        { ...base, id: 'a', alias: 'A', label: '' },
+        { ...base, id: 'b', alias: 'B', label: '' },
+      ],
+    });
+    fixture.componentRef.setInput('reviewMode', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentRef.setInput('reviewMode', true);
+    fixture.detectChanges();
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(new Set(headings(fixture)).size).toBe(2);
+    expect(headings(fixture).every((title) => title.includes('Kodiervariable'))).toBe(true);
+  });
 
   it('shows aliased manual instructions, custom labels and searchable automatic rules', async () => {
     const { fixture, component } = await playerFixture(undefined, solutionScheme);
@@ -1064,7 +1592,7 @@ describe('UnitViewComponent', () => {
       Array.from(
         fixture.nativeElement.querySelectorAll('.coding-variable h4') as NodeListOf<HTMLElement>,
       ).map((heading) => heading.textContent?.trim().replace(/\s+/g, ' ')),
-    ).toEqual(['VAR_1 – Variable 1', 'VAR_2 – Variable 2']);
+    ).toEqual(['Variable 1', 'Variable 2']);
     expect(fixture.nativeElement.textContent).not.toContain('Audio 1');
     expect(fixture.nativeElement.textContent).not.toContain('Textinhalt');
     expect(fixture.nativeElement.querySelector('.coding-visibility-toggle')).toBeNull();
@@ -1076,14 +1604,14 @@ describe('UnitViewComponent', () => {
     const codingFilter = fixture.nativeElement.querySelector(
       'input[aria-label="Kodiervariablen filtern"]',
     ) as HTMLInputElement;
-    codingFilter.value = 'VAR_1';
+    codingFilter.value = 'Variable 1';
     codingFilter.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     expect(
       Array.from(
         fixture.nativeElement.querySelectorAll('.coding-variable h4') as NodeListOf<HTMLElement>,
       ).map((heading) => heading.textContent?.trim().replace(/\s+/g, ' ')),
-    ).toEqual(['VAR_1 – Variable 1']);
+    ).toEqual(['Variable 1']);
     codingFilter.value = '';
     codingFilter.dispatchEvent(new Event('input'));
     fixture.detectChanges();

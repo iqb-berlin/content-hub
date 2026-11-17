@@ -1,6 +1,6 @@
 # Musterlösung und Kodierinformation im Booklet-Review
 
-Refs #228, #238 und #285.
+Refs #228, #238, #285 und #290.
 
 Mit **Musterlösung anzeigen** wird eine aus dem Kodierschema ableitbare Lösung
 im Aufgabenplayer eingeblendet. Der Reviewbereich öffnet dabei den separaten Bereich
@@ -58,12 +58,93 @@ Beim Einblenden bleibt das zuletzt verwendete Kommentarfeld auch mit Kategorie-
 und Gruppenauswahl sichtbar. Falls nötig, wird die Scrollposition nach der
 Layoutänderung angepasst; der Fokus bleibt auf der betätigten Schaltfläche.
 
-Der Bereich **Kodierung** zeigt Variablen-ID und Bezeichnung, Herkunft und
-Vorverarbeitung, allgemeine Variablenanweisungen, Code-Bezeichnungen, Punkte,
-manuelle Kodieranweisungen und ausgeschriebene Regeln einschließlich ihrer
-Verknüpfung. Manuelle Texte bleiben auch bei Kodiervariablen mit Alias erhalten.
-Die Suche berücksichtigt auch diese Texte und Regeln. Die bestehende natürliche
-Sortierung und das Ausblenden von Audio-/Video-Variablen bleiben bestehen.
+Der Bereich **Kodierung** ermittelt Teilaufgabennummern lesend aus unterstützten
+ASPECT-Definitionen. Der Adapter prüft den Definitionstyp und die genaue
+VOUD-Version. Unterstützt werden 4.6.0, 4.7.0, 4.8.0, 4.9.0, 4.10.0, 4.11.0
+und 4.12.0: die automatische Abschnittsnummerierung seit ASPECT 2.5 bis 2.12.6
+sowie 3.0.1. Das sind Definitionsversionen, keine Player-Versionsnummern.
+Ältere Formate vor dieser Automatik (z. B. ASPECT 2.4), unbekannte zukünftige
+Versionen und deaktivierte Nummerierung liefern keine abgeleitete Nummer.
+Der Lückentext-Parser unterscheidet die Modellformen: `Checkbox` wird in allen
+unterstützten Formaten gelesen, der Lückentext-Knotentyp `Dropdown` erst in
+4.12.0 (ASPECT 3.0.1). Die Knotentypen sind mit den Modellen von
+[ASPECT 2.12.6](https://github.com/iqb-berlin/verona-modules-aspect/blob/b281f3353ee12b3d70d48cdca4a441d569f6763b/projects/common/models/elements/compound-elements/cloze/cloze.ts)
+und [3.0.1](https://github.com/iqb-berlin/verona-modules-aspect/blob/editor/3.0.1%2Bplayer/3.0.1/projects/common/models/elements/cloze.ts)
+abgeglichen.
+
+Die Antwortkennungen werden ebenfalls versionsabhängig gelesen: ASPECT 2.5
+(VOUD 4.6.0) verwendet nur interne IDs; ein zusätzlich gespeicherter Alias wird
+wie im Player ignoriert. Ab 2.6 (4.7.0) gibt es getrennte Aliasse. Bei vollständigen
+2.x-Modellen fällt ein leerer Alias auf die ID zurück; bei unvollständigen
+Modellen wird kein generierter Alias geraten. ASPECT 3.0.1 (4.12.0) behält einen
+explizit leeren Alias bei. Likert-Zeilen erhalten ihren Modelltyp aus dem
+Zeilenkontext, auch wenn die gespeicherte Zeile kein `type` enthält.
+Geometrie-Antworten werden aus Elementkennung und überwachtem Variablennamen
+gebildet und nehmen an derselben ID-/Alias-Konfliktprüfung teil. Bis 2.10
+(4.9.0) sind die überwachten Namen Strings; ab 2.11 (4.10.0) werden zusätzlich
+Objekte und erwartete Variablen berücksichtigt, mit Deduplizierung desselben
+Geometrie-Variablennamens. Nicht lesbare Geometriekennungen liefern keine
+abgeleiteten Nummern. Die Regeln folgen den Element-/Geometriemodellen von
+[2.5.0](https://github.com/iqb-berlin/verona-modules-aspect/blob/editor/2.5.0%2Bplayer/2.5.0/projects/common/models/elements/geometry/geometry.ts),
+[2.6.4](https://github.com/iqb-berlin/verona-modules-aspect/blob/editor/2.6.4%2Bplayer/2.6.4/projects/common/models/elements/element.ts),
+[2.11.6](https://github.com/iqb-berlin/verona-modules-aspect/blob/38d561bfc573c5e9e99b43006ecb99309ebfa0b3/projects/common/models/elements/geometry/geometry.ts)
+und [3.0.1](https://github.com/iqb-berlin/verona-modules-aspect/blob/editor/3.0.1%2Bplayer/3.0.1/projects/common/models/elements/element.ts).
+
+Gezählt werden die nicht ausgenommenen Abschnitte über alle normalen Seiten;
+dauerhaft sichtbare Stimulus-Seiten zählen nicht mit. Sichtbarkeitsregeln ändern
+den Zähler nicht. Eine Basisvariable im nummerierten Abschnitt erhält dessen
+Nummer, sofern interne ID und öffentlicher Antwortalias denselben eindeutigen
+VOUD-Knoten bestätigen. Widersprüchliche oder doppelte Aliasse sowie doppelte
+interne Kodier-IDs liefern keine Nummer. Das gilt auch für Quellvariablen
+abgeleiteter Kodierungen. Bei älteren Kodierschemata ohne getrennte interne ID
+bleibt eine eindeutige Zuordnung über die öffentliche Kennung möglich.
+Für ausgenommene Antwortabschnitte wird nur das am Original DHV004 aus
+#290 geprüfte Audio-Muster unterstützt: genau ein nummerierter Abschnitt auf
+der Seite, nur Audio/Schaltflächen in diesem Abschnitt, unmittelbar danach der
+Antwortabschnitt und genau eine Freigaberegel „dieses Audio > 0“.
+Bloße Nachbarschaft, Rich-Text-Überschriften, IDs und Tabellenpositionen reichen
+nicht aus. Der Adapter interpretiert keine beliebigen Sichtbarkeitsbeziehungen
+als fachliche Zuordnung. Abgeleitete Variablen erhalten eine Nummer nur, wenn
+alle internen Quellvariablen eindeutig dieselbe Nummer liefern; fehlende,
+seitenübergreifend gemischte oder zyklische Quellen liefern keine Nummer.
+
+Die Zählregeln wurden gegen den Quellcode von ASPECT
+[2.5.0](https://github.com/iqb-berlin/verona-modules-aspect/blob/editor/2.5.0%2Bplayer/2.5.0/projects/player/src/app/components/section/section.component.ts),
+[2.11.6](https://github.com/iqb-berlin/verona-modules-aspect/blob/38d561bfc573c5e9e99b43006ecb99309ebfa0b3/projects/player/src/app/components/section/section.component.ts)
+und [2.12.6](https://github.com/iqb-berlin/verona-modules-aspect/blob/b281f3353ee12b3d70d48cdca4a441d569f6763b/projects/player/src/app/components/section/section.component.ts)
+geprüft. Die Regression für #290 enthält eine strukturelle Projektion des
+Originalpakets: alle Seiten und Abschnitte, Nummerierungsflags, Freigaberegeln
+und Antwortkennungen bleiben erhalten; Medien, Aufgabentexte und Gestaltung
+sind entfernt. VOMD-Beschreibungen bleiben `null`, Kodierlabels leer und
+Indexnamen wie `05` unverändert. Erwartet wird ausdrücklich `05` → `4.`.
+
+Ohne sicher ableitbare Nummer werden vorhandene Item-/Kodierbezeichnungen oder
+„Kodierung ohne Bezeichnung“ angezeigt. Zusätzliche Bezeichnungen stehen als
+Untertitel neben einer ermittelten Nummer. Eine eindeutig zugeordnete
+Itembeschreibung aus einer vollständigen VOMD-Vorschau hat Vorrang vor dem
+Itemnamen im AP-Index. Die Vorschau ist auf 20 Items begrenzt; bei größerem
+`itemCount` wird sie nicht als vollständige Quelle für Bezeichnungen verwendet.
+Die Zuordnung nutzt `variableReadOnlyId` als interne ID; ohne diese Referenz
+werden `sourceVariable` beziehungsweise `variableId` zuerst als Alias und danach
+als interne ID aufgelöst. Eine unbekannte angegebene interne ID wird nicht durch
+einen Alias ersetzt. Widersprüchliche oder unvollständige Beschreibungen fallen
+auf die Kodierbezeichnung zurück. Technische Kennungen werden nicht als
+Bezeichnungen verwendet; eine explizite VOMD-Beschreibung darf der Item-ID gleichen.
+
+Gleiche Überschriften erhalten einen eindeutigen Zusatz, mit dem Quellen in
+abgeleiteten Kodierungen den Kodierkarten zugeordnet werden können. Bei Formeln
+steht die Zuordnung der Platzhalter zu den Karten unter dem Ausdruck. Hinweise
+auf Kodiervariablen ohne eindeutige Player-Lösung verwenden den Alias
+beziehungsweise die ID der Kodierkarte; Quellenverweise werden zuerst über die
+interne ID aufgelöst. Die Suche berücksichtigt die angezeigten Bezeichnungen,
+Anweisungen und Kodierregeln. Audio- und Video-Variablen bleiben ausgeblendet.
+
+Die Anzeige wird beim Eintreffen der VOUD oder vollständiger VOMD-Metadaten
+aktualisiert und benötigt keine Player-Bereitschaft. Der ASPECT-Adapter arbeitet
+ohne Browser-Globals und ohne DOM-Analyse. Die Original-VOUD wird weder
+verändert noch neu serialisiert, sondern unverändert an den Player übergeben.
+Paging- und Druckmodi beeinflussen die Nummern nicht. Andere Player verwenden
+weiterhin die vorhandenen Bezeichnungen; die VOUD-Auswertung ist ASPECT-spezifisch.
 
 Die automatisierte Prüfung verwendet synthetische Antwortdefinitionen und
 Kodierschemata. Komponententests prüfen das Puffern inkrementeller Antwortteile,
