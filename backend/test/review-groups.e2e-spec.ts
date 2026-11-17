@@ -56,6 +56,29 @@ describe("Review visibility, groups and synchronization API", () => {
     return config;
   }
 
+  async function readExport(
+    token: string,
+    path: string,
+    filters: Record<string, string> = {},
+  ) {
+    const result = await request(server)
+      .get(path)
+      .query(filters)
+      .set(headers(token))
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => done(null, Buffer.concat(chunks)));
+      })
+      .expect("Content-Disposition", /attachment;/)
+      .expect(200);
+    const ExcelJS = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(result.body);
+    return JSON.stringify(workbook.worksheets[0].getSheetValues());
+  }
+
   function realItemParser(dataSource: DataSource, catalog: FileCatalogCache) {
     return new UnitParserService(
       dataSource.getRepository(ApFile),
@@ -645,29 +668,154 @@ describe("Review visibility, groups and synchronization API", () => {
     });
   }
 
+  it.each([true, false])(
+    "limits SHARED overview and downloads to own comments and groups with Review activation %s",
+    async (enableReview) => {
+      const groupPeer = `group peer ${enableReview}`;
+      await request(server)
+        .post(api())
+        .set(headers(actors[2].token))
+        .send({ ...item, commentText: groupPeer })
+        .expect(201);
+      try {
+        await saveConfig({
+          visibilityMode: "SHARED",
+          enableReview,
+          confirmExistingComments: true,
+        });
+        const texts = ["own user", "foreign user", "own credential"].map(
+          (text) => `${text} ${enableReview}`,
+        );
+        for (let i = 0; i < texts.length; i++) {
+          await request(server)
+            .post(api())
+            .set(headers(actors[i].token))
+            .send({ ...item, commentText: texts[i] })
+            .expect(201);
+        }
+        for (const index of [0, 2]) {
+          const actor = actors[index];
+          const other = texts[index === 0 ? 2 : 0];
+          const access = await request(server)
+            .get(`/api/view/ap/${apId}/capabilities`)
+            .set(headers(actor.token))
+            .expect(200);
+          expect(access.body).toMatchObject({
+            canReadReviewComments: true,
+            canReview: enableReview,
+          });
+          const overview = await request(server)
+            .get(`${api()}/visible`)
+            .set(headers(actor.token))
+            .expect(200);
+          const visible = JSON.stringify(overview.body);
+          const xlsx = await readExport(
+            actor.token,
+            `${api()}/export/visible.xlsx`,
+          );
+          for (const output of [visible, xlsx]) {
+            expect(output).toContain(texts[index]);
+            expect(output).toContain(groupPeer);
+            expect(output).toContain("A changed");
+            expect(output).not.toContain("B-secret");
+            expect(output).not.toContain(config.groups[1].id);
+            expect(output).not.toContain(texts[1]);
+            expect(output).not.toContain(other);
+          }
+          const personal = await readExport(
+            actor.token,
+            `${api()}/export/mine.xlsx`,
+          );
+          const csv = await request(server)
+            .get(`${api()}/export/mine.csv`)
+            .set(headers(actor.token))
+            .expect(200);
+          for (const output of [personal, csv.text]) {
+            expect(output).toContain(texts[index]);
+            expect(output).not.toContain(texts[1]);
+            expect(output).not.toContain(other);
+            expect(output).not.toContain("B-secret");
+          }
+          const filtered = await readExport(
+            actor.token,
+            `${api()}/export/visible.xlsx`,
+            { groupId: config.groups[1].id },
+          );
+          expect(filtered).not.toContain("B-secret");
+          expect(filtered).not.toContain(config.groups[1].id);
+          await request(server)
+            .get(`${api()}/export/all.xlsx`)
+            .set(headers(actor.token))
+            .expect(403);
+          const thread = await request(server)
+            .get(api())
+            .query(item)
+            .set(headers(actor.token))
+            .expect(200);
+          expect(JSON.stringify(thread.body)).toContain("B-secret");
+        }
+        const managerExport = await readExport(
+          manager,
+          `${api()}/export/all.xlsx`,
+        );
+        expect(managerExport).toContain("B-secret");
+        expect(managerExport).toContain(texts[1]);
+      } finally {
+        await saveConfig({ visibilityMode: "GROUP", enableReview: true });
+      }
+    },
+  );
+
   it("filters visible exports and old own endpoints after membership changes", async () => {
-    const ExcelJS = await import("exceljs");
-    const readExport = async (token: string, path: string) => {
-      const result = await request(server)
-        .get(path)
-        .set(headers(token))
-        .buffer(true)
-        .parse((res, done) => {
-          const chunks: Buffer[] = [];
-          res.on("data", (chunk) => chunks.push(chunk));
-          res.on("end", () => done(null, Buffer.concat(chunks)));
-        })
+    await request(server)
+      .post(api())
+      .set(headers(actors[2].token))
+      .send({ ...item, commentText: "A credential comment" })
+      .expect(201);
+    for (const actor of [actors[0], actors[2]]) {
+      const participant = await readExport(
+        actor.token,
+        `${api()}/export/visible.xlsx`,
+      );
+      expect(participant).toContain(config.groups[0].id);
+      expect(participant).toContain("A changed");
+      expect(participant).toContain("A credential comment");
+      expect(participant).not.toContain(config.groups[1].id);
+      expect(participant).not.toContain("B-secret");
+      const personal = await readExport(
+        actor.token,
+        `${api()}/export/mine.xlsx`,
+      );
+      const ownText =
+        actor.kind === "user" ? "A changed" : "A credential comment";
+      const peerText =
+        actor.kind === "user" ? "A credential comment" : "A changed";
+      expect(personal).toContain(ownText);
+      expect(personal).not.toContain(peerText);
+      expect(personal).not.toContain("B-secret");
+      const csv = await request(server)
+        .get(`${api()}/export/mine.csv`)
+        .set(headers(actor.token))
+        .expect("Content-Type", /text\/csv/)
+        .expect("Content-Disposition", /attachment;/)
         .expect(200);
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(result.body);
-      return JSON.stringify(workbook.worksheets[0].getSheetValues());
-    };
-    const participant = await readExport(
-      actors[0].token,
-      `${api()}/export/visible.xlsx`,
-    );
-    expect(participant).toContain(config.groups[0].id);
-    expect(participant).not.toContain("B-secret");
+      expect(csv.text).toContain(ownText);
+      expect(csv.text).not.toContain(peerText);
+      expect(csv.text).not.toContain("B-secret");
+      for (const scope of ["visible", "mine"]) {
+        const foreign = await readExport(
+          actor.token,
+          `${api()}/export/${scope}.xlsx`,
+          { groupId: config.groups[1].id },
+        );
+        expect(foreign).not.toContain("B-secret");
+        expect(foreign).not.toContain(config.groups[1].id);
+      }
+      await request(server)
+        .get(`${api()}/export/all.xlsx`)
+        .set(headers(actor.token))
+        .expect(403);
+    }
     const all = await readExport(manager, `${api()}/export/all.xlsx`);
     expect(all).toContain(config.groups[0].id);
     expect(all).toContain(config.groups[1].id);
@@ -1062,10 +1210,19 @@ describe("Review visibility, groups and synchronization API", () => {
           .set(headers(actors[1].token))
           .expect(200)
       ).body;
-      expect(overview.find((c: any) => c.id === root.id)).toMatchObject({
+      expect(
+        overview.some((c: any) => c.id === root.id || c.id === reply.id),
+      ).toBe(false);
+      const ownerOverview = (
+        await request(server)
+          .get(`${api()}/visible`)
+          .set(headers(actors[0].token))
+          .expect(200)
+      ).body;
+      expect(ownerOverview.find((c: any) => c.id === root.id)).toMatchObject({
         upvotes: 2,
-        myVote: "UP",
-        canVote: true,
+        myVote: null,
+        canVote: false,
       });
       await request(server)
         .patch(`${api()}/${root.id}`)

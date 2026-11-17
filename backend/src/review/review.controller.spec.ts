@@ -44,6 +44,33 @@ describe("unit view access in capability responses", () => {
   );
 });
 
+describe("comment access in capability responses", () => {
+  it.each([
+    [false, ["review:participate"], true, true],
+    [true, ["review:participate"], true, true],
+    [false, ["review:manage"], true, true],
+    [false, ["item-explorer:view"], true, false],
+    [true, [], true, false],
+    [true, ["review:participate"], false, false],
+  ])(
+    "keeps comment access independent of Review activation (%j)",
+    async (enableReview, grants, identity, expected) => {
+      const controller = new ReviewController(
+        { resolve: async () => grants } as any,
+        {} as any,
+        { findOne: async () => ({ featureConfig: { enableReview } }) } as any,
+        {} as any,
+        {} as any,
+      );
+      const access = await controller.getCapabilities(
+        "ap",
+        identity ? { user: { sub: "me" } } : {},
+      );
+      expect(access.canReadReviewComments).toBe(expected);
+    },
+  );
+});
+
 describe("ReviewController stale memberships", () => {
   it.each(["user", "credential"] as const)(
     "removes a deleted %s while saving config and preserves live members and groups",

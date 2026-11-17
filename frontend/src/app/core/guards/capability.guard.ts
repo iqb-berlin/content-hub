@@ -22,3 +22,13 @@ export const reviewManageGuard = ((route) => {
     catchError(() => of(router.createUrlTree(['/view', id]))),
   );
 }) satisfies CanActivateFn;
+
+export const reviewCommentsGuard = ((route) => {
+  const api = inject(ApiService);
+  const router = inject(Router);
+  const id = route.paramMap.get('apId') || route.parent?.paramMap.get('apId') || '';
+  return api.getCapabilities(id).pipe(
+    map((access) => (access.canReadReviewComments ? true : router.createUrlTree(['/view', id]))),
+    catchError(() => of(router.createUrlTree(['/view', id]))),
+  );
+}) satisfies CanActivateFn;

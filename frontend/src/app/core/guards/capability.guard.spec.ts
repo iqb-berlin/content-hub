@@ -3,7 +3,11 @@ import { Router } from '@angular/router';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { describe, it, expect, vi } from 'vitest';
 import { ApiService } from '../services/api.service';
-import { explorerCapabilityGuard, reviewManageGuard } from './capability.guard';
+import {
+  explorerCapabilityGuard,
+  reviewCommentsGuard,
+  reviewManageGuard,
+} from './capability.guard';
 
 describe('Explorer route access', () => {
   it.each([true, false])('uses server permission %s', async (canViewExplorer) => {
@@ -68,5 +72,49 @@ describe('Review management route access', () => {
     );
     expect(await firstValueFrom(result as any)).toBe(redirect);
     TestBed.resetTestingModule();
+  });
+});
+
+describe('Review comment route access', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it.each([true, false])(
+    'uses comment access %s while the Booklet Review is disabled',
+    async (canReadReviewComments) => {
+      const redirect = {};
+      const api = {
+        getCapabilities: vi
+          .fn()
+          .mockReturnValue(of({ canReadReviewComments, canReview: false, canManageReview: false })),
+      };
+      TestBed.configureTestingModule({
+        providers: [
+          { provide: ApiService, useValue: api },
+          { provide: Router, useValue: { createUrlTree: vi.fn().mockReturnValue(redirect) } },
+        ],
+      });
+      const result = TestBed.runInInjectionContext(() =>
+        reviewCommentsGuard({
+          paramMap: { get: () => null },
+          parent: { paramMap: { get: () => 'ap' } },
+        } as any),
+      );
+      expect(await firstValueFrom(result as any)).toBe(canReadReviewComments ? true : redirect);
+      expect(api.getCapabilities).toHaveBeenCalledWith('ap');
+    },
+  );
+
+  it('fails closed if Review access cannot be loaded', async () => {
+    const redirect = {};
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ApiService, useValue: { getCapabilities: () => throwError(() => new Error()) } },
+        { provide: Router, useValue: { createUrlTree: () => redirect } },
+      ],
+    });
+    const result = TestBed.runInInjectionContext(() =>
+      reviewCommentsGuard({ paramMap: { get: () => 'ap' } } as any),
+    );
+    expect(await firstValueFrom(result as any)).toBe(redirect);
   });
 });
