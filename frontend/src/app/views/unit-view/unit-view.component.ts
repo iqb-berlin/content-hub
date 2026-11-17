@@ -317,19 +317,23 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
               @if (commentScope === 'item' || commentScope === 'coding') {
                 @if (commentItemsLoading) {
                   <p class="help-text" role="status">Items werden geladen …</p>
-                } @else if (commentItemsError) {
-                  <p class="alert alert-error" role="alert">{{ commentItemsError }}</p>
+                } @else if (
+                  commentItemsError || (commentScope === 'coding' && !codingCommentsAvailable)
+                ) {
+                  @if (commentItemsError) {
+                    <p class="alert alert-error" role="alert">{{ commentItemsError }}</p>
+                  } @else {
+                    <p class="help-text" role="status">
+                      Für diese Aufgabe ist keine kommentierbare Kodierung verfügbar.
+                    </p>
+                  }
                   <button
                     type="button"
                     class="btn btn-outline btn-sm comment-items-retry"
                     (click)="loadCommentItems()"
                   >
-                    Items erneut laden
+                    {{ commentItemsError ? 'Items erneut laden' : 'Kodierkommentare erneut laden' }}
                   </button>
-                } @else if (commentScope === 'coding' && !codingCommentsAvailable) {
-                  <p class="help-text" role="status">
-                    Für diese Aufgabe ist keine kommentierbare Kodierung verfügbar.
-                  </p>
                 } @else if (commentItems.length) {
                   <label class="comment-item-select">
                     Item

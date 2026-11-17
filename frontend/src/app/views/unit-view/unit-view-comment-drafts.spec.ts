@@ -311,6 +311,26 @@ describe('Unit review comment drafts', () => {
     );
   });
 
+  it('reloads coding comments after an incomplete catalog response', () => {
+    const counts = [{ unitId: 'U', itemId: 'I1', count: 0, codingCount: 1 }];
+    api.getItemCommentCounts
+      .mockReturnValueOnce(of({ revision: 'partial', codingUnitIds: [], counts }))
+      .mockReturnValue(of({ revision: 'recovered', codingUnitIds: ['U'], counts }));
+    enableItemComments(['CODING']);
+
+    expect(thread()).toBeUndefined();
+    const retry = fixture.nativeElement.querySelector('.comment-items-retry') as HTMLButtonElement;
+    expect(retry?.textContent?.trim()).toBe('Kodierkommentare erneut laden');
+    retry.click();
+    detect();
+
+    expect(api.getItemCommentCounts).toHaveBeenCalledTimes(2);
+    expect(thread()?.targetType).toBe('CODING');
+    expect(thread()?.itemId).toBe('I1');
+    expect(fixture.nativeElement.textContent).toContain(root.commentText);
+    expect(fixture.nativeElement.querySelector('.comment-items-retry')).toBeNull();
+  });
+
   it.each(['tab', 'collapse'] as const)(
     'preserves all drafts and their group through %s changes',
     (change) => {

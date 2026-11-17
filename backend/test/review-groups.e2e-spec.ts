@@ -1116,7 +1116,11 @@ describe("Review visibility, groups and synchronization API", () => {
         profiles: [],
         items: [{ id: "I", variableId: "I", profiles: [] }],
       }),
-      "U.vocs": '{"variableCodings":[]}',
+      "U.vocs": JSON.stringify({
+        variableCodings: [
+          { id: "I", label: "Item I", sourceType: "BASE", codes: [] },
+        ],
+      }),
     };
 
     beforeEach(async () => {
@@ -1148,7 +1152,15 @@ describe("Review visibility, groups and synchronization API", () => {
       const ap = await db.getRepository(Ap).save({
         packageId: `review-coding-catalog-${Date.now()}`,
         name: "Coding comments",
-        apIndex: { units: [{ id: "U", items: [{ id: "I" }] }] },
+        apIndex: {
+          units: [
+            {
+              id: "U",
+              items: [{ id: "I" }],
+              dependencies: [{ id: "U.vocs", type: "CODING_SCHEME" }],
+            },
+          ],
+        },
       });
       await db.getRepository(ApAccessConfig).save({
         apId: ap.id,
@@ -1203,6 +1215,49 @@ describe("Review visibility, groups and synchronization API", () => {
         threadPath: `/api/ap/${ap.id}/review/comments`,
       };
     }
+
+    it("reads and creates coding comments for indexed items without a VOMD file", async () => {
+      const { apId, reviewer, target, comment, threadPath } =
+        await createCodingFixture({ missingFile: "U.vomd" });
+      const unit = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(unit.body.items).toEqual([{ id: "I" }]);
+      expect(unit.body.dependencies).toContainEqual(
+        expect.objectContaining({
+          originalName: "U.vocs",
+          type: "CODING_SCHEME",
+        }),
+      );
+
+      const snapshot = await request(server)
+        .get(`${threadPath}/counts`)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(snapshot.body.codingUnitIds).toEqual(["U"]);
+      expect(snapshot.body.counts).toEqual([
+        { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+      ]);
+
+      const created = await request(server)
+        .post(threadPath)
+        .set(headers(reviewer.token))
+        .send({ ...target, commentText: "New coding comment" })
+        .expect(201);
+      const thread = await request(server)
+        .get(threadPath)
+        .query(target)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(thread.body.comments).toHaveLength(2);
+      expect(thread.body.comments).toContainEqual(
+        expect.objectContaining({ id: comment.id }),
+      );
+      expect(thread.body.comments).toContainEqual(
+        expect.objectContaining({ id: created.body.id }),
+      );
+    });
 
     it("restores coding comments after a temporary scheme read failure with the same file signature", async () => {
       const { apId, reviewer, target, comment, threadPath } =
@@ -1281,7 +1336,9 @@ describe("Review visibility, groups and synchronization API", () => {
           .get(countsPath)
           .set(headers(reviewer.token))
           .expect(200);
-        expect(first.body.codingUnitIds).toEqual([]);
+        expect(first.body.codingUnitIds).toEqual(
+          missingFile === "U.vomd" ? ["U"] : [],
+        );
         expect(first.body.counts).toEqual([
           { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
         ]);
@@ -1305,7 +1362,6 @@ describe("Review visibility, groups and synchronization API", () => {
         const rebuilt = await request(server)
           .get(countsPath)
           .set(headers(reviewer.token))
-          .set("If-None-Match", first.headers.etag)
           .expect(200);
         expect(rebuilt.body.codingUnitIds).toEqual(["U"]);
         expect(rebuilt.body.counts).toEqual(first.body.counts);

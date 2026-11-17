@@ -152,6 +152,24 @@ export class ItemListParser {
 
         // Uploading missing metadata or a missing scheme changes the source
         // signature. A failed read of a registered file needs a retry.
+        // Review can match a coding scheme to items from the AP index without VOMD.
+        if (parsed.codingSchemeRef) {
+          const vocsFile = allFiles.find(
+            (file) => file.originalName === parsed.codingSchemeRef,
+          );
+          if (vocsFile) {
+            try {
+              const vocsContent = await fs.readFile(vocsFile.filePath, "utf-8");
+              codingSchemes[parsed.unitId] = JSON.parse(vocsContent);
+            } catch {
+              cacheable = false;
+              this.logger.warn(
+                `Could not parse coding scheme ${parsed.codingSchemeRef}`,
+              );
+            }
+          }
+        }
+
         const vomdFileName = parsed.metadataRef;
         if (!vomdFileName) continue;
         const vomdFile = allFiles.find(
@@ -188,23 +206,6 @@ export class ItemListParser {
           vomdData.unitProfiles,
           "iqb_time_stimulus",
         );
-
-        if (parsed.codingSchemeRef) {
-          const vocsFile = allFiles.find(
-            (file) => file.originalName === parsed.codingSchemeRef,
-          );
-          if (vocsFile) {
-            try {
-              const vocsContent = await fs.readFile(vocsFile.filePath, "utf-8");
-              codingSchemes[parsed.unitId] = JSON.parse(vocsContent);
-            } catch {
-              cacheable = false;
-              this.logger.warn(
-                `Could not parse coding scheme ${parsed.codingSchemeRef}`,
-              );
-            }
-          }
-        }
 
         let studioComments = new Map<string, StudioItemComment[]>();
         if (
