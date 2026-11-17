@@ -90,12 +90,16 @@ abgeleiteten Nummern. Die Regeln folgen den Element-/Geometriemodellen von
 [2.11.6](https://github.com/iqb-berlin/verona-modules-aspect/blob/38d561bfc573c5e9e99b43006ecb99309ebfa0b3/projects/common/models/elements/geometry/geometry.ts)
 und [3.0.1](https://github.com/iqb-berlin/verona-modules-aspect/blob/editor/3.0.1%2Bplayer/3.0.1/projects/common/models/elements/element.ts).
 
-Gezählt werden die nicht ausgenommenen Abschnitte über alle normalen Seiten;
-dauerhaft sichtbare Stimulus-Seiten zählen nicht mit. Sichtbarkeitsregeln ändern
-den Zähler nicht. Eine Basisvariable im nummerierten Abschnitt erhält dessen
-Nummer, sofern interne ID und öffentlicher Antwortalias denselben eindeutigen
-VOUD-Knoten bestätigen. Widersprüchliche oder doppelte Aliasse sowie doppelte
-interne Kodier-IDs liefern keine Nummer. Das gilt auch für Quellvariablen
+Gezählt werden die nicht ausgenommenen Abschnitte in Dokumentreihenfolge.
+Im Normalmodus zählen dauerhaft sichtbare Stimulus-Seiten nicht mit; in beiden
+Druckansichten nummeriert ASPECT auch deren Abschnitte. Beim Wechsel der Ansicht
+werden Karten, Suche und Quellenverweise entsprechend aktualisiert.
+Sichtbarkeitsregeln ändern den Zähler nicht. Eine Basisvariable im nummerierten
+Abschnitt erhält dessen Nummer, sofern interne ID und öffentlicher Antwortalias
+denselben eindeutigen VOUD-Knoten bestätigen. Widersprüchliche oder doppelte Aliasse sowie doppelte
+interne Kodier-IDs liefern keine Nummer. Die IDs und effektiven Aliasse der
+Zustandsvariablen aus `stateVariables` nehmen ebenfalls an der Konfliktprüfung
+teil; sie erhalten selbst keine Abschnittsnummer. Das gilt auch für Quellvariablen
 abgeleiteter Kodierungen. Bei älteren Kodierschemata ohne getrennte interne ID
 bleibt eine eindeutige Zuordnung über die öffentliche Kennung möglich.
 Für ausgenommene Antwortabschnitte wird nur das am Original DHV004 aus
@@ -143,12 +147,16 @@ Die Anzeige wird beim Eintreffen der VOUD oder vollständiger VOMD-Metadaten
 aktualisiert und benötigt keine Player-Bereitschaft. Der ASPECT-Adapter arbeitet
 ohne Browser-Globals und ohne DOM-Analyse. Die Original-VOUD wird weder
 verändert noch neu serialisiert, sondern unverändert an den Player übergeben.
-Paging- und Druckmodi beeinflussen die Nummern nicht. Andere Player verwenden
-weiterhin die vorhandenen Bezeichnungen; die VOUD-Auswertung ist ASPECT-spezifisch.
+Die Nummern folgen dem Normal- beziehungsweise Drucklayout des Players. Andere
+Player verwenden weiterhin die vorhandenen Bezeichnungen; die VOUD-Auswertung
+ist ASPECT-spezifisch.
 
 Die automatisierte Prüfung verwendet synthetische Antwortdefinitionen und
 Kodierschemata. Komponententests prüfen das Puffern inkrementeller Antwortteile,
 Zeitstempel, veraltete Sitzungen, ausstehende Antwortmeldungen, abschließende
-Entlademeldungen, Druckansichten, Wiederherstellung und Aufgabenwechsel. Die
-Browserprüfung deckt den Booklet-Ablauf einschließlich offener Antwortformate,
-Teilmusterlösung und mobiler Anzeige in Chromium, Firefox und WebKit ab.
+Entlademeldungen, Druckansichten, Wiederherstellung und Aufgabenwechsel.
+Ein Browsertest mit dem echten ASPECT 3.0.1 vergleicht die gerenderte Nummer mit
+der Kodierkarte beim Wechsel in beide Druckansichten und zurück, einschließlich
+einer festen Stimulus-Seite. Die Browserprüfung deckt den Booklet-Ablauf
+einschließlich offener Antwortformate, Teilmusterlösung und mobiler Anzeige
+in Chromium, Firefox und WebKit ab.

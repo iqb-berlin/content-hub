@@ -341,6 +341,84 @@ test('shows readable coding and a reversible partial solution in the booklet rev
   expect(errors).toEqual([]);
 });
 
+test('real ASPECT review matches task numbers across both print modes and back', async ({
+  page,
+}) => {
+  await installContent(page, {
+    codingScheme: {
+      variableCodings: [
+        {
+          id: 'response',
+          alias: 'ANSWER',
+          label: 'Antwort',
+          sourceType: 'BASE',
+          codes: [{ id: 1, type: 'FULL_CREDIT', score: 1 }],
+        },
+      ],
+    },
+  });
+  const template = conditionalVisibilityDefinition();
+  const stimulus = template.pages[0];
+  const task = template.pages[1];
+  const section = task.sections[0];
+  const definition = {
+    ...template,
+    version: '4.12.0',
+    enableSectionNumbering: true,
+    stateVariables: [],
+    pages: [
+      { ...stimulus, sections: [{ ...stimulus.sections[0], visibilityRules: [] }] },
+      {
+        ...task,
+        sections: [
+          {
+            ...section,
+            visibilityRules: [],
+            elements: [
+              {
+                ...section.elements[0],
+                type: 'checkbox',
+                id: 'response',
+                alias: 'ANSWER',
+                label: 'Antwort',
+                value: false,
+                required: false,
+                requiredWarnMessage: '',
+                readOnly: false,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  await page.route('**/review-test/player*', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: readFileSync(join(__dirname, '../tmp/aspect-3.0.1.html'), 'utf8'),
+    }),
+  );
+  await page.route('**/review-test/review-u*', (route) => route.fulfill({ json: definition }));
+  await page.goto(reviewUrl);
+  const player = page.frameLocator('app-unit-view iframe');
+  await expect(player.getByRole('checkbox')).toBeVisible();
+  await page.getByRole('button', { name: 'Kodierung anzeigen', exact: true }).click();
+  const heading = page.locator('.coding-variable h4');
+  await expect(heading).toHaveText('1. – Antwort');
+  await expect(
+    player.locator('aspect-section').last().getByText('1.', { exact: true }),
+  ).toBeVisible();
+  for (const mode of ['view-all', 'print-ids', 'buttons']) {
+    await page.getByRole('combobox', { name: 'Seitendarstellung der Aufgabe' }).selectOption(mode);
+    const printing = mode !== 'buttons';
+    const number = printing ? '2.' : '1.';
+    await expect(player.getByRole('checkbox')).toBeVisible();
+    const sections = player.locator(printing ? 'aspect-print-section' : 'aspect-section');
+    await expect(sections.last().getByText(number, { exact: true })).toBeVisible();
+    await expect(heading).toHaveText(`${number} – Antwort`);
+  }
+});
+
 for (const mode of ['move', 'copy', 'conflict'] as const) {
   test(`real ASPECT review reconciles ${mode} drag solutions and preserves personal answers`, async ({
     page,

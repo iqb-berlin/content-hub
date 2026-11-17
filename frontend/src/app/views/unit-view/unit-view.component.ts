@@ -1347,7 +1347,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       variables,
       Array.isArray(this.unit?.items) ? this.unit.items : [],
       this.reviewMetadataItems,
-      readReviewTaskNumbers(this.definitionContent, variables),
+      readReviewTaskNumbers(this.definitionContent, variables, this.printMode !== 'off'),
     );
     this.reviewCodingPositions.clear();
     if (!this.reviewMode) return;
@@ -1717,6 +1717,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onPagingModeChange() {
+    this.updateReviewCodingLabels();
     const src = this.playerSrcDoc;
     if (!src) return;
     this.clearPlayerRefresh();

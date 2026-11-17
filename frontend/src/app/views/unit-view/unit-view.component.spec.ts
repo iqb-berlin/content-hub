@@ -177,6 +177,95 @@ describe('UnitViewComponent', () => {
     };
   }
 
+  it('updates numbered cards, search and source references when entering and leaving both print modes', async () => {
+    const base = solutionScheme.variableCodings[0];
+    const scheme = {
+      variableCodings: [
+        base,
+        {
+          ...base,
+          id: 'copy',
+          alias: 'COPY',
+          label: 'Übernahme',
+          sourceType: 'COPY_VALUE',
+          deriveSources: [base.id],
+        },
+      ],
+    };
+    const definition = JSON.stringify({
+      type: 'aspect-unit-definition',
+      version: '4.12.0',
+      enableSectionNumbering: true,
+      pages: [
+        { alwaysVisible: true, sections: [{ elements: [{ id: 'stimulus', type: 'text' }] }] },
+        { sections: [{ elements: [{ id: base.id, alias: base.alias, type: 'radio' }] }] },
+      ],
+    });
+    const { fixture, component, message } = await playerFixture(definition, scheme);
+    component.reviewCodingVisible = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(headings(fixture)).toEqual(['1. – Antwort', '1. – Übernahme']);
+    const copy = component.codingSchemeAsText!.find((entry) => entry.id === 'COPY')!;
+    for (const mode of ['view-all', 'print-ids', 'buttons'] as const) {
+      const previous = fixture.nativeElement.querySelector('iframe');
+      component.pagingMode = mode;
+      component.onPagingModeChange();
+      const number = mode === 'buttons' ? '1.' : '2.';
+      expect(component.reviewCodingSource(copy)).toBe(`Kopie von Variable '${number} – Antwort'`);
+      component.codingFilterText = number;
+      expect(component.visibleCodingSchemeAsText).toHaveLength(2);
+      component.codingFilterText = '';
+      await vi.waitFor(() => {
+        expect(fixture.nativeElement.querySelector('iframe')).not.toBeNull();
+        expect(fixture.nativeElement.querySelector('iframe')).not.toBe(previous);
+      });
+      const frame = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+      const send = vi.spyOn(frame.contentWindow!, 'postMessage');
+      await message({ type: 'vopReadyNotification' }, frame.contentWindow!);
+      expect(
+        send.mock.calls.find(([command]) => command.type === 'vopStartCommand')?.[0].unitDefinition,
+      ).toBe(definition);
+      expect(headings(fixture)).toEqual([`${number} – Antwort`, `${number} – Übernahme`]);
+    }
+    // A mode change must update cards even while the player source is unavailable.
+    component.playerSrcDoc = null;
+    component.pagingMode = 'view-all';
+    component.onPagingModeChange();
+    expect(component.reviewCodingTitle(component.codingSchemeAsText![0])).toBe('2.');
+  });
+
+  it.each(['4.11.0', '4.12.0'])(
+    'keeps descriptions for state-variable conflicts in %s',
+    async (version) => {
+      const base = solutionScheme.variableCodings[0];
+      const definition = JSON.stringify({
+        type: 'aspect-unit-definition',
+        version,
+        enableSectionNumbering: true,
+        stateVariables: [{ id: 'state', alias: base.alias, value: '0' }],
+        pages: [{ sections: [{ elements: [{ id: base.id, alias: base.alias, type: 'radio' }] }] }],
+      });
+      const { fixture, component } = await playerFixture(definition, {
+        variableCodings: [
+          base,
+          {
+            ...base,
+            id: 'copy',
+            alias: 'COPY',
+            label: 'Übernahme',
+            sourceType: 'COPY_VALUE',
+            deriveSources: [base.id],
+          },
+        ],
+      });
+      component.reviewCodingVisible = true;
+      fixture.changeDetectorRef.markForCheck();
+      await fixture.whenStable();
+      expect(headings(fixture)).toEqual(['Antwort', 'Übernahme']);
+    },
+  );
+
   it.each(['conflicting', 'duplicate'])(
     'shows the description without a number for %s VOUD aliases',
     async (ambiguity) => {

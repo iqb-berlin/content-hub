@@ -23,6 +23,10 @@ interface SectionEntry {
   value: RecordValue;
   nodes: ResponseNode[];
 }
+interface ResponseEntry {
+  node: ResponseNode;
+  section?: SectionEntry;
+}
 
 function record(value: unknown): value is RecordValue {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -142,6 +146,7 @@ const formats = new Map<string, AspectFormat>([
 export function readReviewTaskNumbers(
   definition: string | null,
   variables: readonly ReviewTaskVariable[],
+  printMode = false,
 ): Map<string, string> {
   const result = new Map<string, string>();
   let unit: unknown;
@@ -179,9 +184,12 @@ export function readReviewTaskNumbers(
           typeof section['ignoreNumbering'] !== 'boolean')
       )
         return result;
-      // Hidden sections are instantiated and counted too. Fixed stimulus pages are excluded.
+      // Hidden sections count too. Only the interactive layout excludes fixed
+      // stimulus pages; the print layout numbers every page in document order.
       const number =
-        !page['alwaysVisible'] && !section['ignoreNumbering'] ? `${++counter}.` : undefined;
+        (printMode || !page['alwaysVisible']) && !section['ignoreNumbering']
+          ? `${++counter}.`
+          : undefined;
       const nodes = elementNodes(section['elements'], format);
       if (!nodes) return result;
       sections.push({
@@ -193,7 +201,21 @@ export function readReviewTaskNumbers(
       });
     }
   }
-  const entries = sections.flatMap((section) => section.nodes.map((node) => ({ node, section })));
+  const entries: ResponseEntry[] = sections.flatMap((section) =>
+    section.nodes.map((node) => ({ node, section })),
+  );
+  const stateVariables = unit['stateVariables'] === undefined ? [] : unit['stateVariables'];
+  if (!Array.isArray(stateVariables)) return result;
+  for (const state of stateVariables) {
+    if (!record(state)) return result;
+    const id = state['id'];
+    // Unlike 2.x element models, state variables retain an explicit empty alias.
+    const alias = format.aliases === 'none' ? id : (state['alias'] ?? id);
+    if (typeof id !== 'string' || typeof alias !== 'string') return result;
+    // State responses can collide with section responses, but have no section
+    // of their own and must never acquire a task number.
+    entries.push({ node: { id, alias, type: 'state-variable' } });
+  }
   const byId = (id: unknown) => entries.filter((entry) => entry.node['id'] === id);
   // ID and alias namespaces remain separate; compare effective player identities.
   const byAlias = (alias: string) => entries.filter(({ node }) => node.alias === alias);
@@ -257,7 +279,12 @@ export function readReviewTaskNumbers(
       const aliases = byAlias(key);
       const legacy = !variable.alias || variable.alias === variable.id;
       const matches = canonical.length ? canonical : legacy ? aliases : [];
-      if (matches.length === 1 && aliases.length === 1 && matches[0] === aliases[0])
+      if (
+        matches.length === 1 &&
+        aliases.length === 1 &&
+        matches[0] === aliases[0] &&
+        matches[0].section
+      )
         number = sectionNumber(matches[0].section);
     } else if (Array.isArray(variable.deriveSources) && variable.deriveSources.length) {
       const sources = variable.deriveSources.map((id) => {

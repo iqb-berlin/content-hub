@@ -78,6 +78,91 @@ describe('readReviewTaskNumbers', () => {
     expect(readReviewTaskNumbers(JSON.stringify(definition), [answer]).get('05')).toBe('2.');
   });
 
+  it.each(['4.6.0', '4.7.0', '4.8.0', '4.9.0', '4.10.0', '4.11.0', '4.12.0'])(
+    'counts fixed sections in document order only in print mode (%s)',
+    (version) => {
+      const response = (id: string) => ({
+        id,
+        alias: id,
+        type: 'radio',
+        isRelevantForPresentationComplete: true,
+      });
+      const definition = {
+        ...unit(),
+        version,
+        pages: [
+          { sections: [numbered([response('first')])] },
+          {
+            alwaysVisible: true,
+            sections: [numbered([], true), numbered([response('fixed')])],
+          },
+          { sections: [numbered([response('last')])] },
+        ],
+      };
+      const variables = [
+        { id: 'first' },
+        { id: 'fixed' },
+        { id: 'last' },
+        { id: 'derived', sourceType: 'COPY_VALUE', deriveSources: ['last'] },
+      ];
+      const raw = JSON.stringify(definition);
+      expect([...readReviewTaskNumbers(raw, variables)]).toEqual([
+        ['first', '1.'],
+        ['last', '2.'],
+        ['derived', '2.'],
+      ]);
+      expect([...readReviewTaskNumbers(raw, variables, true)]).toEqual([
+        ['first', '1.'],
+        ['fixed', '2.'],
+        ['last', '3.'],
+        ['derived', '3.'],
+      ]);
+      expect(JSON.stringify(definition)).toBe(raw);
+    },
+  );
+
+  it.each(['4.7.0', '4.11.0', '4.12.0'])(
+    'rejects state-variable alias and canonical-ID conflicts, including derived codings (%s)',
+    (version) => {
+      for (const state of [
+        { id: 'state', alias: '05', value: '0' },
+        { id: 'response', alias: 'STATE', value: '0' },
+        { id: '05', value: '0' },
+      ]) {
+        const definition = { ...unit(), version, stateVariables: [state] };
+        const variables = [
+          answer,
+          { id: 'derived', sourceType: 'COPY_VALUE', deriveSources: ['response'] },
+        ];
+        for (const printMode of [false, true]) {
+          expect(readReviewTaskNumbers(JSON.stringify(definition), variables, printMode).size).toBe(
+            0,
+          );
+        }
+      }
+    },
+  );
+
+  it.each(['4.6.0', '4.7.0', '4.11.0', '4.12.0'])(
+    'keeps state aliases version-specific and never assigns state variables a section (%s)',
+    (version) => {
+      const definition = {
+        ...unit([numbered([{ ...element, id: '05', isRelevantForPresentationComplete: true }])]),
+        version,
+        stateVariables: [{ id: 'state', alias: '', value: '0' }],
+      };
+      expect([
+        ...readReviewTaskNumbers(JSON.stringify(definition), [{ id: '05' }, { id: 'state' }]),
+      ]).toEqual([['05', '1.']]);
+      definition.stateVariables[0].alias = '05';
+      expect(readReviewTaskNumbers(JSON.stringify(definition), [{ id: '05' }]).get('05')).toBe(
+        version === '4.6.0' ? '1.' : undefined,
+      );
+      definition.stateVariables = [{ id: '05', alias: 'STATE', value: '0' }];
+      expect(readReviewTaskNumbers(JSON.stringify(definition), [{ id: '05' }]).size).toBe(0);
+    },
+  );
+
   it.each([
     {
       name: 'only adjacency',
