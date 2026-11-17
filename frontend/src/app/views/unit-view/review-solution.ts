@@ -60,7 +60,7 @@ export function deriveReviewSolution(
   }
   if (!responses.size) {
     return unavailable(
-      'Keine eindeutige Musterlösung für den Player verfügbar. Vorhandene Kodieranweisungen und Lösungsregeln stehen im Reiter „Kodierung“.',
+      'Keine eindeutige Musterlösung für den Player verfügbar. Vorhandene Kodieranweisungen und Lösungsregeln stehen im Bereich „Kodierung“.',
     );
   }
 

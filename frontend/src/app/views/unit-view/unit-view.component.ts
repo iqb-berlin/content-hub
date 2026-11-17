@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectorRef,
   Component,
   OnInit,
@@ -7,6 +8,7 @@ import {
   ElementRef,
   Inject,
   Input,
+  Injector,
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
@@ -240,6 +242,30 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
       </div>
 
       <ng-template #panelContent>
+        @if (reviewMode && showCodingScheme) {
+          <section class="review-coding-panel" aria-label="Kodierung">
+            <button
+              class="btn btn-outline btn-sm btn-state"
+              type="button"
+              (click)="toggleReviewCoding()"
+              [attr.aria-expanded]="reviewCodingVisible"
+              aria-controls="review-coding-content"
+            >
+              {{ reviewCodingVisible ? 'Kodierung ausblenden' : 'Kodierung anzeigen' }}
+            </button>
+            @if (reviewCodingVisible) {
+              <div
+                id="review-coding-content"
+                class="review-coding-body"
+                role="region"
+                aria-label="Kodierinformationen"
+                tabindex="0"
+              >
+                <ng-container [ngTemplateOutlet]="codingContent"></ng-container>
+              </div>
+            }
+          </section>
+        }
         <div class="panel-tabs" role="group" aria-label="Zusatzdaten">
           @if (reviewMode) {
             <button
@@ -274,7 +300,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
               Metadaten
             </button>
           }
-          @if (showCodingScheme) {
+          @if (showCodingScheme && !reviewMode) {
             <button
               class="tab"
               type="button"
@@ -298,7 +324,11 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
           }
         </div>
 
-        <div class="panel-content">
+        <div
+          #reviewPanelScrollContent
+          class="panel-content"
+          (focusin)="rememberReviewCommentEditor($event)"
+        >
           @if (reviewTranscriptError) {
             <p class="help-text" role="status">{{ reviewTranscriptError }}</p>
           }
@@ -422,125 +452,8 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
             }
           }
 
-          @if (activeTab === 'coding') {
-            <div class="coding-content">
-              @if (reviewMode && !codingSchemeLoading) {
-                <div class="solution-info" role="status">
-                  <strong>{{
-                    solutionVisible ? 'Musterlösung eingeblendet' : 'Musterlösung'
-                  }}</strong>
-                  <p>{{ reviewSolution.prefill.message }}</p>
-                  @if (printMode !== 'off') {
-                    <p>Zum Anzeigen der Musterlösung eine interaktive Seitendarstellung wählen.</p>
-                  }
-                  @if (solutionRequestError) {
-                    <p role="alert">{{ solutionRequestError }}</p>
-                  }
-                  @if (reviewSolution.unavailableVariables.length) {
-                    <p>
-                      Ohne eindeutige Player-Lösung:
-                      {{ reviewSolution.unavailableVariables.join(', ') }}
-                    </p>
-                  }
-                  @if (solutionVisible) {
-                    <p>Beim Ausblenden werden die eigenen Eingaben wiederhergestellt.</p>
-                  }
-                </div>
-              }
-              @if (codingSchemeLoading) {
-                <p class="help-text">Kodierung wird geladen...</p>
-              } @else if (codingSchemeAsText?.length) {
-                <label class="coding-filter">
-                  <span>Kodiervariablen filtern</span>
-                  <input
-                    type="search"
-                    aria-label="Kodiervariablen filtern"
-                    placeholder="ID, Name oder Code"
-                    [(ngModel)]="codingFilterText"
-                  />
-                </label>
-                @if (!reviewMode && hiddenCodingVariableCount > 0) {
-                  <label class="coding-visibility-toggle">
-                    <input type="checkbox" [(ngModel)]="showAllCodingVariables" />
-                    <span>
-                      Alle Variablen anzeigen
-                      <small>({{ hiddenCodingVariableCount }} weitere)</small>
-                    </span>
-                  </label>
-                }
-                @if (visibleCodingSchemeAsText.length) {
-                  @for (coding of visibleCodingSchemeAsText; track coding.id) {
-                    <section class="coding-variable">
-                      <h4>
-                        {{ reviewMode ? coding.id : coding.label || coding.id }}
-                        @if (reviewMode && coding.label && coding.label !== coding.id) {
-                          <span> – {{ coding.label }}</span>
-                        }
-                      </h4>
-                      @if (reviewMode && coding.source) {
-                        <p class="help-text">{{ coding.source }}</p>
-                      }
-                      @if (reviewMode && coding.processing) {
-                        <p class="help-text">{{ coding.processing }}</p>
-                      }
-                      @if (coding.manualInstructionText) {
-                        <div class="coding-instruction">
-                          <strong>Variablenanweisung</strong>
-                          <div [innerHTML]="coding.manualInstructionText"></div>
-                        </div>
-                      }
-                      <div class="coding-codes">
-                        @for (code of coding.codes; track code.id) {
-                          <div class="coding-code">
-                            <strong>{{ reviewMode ? 'Code ' : '' }}{{ code.id }}</strong>
-                            <span class="coding-score"
-                              >({{ code.score
-                              }}{{
-                                reviewMode ? (code.score === 1 ? ' Punkt' : ' Punkte') : ''
-                              }})</span
-                            >
-                            <span>{{ code.label }}</span>
-                          </div>
-                          @if (reviewMode && code.description && code.description !== code.label) {
-                            <p>{{ code.description }}</p>
-                          }
-                          @if (code.manualInstructionText) {
-                            <div class="coding-instruction code-instruction">
-                              <strong>Kodieranweisung</strong>
-                              <div [innerHTML]="code.manualInstructionText"></div>
-                            </div>
-                          }
-                          @if (reviewMode && code.ruleSetDescriptions.length) {
-                            <div class="coding-instruction code-instruction">
-                              <strong>
-                                Kodierregeln:
-                                {{
-                                  code.ruleSetOperatorAnd
-                                    ? 'Alle folgenden Bedingungen müssen'
-                                    : 'Mindestens eine der folgenden Bedingungen muss'
-                                }}
-                                zutreffen
-                              </strong>
-                              <ul>
-                                @for (rule of code.ruleSetDescriptions; track $index) {
-                                  <li>{{ rule }}</li>
-                                }
-                              </ul>
-                            </div>
-                          }
-                        }
-                      </div>
-                    </section>
-                  }
-                } @else {
-                  <p class="help-text">Keine passende Kodiervariable gefunden.</p>
-                }
-              } @else if (codingSchemeError) {
-                <p class="help-text" role="alert">{{ codingSchemeError }}</p>
-              } @else {
-                <p class="help-text">Keine Kodierung verfügbar.</p>
-              }
-            </div>
+          @if (activeTab === 'coding' && !reviewMode) {
+            <ng-container [ngTemplateOutlet]="codingContent"></ng-container>
           }
 
           @if (activeTab === 'richtext') {
@@ -551,6 +464,123 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
                 <p class="help-text">Keine Zusatztexte verfügbar.</p>
               }
             </div>
+          }
+        </div>
+      </ng-template>
+
+      <ng-template #codingContent>
+        <div class="coding-content">
+          @if (reviewMode && !codingSchemeLoading) {
+            <div class="solution-info" role="status">
+              <strong>{{ solutionVisible ? 'Musterlösung eingeblendet' : 'Musterlösung' }}</strong>
+              <p>{{ reviewSolution.prefill.message }}</p>
+              @if (printMode !== 'off') {
+                <p>Zum Anzeigen der Musterlösung eine interaktive Seitendarstellung wählen.</p>
+              }
+              @if (solutionRequestError) {
+                <p role="alert">{{ solutionRequestError }}</p>
+              }
+              @if (reviewSolution.unavailableVariables.length) {
+                <p>
+                  Ohne eindeutige Player-Lösung:
+                  {{ reviewSolution.unavailableVariables.join(', ') }}
+                </p>
+              }
+              @if (solutionVisible) {
+                <p>Beim Ausblenden werden die eigenen Eingaben wiederhergestellt.</p>
+              }
+            </div>
+          }
+          @if (codingSchemeLoading) {
+            <p class="help-text">Kodierung wird geladen...</p>
+          } @else if (codingSchemeAsText?.length) {
+            <label class="coding-filter">
+              <span>Kodiervariablen filtern</span>
+              <input
+                type="search"
+                aria-label="Kodiervariablen filtern"
+                placeholder="ID, Name oder Code"
+                [(ngModel)]="codingFilterText"
+              />
+            </label>
+            @if (!reviewMode && hiddenCodingVariableCount > 0) {
+              <label class="coding-visibility-toggle">
+                <input type="checkbox" [(ngModel)]="showAllCodingVariables" />
+                <span>
+                  Alle Variablen anzeigen
+                  <small>({{ hiddenCodingVariableCount }} weitere)</small>
+                </span>
+              </label>
+            }
+            @if (visibleCodingSchemeAsText.length) {
+              @for (coding of visibleCodingSchemeAsText; track coding.id) {
+                <section class="coding-variable">
+                  <h4>
+                    {{ reviewMode ? coding.id : coding.label || coding.id }}
+                    @if (reviewMode && coding.label && coding.label !== coding.id) {
+                      <span> – {{ coding.label }}</span>
+                    }
+                  </h4>
+                  @if (reviewMode && coding.source) {
+                    <p class="help-text">{{ coding.source }}</p>
+                  }
+                  @if (reviewMode && coding.processing) {
+                    <p class="help-text">{{ coding.processing }}</p>
+                  }
+                  @if (coding.manualInstructionText) {
+                    <div class="coding-instruction">
+                      <strong>Variablenanweisung</strong>
+                      <div [innerHTML]="coding.manualInstructionText"></div>
+                    </div>
+                  }
+                  <div class="coding-codes">
+                    @for (code of coding.codes; track code.id) {
+                      <div class="coding-code">
+                        <strong>{{ reviewMode ? 'Code ' : '' }}{{ code.id }}</strong>
+                        <span class="coding-score"
+                          >({{ code.score
+                          }}{{ reviewMode ? (code.score === 1 ? ' Punkt' : ' Punkte') : '' }})</span
+                        >
+                        <span>{{ code.label }}</span>
+                      </div>
+                      @if (reviewMode && code.description && code.description !== code.label) {
+                        <p>{{ code.description }}</p>
+                      }
+                      @if (code.manualInstructionText) {
+                        <div class="coding-instruction code-instruction">
+                          <strong>Kodieranweisung</strong>
+                          <div [innerHTML]="code.manualInstructionText"></div>
+                        </div>
+                      }
+                      @if (reviewMode && code.ruleSetDescriptions.length) {
+                        <div class="coding-instruction code-instruction">
+                          <strong>
+                            Kodierregeln:
+                            {{
+                              code.ruleSetOperatorAnd
+                                ? 'Alle folgenden Bedingungen müssen'
+                                : 'Mindestens eine der folgenden Bedingungen muss'
+                            }}
+                            zutreffen
+                          </strong>
+                          <ul>
+                            @for (rule of code.ruleSetDescriptions; track $index) {
+                              <li>{{ rule }}</li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                    }
+                  </div>
+                </section>
+              }
+            } @else {
+              <p class="help-text">Keine passende Kodiervariable gefunden.</p>
+            }
+          } @else if (codingSchemeError) {
+            <p class="help-text" role="alert">{{ codingSchemeError }}</p>
+          } @else {
+            <p class="help-text">Keine Kodierung verfügbar.</p>
           }
         </div>
       </ng-template>
@@ -676,9 +706,32 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
         max-height: var(--review-content-height);
         overflow: hidden;
       }
+      .review-coding-panel {
+        display: flex;
+        flex-direction: column;
+        flex: 0 1 auto;
+        min-height: 0;
+        max-height: 50%;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .review-coding-panel > button {
+        flex: none;
+        align-self: flex-start;
+      }
+      .review-coding-body {
+        min-height: 0;
+        margin-top: 12px;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      .review-coding-panel + .panel-tabs {
+        margin-top: 0;
+      }
       .review-mode .meta-panel.split .panel-content {
         flex: 1;
-        min-height: 0;
+        min-height: min(180px, 50%);
         overflow-y: auto;
       }
       .review-mode .player-container.print-mode {
@@ -939,7 +992,14 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
           overflow: visible;
         }
         .review-mode .meta-panel.split .panel-content {
+          min-height: 0;
           max-height: none;
+        }
+        .review-coding-panel {
+          max-height: none;
+        }
+        .review-coding-body {
+          max-height: 45dvh;
         }
         .panel-resize-handle {
           display: none;
@@ -970,6 +1030,9 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
 })
 export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('playerFrame') playerFrame!: ElementRef<HTMLIFrameElement>;
+  @ViewChild('reviewPanelScrollContent')
+  private reviewPanelScrollContent?: ElementRef<HTMLElement>;
+  private reviewCommentEditor: HTMLTextAreaElement | null = null;
 
   @Input() apId = '';
   @Input() unitId = '';
@@ -998,6 +1061,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   activeTab: 'comments' | 'transcripts' | 'metadata' | 'coding' | 'richtext' = 'metadata';
   isNarrowLayout = false;
   reviewPanelCollapsed = false;
+  reviewCodingVisible = false;
   reviewPanelWidth = 360;
 
   // Feature config
@@ -1158,6 +1222,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     @Inject(AuthService) private auth: AuthService,
     @Inject(PendingPersonalSessionStorageService)
     private personalSession: PendingPersonalSessionStorageService,
+    @Inject(Injector) private injector: Injector,
   ) {}
 
   get printMode(): 'off' | 'on' | 'on-with-ids' {
@@ -1402,6 +1467,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   private loadUnit() {
     this.stopReviewPanelResize();
+    this.reviewCommentEditor = null;
     if (!this.apId || !this.unitId) return;
     const requestToken = ++this.unitLoadToken;
     this.unitRequest?.unsubscribe();
@@ -1522,8 +1588,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       this.printMode !== 'off'
     )
       return;
-    this.activeTab = 'coding';
+    this.reviewCodingVisible = true;
     this.reviewPanelCollapsed = false;
+    this.keepReviewCommentEditorVisible();
     this.changeDetector.markForCheck();
     if (!this.solutionVisible && this.reviewSolution.prefill.status !== 'available') return;
     this.solutionRequestError = '';
@@ -1727,6 +1794,45 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   toggleReviewPanel() {
     this.stopReviewPanelResize();
     this.reviewPanelCollapsed = !this.reviewPanelCollapsed;
+  }
+
+  rememberReviewCommentEditor(event: FocusEvent) {
+    if (this.reviewMode && event.target instanceof HTMLTextAreaElement) {
+      this.reviewCommentEditor = event.target;
+    }
+  }
+
+  toggleReviewCoding() {
+    this.reviewCodingVisible = !this.reviewCodingVisible;
+    if (this.reviewCodingVisible) this.keepReviewCommentEditorVisible();
+  }
+
+  private keepReviewCommentEditorVisible() {
+    const unitLoadToken = this.unitLoadToken;
+    // Expanding coding reduces the comment scroll area. Wait for its final size
+    // before revealing the current editor, without moving focus or recreating it.
+    afterNextRender(
+      {
+        write: () => {
+          if (
+            unitLoadToken !== this.unitLoadToken ||
+            !this.reviewMode ||
+            !this.reviewCodingVisible ||
+            this.reviewPanelCollapsed ||
+            this.activeTab !== 'comments'
+          )
+            return;
+          const content = this.reviewPanelScrollContent?.nativeElement;
+          if (!content) return;
+          const editor =
+            this.reviewCommentEditor && content.contains(this.reviewCommentEditor)
+              ? this.reviewCommentEditor
+              : content.querySelector<HTMLTextAreaElement>('.new-comment-form textarea');
+          editor?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+        },
+      },
+      { injector: this.injector },
+    );
   }
 
   startReviewPanelResize(event: PointerEvent) {

@@ -45,12 +45,20 @@ const playerHtml = `<!doctype html><html><body><main id="view">Warte auf Start</
   parent.postMessage({type:'vopReadyNotification'}, '*');
 </script></body></html>`;
 
-async function installContent(page: Page) {
+async function installContent(
+  page: Page,
+  options: { enableCommenting?: boolean; codingScheme?: object } = {},
+) {
   await installOidcSession(page, managerId, 'e2e-manager');
   await page.route(`**/api/view/ap/${apId}`, async (route) => {
     const response = await route.fetch();
     const data = await response.json();
-    data.featureConfig = { ...data.featureConfig, showMetadata: true, enableCommenting: false };
+    data.featureConfig = {
+      ...data.featureConfig,
+      showMetadata: true,
+      enableCommenting: options.enableCommenting === true,
+      ...(options.enableCommenting ? { commentTargets: ['UNIT', 'BOOKLET'] } : {}),
+    };
     await route.fulfill({ json: data });
   });
   await page.route(`**/api/view/ap/${apId}/sequences/review-navigation?*`, (route) =>
@@ -72,6 +80,7 @@ async function installContent(page: Page) {
         id,
         name: id === 'review-u1' ? 'Aufgabe 1' : 'Aufgabe 2',
         items: [],
+        codingScheme: options.codingScheme,
         dependencies: [
           { type: 'PLAYER', downloadUrl: '/review-test/player' },
           { type: 'UNIT_DEFINITION', downloadUrl: `/review-test/${id}` },
@@ -130,6 +139,74 @@ async function installContent(page: Page) {
     }),
   );
 }
+
+test('keeps the comment editor visible when expanding coding with category and group controls', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await installContent(page, {
+    enableCommenting: true,
+    codingScheme: {
+      variableCodings: [
+        {
+          id: 'ANSWER',
+          label: 'Antwort',
+          sourceType: 'BASE',
+          codeModel: 'MANUAL_ONLY',
+          manualInstruction: '<p>Sinngemäße Antworten akzeptieren.</p>'.repeat(20),
+          codes: [{ id: 1, type: 'FULL_CREDIT', score: 1 }],
+        },
+      ],
+    },
+  });
+  // Keep review permissions on the real API while making the form controls deterministic.
+  await page.route(`**/api/ap/${apId}/review/comments?*`, (route) =>
+    route.fulfill({
+      json: {
+        target: { targetType: 'UNIT', unitId: 'review-u1' },
+        revision: '1',
+        visibilityMode: 'GROUP',
+        groups: [{ id: 'review-group', name: 'Review-Gruppe', archived: false }],
+        defaultGroupId: 'review-group',
+        categories: [{ id: 'coding', name: 'Kodierung', archived: false }],
+        comments: [],
+      },
+    }),
+  );
+  await page.goto(reviewUrl);
+  const category = page.getByRole('combobox', { name: 'Kategorie für neuen Kommentar' });
+  const group = page.getByRole('combobox', { name: 'Review-Gruppe', exact: true });
+  await category.selectOption('coding');
+  const editor = page.getByRole('textbox', { name: /Kommentar zur Aufgabe/ });
+  const draft = 'Die Kodieranweisung soll auch sinngemäße Antworten berücksichtigen.';
+  await editor.fill(draft);
+  await editor.scrollIntoViewIfNeeded();
+  // Allow border rounding at the viewport edge; the editor itself must stay fully visible.
+  await expect(editor).toBeInViewport({ ratio: 0.98 });
+  await expect(page.getByRole('region', { name: 'Kodierinformationen' })).toHaveCount(0);
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await page.getByRole('button', { name: 'Kodierung anzeigen', exact: true }).click();
+    const coding = page.getByRole('region', { name: 'Kodierinformationen' });
+    // Visibility must include clipping by the inner scroll area, not merely DOM presence.
+    await expect(editor).toBeInViewport({ ratio: 0.98 });
+    await expect(coding).toBeInViewport({ ratio: 0.98 });
+    await expect(editor).toHaveValue(draft);
+    await expect(category).toHaveValue('coding');
+    await expect(group).toHaveValue('review-group');
+    await coding.hover();
+    await page.mouse.wheel(0, 200);
+    await expect.poll(() => coding.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    await expect(editor).toBeInViewport({ ratio: 0.98 });
+    await page.getByRole('button', { name: 'Kodierung ausblenden', exact: true }).click();
+    await expect(editor).toBeInViewport({ ratio: 0.98 });
+    await expect(editor).toHaveValue(draft);
+  }
+  await page.screenshot({
+    path: testInfo.outputPath('review-coding-comment-editor.png'),
+    fullPage: true,
+  });
+});
 
 test('shows readable coding and a reversible partial solution in the booklet review', async ({
   page,
@@ -498,7 +575,9 @@ test('keeps transcripts visible while hiding metadata across reload and task cha
     await expect(
       page.getByRole('heading', { name: 'Aufgabe 1 (review-u1)', exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Kodierung', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Kodierung anzeigen', exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Metadaten', exact: true })).toHaveCount(0);
     await expect(page.locator('.meta-dl')).toHaveCount(0);
     const transcriptsTab = page.getByRole('button', { name: 'Hörtranskripte', exact: true });
