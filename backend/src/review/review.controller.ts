@@ -143,6 +143,10 @@ export class ReviewController {
         grants.includes("review:manage") ||
         (config?.featureConfig?.enableReview === true &&
           grants.includes("review:participate")),
+      canReadReviewComments:
+        Boolean(req?.user?.sub) &&
+        (grants.includes("review:manage") ||
+          grants.includes("review:participate")),
       canManageReview: grants.includes("review:manage"),
       enableReview: config?.featureConfig?.enableReview === true,
     };

@@ -212,7 +212,11 @@ describe('ApStartComponent', () => {
     const route = createRouteStub();
     const api = {
       ...createApiStub(),
-      getCapabilities: vi.fn().mockReturnValue(of({ canReview: true, canViewExplorer: false })),
+      getCapabilities: vi
+        .fn()
+        .mockReturnValue(
+          of({ canReview: true, canReadReviewComments: true, canViewExplorer: false }),
+        ),
       getApStartPage: vi.fn().mockReturnValue(
         of({
           name: 'AP 1',
@@ -267,7 +271,11 @@ describe('ApStartComponent', () => {
     const route = createRouteStub();
     const api = {
       ...createApiStub(),
-      getCapabilities: vi.fn().mockReturnValue(of({ canReview: true, canViewExplorer: true })),
+      getCapabilities: vi
+        .fn()
+        .mockReturnValue(
+          of({ canReview: true, canReadReviewComments: true, canViewExplorer: true }),
+        ),
       getApStartPage: vi.fn().mockReturnValue(
         of({
           name: 'AP 1',
@@ -302,35 +310,49 @@ describe('ApStartComponent', () => {
     expect(entries.at(-1)?.classList.contains('review-card')).toBe(true);
   });
 
-  it('offers capability-only Review managers a visible management entry', async () => {
-    const route = createRouteStub();
-    const api = {
-      ...createApiStub(),
-      getCapabilities: vi
-        .fn()
-        .mockReturnValue(of({ canReview: true, canManageReview: true, canViewExplorer: false })),
-    };
+  it.each([
+    [true, true],
+    [false, true],
+    [false, false],
+  ])(
+    'offers Review comments with management rights %s and Review activation %s',
+    async (canManageReview, canReview) => {
+      const route = createRouteStub();
+      const api = {
+        ...createApiStub(),
+        getCapabilities: vi
+          .fn()
+          .mockReturnValue(
+            of({ canReview, canManageReview, canReadReviewComments: true, canViewExplorer: false }),
+          ),
+      };
 
-    await TestBed.configureTestingModule({
-      imports: [ApStartComponent],
-      providers: [
-        provideZonelessChangeDetection(),
-        provideRouter([]),
-        { provide: ActivatedRoute, useValue: route },
-        { provide: ApiService, useValue: api },
-        { provide: AuthService, useValue: createAuthStub({ isLoggedIn: true }) },
-      ],
-    }).compileComponents();
-    const fixture = TestBed.createComponent(ApStartComponent);
-    fixture.detectChanges();
-    const element = fixture.nativeElement as HTMLElement;
+      await TestBed.configureTestingModule({
+        imports: [ApStartComponent],
+        providers: [
+          provideZonelessChangeDetection(),
+          provideRouter([]),
+          { provide: ActivatedRoute, useValue: route },
+          { provide: ApiService, useValue: api },
+          { provide: AuthService, useValue: createAuthStub({ isLoggedIn: true }) },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(ApStartComponent);
+      fixture.detectChanges();
+      const element = fixture.nativeElement as HTMLElement;
 
-    const managementLink = element.querySelector(
-      'a[href="/view/ap-1/review/manage"]',
-    ) as HTMLAnchorElement | null;
-    expect(managementLink?.textContent).toContain('Review verwalten');
-    expect(router.navigate).not.toHaveBeenCalled();
-  });
+      const managementLink = element.querySelector(
+        'a[href="/view/ap-1/review/manage"]',
+      ) as HTMLAnchorElement | null;
+      if (canManageReview) expect(managementLink?.textContent).toContain('Review verwalten');
+      else expect(managementLink).toBeNull();
+      expect(element.querySelector('a[href="/view/ap-1/review/comments"]')?.textContent).toContain(
+        'Kommentare ansehen und herunterladen',
+      );
+      expect(element.querySelector('app-booklet-selection') !== null).toBe(canReview);
+      expect(router.navigate).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([
     ['showItemExplorerOnStartPage', 'a[href="/view/ap-1/item-explorer"]'],

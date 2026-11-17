@@ -263,7 +263,13 @@ interface ReviewConfig {
   template: `<a class="btn btn-outline btn-sm" [routerLink]="['/view', apId]">← Zur AP-Übersicht</a>
     <div class="page-header">
       <h1>Review</h1>
-      <p>Review vorbereiten und Rückmeldungen auswerten.</p>
+      <p>
+        {{
+          access?.canManageReview
+            ? 'Review vorbereiten und Rückmeldungen auswerten.'
+            : 'Kommentare ansehen und herunterladen.'
+        }}
+      </p>
     </div>
     @if (error) {
       <p class="alert alert-error" role="alert">{{ error }}</p>
@@ -272,13 +278,7 @@ interface ReviewConfig {
       <span
         ><strong>Review:</strong>
         {{
-          config
-            ? savedEnabled
-              ? 'Aktiv'
-              : 'Inaktiv'
-            : access?.canReview
-              ? 'Zugänglich'
-              : 'Nicht zugänglich'
+          config ? (savedEnabled ? 'Aktiv' : 'Inaktiv') : access?.enableReview ? 'Aktiv' : 'Inaktiv'
         }}</span
       >
       @if (access?.canManageReview) {
@@ -286,15 +286,17 @@ interface ReviewConfig {
       }
     </div>
     <nav class="review-navigation" aria-label="Review-Bereiche">
-      <button
-        class="btn"
-        [class.btn-primary]="activeSection === 'preparation'"
-        [attr.aria-pressed]="activeSection === 'preparation'"
-        (click)="activeSection = 'preparation'"
-      >
-        Vorbereitung
-      </button>
-      @if (access?.canReview) {
+      @if (access?.canManageReview) {
+        <button
+          class="btn"
+          [class.btn-primary]="activeSection === 'preparation'"
+          [attr.aria-pressed]="activeSection === 'preparation'"
+          (click)="activeSection = 'preparation'"
+        >
+          Vorbereitung
+        </button>
+      }
+      @if (access?.canReadReviewComments) {
         <button
           class="btn"
           [class.btn-primary]="activeSection === 'analysis'"
@@ -564,7 +566,7 @@ interface ReviewConfig {
       }
     }
     @if (activeSection === 'analysis') {
-      @if (access?.canReview) {
+      @if (access?.canReadReviewComments) {
         <section class="card analysis-card">
           <div class="readiness-header">
             <h2>Kommentare ({{ filteredComments.length }})</h2>
@@ -629,7 +631,7 @@ interface ReviewConfig {
                   {{
                     access?.canManageReview
                       ? 'Kommentare aller Personen'
-                      : 'Alle sichtbaren Kommentare'
+                      : 'Eigene Kommentare und Review-Gruppen'
                   }}
                 </option>
                 <option value="personal">Eigene Kommentare</option>
@@ -772,6 +774,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
     @Inject(ApiService) private api: ApiService,
   ) {}
   ngOnInit() {
+    if (this.route.snapshot.data?.['section'] === 'analysis') this.activeSection = 'analysis';
     this.apId =
       this.route.snapshot.paramMap.get('apId') ||
       this.route.parent?.snapshot.paramMap.get('apId') ||
@@ -781,7 +784,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
       if (this.access?.canManageReview && !this.readinessBusy) this.loadReadiness();
     }, 30000);
     this.poll = setInterval(() => {
-      if (this.access?.canReview) this.loadComments();
+      if (this.access?.canReadReviewComments) this.loadComments();
     }, 8000);
   }
   ngOnDestroy() {
@@ -795,7 +798,8 @@ export class ReviewComponent implements OnInit, OnDestroy {
       this.api.getCapabilities(this.apId).subscribe({
         next: (access) => {
           this.access = access;
-          if (!access.canManageReview && access.canReview) this.activeSection = 'analysis';
+          if (!access.canManageReview && access.canReadReviewComments)
+            this.activeSection = 'analysis';
           if (access.canManageReview && reloadConfig) {
             this.loadConfig();
             this.loadReadiness();
@@ -807,9 +811,11 @@ export class ReviewComponent implements OnInit, OnDestroy {
                 error: () => (this.error = 'Review konnte nicht geladen werden.'),
               }),
             );
+          }
+          if (access.canReadReviewComments) {
             this.loadComments();
           } else {
-            this.error = 'Review ist deaktiviert oder nicht zugänglich.';
+            this.error = 'Kommentare sind nicht zugänglich.';
             this.comments = [];
           }
         },

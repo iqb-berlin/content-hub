@@ -95,7 +95,7 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
           </div>
         }
 
-        @if (capabilityAccess?.canReview) {
+        @if (capabilityAccess?.canReadReviewComments) {
           <section class="card section-card review-card" aria-labelledby="review-heading">
             <div class="section-icon">💬</div>
             <h3 id="review-heading">Review</h3>
@@ -104,12 +104,17 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
                 >Review verwalten</a
               >
             }
-            <p>Testheft auswählen und direkt im Review-Arbeitsplatz öffnen.</p>
-            <app-booklet-selection
-              [apId]="apId"
-              [booklets]="reviewBooklets"
-              actionLabel="Review öffnen"
-            />
+            <a class="btn btn-outline btn-sm" [routerLink]="['/view', apId, 'review', 'comments']"
+              >Kommentare ansehen und herunterladen</a
+            >
+            @if (capabilityAccess?.canReview) {
+              <p>Testheft auswählen und direkt im Review-Arbeitsplatz öffnen.</p>
+              <app-booklet-selection
+                [apId]="apId"
+                [booklets]="reviewBooklets"
+                actionLabel="Review öffnen"
+              />
+            }
           </section>
         }
       </div>

@@ -212,7 +212,7 @@ export class CommentsService {
     const mode = await this.reviewPolicy.prepareVisibility(apId, actor);
     const comments = await this.findByAp(apId);
     return comments.filter((comment) =>
-      this.reviewPolicy.canViewComment(mode, actor, comment),
+      this.reviewPolicy.canViewOverviewComment(mode, actor, comment),
     );
   }
 
@@ -1138,9 +1138,15 @@ export class CommentsService {
       for (const parent of parents) {
         if (
           !requestActor ||
-          this.reviewPolicy.canViewComment(mode, requestActor, parent) ||
+          (actor?.visible
+            ? this.reviewPolicy.canViewOverviewComment(
+                mode,
+                requestActor,
+                parent,
+              )
+            : this.reviewPolicy.canViewComment(mode, requestActor, parent)) ||
           // Match the neutral tombstones exposed by the thread endpoint.
-          (parent.deletedAt && mode !== "GROUP")
+          (!actor?.visible && parent.deletedAt && mode !== "GROUP")
         )
           visibleIds.add(parent.id);
       }

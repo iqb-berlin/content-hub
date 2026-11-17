@@ -178,7 +178,18 @@ enable comment targets. Managers can export comments as:
 - JSON
 - XLSX
 
-Non-manager users can export only the subset they are allowed to see.
+Review participants open **Kommentare ansehen und herunterladen** on the AP start page
+(`/view/:apId/review/comments`). The comment overview offers **Eigene Kommentare** as CSV or
+XLSX and **Eigene Kommentare und Review-Gruppen** as XLSX, using the same display filters unless
+**Anzeigefilter beim Export ignorieren** is selected. The overview and group export contain only
+the participant's own contributions and visible comments from their current, non-archived Review
+groups, including in `SHARED` mode. `PRIVATE` still excludes other authors' comments. Changing
+filters never broadens this server-side boundary. Thread discussions retain their configured
+visibility. The management page and the export of all groups remain restricted to Review managers.
+
+Comment access uses `canReadReviewComments` and remains available with `review:participate` or
+`review:manage` when the Booklet Review is deactivated. `canReview` continues to control the
+Booklet workspace; the comment page does not request its manifest when Review is deactivated.
 
 For item comments, managers also choose a visibility mode. Existing APs default to `PRIVATE`;
 `SHARED` must be selected explicitly before authenticated AP users can see and reply to each

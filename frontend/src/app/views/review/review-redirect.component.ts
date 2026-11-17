@@ -23,7 +23,9 @@ export class ReviewRedirectComponent implements OnInit {
       next: (access) => {
         const target = access?.canManageReview
           ? ['/view', apId, 'review', 'manage']
-          : ['/view', apId];
+          : access?.canReadReviewComments
+            ? ['/view', apId, 'review', 'comments']
+            : ['/view', apId];
         void this.router.navigate(target, { replaceUrl: true });
       },
       error: () => void this.router.navigate(['/view', apId], { replaceUrl: true }),

@@ -13,7 +13,7 @@ const explorerAps: Record<string, string> = {
   webkit: '10000000-0000-4000-8000-000000000306',
 };
 
-test('credential login rejects a bad password and survives reload after a valid login', async ({
+test('credential login survives reload and downloads comments while Review is disabled', async ({
   page,
 }) => {
   await page.goto(`/credential-login/${credentialAp}`);
@@ -30,6 +30,34 @@ test('credential login rejects a bad password and survives reload after a valid 
   await page.reload();
   await expect(page).toHaveURL(`/view/${credentialAp}`);
   await expect(page.getByRole('link', { name: /Item-Explorer/ })).toBeVisible();
+
+  const manifestRequests: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === `/api/view/ap/${credentialAp}/review`)
+      manifestRequests.push(request.url());
+  });
+  await page.getByRole('link', { name: 'Kommentare ansehen und herunterladen' }).click();
+  await expect(page).toHaveURL(`/view/${credentialAp}/review/comments`);
+  await expect(page.locator('.review-status')).toContainText('Inaktiv');
+  await expect(page.getByRole('button', { name: 'Vorbereitung', exact: true })).toHaveCount(0);
+  for (const [scope, format] of [
+    ['personal', 'xlsx'],
+    ['personal', 'csv'],
+    ['visible', 'xlsx'],
+  ]) {
+    await page.getByRole('combobox', { name: 'Exportumfang' }).selectOption(scope);
+    if (scope === 'personal')
+      await page.getByRole('combobox', { name: 'Format' }).selectOption(format);
+    const downloaded = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Exportieren', exact: true }).click();
+    const download = await downloaded;
+    expect(download.suggestedFilename()).toMatch(new RegExp(`\\.${format}$`));
+    expect(await download.failure()).toBeNull();
+  }
+  await page.reload();
+  await expect(page).toHaveURL(`/view/${credentialAp}/review/comments`);
+  await expect(page.getByRole('heading', { name: /^Kommentare \(/ })).toBeVisible();
+  expect(manifestRequests).toEqual([]);
 });
 
 test('unit navigation renders real ASPECT content and applies display modes', async ({ page }) => {

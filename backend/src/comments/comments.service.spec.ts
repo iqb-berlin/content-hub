@@ -687,9 +687,25 @@ describe("CommentsService", () => {
     {
       mode: "PRIVATE",
       deleted: true,
-      expected: true,
+      expected: false,
       visible: true,
       manager: false,
+    },
+    {
+      mode: "SHARED",
+      deleted: false,
+      expected: false,
+      visible: true,
+      manager: false,
+      foreignGroup: true,
+    },
+    {
+      mode: "SHARED",
+      deleted: true,
+      expected: false,
+      visible: true,
+      manager: false,
+      foreignGroup: true,
     },
     {
       mode: "PRIVATE",
