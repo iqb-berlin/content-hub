@@ -146,7 +146,7 @@ describe('UnitViewComponent', () => {
 
   it('shows aliased manual instructions, custom labels and searchable automatic rules', async () => {
     const { fixture, component } = await playerFixture(undefined, solutionScheme);
-    component.activeTab = 'coding';
+    component.reviewCodingVisible = true;
     fixture.changeDetectorRef.markForCheck();
     await fixture.whenStable();
     const panel = fixture.nativeElement.querySelector('.coding-content') as HTMLElement;
@@ -159,6 +159,23 @@ describe('UnitViewComponent', () => {
     expect(component.visibleCodingSchemeAsText).toHaveLength(1);
     component.codingFilterText = 'unbekannt';
     expect(component.visibleCodingSchemeAsText).toHaveLength(0);
+  });
+
+  it('keeps the coding tab available in the ordinary unit view', async () => {
+    const { fixture, component } = await playerFixture(undefined, solutionScheme);
+    fixture.componentRef.setInput('reviewMode', false);
+    fixture.componentRef.setInput('featureConfigOverride', { showCodingScheme: true });
+    fixture.detectChanges();
+    component.togglePanel();
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('.review-coding-panel')).toBeNull();
+    const tab = fixture.nativeElement.querySelector('.panel-tabs button') as HTMLButtonElement;
+    expect(tab.textContent?.trim()).toBe('Kodierung');
+    expect(tab.getAttribute('aria-pressed')).toBe('true');
+    expect(fixture.nativeElement.querySelector('.coding-content').textContent).toContain(
+      'Allgemeine Hinweise zur Antwort',
+    );
   });
 
   it('keeps toggle-button coding readable without claiming an unverified scalar player solution', async () => {
@@ -395,7 +412,8 @@ describe('UnitViewComponent', () => {
     await fixture.whenStable();
     expect(component.solutionVisible).toBe(false);
     expect(component.reviewPanelCollapsed).toBe(false);
-    expect(component.activeTab).toBe('coding');
+    expect(component.reviewCodingVisible).toBe(true);
+    expect(component.activeTab).toBe('comments');
     expect(postMessage).toHaveBeenCalledTimes(1);
     expect(fixture.nativeElement.querySelector('.solution-info').textContent).toContain(
       'Keine eindeutige Musterlösung',
@@ -1003,7 +1021,7 @@ describe('UnitViewComponent', () => {
     const tabs = Array.from(
       fixture.nativeElement.querySelectorAll('.panel-tabs .tab') as NodeListOf<HTMLButtonElement>,
     ).map((button) => button.textContent?.trim());
-    expect(tabs).toEqual(['Kommentare', 'Metadaten', 'Kodierung']);
+    expect(tabs).toEqual(['Kommentare', 'Metadaten']);
     expect(component.activeTab).toBe('comments');
     const commentScope = fixture.nativeElement.querySelector(
       '.comment-scope-select select',
@@ -1038,7 +1056,9 @@ describe('UnitViewComponent', () => {
     expect(fixture.nativeElement.querySelector('.meta-dl').textContent).toContain('Deutsch');
     expect(fixture.nativeElement.textContent).not.toContain('Items (');
     expect(fixture.nativeElement.textContent).not.toContain('Abhängigkeiten');
-    (fixture.nativeElement.querySelectorAll('.panel-tabs .tab')[2] as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('.review-coding-panel button') as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
     expect(
       Array.from(
@@ -1147,6 +1167,7 @@ describe('Review panel interactions', () => {
       null as any,
       null as any,
       { markForCheck: vi.fn() } as any,
+      null as any,
       null as any,
       null as any,
     );

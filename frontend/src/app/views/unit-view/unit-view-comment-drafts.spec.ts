@@ -336,7 +336,7 @@ describe('Unit review comment drafts', () => {
     (change) => {
       enterDrafts();
       const original = thread();
-      if (change === 'tab') fixture.componentInstance.activeTab = 'coding';
+      if (change === 'tab') fixture.componentInstance.activeTab = 'metadata';
       else fixture.componentInstance.reviewPanelCollapsed = true;
       detect();
       expect(thread()).toBeUndefined();
@@ -363,6 +363,75 @@ describe('Unit review comment drafts', () => {
     expect(thread()!.newCommentText).toBe('Testheftentwurf');
   });
 
+  it.each(['unit', 'item', 'booklet'] as const)(
+    'keeps the %s comment editor mounted while independently toggling coding',
+    async (scope) => {
+      enableItemComments();
+      select('.comment-scope-select select', scope);
+      enterDrafts();
+      await fixture.whenStable();
+      const original = thread();
+      const component = fixture.componentInstance;
+      component.codingSchemeAsText = [
+        {
+          id: 'ANSWER',
+          label: 'Antwort',
+          source: '',
+          hasManualInstruction: true,
+          manualInstructionText: 'Sinngemäße Antworten akzeptieren.',
+          codes: [],
+        },
+      ];
+      detect();
+      const toggle = fixture.nativeElement.querySelector(
+        '.review-coding-panel button',
+      ) as HTMLButtonElement;
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      expect(fixture.nativeElement.querySelector('.coding-content')).toBeNull();
+
+      toggle.click();
+      detect();
+      await fixture.whenStable();
+      expect(toggle.getAttribute('aria-expanded')).toBe('true');
+      expect(component.activeTab).toBe('comments');
+      expect(fixture.nativeElement.querySelector('.coding-content').textContent).toContain(
+        'Sinngemäße Antworten akzeptieren.',
+      );
+      const filter = fixture.nativeElement.querySelector(
+        'input[aria-label="Kodiervariablen filtern"]',
+      ) as HTMLInputElement;
+      filter.value = 'Antwort';
+      filter.dispatchEvent(new Event('input'));
+      detect();
+      expect(thread()).toBe(original);
+      expectDrafts();
+      expect(fixture.nativeElement.querySelector('.new-comment-form textarea').value).toBe(
+        'Neuer Kommentar',
+      );
+
+      toggle.click();
+      detect();
+      expect(fixture.nativeElement.querySelector('.coding-content')).toBeNull();
+      expect(thread()).toBe(original);
+      expectDrafts();
+      toggle.click();
+      detect();
+      await fixture.whenStable();
+      expect(
+        fixture.nativeElement.querySelector('input[aria-label="Kodiervariablen filtern"]').value,
+      ).toBe('Antwort');
+      expect(thread()).toBe(original);
+      expectDrafts();
+
+      component.activeTab = 'metadata';
+      detect();
+      expect(fixture.nativeElement.querySelector('.coding-content')).not.toBeNull();
+      component.activeTab = 'comments';
+      detect();
+      expectDrafts();
+    },
+  );
+
   it('preserves drafts across asynchronous unit loads and isolates package identities', () => {
     enterDrafts();
     const response = new Subject<any>();
@@ -387,7 +456,7 @@ describe('Unit review comment drafts', () => {
 
   it('keeps the original edit version after remount and clears only successfully saved drafts', () => {
     enterDrafts();
-    fixture.componentInstance.activeTab = 'coding';
+    fixture.componentInstance.activeTab = 'metadata';
     detect();
     api.getReviewCommentThread.mockReturnValue(
       of({
@@ -413,7 +482,7 @@ describe('Unit review comment drafts', () => {
     'clears hidden drafts when the session changes',
     (nextToken) => {
       enterDrafts();
-      fixture.componentInstance.activeTab = 'coding';
+      fixture.componentInstance.activeTab = 'metadata';
       detect();
       token = nextToken;
       currentUser$.next(null);

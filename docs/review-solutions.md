@@ -1,10 +1,11 @@
 # Musterlösung und Kodierinformation im Booklet-Review
 
-Refs #228 und #238.
+Refs #228, #238 und #285.
 
 Mit **Musterlösung anzeigen** wird eine aus dem Kodierschema ableitbare Lösung
-im Aufgabenplayer eingeblendet. Der Reviewbereich öffnet dabei den Reiter
-**Kodierung** mit dem Ergebnis und den zugehörigen Anweisungen. Beim Ausblenden
+im Aufgabenplayer eingeblendet. Der Reviewbereich öffnet dabei den separaten Bereich
+**Kodierung** mit dem Ergebnis und den zugehörigen Anweisungen. Der ausgewählte
+Reiter und begonnene Kommentare bleiben erhalten. Beim Ausblenden
 werden die zuvor vom Player gemeldeten eigenen Eingaben und die aktuelle Seite
 wiederhergestellt. Eingaben im Lösungsmodus verändern diesen vorherigen Stand
 nicht. Bei noch nicht gemeldeten Eingaben wartet die Umschaltung auf einen
@@ -47,7 +48,17 @@ Schaltflächen-Gruppen werden über die Kodierinformation erläutert; eine skala
 Antwortvorgabe wird dafür im Review nicht verwendet, weil sie im geprüften
 ASPECT-Player nicht zuverlässig dargestellt wird.
 
-Der Reiter **Kodierung** zeigt Variablen-ID und Bezeichnung, Herkunft und
+Mit **Kodierung anzeigen** lässt sich der standardmäßig geschlossene Bereich unabhängig
+von den Reitern **Kommentare** und **Metadaten** öffnen. Kodierung und Kommentare
+sind gleichzeitig sichtbar und auf großen Bildschirmen getrennt scrollbar. Auf
+schmalen Bildschirmen stehen sie untereinander; die Kodierung behält eine begrenzte
+Scrollfläche. **Kodierung ausblenden** schließt nur die Kodierinformation und erhält
+Kommentarentwürfe und den eingegebenen Suchbegriff.
+Beim Einblenden bleibt das zuletzt verwendete Kommentarfeld auch mit Kategorie-
+und Gruppenauswahl sichtbar. Falls nötig, wird die Scrollposition nach der
+Layoutänderung angepasst; der Fokus bleibt auf der betätigten Schaltfläche.
+
+Der Bereich **Kodierung** zeigt Variablen-ID und Bezeichnung, Herkunft und
 Vorverarbeitung, allgemeine Variablenanweisungen, Code-Bezeichnungen, Punkte,
 manuelle Kodieranweisungen und ausgeschriebene Regeln einschließlich ihrer
 Verknüpfung. Manuelle Texte bleiben auch bei Kodiervariablen mit Alias erhalten.
