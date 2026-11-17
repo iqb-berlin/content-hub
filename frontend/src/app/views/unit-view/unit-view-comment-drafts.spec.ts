@@ -64,6 +64,7 @@ describe('Unit review comment drafts', () => {
     api.getItemCommentCounts.mockReturnValue(
       of({
         revision: '1',
+        codingUnitIds: ['U'],
         counts: [
           { unitId: 'U', itemId: 'I2', count: 0, codingCount: 0 },
           { unitId: 'U', itemId: 'I1', count: 0, codingCount: 0 },
@@ -283,6 +284,51 @@ describe('Unit review comment drafts', () => {
     expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain(
       'Für diese Aufgabe sind keine kommentierbaren Items verfügbar.',
     );
+  });
+
+  it('keeps coding drafts separate from item drafts and handles units without a coding scheme', () => {
+    enableItemComments(['ITEM', 'CODING']);
+    expect(thread()!.targetType).toBe('ITEM');
+    thread()!.newCommentText = 'Entwurf zum Item';
+    select('.comment-scope-select select', 'coding');
+    expect(thread()!.targetType).toBe('CODING');
+    expect(thread()!.itemId).toBe('I1');
+    expect(thread()!.newCommentText).toBe('');
+    thread()!.newCommentText = 'Entwurf zur Kodierung';
+    select('.comment-scope-select select', 'item');
+    expect(thread()!.newCommentText).toBe('Entwurf zum Item');
+
+    enableItemComments(['CODING']);
+    expect(fixture.nativeElement.querySelector('.comment-scope-select')).toBeNull();
+    expect(thread()!.targetType).toBe('CODING');
+    expect(thread()!.newCommentText).toBe('Entwurf zur Kodierung');
+
+    fixture.componentRef.setInput('unitId', 'V');
+    detect();
+    expect(thread()).toBeUndefined();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain(
+      'Für diese Aufgabe ist keine kommentierbare Kodierung verfügbar.',
+    );
+  });
+
+  it('reloads coding comments after an incomplete catalog response', () => {
+    const counts = [{ unitId: 'U', itemId: 'I1', count: 0, codingCount: 1 }];
+    api.getItemCommentCounts
+      .mockReturnValueOnce(of({ revision: 'partial', codingUnitIds: [], counts }))
+      .mockReturnValue(of({ revision: 'recovered', codingUnitIds: ['U'], counts }));
+    enableItemComments(['CODING']);
+
+    expect(thread()).toBeUndefined();
+    const retry = fixture.nativeElement.querySelector('.comment-items-retry') as HTMLButtonElement;
+    expect(retry?.textContent?.trim()).toBe('Kodierkommentare erneut laden');
+    retry.click();
+    detect();
+
+    expect(api.getItemCommentCounts).toHaveBeenCalledTimes(2);
+    expect(thread()?.targetType).toBe('CODING');
+    expect(thread()?.itemId).toBe('I1');
+    expect(fixture.nativeElement.textContent).toContain(root.commentText);
+    expect(fixture.nativeElement.querySelector('.comment-items-retry')).toBeNull();
   });
 
   it.each(['tab', 'collapse'] as const)(

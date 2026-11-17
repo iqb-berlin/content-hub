@@ -29,6 +29,7 @@ import {
 } from "../database/entities";
 import { UnitParserService } from "../files/unit-parser.service";
 import { FileCatalogCache } from "../files/file-catalog.cache";
+import { AsyncLruCache } from "../files/async-lru-cache";
 import { getAssessmentParts, getIndexUnits } from "../ap/ap-index.utils";
 import { extractLabelText } from "../files/unit-file-parsing";
 import { ReviewManifestService } from "../review/review-manifest.service";
@@ -90,6 +91,7 @@ export interface ItemCommentCount {
 
 export interface ItemCommentCountsSnapshot {
   revision: string;
+  codingUnitIds: string[];
   counts: ItemCommentCount[];
 }
 
@@ -124,10 +126,16 @@ interface ItemTargetResolution {
 interface ItemCatalogEntry {
   unitId: string;
   itemId: string;
+  hasCodingScheme: boolean;
   unitLabel: string;
   itemLabel: string;
   unitOrder: number;
   itemOrder: number;
+}
+
+interface ItemCatalog {
+  entries: ItemCatalogEntry[];
+  cacheable: boolean;
 }
 
 interface ReviewBookletCatalogEntry {
@@ -185,11 +193,9 @@ export class CommentsService {
     });
   }
 
-  private readonly itemCatalogCache = new Map<
-    string,
-    Promise<ItemCatalogEntry[]>
-  >();
-  private readonly maxItemCatalogCacheEntries = 100;
+  private readonly itemCatalogCache = new AsyncLruCache<string, ItemCatalog>(
+    100,
+  );
 
   constructor(
     @InjectRepository(Comment)
@@ -576,10 +582,20 @@ export class CommentsService {
           }) ||
           left.itemId.localeCompare(right.itemId, undefined, { numeric: true }),
       );
+    const codingUnitIds = targetTypes.includes(CommentTargetType.CODING)
+      ? [
+          ...new Set(
+            catalog
+              .filter((entry) => entry.hasCodingScheme)
+              .map((entry) => entry.unitId),
+          ),
+        ].sort()
+      : [];
     return {
       revision: createHash("sha256")
-        .update(JSON.stringify([visibilityMode, result]))
+        .update(JSON.stringify([visibilityMode, result, codingUnitIds]))
         .digest("hex"),
+      codingUnitIds,
       counts: result,
     };
   }
@@ -1308,17 +1324,13 @@ export class CommentsService {
       throw new BadRequestException("unitId and itemId are required");
     }
     const itemTarget = await this.resolveItemTarget(apId, unitId, itemId);
-    if (input.targetType === CommentTargetType.CODING) {
-      const itemList = await this.unitParserService.getItemListFromFiles(
-        apId,
-        {},
-        this.transactionManager,
+    if (
+      input.targetType === CommentTargetType.CODING &&
+      !itemTarget.hasCodingScheme
+    ) {
+      throw new NotFoundException(
+        "Coding scheme not found for this item in this AP",
       );
-      if (!itemList.codingSchemes?.[itemTarget.unitId]) {
-        throw new NotFoundException(
-          "Coding scheme not found for this item in this AP",
-        );
-      }
     }
     return {
       targetType: input.targetType,
@@ -1385,7 +1397,7 @@ export class CommentsService {
     apId: string,
     unitId: string,
     requestedItemId: string,
-  ): Promise<ItemTargetResolution> {
+  ): Promise<ItemTargetResolution & { hasCodingScheme: boolean }> {
     const catalog = await this.getItemCatalog(apId);
     const unitItems = catalog.filter((item) => item.unitId === unitId);
     const exactMatches = unitItems.filter(
@@ -1449,36 +1461,36 @@ export class CommentsService {
     const cacheKey = `${apId}:${fileCatalog.signature}:${
       ap?.updatedAt?.toISOString() || "missing"
     }`;
-    this.deleteStaleItemCatalogEntries(apId, cacheKey);
-
-    let catalogPromise = this.itemCatalogCache.get(cacheKey);
-    if (!catalogPromise) {
-      catalogPromise = this.buildItemCatalog(apId, ap);
-      if (this.itemCatalogCache.size >= this.maxItemCatalogCacheEntries) {
-        const oldestKey = this.itemCatalogCache.keys().next().value as
-          | string
-          | undefined;
-        if (oldestKey) this.itemCatalogCache.delete(oldestKey);
-      }
-      this.itemCatalogCache.set(cacheKey, catalogPromise);
-    }
-
-    try {
-      return await catalogPromise;
-    } catch (error) {
-      this.itemCatalogCache.delete(cacheKey);
-      throw error;
-    }
+    this.itemCatalogCache.deleteWhere(
+      (key) => key.startsWith(`${apId}:`) && key !== cacheKey,
+    );
+    const { value } = await this.itemCatalogCache.getOrLoad(
+      cacheKey,
+      () => this.buildItemCatalog(apId, ap),
+      { shouldCache: (catalog) => catalog.cacheable },
+    );
+    return value.entries;
   }
 
   private async buildItemCatalog(
     apId: string,
     ap: Ap | null,
-  ): Promise<ItemCatalogEntry[]> {
+  ): Promise<ItemCatalog> {
+    let cacheable = false;
     const itemList = await this.unitParserService.getItemListFromFiles(
       apId,
-      {},
+      {
+        includeStudioItemComments: false,
+        onDiagnostics: (diagnostics) => {
+          cacheable = diagnostics.cacheable;
+        },
+      },
       this.transactionManager,
+    );
+    const codingUnitIds = new Set(
+      Object.entries(itemList.codingSchemes || {})
+        .filter(([, scheme]) => Boolean(scheme))
+        .map(([unitId]) => unitId),
     );
     const indexEntries: ItemCatalogEntry[] = [];
     const indexUnits = getIndexUnits(ap?.apIndex);
@@ -1493,6 +1505,7 @@ export class CommentsService {
         indexEntries.push({
           unitId: indexUnitId,
           itemId,
+          hasCodingScheme: codingUnitIds.has(indexUnitId),
           unitLabel,
           itemLabel:
             extractLabelText(item?.name || item?.label) ||
@@ -1524,9 +1537,11 @@ export class CommentsService {
     }
     const parsedUnitOrders = new Map<string, number>();
     for (const [parsedOrder, item] of (itemList.items || []).entries()) {
+      const unitId = String(item.unitId || "").trim();
       const parsedEntry = {
-        unitId: String(item.unitId || "").trim(),
+        unitId,
         itemId: String(item.itemId || "").trim(),
+        hasCodingScheme: codingUnitIds.has(unitId),
         unitLabel: String(item.unitLabel || item.unitId || "").trim(),
         itemLabel: String(item.description || item.itemId || "").trim(),
         unitOrder: 0,
@@ -1580,7 +1595,7 @@ export class CommentsService {
         if (!existing.itemLabel) existing.itemLabel = entry.itemLabel;
       }
     }
-    return [...unique.values()];
+    return { entries: [...unique.values()], cacheable };
   }
 
   private buildReviewUnitCatalog(
@@ -1719,18 +1734,6 @@ export class CommentsService {
           ? -1
           : (itemEntry?.itemOrder ?? fallbackOrder),
     };
-  }
-
-  private deleteStaleItemCatalogEntries(
-    apId: string,
-    currentKey: string,
-  ): void {
-    const prefix = `${apId}:`;
-    for (const key of this.itemCatalogCache.keys()) {
-      if (key.startsWith(prefix) && key !== currentKey) {
-        this.itemCatalogCache.delete(key);
-      }
-    }
   }
 
   private itemCatalogKey(unitId: string, itemId: string): string {

@@ -4,9 +4,11 @@ import { JwtService } from "@nestjs/jwt";
 import { DataSource } from "typeorm";
 import * as request from "supertest";
 import {
+  AccessModel,
   Ap,
   ApFile,
   ApItemRowNumber,
+  ApRole,
   CommentTargetType,
   ApAccessConfig,
   ApUserRole,
@@ -21,7 +23,7 @@ import { ReviewManifestService } from "../src/review/review-manifest.service";
 import { ReviewReadinessService } from "../src/review/review-readiness.service";
 import { UnitParserService } from "../src/files/unit-parser.service";
 
-import { mkdtemp, writeFile, rm } from "fs/promises";
+import { mkdtemp, rename, writeFile, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { CommentsService } from "../src/comments/comments.service";
@@ -53,6 +55,21 @@ describe("Review visibility, groups and synchronization API", () => {
     config = response.body;
     return config;
   }
+
+  function realItemParser(dataSource: DataSource, catalog: FileCatalogCache) {
+    return new UnitParserService(
+      dataSource.getRepository(ApFile),
+      dataSource.getRepository(Ap),
+      dataSource.getRepository(ApAccessConfig),
+      new ItemRowNumberingService(dataSource.getRepository(ApItemRowNumber)),
+      app.get(ItemExplorerStateService),
+      catalog,
+      new ItemListParser(),
+      new NumberedItemListCache(),
+      app.get(UnitViewResolver),
+    );
+  }
+
   beforeAll(async () => {
     if (
       process.env.NODE_ENV !== "test" ||
@@ -91,6 +108,7 @@ describe("Review visibility, groups and synchronization API", () => {
           items: [{ unitId: "U", itemId: "I" }],
           codingSchemes: { U: {} },
         }),
+        invalidateFileCaches: () => undefined,
       })
       .compile();
     app = module.createNestApplication();
@@ -1088,6 +1106,270 @@ describe("Review visibility, groups and synchronization API", () => {
     },
   );
 
+  describe("Review comment catalog with real files", () => {
+    let directory: string;
+    let catalog: FileCatalogCache;
+    let parserSpy: jest.SpyInstance;
+    let invalidateFileCachesSpy: jest.SpyInstance;
+    const itemFiles = {
+      "U.vomd": JSON.stringify({
+        profiles: [],
+        items: [{ id: "I", variableId: "I", profiles: [] }],
+      }),
+      "U.vocs": JSON.stringify({
+        variableCodings: [
+          { id: "I", label: "Item I", sourceType: "BASE", codes: [] },
+        ],
+      }),
+    };
+
+    beforeEach(async () => {
+      directory = await mkdtemp(join(tmpdir(), "review-coding-"));
+      catalog = new FileCatalogCache(db.getRepository(ApFile));
+      const parser = realItemParser(db, catalog);
+      const parserProvider = app.get(UnitParserService);
+      parserSpy = jest
+        .spyOn(parserProvider, "getItemListFromFiles")
+        .mockImplementation(parser.getItemListFromFiles.bind(parser));
+      invalidateFileCachesSpy = jest
+        .spyOn(parserProvider, "invalidateFileCaches")
+        .mockImplementation(parser.invalidateFileCaches.bind(parser));
+    });
+
+    afterEach(async () => {
+      parserSpy.mockRestore();
+      invalidateFileCachesSpy.mockRestore();
+      await rm(directory, { recursive: true, force: true });
+    });
+
+    async function createCodingFixture({
+      withMissingStudioFile = false,
+      missingFile,
+    }: {
+      withMissingStudioFile?: boolean;
+      missingFile?: keyof typeof itemFiles;
+    } = {}) {
+      const ap = await db.getRepository(Ap).save({
+        packageId: `review-coding-catalog-${Date.now()}`,
+        name: "Coding comments",
+        apIndex: {
+          units: [
+            {
+              id: "U",
+              items: [{ id: "I" }],
+              dependencies: [{ id: "U.vocs", type: "CODING_SCHEME" }],
+            },
+          ],
+        },
+      });
+      await db.getRepository(ApAccessConfig).save({
+        apId: ap.id,
+        accessModel: AccessModel.REGISTERED,
+        featureConfig: {
+          enableReview: true,
+          enableCommenting: true,
+          showStudioItemComments: withMissingStudioFile,
+          commentTargets: [CommentTargetType.CODING],
+        },
+      });
+      const reviewer = actors[0];
+      await db.getRepository(ApUserRole).save({
+        apId: ap.id,
+        userId: reviewer.id,
+        role: ApRole.READ_ONLY,
+        capabilities: ["review:participate"],
+      });
+      const files = {
+        "U.xml":
+          "<Unit><Id>U</Id><Reference>U.vomd</Reference><CodingSchemeRef>U.vocs</CodingSchemeRef>" +
+          (withMissingStudioFile
+            ? "<UnitCommentsRef>U.vouc</UnitCommentsRef>"
+            : "") +
+          "</Unit>",
+        ...itemFiles,
+      };
+      for (const [originalName, content] of Object.entries(files)) {
+        if (originalName === missingFile) continue;
+        const filePath = join(directory, originalName);
+        await writeFile(filePath, content);
+        await db.getRepository(ApFile).save({
+          apId: ap.id,
+          originalName,
+          filePath,
+          fileSize: Buffer.byteLength(content),
+        });
+      }
+      const target = { ...item, targetType: CommentTargetType.CODING };
+      const comment = await db.getRepository(Comment).save({
+        ...target,
+        apId: ap.id,
+        userId: reviewer.id,
+        targetId: "U_I",
+        commentText: "Existing coding comment",
+      });
+      return {
+        apId: ap.id,
+        reviewer,
+        target,
+        comment,
+        threadPath: `/api/ap/${ap.id}/review/comments`,
+      };
+    }
+
+    it("reads and creates coding comments for indexed items without a VOMD file", async () => {
+      const { apId, reviewer, target, comment, threadPath } =
+        await createCodingFixture({ missingFile: "U.vomd" });
+      const unit = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(unit.body.items).toEqual([{ id: "I" }]);
+      expect(unit.body.dependencies).toContainEqual(
+        expect.objectContaining({
+          originalName: "U.vocs",
+          type: "CODING_SCHEME",
+        }),
+      );
+
+      const snapshot = await request(server)
+        .get(`${threadPath}/counts`)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(snapshot.body.codingUnitIds).toEqual(["U"]);
+      expect(snapshot.body.counts).toEqual([
+        { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+      ]);
+
+      const created = await request(server)
+        .post(threadPath)
+        .set(headers(reviewer.token))
+        .send({ ...target, commentText: "New coding comment" })
+        .expect(201);
+      const thread = await request(server)
+        .get(threadPath)
+        .query(target)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(thread.body.comments).toHaveLength(2);
+      expect(thread.body.comments).toContainEqual(
+        expect.objectContaining({ id: comment.id }),
+      );
+      expect(thread.body.comments).toContainEqual(
+        expect.objectContaining({ id: created.body.id }),
+      );
+    });
+
+    it("restores coding comments after a temporary scheme read failure with the same file signature", async () => {
+      const { apId, reviewer, target, comment, threadPath } =
+        await createCodingFixture();
+      const signature = (await catalog.get(apId)).signature;
+      const schemePath = join(directory, "U.vocs");
+      const unavailablePath = join(directory, "U.vocs.unavailable");
+      await rename(schemePath, unavailablePath);
+      let partialEtag: string;
+      try {
+        const partial = await request(server)
+          .get(`${threadPath}/counts`)
+          .set(headers(reviewer.token))
+          .expect(200);
+        expect(partial.body.codingUnitIds).toEqual([]);
+        expect(partial.body.counts).toEqual([
+          { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+        ]);
+        partialEtag = partial.headers.etag;
+      } finally {
+        await rename(unavailablePath, schemePath);
+      }
+
+      expect((await catalog.get(apId)).signature).toBe(signature);
+      const recovered = await request(server)
+        .get(`${threadPath}/counts`)
+        .set(headers(reviewer.token))
+        .set("If-None-Match", partialEtag)
+        .expect(200);
+      expect(recovered.body.codingUnitIds).toEqual(["U"]);
+      expect(recovered.headers.etag).not.toBe(partialEtag);
+      const thread = await request(server)
+        .get(threadPath)
+        .query(target)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(thread.body.comments).toEqual([
+        expect.objectContaining({
+          id: comment.id,
+          commentText: comment.commentText,
+        }),
+      ]);
+    });
+
+    it("reuses the review comment catalog when a referenced Studio comments file is missing", async () => {
+      const { reviewer, threadPath } = await createCodingFixture({
+        withMissingStudioFile: true,
+      });
+      const countsPath = `${threadPath}/counts`;
+      const first = await request(server)
+        .get(countsPath)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(first.body.codingUnitIds).toEqual(["U"]);
+      expect(first.body.counts).toEqual([
+        { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+      ]);
+
+      const second = await request(server)
+        .get(countsPath)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(second.body).toEqual(first.body);
+      expect(parserSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(["U.vocs", "U.vomd"] as const)(
+      "caches the review catalog while %s is absent and rebuilds it after upload",
+      async (missingFile) => {
+        const { apId, reviewer, threadPath } = await createCodingFixture({
+          missingFile,
+        });
+        const signature = (await catalog.get(apId)).signature;
+        const countsPath = `${threadPath}/counts`;
+        const first = await request(server)
+          .get(countsPath)
+          .set(headers(reviewer.token))
+          .expect(200);
+        expect(first.body.codingUnitIds).toEqual(
+          missingFile === "U.vomd" ? ["U"] : [],
+        );
+        expect(first.body.counts).toEqual([
+          { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+        ]);
+        const cached = await request(server)
+          .get(countsPath)
+          .set(headers(reviewer.token))
+          .expect(200);
+        expect(cached.body).toEqual(first.body);
+        expect(parserSpy).toHaveBeenCalledTimes(1);
+
+        const upload = await request(server)
+          .post(`/api/ap/${apId}/files/upload`)
+          .set(headers(manager))
+          .attach("files", Buffer.from(itemFiles[missingFile]), missingFile)
+          .expect(201);
+        expect(upload.body.files).toEqual([
+          expect.objectContaining({ originalName: missingFile }),
+        ]);
+        expect((await catalog.get(apId)).signature).not.toBe(signature);
+
+        const rebuilt = await request(server)
+          .get(countsPath)
+          .set(headers(reviewer.token))
+          .expect(200);
+        expect(rebuilt.body.codingUnitIds).toEqual(["U"]);
+        expect(rebuilt.body.counts).toEqual(first.body.counts);
+        expect(parserSpy).toHaveBeenCalledTimes(2);
+      },
+    );
+  });
+
   it.each([1, 2, 10])(
     "completes concurrent real catalog reads and votes with a pool of %i",
     async (poolSize) => {
@@ -1140,17 +1422,7 @@ describe("Review visibility, groups and synchronization API", () => {
         // All sources are real services. Their default repositories use the same
         // constrained pool, so any escaped transaction query fails this test.
         const catalog = new FileCatalogCache(limited.getRepository(ApFile));
-        const parser = new UnitParserService(
-          limited.getRepository(ApFile),
-          limited.getRepository(Ap),
-          limited.getRepository(ApAccessConfig),
-          new ItemRowNumberingService(limited.getRepository(ApItemRowNumber)),
-          app.get(ItemExplorerStateService),
-          catalog,
-          new ItemListParser(),
-          new NumberedItemListCache(),
-          app.get(UnitViewResolver),
-        );
+        const parser = realItemParser(limited, catalog);
         const service = new CommentsService(
           limited.getRepository(Comment),
           new ReviewPolicyService(limited.getRepository(ApAccessConfig)),

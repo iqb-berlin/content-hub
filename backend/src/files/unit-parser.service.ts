@@ -73,6 +73,10 @@ interface ParsedItemListResult {
   cacheable: boolean;
 }
 
+interface ItemListLoadDiagnostics extends ItemExplorerLoadDiagnostics {
+  cacheable: boolean;
+}
+
 interface ItemListSourceContext {
   allFiles: ApFile[];
   fallbackItemProperties: Record<string, Record<string, unknown>>;
@@ -566,7 +570,8 @@ export class UnitParserService {
       publishedItemPropertiesOverride?: Record<string, Record<string, unknown>>;
       activeStateSignature?: string;
       publishedStateSignature?: string;
-      onDiagnostics?: (diagnostics: ItemExplorerLoadDiagnostics) => void;
+      includeStudioItemComments?: boolean;
+      onDiagnostics?: (diagnostics: ItemListLoadDiagnostics) => void;
     } = {},
     manager?: EntityManager,
   ): Promise<ItemListResult> {
@@ -601,6 +606,9 @@ export class UnitParserService {
       apId,
       options.itemPropertiesOverride === undefined,
     );
+    if (options.includeStudioItemComments === false) {
+      sourceContext.normalizedFeatureConfig.showStudioItemComments = false;
+    }
     const activeParse = await this.parseItemListFromContext(
       apId,
       sourceContext,
@@ -633,6 +641,8 @@ export class UnitParserService {
       };
     }
 
+    const cacheable =
+      activeParse.cacheable && (publishedParse?.cacheable ?? true);
     if (this.readOnlyRowNumbers) {
       const { rowNumberRevisionMs } = await rowRevisionPromise;
       const rowNumberingStartedAt = performance.now();
@@ -644,6 +654,7 @@ export class UnitParserService {
         },
       );
       options.onDiagnostics?.({
+        cacheable,
         cacheStatus: parseDiagnostics.cacheStatus,
         rowCacheStatus: "miss",
         sourceReadMs: sourceContext.sourceReadMs,
@@ -656,10 +667,7 @@ export class UnitParserService {
       return result;
     }
 
-    if (
-      !activeParse.cacheable ||
-      (publishedParse && !publishedParse.cacheable)
-    ) {
+    if (!cacheable) {
       const { rowNumberRevisionMs } = await rowRevisionPromise;
       const rowNumberingStartedAt = performance.now();
       let result: ItemListResult;
@@ -672,6 +680,7 @@ export class UnitParserService {
         result = await this.applyItemRowNumbers(apId, activeParse.itemList, {});
       }
       options.onDiagnostics?.({
+        cacheable,
         cacheStatus: parseDiagnostics.cacheStatus,
         rowCacheStatus: "miss",
         sourceReadMs: sourceContext.sourceReadMs,
@@ -710,6 +719,7 @@ export class UnitParserService {
         },
       );
     options.onDiagnostics?.({
+      cacheable,
       cacheStatus: parseDiagnostics.cacheStatus,
       rowCacheStatus,
       sourceReadMs: sourceContext.sourceReadMs,
