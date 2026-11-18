@@ -183,12 +183,20 @@ export function mergePlayerSolutionIntoDataParts(
     existingResponses = [];
   }
 
+  const readOnlyExamples = dropLists.flatMap((list) => list.readOnlyExamples || []);
   const solutionIds = new Set(
     [
       ...solutionResponses.map((response) => response.id),
       // Omit saved example responses so ASPECT reads their contents from the definition.
-      ...dropLists.flatMap((list) => [list.responseId, ...(list.readOnlyResponseIds || [])]),
+      ...dropLists.map((list) => list.responseId),
+      ...readOnlyExamples.map((example) => example.responseId),
     ].map(normalizeSolutionIdentifier),
+  );
+  const restoredItemIds = new Set(readOnlyExamples.flatMap((example) => example.movableItemIds));
+  const otherDropListIds = new Set(
+    dropLists
+      .flatMap((list) => list.otherDropListResponseIds || [])
+      .map(normalizeSolutionIdentifier),
   );
   const dropListResponses = mergeDropListSolutionResponses(
     existingResponses,
@@ -196,9 +204,16 @@ export function mergePlayerSolutionIntoDataParts(
     dropLists,
   );
   merged['elementCodes'] = JSON.stringify([
-    ...existingResponses.filter(
-      (response) => !solutionIds.has(normalizeSolutionIdentifier(response?.id)),
-    ),
+    ...existingResponses
+      .filter((response) => !solutionIds.has(normalizeSolutionIdentifier(response?.id)))
+      .map((response) => {
+        // Legacy players can move an example object to a list outside the solution group.
+        if (!otherDropListIds.has(normalizeSolutionIdentifier(response?.id))) return response;
+        const savedItems = response?.['value'];
+        if (!Array.isArray(savedItems)) return response;
+        const value = savedItems.filter((item) => !restoredItemIds.has(item));
+        return value.length === savedItems.length ? response : { ...response, value };
+      }),
     ...solutionResponses.filter(
       (response) => !dropLists.some((list) => list.responseId === response.id),
     ),

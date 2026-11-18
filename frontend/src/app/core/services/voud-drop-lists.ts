@@ -5,7 +5,8 @@ export interface PlayerDropList {
   onlyOneItem: boolean;
   copyOnDrop: boolean;
   items: Array<{ value: string; label: string }>;
-  readOnlyResponseIds?: string[];
+  readOnlyExamples?: Array<{ responseId: string; movableItemIds: string[] }>;
+  otherDropListResponseIds?: string[];
 }
 
 interface DropListNode {
@@ -31,7 +32,9 @@ export function usesLegacyAspectDropListIds(metadata: unknown): boolean {
   if (!metadata || typeof metadata !== 'object') return false;
   const { id, version } = metadata as { id?: unknown; version?: unknown };
   return (
-    id === 'iqb-player-aspect' && typeof version === 'string' && /^2\.[0-5]\.\d+$/.test(version)
+    id === 'iqb-player-aspect' &&
+    typeof version === 'string' &&
+    /^2\.[0-5]\.\d+(?:-[\da-z.-]+)?(?:\+[\da-z.-]+)?$/i.test(version)
   );
 }
 
@@ -135,15 +138,24 @@ export function resolveDropListTarget(
   ) {
     return undefined;
   }
+  const otherDropListResponseIds = nodes
+    .filter((node) => !component.has(String(node.id)))
+    .map((node) => String(listResponseId(node)));
   const dropLists: PlayerDropList[] = group.map((node) => {
     const id = String(node.id);
     const outgoingConnections = connections(node);
-    const readOnlyResponseIds = readOnlyNodes
+    const readOnlyExamples = readOnlyNodes
       .filter(
         (example) =>
           outgoingConnections.includes(String(example.id)) || connections(example).includes(id),
       )
-      .map((example) => String(listResponseId(example)));
+      .map((example) => ({
+        responseId: String(listResponseId(example)),
+        movableItemIds:
+          example.copyOnDrop !== true && Array.isArray(example.value)
+            ? (example.value as DropListItem[]).map((item) => String(item[itemIdentifier]))
+            : [],
+      }));
     return {
       id,
       responseId: String(listResponseId(node)),
@@ -154,7 +166,7 @@ export function resolveDropListTarget(
         const value = String(item[itemIdentifier]);
         return { value, label: displayText(item.text) || value };
       }),
-      ...(readOnlyResponseIds.length ? { readOnlyResponseIds } : {}),
+      ...(readOnlyExamples.length ? { readOnlyExamples, otherDropListResponseIds } : {}),
     };
   });
   const valueOptions = dropLists

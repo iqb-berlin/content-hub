@@ -106,13 +106,13 @@ describe('resolveDropListTarget', () => {
 });
 
 describe('usesLegacyAspectDropListIds', () => {
-  it.each(['2.0.3', '2.1.2', '2.2.5', '2.3.0', '2.4.13', '2.5.0'])(
+  it.each(['2.0.3', '2.1.2', '2.2.5', '2.3.0', '2.4.13', '2.5.0', '2.5.0-rc3', '2.5.0+build.1'])(
     'selects IDs for ASPECT %s',
     (version) => {
       expect(usesLegacyAspectDropListIds({ id: 'iqb-player-aspect', version })).toBe(true);
     },
   );
-  it.each(['1.5.0', '2.6.0', '2.12.6', '3.1.2', '2.5', undefined])(
+  it.each(['1.5.0', '2.6.0-beta2', '2.6.0', '2.12.6', '3.1.2', '2.5', undefined])(
     'preserves alias handling for ASPECT version %s',
     (version) => {
       expect(usesLegacyAspectDropListIds({ id: 'iqb-player-aspect', version })).toBe(false);

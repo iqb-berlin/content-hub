@@ -194,6 +194,60 @@ describe('deriveReviewSolution', () => {
     expect(voud.resolvePlayerResponseTarget(definition, 'EXAMPLE')?.dropLists).toBeUndefined();
   });
 
+  it.each([false, true])('restores a shared legacy example with copyOnDrop=%s', (copyOnDrop) => {
+    const [pool, answer] = dragLists().map(({ items, ...list }) => ({
+      ...list,
+      type: 'drop-list',
+      value: items.map(({ value }) => ({ id: value })),
+    }));
+    pool.connectedTo = ['a'];
+    const example = {
+      ...answer,
+      id: 'example',
+      readOnly: true,
+      connectedTo: ['a', 'other-target'],
+      copyOnDrop,
+      value: [{ id: 'DEMO' }],
+    };
+    const otherTarget = {
+      ...answer,
+      id: 'other-target',
+      onlyOneItem: false,
+      connectedTo: ['example'],
+      value: [{ id: 'OTHER' }],
+    };
+    const definition = JSON.stringify({
+      version: '4.3.0',
+      pages: [{ elements: [pool, answer, example, otherTarget, { type: 'text', id: 'text' }] }],
+    });
+    const voud = new VoudService();
+    const variables = [{ ...textVariable('a', 'X'), id: 'a' }];
+    const { prefill } = deriveReviewSolution(variables, variables, () =>
+      voud.resolvePlayerResponseTarget(definition, 'a', true),
+    );
+    expect(prefill.status).toBe('available');
+    if (prefill.status !== 'available') throw new Error(prefill.message);
+
+    const savedResponses = JSON.stringify([
+      { id: 'example', status: 'VALUE_CHANGED', value: copyOnDrop ? ['DEMO'] : [] },
+      { id: 'other-target', status: 'VALUE_CHANGED', value: ['DEMO', 'OTHER'] },
+      { id: 'text', status: 'VALUE_CHANGED', value: ['DEMO'] },
+    ]);
+    const savedData = { elementCodes: savedResponses };
+    const parts = mergePlayerSolutionIntoDataParts(savedData, prefill.responses, prefill.dropLists);
+    expect(JSON.parse(parts['elementCodes'])).toEqual([
+      {
+        id: 'other-target',
+        status: 'VALUE_CHANGED',
+        value: copyOnDrop ? ['DEMO', 'OTHER'] : ['OTHER'],
+      },
+      { id: 'text', status: 'VALUE_CHANGED', value: ['DEMO'] },
+      { id: 'pool', status: 'VALUE_CHANGED', value: ['Y', 'Z'] },
+      { id: 'a', status: 'VALUE_CHANGED', value: ['X'] },
+    ]);
+    expect(savedData.elementCodes).toBe(savedResponses);
+  });
+
   it('deduplicates a shared group while combining independent drag answers', () => {
     const variables = [textVariable('A', 'X'), textVariable('B', 'Y')];
     const result = deriveReviewSolution(variables, variables, dragResolver(dragLists()));
