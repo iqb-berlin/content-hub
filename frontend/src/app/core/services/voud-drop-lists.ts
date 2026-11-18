@@ -5,6 +5,7 @@ export interface PlayerDropList {
   onlyOneItem: boolean;
   copyOnDrop: boolean;
   items: Array<{ value: string; label: string }>;
+  readOnlyResponseIds?: string[];
 }
 
 interface DropListNode {
@@ -81,15 +82,14 @@ export function resolveDropListTarget(
     return undefined;
   }
 
-  // Connected read-only examples stay in the definition and never participate in assignments.
-  const readOnlyIds = new Set(
-    nodes.filter((node) => node.readOnly === true).map((node) => String(node.id)),
-  );
+  // Read-only examples use the definition's values and stay outside the assignment graph.
+  const readOnlyNodes = nodes.filter((node) => node.readOnly === true);
+  const readOnlyIds = new Set(readOnlyNodes.map((node) => String(node.id)));
   const interactiveNodes = nodes.filter((node) => node.readOnly !== true);
+  const connections = (node: DropListNode): string[] =>
+    Array.isArray(node.connectedTo) ? node.connectedTo.map(String) : [];
   const connectedListIds = (node: DropListNode): string[] =>
-    Array.isArray(node.connectedTo)
-      ? node.connectedTo.map(String).filter((id) => !readOnlyIds.has(id))
-      : [];
+    connections(node).filter((id) => !readOnlyIds.has(id));
 
   const component = new Set([String(target.id || '').trim()]);
   let changed = true;
@@ -135,17 +135,28 @@ export function resolveDropListTarget(
   ) {
     return undefined;
   }
-  const dropLists: PlayerDropList[] = group.map((node) => ({
-    id: String(node.id),
-    responseId: String(listResponseId(node)),
-    connectedTo: connectedListIds(node),
-    onlyOneItem: node.onlyOneItem as boolean,
-    copyOnDrop: node.copyOnDrop as boolean,
-    items: (node.value as DropListItem[]).map((item) => {
-      const value = String(item[itemIdentifier]);
-      return { value, label: displayText(item.text) || value };
-    }),
-  }));
+  const dropLists: PlayerDropList[] = group.map((node) => {
+    const id = String(node.id);
+    const outgoingConnections = connections(node);
+    const readOnlyResponseIds = readOnlyNodes
+      .filter(
+        (example) =>
+          outgoingConnections.includes(String(example.id)) || connections(example).includes(id),
+      )
+      .map((example) => String(listResponseId(example)));
+    return {
+      id,
+      responseId: String(listResponseId(node)),
+      connectedTo: connectedListIds(node),
+      onlyOneItem: node.onlyOneItem as boolean,
+      copyOnDrop: node.copyOnDrop as boolean,
+      items: (node.value as DropListItem[]).map((item) => {
+        const value = String(item[itemIdentifier]);
+        return { value, label: displayText(item.text) || value };
+      }),
+      ...(readOnlyResponseIds.length ? { readOnlyResponseIds } : {}),
+    };
+  });
   const valueOptions = dropLists
     .filter((list) => !list.onlyOneItem && list.connectedTo.includes(String(target.id)))
     .flatMap((list) => list.items);

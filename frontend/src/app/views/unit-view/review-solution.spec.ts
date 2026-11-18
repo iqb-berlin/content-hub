@@ -135,13 +135,12 @@ describe('deriveReviewSolution', () => {
     ]);
   });
 
-  it('solves a drag group connected to a read-only example and leaves its contents in place', () => {
+  it('restores a connected read-only example from the definition in the solution preview', () => {
     const lists = dragLists().map(({ responseId, items, ...list }) => ({
       ...list,
       alias: responseId,
       type: 'drop-list',
       isSortList: false,
-      connectedTo: [...list.connectedTo, 'example'],
       value: items.map(({ value }) => ({ alias: value, text: value })),
     }));
     const example = {
@@ -152,7 +151,14 @@ describe('deriveReviewSolution', () => {
       readOnly: true,
       value: [{ alias: 'DEMO', text: 'Example' }],
     };
-    const definition = JSON.stringify({ pages: [{ elements: [...lists, example] }] });
+    const otherExample = {
+      ...example,
+      id: 'other-example',
+      alias: 'OTHER_EXAMPLE',
+      connectedTo: [],
+      value: [{ alias: 'OTHER_DEMO', text: 'Other example' }],
+    };
+    const definition = JSON.stringify({ pages: [{ elements: [...lists, example, otherExample] }] });
     const voud = new VoudService();
     const resolveTarget = (variable: CodingVariableLike) =>
       voud.resolvePlayerResponseTarget(definition, String(variable.alias));
@@ -162,16 +168,24 @@ describe('deriveReviewSolution', () => {
     expect(result.prefill.status).toBe('available');
     if (result.prefill.status !== 'available') throw new Error(result.prefill.message);
     expect(result.unavailableVariables).toEqual([]);
+    const savedResponses = JSON.stringify([
+      { id: 'EXAMPLE', status: 'VALUE_CHANGED', value: [] },
+      { id: 'B', status: 'VALUE_CHANGED', value: ['DEMO'] },
+      { id: 'OTHER_EXAMPLE', status: 'VALUE_CHANGED', value: ['OTHER_DEMO'] },
+    ]);
+    const savedData = { elementCodes: savedResponses };
     const parts = mergePlayerSolutionIntoDataParts(
-      {},
+      savedData,
       result.prefill.responses,
       result.prefill.dropLists,
     );
     expect(JSON.parse(parts['elementCodes'])).toEqual([
+      { id: 'OTHER_EXAMPLE', status: 'VALUE_CHANGED', value: ['OTHER_DEMO'] },
       { id: 'POOL', status: 'VALUE_CHANGED', value: ['Z'] },
       { id: 'A', status: 'VALUE_CHANGED', value: ['X'] },
       { id: 'B', status: 'VALUE_CHANGED', value: ['Y'] },
     ]);
+    expect(savedData.elementCodes).toBe(savedResponses);
     expect(resolveTarget(variables[0])?.valueOptions?.map(({ value }) => value)).toEqual([
       'X',
       'Y',

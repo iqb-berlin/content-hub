@@ -186,7 +186,8 @@ export function mergePlayerSolutionIntoDataParts(
   const solutionIds = new Set(
     [
       ...solutionResponses.map((response) => response.id),
-      ...dropLists.map((list) => list.responseId),
+      // Omit saved example responses so ASPECT reads their contents from the definition.
+      ...dropLists.flatMap((list) => [list.responseId, ...(list.readOnlyResponseIds || [])]),
     ].map(normalizeSolutionIdentifier),
   );
   const dropListResponses = mergeDropListSolutionResponses(

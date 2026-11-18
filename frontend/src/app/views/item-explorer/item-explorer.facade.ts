@@ -2316,8 +2316,20 @@ export class ItemExplorerFacade implements OnDestroy {
         'metadata' in msg ? msg.metadata : undefined,
       );
       if (this.useLegacyDropListIds !== useLegacyDropListIds) {
+        const previous = this.correctSolutionPrefill;
         this.useLegacyDropListIds = useLegacyDropListIds;
         this.refreshCorrectSolutionPrefill();
+        const current = this.correctSolutionPrefill;
+        if (
+          this.correctSolutionRequested &&
+          this.player.activePlayerSessionId &&
+          ((previous.status === 'available' && previous.dropLists?.length) ||
+            (current.status === 'available' && current.dropLists?.length))
+        ) {
+          // The iframe load event may already have started the preview with the old prefill.
+          if (current.status === 'available') this.player.captureAnswersForSolution();
+          this.startPlayerIfReady();
+        }
       }
       return;
     }
