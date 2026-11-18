@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PlayerDropList } from '../../core/services/voud-drop-lists';
+import { VoudService } from '../../core/services/voud.service';
 import {
   CodingVariableLike,
   mergePlayerSolutionIntoDataParts,
@@ -132,6 +133,51 @@ describe('deriveReviewSolution', () => {
       { id: 'A', status: 'VALUE_CHANGED', value: ['X'] },
       { id: 'B', status: 'VALUE_CHANGED', value: [] },
     ]);
+  });
+
+  it('solves a drag group connected to a read-only example and leaves its contents in place', () => {
+    const lists = dragLists().map(({ responseId, items, ...list }) => ({
+      ...list,
+      alias: responseId,
+      type: 'drop-list',
+      isSortList: false,
+      connectedTo: [...list.connectedTo, 'example'],
+      value: items.map(({ value }) => ({ alias: value, text: value })),
+    }));
+    const example = {
+      ...lists[1],
+      id: 'example',
+      alias: 'EXAMPLE',
+      connectedTo: lists.map((list) => list.id),
+      readOnly: true,
+      value: [{ alias: 'DEMO', text: 'Example' }],
+    };
+    const definition = JSON.stringify({ pages: [{ elements: [...lists, example] }] });
+    const voud = new VoudService();
+    const resolveTarget = (variable: CodingVariableLike) =>
+      voud.resolvePlayerResponseTarget(definition, String(variable.alias));
+    const variables = [textVariable('A', 'X'), textVariable('B', 'Y')];
+    const result = deriveReviewSolution(variables, variables, resolveTarget);
+
+    expect(result.prefill.status).toBe('available');
+    if (result.prefill.status !== 'available') throw new Error(result.prefill.message);
+    expect(result.unavailableVariables).toEqual([]);
+    const parts = mergePlayerSolutionIntoDataParts(
+      {},
+      result.prefill.responses,
+      result.prefill.dropLists,
+    );
+    expect(JSON.parse(parts['elementCodes'])).toEqual([
+      { id: 'POOL', status: 'VALUE_CHANGED', value: ['Z'] },
+      { id: 'A', status: 'VALUE_CHANGED', value: ['X'] },
+      { id: 'B', status: 'VALUE_CHANGED', value: ['Y'] },
+    ]);
+    expect(resolveTarget(variables[0])?.valueOptions?.map(({ value }) => value)).toEqual([
+      'X',
+      'Y',
+      'Z',
+    ]);
+    expect(voud.resolvePlayerResponseTarget(definition, 'EXAMPLE')?.dropLists).toBeUndefined();
   });
 
   it('deduplicates a shared group while combining independent drag answers', () => {
