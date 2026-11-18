@@ -31,6 +31,7 @@ import { ItemCommentThreadComponent } from '../comment-thread/item-comment-threa
 import { CommentThreadDrafts } from '../comment-thread/comment-thread-drafts';
 import { AuthService } from '../../core/services/auth.service';
 import { PendingPersonalSessionStorageService } from '../../core/services/pending-personal-session-storage.service';
+import { usesLegacyAspectDropListIds } from '../../core/services/voud-drop-lists';
 import { VoudService } from '../../core/services/voud.service';
 import {
   CodingVariableLike,
@@ -1179,6 +1180,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private playerRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   definitionContent: string | null = null;
+  private useLegacyDropListIds = false;
   private playerFrameReady = false;
   private unitLoadToken = 0;
   private initialized = false;
@@ -1478,6 +1480,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.stopAutoResize();
     this.unit = null;
     this.playerSrcDoc = null;
+    this.useLegacyDropListIds = false;
     this.playerFrameReady = false;
     this.playerSessionId = null;
     this.playerPageIds = [];
@@ -1682,6 +1685,12 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
     switch (msg.type) {
       case 'vopReadyNotification': {
+        const useLegacyDropListIds = usesLegacyAspectDropListIds(msg.metadata);
+        if (this.useLegacyDropListIds !== useLegacyDropListIds) {
+          this.useLegacyDropListIds = useLegacyDropListIds;
+          this.updateReviewSolution();
+          this.changeDetector.markForCheck();
+        }
         this.observePlayerInputs();
         this.playerFrameReady = true;
         this.startPlayerIfReady();
@@ -2071,7 +2080,11 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         if (!this.definitionContent) return undefined;
         for (const id of [variable.alias, variable.id]) {
           if (typeof id !== 'string' || !id.trim()) continue;
-          const target = this.voud.resolvePlayerResponseTarget(this.definitionContent, id);
+          const target = this.voud.resolvePlayerResponseTarget(
+            this.definitionContent,
+            id,
+            this.useLegacyDropListIds,
+          );
           // The supported ASPECT player does not reliably render scalar toggle-button
           // prefills. Keep these variables in the readable coding fallback.
           if (target && target.elementType.trim().toLowerCase() !== 'toggle-button') return target;

@@ -30,6 +30,7 @@ import { ApiService } from '../../core/services/api.service';
 import { rewriteGeoGebraAssetUrls } from '../../core/utils/geogebra-player-html.util';
 import { AuthService } from '../../core/services/auth.service';
 import { PendingPersonalSessionStorageService } from '../../core/services/pending-personal-session-storage.service';
+import { usesLegacyAspectDropListIds } from '../../core/services/voud-drop-lists';
 import { BreadcrumbItem } from '../../shared/components/breadcrumb.component';
 import { CodingAsText } from '@iqb/responses';
 import { finalize, firstValueFrom, ReplaySubject, Subscription, takeUntil } from 'rxjs';
@@ -503,6 +504,7 @@ export class ItemExplorerFacade implements OnDestroy {
   private itemListLoadToken = 0;
   private itemListSlowTimer: ReturnType<typeof setTimeout> | null = null;
   private previewSlowTimer: ReturnType<typeof setTimeout> | null = null;
+  private useLegacyDropListIds = false;
   private playerReadyTiming: ItemExplorerTimingToken | null = null;
   itemListSlow = false;
   previewSlow = false;
@@ -2016,6 +2018,7 @@ export class ItemExplorerFacade implements OnDestroy {
   resetPlayer() {
     this.previewCoordinator.cancel();
     this.player.reset();
+    this.useLegacyDropListIds = false;
     this.previewUserFacingMessage = '';
     this.coding.correctSolutionPrefill = {
       status: 'unavailable',
@@ -2308,6 +2311,16 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   handlePlayerMessage(msg: unknown): void {
+    if (msg && typeof msg === 'object' && 'type' in msg && msg.type === 'vopReadyNotification') {
+      const useLegacyDropListIds = usesLegacyAspectDropListIds(
+        'metadata' in msg ? msg.metadata : undefined,
+      );
+      if (this.useLegacyDropListIds !== useLegacyDropListIds) {
+        this.useLegacyDropListIds = useLegacyDropListIds;
+        this.refreshCorrectSolutionPrefill();
+      }
+      return;
+    }
     this.player.handlePlayerMessage(msg, {
       ready: this.previewCoordinator.status.kind === 'ready',
       solutionActive: this.isCorrectSolutionActive,
@@ -2392,7 +2405,11 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private refreshCorrectSolutionPrefill(): void {
-    return this.coding.refreshCorrectSolutionPrefill(this.selectedItem, this.definitionContent);
+    return this.coding.refreshCorrectSolutionPrefill(
+      this.selectedItem,
+      this.definitionContent,
+      this.useLegacyDropListIds,
+    );
   }
 
   private buildPrintLabelOverrides(): Record<string, string> {

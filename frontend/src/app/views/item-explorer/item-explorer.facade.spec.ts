@@ -4816,6 +4816,73 @@ describe('ItemExplorerFacade', () => {
         component.coding.createCodingSchemeAsText(variables);
     };
 
+    it('refreshes the preview and coding information after a legacy ASPECT ready message', () => {
+      const voud = new VoudService();
+      const component = createFacade({
+        resolvePlayerResponseTarget: voud.resolvePlayerResponseTarget.bind(voud),
+      });
+      configureCoding(component, [
+        {
+          id: 'answer',
+          sourceType: 'BASE',
+          codes: [
+            {
+              id: 1,
+              type: 'FULL_CREDIT',
+              score: 1,
+              ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['object'] }] }],
+            },
+            residual,
+          ],
+        },
+      ]);
+      component.player.definitionContent = JSON.stringify({
+        version: '4.6.0',
+        pages: [
+          {
+            elements: [
+              {
+                id: 'pool',
+                type: 'drop-list',
+                value: [{ id: 'object', text: 'Richtiges Objekt' }],
+                connectedTo: ['answer'],
+                onlyOneItem: false,
+                copyOnDrop: false,
+                isSortList: false,
+              },
+              {
+                id: 'answer',
+                type: 'drop-list',
+                value: [],
+                connectedTo: [],
+                onlyOneItem: true,
+                copyOnDrop: false,
+                isSortList: false,
+              },
+            ],
+          },
+        ],
+      });
+      component.handlePlayerMessage({
+        type: 'vopReadyNotification',
+        metadata: { id: 'iqb-player-aspect', version: '2.5.0' },
+      });
+      expect(component.correctSolutionPrefill).toMatchObject({
+        status: 'available',
+        responses: [{ id: 'answer', value: ['object'] }],
+      });
+      expect(component.codingInformation).toMatchObject({
+        status: 'exact',
+        answers: [{ responseId: 'answer', valueLabel: 'Richtiges Objekt' }],
+      });
+      component.handlePlayerMessage({
+        type: 'vopReadyNotification',
+        metadata: { id: 'iqb-player-aspect', version: '3.1.2' },
+      });
+      expect(component.correctSolutionPrefill.status).toBe('unavailable');
+      destroyFacade(component);
+    });
+
     it('loads the preview and manual instruction when optional ruleSets are absent', () => {
       const previewLoader = {
         load: vi.fn(() => of({ unit: null, playerHtml: null, definition: null })),

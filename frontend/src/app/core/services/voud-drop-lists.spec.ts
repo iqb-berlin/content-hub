@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveDropListTarget } from './voud-drop-lists';
+import { resolveDropListTarget, usesLegacyAspectDropListIds } from './voud-drop-lists';
 
 function definition() {
   return [
@@ -35,6 +35,25 @@ describe('resolveDropListTarget', () => {
     const result = resolveDropListTarget(pages, nodes[1], String);
     expect(result?.valueOptions).toEqual([{ value: 'TOKEN', label: 'Text' }]);
     expect(result?.dropLists.map((list) => list.responseId)).toEqual(['POOL', 'SLOT']);
+  });
+  it('uses legacy IDs even when the definition also contains aliases', () => {
+    const nodes = definition();
+    const result = resolveDropListTarget(nodes, nodes[1], String, { useLegacyIds: true });
+    expect(result?.valueOptions).toEqual([{ value: 'internal-token', label: 'Text' }]);
+    expect(result?.dropLists.map((list) => list.responseId)).toEqual(['pool', 'slot']);
+  });
+  it('accepts connected early VOUD lists without a flag and rejects implicit sorting', () => {
+    const nodes = definition().map((node) => ({ ...node, isSortList: undefined }));
+    const options = { useLegacyIds: true, definitionVersion: '4.3.0' };
+    expect(resolveDropListTarget(nodes, nodes[1], String, options)?.valueOptions).toEqual([
+      { value: 'internal-token', label: 'Text' },
+    ]);
+    expect(
+      resolveDropListTarget(nodes, nodes[1], String, { ...options, definitionVersion: '4.4.0' }),
+    ).toBeUndefined();
+    nodes[0].value.push({ id: 'second-token', alias: 'SECOND', text: 'Zweites Objekt' });
+    nodes[0].connectedTo = [];
+    expect(resolveDropListTarget(nodes, nodes[1], String, options)).toBeUndefined();
   });
   it.each([
     'missing-connection',
@@ -83,5 +102,23 @@ describe('resolveDropListTarget', () => {
       },
     ];
     expect(resolveDropListTarget(pages, nodes[1], String)?.dropLists).toHaveLength(2);
+  });
+});
+
+describe('usesLegacyAspectDropListIds', () => {
+  it.each(['2.0.3', '2.1.2', '2.2.5', '2.3.0', '2.4.13', '2.5.0'])(
+    'selects IDs for ASPECT %s',
+    (version) => {
+      expect(usesLegacyAspectDropListIds({ id: 'iqb-player-aspect', version })).toBe(true);
+    },
+  );
+  it.each(['1.5.0', '2.6.0', '2.12.6', '3.1.2', '2.5', undefined])(
+    'preserves alias handling for ASPECT version %s',
+    (version) => {
+      expect(usesLegacyAspectDropListIds({ id: 'iqb-player-aspect', version })).toBe(false);
+    },
+  );
+  it('does not use ASPECT IDs for another player', () => {
+    expect(usesLegacyAspectDropListIds({ id: 'iqb-player-other', version: '2.5.0' })).toBe(false);
   });
 });

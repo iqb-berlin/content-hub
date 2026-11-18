@@ -19,11 +19,29 @@ interface DropListNode {
   readOnly?: unknown;
 }
 
-/** Aspect restores drag objects by their globally unique alias, not by their element id. */
+interface DropListItem {
+  id?: unknown;
+  alias?: unknown;
+  text?: unknown;
+}
+
+/** ASPECT 2.6 switched both response and drag object identifiers to aliases. */
+export function usesLegacyAspectDropListIds(metadata: unknown): boolean {
+  if (!metadata || typeof metadata !== 'object') return false;
+  const { id, version } = metadata as { id?: unknown; version?: unknown };
+  return (
+    id === 'iqb-player-aspect' && typeof version === 'string' && /^2\.[0-5]\.\d+$/.test(version)
+  );
+}
+
 export function resolveDropListTarget(
   pages: unknown,
   target: DropListNode,
   displayText: (value: unknown) => string,
+  {
+    useLegacyIds = false,
+    definitionVersion,
+  }: { useLegacyIds?: boolean; definitionVersion?: unknown } = {},
 ): { valueOptions: PlayerDropList['items']; dropLists: PlayerDropList[] } | undefined {
   if (target.readOnly === true) return undefined;
 
@@ -44,20 +62,20 @@ export function resolveDropListTarget(
 
   const isIdentifier = (value: unknown): value is string =>
     typeof value === 'string' && value.length > 0 && value.trim() === value;
-  if (nodes.some((node) => !isIdentifier(node.id) || !isIdentifier(node.alias || node.id))) {
+  const listResponseId = (node: DropListNode) => (useLegacyIds ? node.id : node.alias || node.id);
+  const itemIdentifier = useLegacyIds ? 'id' : 'alias';
+  if (nodes.some((node) => !isIdentifier(node.id) || !isIdentifier(listResponseId(node)))) {
     return undefined;
   }
-  const ids = nodes.map((node) => String(node.id || '').trim());
-  const responseIds = nodes.map((node) => String(node.alias || node.id || '').trim());
-  if (
-    ids.some((id) => !id) ||
-    new Set(ids).size !== ids.length ||
-    new Set(responseIds.map((id) => id.toLowerCase())).size !== responseIds.length
-  ) {
+  const ids = nodes.map((node) => String(node.id));
+  const responseIds = nodes.map((node) => String(listResponseId(node)).toLowerCase());
+  if (new Set(ids).size !== ids.length || new Set(responseIds).size !== responseIds.length) {
     return undefined;
   }
   const tokens = nodes.flatMap((node) =>
-    Array.isArray(node.value) ? node.value.map((item) => item?.alias) : [],
+    Array.isArray(node.value)
+      ? node.value.map((item: DropListItem | null) => item?.[itemIdentifier])
+      : [],
   );
   if (tokens.some((token) => !isIdentifier(token)) || new Set(tokens).size !== tokens.length) {
     return undefined;
@@ -93,15 +111,24 @@ export function resolveDropListTarget(
 
   const group = interactiveNodes.filter((node) => component.has(String(node.id)));
   // Initially empty single-item targets and token palettes have a safe, reversible state.
-  // Sorting and multi-item answers need explicit ordered-answer derivation and stay as rules.
+  // Before VOUD 4.4, an unconnected list with multiple objects implied sorting.
+  const usesImplicitSorting =
+    useLegacyIds &&
+    typeof definitionVersion === 'string' &&
+    /^4\.[0-3]\.\d+$/.test(definitionVersion);
   if (
     group.some(
       (node) =>
-        node.isSortList !== false ||
         typeof node.onlyOneItem !== 'boolean' ||
         typeof node.copyOnDrop !== 'boolean' ||
         !Array.isArray(node.value) ||
         !Array.isArray(node.connectedTo) ||
+        (node.isSortList !== false &&
+          !(
+            usesImplicitSorting &&
+            node.isSortList === undefined &&
+            (node.connectedTo.length > 0 || node.value.length <= 1)
+          )) ||
         (node.onlyOneItem ? node.value.length !== 0 || node.copyOnDrop : !node.value.length),
     ) ||
     target.onlyOneItem !== true
@@ -110,14 +137,14 @@ export function resolveDropListTarget(
   }
   const dropLists: PlayerDropList[] = group.map((node) => ({
     id: String(node.id),
-    responseId: String(node.alias || node.id),
+    responseId: String(listResponseId(node)),
     connectedTo: connectedListIds(node),
     onlyOneItem: node.onlyOneItem as boolean,
     copyOnDrop: node.copyOnDrop as boolean,
-    items: (node.value as Array<{ alias: string; text?: unknown }>).map((item) => ({
-      value: item.alias,
-      label: displayText(item.text) || item.alias,
-    })),
+    items: (node.value as DropListItem[]).map((item) => {
+      const value = String(item[itemIdentifier]);
+      return { value, label: displayText(item.text) || value };
+    }),
   }));
   const valueOptions = dropLists
     .filter((list) => !list.onlyOneItem && list.connectedTo.includes(String(target.id)))
