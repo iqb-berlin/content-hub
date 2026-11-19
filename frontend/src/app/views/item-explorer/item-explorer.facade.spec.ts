@@ -4816,6 +4816,104 @@ describe('ItemExplorerFacade', () => {
         component.coding.createCodingSchemeAsText(variables);
     };
 
+    it('applies a requested solution when ASPECT reports legacy IDs after the frame starts', () => {
+      const voud = new VoudService();
+      const component = createFacade({
+        resolvePlayerResponseTarget: voud.resolvePlayerResponseTarget.bind(voud),
+      });
+      configureCoding(component, [
+        {
+          id: 'answer',
+          sourceType: 'BASE',
+          codes: [
+            {
+              id: 1,
+              type: 'FULL_CREDIT',
+              score: 1,
+              ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['object'] }] }],
+            },
+            residual,
+          ],
+        },
+      ]);
+      component.player.definitionContent = JSON.stringify({
+        version: '4.6.0',
+        pages: [
+          {
+            elements: [
+              {
+                id: 'pool',
+                type: 'drop-list',
+                value: [{ id: 'object', text: 'Richtiges Objekt' }],
+                connectedTo: ['answer'],
+                onlyOneItem: false,
+                copyOnDrop: false,
+                isSortList: false,
+              },
+              {
+                id: 'answer',
+                type: 'drop-list',
+                value: [],
+                connectedTo: [],
+                onlyOneItem: true,
+                copyOnDrop: false,
+                isSortList: false,
+              },
+            ],
+          },
+        ],
+      });
+      const postMessage = vi.fn();
+      registerPlayerDom(component, postMessage);
+      component.player.unit = { id: 'UNIT_1' };
+      const savedData = {
+        elementCodes: JSON.stringify([{ id: 'answer', status: 'VALUE_CHANGED', value: [] }]),
+      };
+      component.player.applyResponseState(savedData);
+      setPreviewStatus(component, 'ready');
+      component.toggleCorrectSolution();
+      component.onPlayerLoaded();
+      expect(component.isCorrectSolutionActive).toBe(false);
+      const answerStart = postMessage.mock.calls[0][0];
+      expect(answerStart.unitState.dataParts).toEqual(savedData);
+      const liveData = { ...savedData, stateVariableCodes: 'current' };
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: answerStart.sessionId,
+        unitState: { dataParts: liveData },
+      });
+
+      const ready = {
+        type: 'vopReadyNotification',
+        metadata: { id: 'iqb-player-aspect', version: '2.5.0' },
+      };
+      component.handlePlayerMessage(ready);
+      expect(component.correctSolutionPrefill).toMatchObject({
+        status: 'available',
+        responses: [{ id: 'answer', value: ['object'] }],
+      });
+      expect(component.codingInformation).toMatchObject({
+        status: 'exact',
+        answers: [{ responseId: 'answer', valueLabel: 'Richtiges Objekt' }],
+      });
+      expect(postMessage).toHaveBeenCalledTimes(2);
+      expect(JSON.parse(postMessage.mock.calls[1][0].unitState.dataParts.elementCodes)).toEqual([
+        { id: 'pool', status: 'VALUE_CHANGED', value: [] },
+        { id: 'answer', status: 'VALUE_CHANGED', value: ['object'] },
+      ]);
+      component.handlePlayerMessage(ready);
+      expect(postMessage).toHaveBeenCalledTimes(2);
+
+      component.toggleCorrectSolution();
+      expect(postMessage.mock.calls[2][0].unitState.dataParts).toEqual(liveData);
+      component.handlePlayerMessage({
+        type: 'vopReadyNotification',
+        metadata: { id: 'iqb-player-aspect', version: '3.1.2' },
+      });
+      expect(component.correctSolutionPrefill.status).toBe('unavailable');
+      destroyFacade(component);
+    });
+
     it('loads the preview and manual instruction when optional ruleSets are absent', () => {
       const previewLoader = {
         load: vi.fn(() => of({ unit: null, playerHtml: null, definition: null })),

@@ -200,12 +200,12 @@ export class VoudService {
 
   /**
    * Resolves the identifier and element type expected in Aspect's `elementCodes` data part.
-   * The player serializes responses by alias and falls back to the internal element id when
-   * no alias is present.
+   * Current players use aliases, while ASPECT 2.0–2.5 requires IDs for drop lists.
    */
   resolvePlayerResponseTarget(
     definition: string,
     variableId: string,
+    useLegacyDropListIds = false,
   ): PlayerResponseTarget | undefined {
     const target = String(variableId || '').trim();
     if (!target) return undefined;
@@ -217,11 +217,15 @@ export class VoudService {
       if (!match) return undefined;
 
       const identifiers = this.getNodeIdentifiers(match.node);
-      const responseId = String(match.node.alias || match.node.id || '').trim();
-      if (!responseId) return undefined;
       const elementType = String(match.node.type || '')
         .trim()
         .toLowerCase();
+      const responseId = String(
+        (useLegacyDropListIds && elementType === 'drop-list'
+          ? match.node.id
+          : match.node.alias || match.node.id) || '',
+      ).trim();
+      if (!responseId) return undefined;
       const isLikertRow = elementType === 'likert-row';
       const optionSource = isLikertRow ? match.parent : match.node;
       const hasValidOptions =
@@ -248,7 +252,10 @@ export class VoudService {
       }));
       const dropListTarget =
         elementType === 'drop-list'
-          ? resolveDropListTarget(pages, match.node, (value) => this.extractDisplayText(value))
+          ? resolveDropListTarget(pages, match.node, (value) => this.extractDisplayText(value), {
+              useLegacyIds: useLegacyDropListIds,
+              definitionVersion: unitDefinition?.version,
+            })
           : undefined;
 
       return {

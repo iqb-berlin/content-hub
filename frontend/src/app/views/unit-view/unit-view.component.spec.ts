@@ -403,6 +403,67 @@ describe('UnitViewComponent', () => {
     expect(send.mock.calls.at(-1)![0].sessionId).toContain('u2');
   });
 
+  it('derives drop-list responses when the current frame identifies a legacy ASPECT player', async () => {
+    const { component, fixture, message } = await playerFixture(
+      JSON.stringify({
+        version: '4.0.0',
+        pages: [
+          {
+            elements: [
+              {
+                id: 'pool',
+                type: 'drop-list',
+                value: [{ id: 'object' }],
+                connectedTo: ['answer'],
+                onlyOneItem: false,
+                copyOnDrop: false,
+              },
+              {
+                id: 'answer',
+                type: 'drop-list',
+                value: [],
+                connectedTo: [],
+                onlyOneItem: true,
+                copyOnDrop: false,
+              },
+            ],
+          },
+        ],
+      }),
+      {
+        variableCodings: [
+          {
+            id: 'answer',
+            sourceType: 'BASE',
+            codes: [
+              {
+                id: 1,
+                type: 'FULL_CREDIT',
+                score: 1,
+                ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['object'] }] }],
+              },
+            ],
+          },
+        ],
+      },
+    );
+    const notification = {
+      type: 'vopReadyNotification',
+      metadata: { id: 'iqb-player-aspect', version: '2.0.3' },
+    };
+    await message(notification, window);
+    expect(component.reviewSolution.prefill.status).toBe('unavailable');
+    await message(notification);
+    expect(component.reviewSolution.prefill).toMatchObject({
+      status: 'available',
+      responses: [{ id: 'answer', value: ['object'] }],
+    });
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.reviewSolution.prefill.status).toBe('unavailable');
+  });
+
   it('opens a readable explanation without changing the player for unsupported solutions', async () => {
     const { fixture, component, message, postMessage } = await playerFixture();
     await message({ type: 'vopReadyNotification' });
