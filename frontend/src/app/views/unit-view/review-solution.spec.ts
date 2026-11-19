@@ -248,6 +248,39 @@ describe('deriveReviewSolution', () => {
     expect(savedData.elementCodes).toBe(savedResponses);
   });
 
+  it.each([false, true])(
+    'merges palette objects moved through a shared example with palette copyOnDrop=%s',
+    (copyOnDrop) => {
+      const lists = dragLists(copyOnDrop);
+      lists[0].readOnlyExamples = [{ responseId: 'EXAMPLE', movableItemIds: ['DEMO'] }];
+      lists[0].otherDropListResponseIds = ['EXAMPLE', 'OTHER'];
+      const response = (id: string, value: string[]) => ({
+        id,
+        status: 'VALUE_CHANGED' as const,
+        value,
+      });
+      // X and Y reached OTHER via EXAMPLE. The solution assigns X and returns Y to POOL.
+      const originalPool = copyOnDrop ? ['X', 'Y', 'Z'] : ['Z'];
+      const saved = JSON.stringify([
+        response('POOL', originalPool),
+        response('EXAMPLE', ['DEMO']),
+        response('OTHER', ['untouched', 'X', 'Y']),
+        response('TEXT', ['X', 'Y']),
+      ]);
+      const dataParts = { elementCodes: saved };
+      const merged = mergePlayerSolutionIntoDataParts(dataParts, [response('A', ['X'])], lists);
+
+      expect(JSON.parse(merged['elementCodes'])).toEqual([
+        response('OTHER', copyOnDrop ? ['untouched', 'X', 'Y'] : ['untouched']),
+        response('TEXT', ['X', 'Y']),
+        response('POOL', copyOnDrop ? originalPool : ['Y', 'Z']),
+        response('A', ['X']),
+        response('B', []),
+      ]);
+      expect(dataParts.elementCodes).toBe(saved);
+    },
+  );
+
   it('deduplicates a shared group while combining independent drag answers', () => {
     const variables = [textVariable('A', 'X'), textVariable('B', 'Y')];
     const result = deriveReviewSolution(variables, variables, dragResolver(dragLists()));

@@ -192,7 +192,13 @@ export function mergePlayerSolutionIntoDataParts(
       ...readOnlyExamples.map((example) => example.responseId),
     ].map(normalizeSolutionIdentifier),
   );
-  const restoredItemIds = new Set(readOnlyExamples.flatMap((example) => example.movableItemIds));
+  // The preview restores every movable object from these lists to its palette, target or example.
+  const restoredItemIds = new Set([
+    ...readOnlyExamples.flatMap((example) => example.movableItemIds),
+    ...dropLists
+      .filter((list) => !list.copyOnDrop)
+      .flatMap((list) => list.items.map((item) => item.value)),
+  ]);
   const otherDropListIds = new Set(
     dropLists
       .flatMap((list) => list.otherDropListResponseIds || [])
@@ -207,7 +213,7 @@ export function mergePlayerSolutionIntoDataParts(
     ...existingResponses
       .filter((response) => !solutionIds.has(normalizeSolutionIdentifier(response?.id)))
       .map((response) => {
-        // Legacy players can move an example object to a list outside the solution group.
+        // In older players, an object can reach an outside list through a shared example.
         if (!otherDropListIds.has(normalizeSolutionIdentifier(response?.id))) return response;
         const savedItems = response?.['value'];
         if (!Array.isArray(savedItems)) return response;
