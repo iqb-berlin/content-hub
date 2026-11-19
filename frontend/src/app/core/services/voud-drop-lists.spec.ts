@@ -118,6 +118,20 @@ describe('usesLegacyAspectDropListIds', () => {
       expect(usesLegacyAspectDropListIds({ id: 'iqb-player-aspect', version })).toBe(false);
     },
   );
+  it.each([
+    ['2.6.0-beta', 'slot', 'internal-token'],
+    ['2.6.0-beta.1', 'slot', 'internal-token'],
+    ['2.6.0-beta.1+build.1', 'slot', 'internal-token'],
+    ['2.6.0-beta2', 'SLOT', 'TOKEN'],
+    ['2.6.0', 'SLOT', 'TOKEN'],
+  ])('resolves the player response and object for ASPECT %s', (version, responseId, token) => {
+    const nodes = definition();
+    const result = resolveDropListTarget(nodes, nodes[1], String, {
+      useLegacyIds: usesLegacyAspectDropListIds({ id: 'iqb-player-aspect', version }),
+    });
+    expect(result?.dropLists[1].responseId).toBe(responseId);
+    expect(result?.valueOptions[0].value).toBe(token);
+  });
   it('does not use ASPECT IDs for another player', () => {
     expect(usesLegacyAspectDropListIds({ id: 'iqb-player-other', version: '2.5.0' })).toBe(false);
   });

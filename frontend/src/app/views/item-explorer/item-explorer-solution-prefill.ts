@@ -2,6 +2,7 @@ import type { PlayerResponseTarget } from '../../core/services/voud.service';
 import type { PlayerDropList } from '../../core/services/voud-drop-lists';
 import {
   mergeDropListSolutionResponses,
+  mergeResponsesOutsideSolution,
   validateDropListAssignments,
 } from './item-explorer-drop-list-solution';
 import {
@@ -183,43 +184,13 @@ export function mergePlayerSolutionIntoDataParts(
     existingResponses = [];
   }
 
-  const readOnlyExamples = dropLists.flatMap((list) => list.readOnlyExamples || []);
-  const solutionIds = new Set(
-    [
-      ...solutionResponses.map((response) => response.id),
-      // Omit saved example responses so ASPECT reads their contents from the definition.
-      ...dropLists.map((list) => list.responseId),
-      ...readOnlyExamples.map((example) => example.responseId),
-    ].map(normalizeSolutionIdentifier),
-  );
-  // The preview restores every movable object from these lists to its palette, target or example.
-  const restoredItemIds = new Set([
-    ...readOnlyExamples.flatMap((example) => example.movableItemIds),
-    ...dropLists
-      .filter((list) => !list.copyOnDrop)
-      .flatMap((list) => list.items.map((item) => item.value)),
-  ]);
-  const otherDropListIds = new Set(
-    dropLists
-      .flatMap((list) => list.otherDropListResponseIds || [])
-      .map(normalizeSolutionIdentifier),
-  );
   const dropListResponses = mergeDropListSolutionResponses(
     existingResponses,
     solutionResponses,
     dropLists,
   );
   merged['elementCodes'] = JSON.stringify([
-    ...existingResponses
-      .filter((response) => !solutionIds.has(normalizeSolutionIdentifier(response?.id)))
-      .map((response) => {
-        // In older players, an object can reach an outside list through a shared example.
-        if (!otherDropListIds.has(normalizeSolutionIdentifier(response?.id))) return response;
-        const savedItems = response?.['value'];
-        if (!Array.isArray(savedItems)) return response;
-        const value = savedItems.filter((item) => !restoredItemIds.has(item));
-        return value.length === savedItems.length ? response : { ...response, value };
-      }),
+    ...mergeResponsesOutsideSolution(existingResponses, solutionResponses, dropLists),
     ...solutionResponses.filter(
       (response) => !dropLists.some((list) => list.responseId === response.id),
     ),

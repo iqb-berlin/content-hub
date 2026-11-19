@@ -249,11 +249,99 @@ describe('deriveReviewSolution', () => {
   });
 
   it.each([false, true])(
+    'returns displaced objects to their external palette with copyOnDrop=%s',
+    (copyOnDrop) => {
+      const list = (id: string, items: string[], connectedTo: string[]) => ({
+        type: 'drop-list',
+        id,
+        value: items.map((item) => ({ id: item })),
+        connectedTo,
+        onlyOneItem: false,
+        copyOnDrop: false,
+      });
+      const elements = [
+        list('pool', ['X'], ['answer']),
+        { ...list('answer', [], []), onlyOneItem: true },
+        { ...list('example', ['DEMO'], ['answer']), readOnly: true },
+        {
+          ...list('outside', ['FIRST', 'Y', 'Z', 'LAST', 'ELSEWHERE'], ['example', 'other']),
+          copyOnDrop,
+        },
+        list('other', [], []),
+      ];
+      const definition = JSON.stringify({ version: '4.3.0', pages: [{ elements }] });
+      const target = new VoudService().resolvePlayerResponseTarget(definition, 'answer', true);
+      const response = (id: string, value: string[]) => ({
+        id,
+        status: 'VALUE_CHANGED' as const,
+        value,
+      });
+      const originalOutside = copyOnDrop
+        ? ['FIRST', 'Y', 'Z', 'LAST', 'ELSEWHERE']
+        : ['FIRST', 'LAST'];
+      const saved = JSON.stringify([
+        response('example', ['DEMO', 'Z', 'Y']),
+        response('outside', originalOutside),
+        response('other', ['ELSEWHERE']),
+      ]);
+      const data = { elementCodes: saved };
+      const solution = [response('answer', ['X'])];
+      const preview = mergePlayerSolutionIntoDataParts(data, solution, target?.dropLists);
+
+      expect(JSON.parse(preview['elementCodes'])).toEqual([
+        response('outside', copyOnDrop ? originalOutside : ['FIRST', 'Y', 'Z', 'LAST']),
+        response('other', ['ELSEWHERE']),
+        response('pool', []),
+        ...solution,
+      ]);
+      expect(mergePlayerSolutionIntoDataParts(preview, solution, target?.dropLists)).toEqual(
+        preview,
+      );
+      expect(data.elementCodes).toBe(saved);
+    },
+  );
+
+  it('returns the occupant of a displaced single-item origin to its own palette', () => {
+    const lists = dragLists();
+    lists[0].readOnlyExamples = [
+      { responseId: 'EXAMPLE', movableItemIds: ['DEMO'], onlyOneItem: false },
+    ];
+    lists[0].otherDropLists = [
+      { responseId: 'SLOT', movableItemIds: ['YELLOW'], onlyOneItem: true },
+      { responseId: 'PALETTE', movableItemIds: ['BLUE'], onlyOneItem: false },
+    ];
+    const response = (id: string, value: string[]) => ({
+      id,
+      status: 'VALUE_CHANGED' as const,
+      value,
+    });
+    const saved = {
+      elementCodes: JSON.stringify([
+        response('EXAMPLE', ['DEMO', 'YELLOW']),
+        response('SLOT', ['BLUE']),
+        response('PALETTE', []),
+      ]),
+    };
+    const preview = mergePlayerSolutionIntoDataParts(saved, [response('A', ['X'])], lists);
+    // EXAMPLE and SLOT return to their definition. BLUE must remain available in PALETTE.
+    expect(JSON.parse(preview['elementCodes'])).toEqual([
+      response('PALETTE', ['BLUE']),
+      response('POOL', ['Y', 'Z']),
+      response('A', ['X']),
+      response('B', []),
+    ]);
+  });
+
+  it.each([false, true])(
     'merges palette objects moved through a shared example with palette copyOnDrop=%s',
     (copyOnDrop) => {
       const lists = dragLists(copyOnDrop);
-      lists[0].readOnlyExamples = [{ responseId: 'EXAMPLE', movableItemIds: ['DEMO'] }];
-      lists[0].otherDropListResponseIds = ['EXAMPLE', 'OTHER'];
+      lists[0].readOnlyExamples = [
+        { responseId: 'EXAMPLE', movableItemIds: ['DEMO'], onlyOneItem: true },
+      ];
+      lists[0].otherDropLists = [
+        { responseId: 'OTHER', movableItemIds: ['untouched'], onlyOneItem: false },
+      ];
       const response = (id: string, value: string[]) => ({
         id,
         status: 'VALUE_CHANGED' as const,

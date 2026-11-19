@@ -1,3 +1,9 @@
+interface DropListOrigin {
+  responseId: string;
+  movableItemIds: string[];
+  onlyOneItem: boolean;
+}
+
 export interface PlayerDropList {
   id: string;
   responseId: string;
@@ -5,8 +11,8 @@ export interface PlayerDropList {
   onlyOneItem: boolean;
   copyOnDrop: boolean;
   items: Array<{ value: string; label: string }>;
-  readOnlyExamples?: Array<{ responseId: string; movableItemIds: string[] }>;
-  otherDropListResponseIds?: string[];
+  readOnlyExamples?: DropListOrigin[];
+  otherDropLists?: DropListOrigin[];
 }
 
 interface DropListNode {
@@ -27,14 +33,14 @@ interface DropListItem {
   text?: unknown;
 }
 
-/** ASPECT 2.6 switched both response and drag object identifiers to aliases. */
+/** ASPECT 2.6.0-beta2 switched both response and drag object identifiers to aliases. */
 export function usesLegacyAspectDropListIds(metadata: unknown): boolean {
   if (!metadata || typeof metadata !== 'object') return false;
   const { id, version } = metadata as { id?: unknown; version?: unknown };
+  if (id !== 'iqb-player-aspect' || typeof version !== 'string') return false;
   return (
-    id === 'iqb-player-aspect' &&
-    typeof version === 'string' &&
-    /^2\.[0-5]\.\d+(?:-[\da-z.-]+)?(?:\+[\da-z.-]+)?$/i.test(version)
+    /^2\.[0-5]\.\d+(?:-[\da-z.-]+)?(?:\+[\da-z.-]+)?$/i.test(version) ||
+    /^2\.6\.0-beta(?:\.1)?(?:\+[\da-z.-]+)?$/i.test(version)
   );
 }
 
@@ -138,9 +144,17 @@ export function resolveDropListTarget(
   ) {
     return undefined;
   }
-  const otherDropListResponseIds = nodes
-    .filter((node) => !component.has(String(node.id)))
-    .map((node) => String(listResponseId(node)));
+  const originOf = (node: DropListNode): DropListOrigin => ({
+    onlyOneItem: node.onlyOneItem === true,
+    responseId: String(listResponseId(node)),
+    movableItemIds:
+      node.copyOnDrop !== true && Array.isArray(node.value)
+        ? (node.value as DropListItem[]).map((item) => String(item[itemIdentifier]))
+        : [],
+  });
+  const otherDropLists = readOnlyNodes.length
+    ? nodes.filter((node) => !component.has(String(node.id))).map(originOf)
+    : [];
   const dropLists: PlayerDropList[] = group.map((node) => {
     const id = String(node.id);
     const outgoingConnections = connections(node);
@@ -149,13 +163,7 @@ export function resolveDropListTarget(
         (example) =>
           outgoingConnections.includes(String(example.id)) || connections(example).includes(id),
       )
-      .map((example) => ({
-        responseId: String(listResponseId(example)),
-        movableItemIds:
-          example.copyOnDrop !== true && Array.isArray(example.value)
-            ? (example.value as DropListItem[]).map((item) => String(item[itemIdentifier]))
-            : [],
-      }));
+      .map(originOf);
     return {
       id,
       responseId: String(listResponseId(node)),
@@ -166,7 +174,7 @@ export function resolveDropListTarget(
         const value = String(item[itemIdentifier]);
         return { value, label: displayText(item.text) || value };
       }),
-      ...(readOnlyExamples.length ? { readOnlyExamples, otherDropListResponseIds } : {}),
+      ...(readOnlyExamples.length ? { readOnlyExamples, otherDropLists } : {}),
     };
   });
   const valueOptions = dropLists
