@@ -264,6 +264,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
   private responseBeforeSolution: {
     origin: 'answers' | 'visibility';
     page: number;
+    playerPageId: string;
     dataParts: Record<string, any> | null;
   } | null = null;
 
@@ -291,6 +292,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
     this.responseBeforeSolution = {
       origin: this.responseSession.origin,
       page: this.currentPage - 1,
+      playerPageId: this.currentPlayerPageId,
       dataParts:
         this.currentResponseData ||
         this.responseBeforeSolution?.dataParts ||
@@ -425,6 +427,15 @@ export class ItemExplorerPlayerService implements OnDestroy {
                   .map(String)
               : Object.keys(pages);
             this.rememberVisiblePages(visiblePageIds);
+            if (
+              this.pendingFlowPage !== null &&
+              visiblePageIds.length > 0 &&
+              this.usesPlayerPageOrder &&
+              !visiblePageIds.includes(this.pendingFlowPage)
+            ) {
+              this.pendingFlowPage = null;
+              this.clearLegacyPageNavigationTimers();
+            }
             this.totalPages = visiblePageIds.length || this.totalPages;
           }
           if (state?.currentPage !== undefined) this.acceptPlayerPage(state.currentPage);
@@ -521,6 +532,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
       return { kind: 'unavailable', reason: 'unresolved-target' };
     }
     let startPage = targetLocation.scrollPageIndex;
+    let startPageId: string | undefined;
     let origin: PreviewResponseSession['origin'] = this.responseBeforeSolution?.origin || 'answers';
     let dataParts = this.getPlayerStartDataParts();
     this.clearFocusRetryTimer();
@@ -540,6 +552,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
         return { kind: 'unavailable', reason: 'unresolved-visibility', message: resolved.reason };
       }
       startPage = resolved.page;
+      startPageId = resolved.playerPageId;
       origin = 'visibility';
       const print = this.pagingMode === 'view-all' || this.pagingMode === 'print-ids';
       dataParts = print ? resolved.printDataParts || resolved.dataParts : resolved.dataParts;
@@ -551,11 +564,13 @@ export class ItemExplorerPlayerService implements OnDestroy {
         // Replaying triggers again could change that already reached context.
         dataParts = this.responseBeforeSolution.dataParts || dataParts;
         startPage = this.responseBeforeSolution.page;
+        startPageId = this.responseBeforeSolution.playerPageId;
         navigation = undefined;
         triggerIds = [];
       }
     } else if (regularFlow) {
       startPage = this.flowStarted ? this.currentPage - 1 : 0;
+      if (this.flowStarted) startPageId = this.currentPlayerPageId;
       if (!this.flowStarted) dataParts = {};
       this.presentationMessage =
         'Regulärer Aufgabenablauf. Eine erreichte Itemansicht kann als Referenzkontext übernommen werden.';
@@ -572,8 +587,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
     const usesPagedNavigation = this.pagingMode !== 'view-all' && this.pagingMode !== 'print-ids';
     const playerDefinition = this.getPlayerDefinitionContent();
 
-    const startPageId =
-      regularFlow && this.flowStarted ? this.currentPlayerPageId : startPage?.toString();
+    startPageId ??= startPage?.toString();
     if (!regularFlow || !this.flowStarted) this.knownPlayerPageIds = [];
     this.startSessionCounter += 1;
     this.beginResponseSession(sessionId, origin, dataParts);
@@ -699,6 +713,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
       definitionKey: previewDefinitionKey(this.definitionContent),
       target: request.target,
       page: this.currentPage - 1,
+      ...(this.usesPlayerPageOrder && { playerPageId: this.currentPlayerPageId }),
       dataParts,
     });
   }
