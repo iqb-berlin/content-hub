@@ -1,0 +1,78 @@
+{
+  "source": "https://iqb-berlin.github.io/releases.html",
+  "aspect": {
+    "source": "https://github.com/iqb-berlin/verona-modules-aspect/blob/editor/3.0.1%2Bplayer/3.0.1/projects/common/utils/element-factory.ts",
+    "types": [
+      "text",
+      "button",
+      "text-field",
+      "text-field-simple",
+      "text-area",
+      "checkbox",
+      "dropdown",
+      "radio",
+      "image",
+      "audio",
+      "video",
+      "cloze",
+      "marking-panel",
+      "slider",
+      "spell-correct",
+      "frame",
+      "toggle-button",
+      "geometry",
+      "hotspot-image",
+      "math-field",
+      "math-table",
+      "text-area-math",
+      "trigger",
+      "table",
+      "radio-group-images",
+      "drop-list",
+      "likert-row",
+      "likert",
+      "widget-molecule-editor",
+      "widget-periodic-table"
+    ]
+  },
+  "families": [
+    "aspect",
+    "abi",
+    "speed-multi",
+    "speed-mono",
+    "simple",
+    "ib"
+  ],
+  "abi": {
+    "source": "https://github.com/iqb-berlin/verona-player-abi/blob/5.0.0/IQB-SCRIPTED.md",
+    "formats": [
+      "input-text",
+      "input-text-multiline",
+      "input-number",
+      "checkbox",
+      "checkboxes",
+      "multiple-choice",
+      "drop-down",
+      "likert",
+      "if",
+      "repeat",
+      "navigation"
+    ]
+  },
+  "speedMulti": {
+    "source": "https://github.com/iqb-berlin/verona-modules-speedtest/blob/3.3.0/projects/common/interfaces/unit.ts",
+    "questionTypes": [
+      "text",
+      "image",
+      "audio",
+      "word-select",
+      "inline-answers"
+    ],
+    "answerTypes": [
+      "text",
+      "image",
+      "number",
+      "audio"
+    ]
+  }
+}

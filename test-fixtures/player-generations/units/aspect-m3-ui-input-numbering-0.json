@@ -1,0 +1,604 @@
+{
+  "id": "aspect-m3-ui-input-numbering-0",
+  "name": "ASPECT Assistent: Antwortfeld(er) – input-numbering-0",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "stateVariables": [],
+    "enableSectionNumbering": false,
+    "sectionNumberingPosition": "left",
+    "showUnitNavNext": false,
+    "version": "4.13.0",
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": null,
+                  "gridColumnRange": 1,
+                  "gridRow": null,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "stimulus",
+                "alias": "STIMULUS",
+                "type": "text",
+                "text": "<p>Am See teilen wir Wasser und Äpfel. Markiere die Lebensmittel.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 400,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          },
+          {
+            "elements": [
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 2,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "text_1793712503741_1",
+                "alias": "text_1",
+                "type": "text",
+                "text": "<p indentsize=\"20\" style=\"padding-left: 0px; text-indent: 0px; margin-bottom: 0px; margin-top: 0px;\">Ausflug an den See: Wasser, Brot und Äpfel. Dies sind synthetische Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              },
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 16,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "text_1793712503742_1",
+                "alias": "text_2",
+                "type": "text",
+                "text": "a)",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              },
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 2,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": -25,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 120,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": 750,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "text-field_1793712503742_1",
+                "alias": "text-field_1",
+                "label": "",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-field",
+                "appearance": "outline",
+                "textAlign": "left",
+                "minLength": null,
+                "minLengthWarnMessage": "Eingabe zu kurz",
+                "maxLength": null,
+                "maxLengthWarnMessage": "Eingabe zu lang",
+                "isLimitedToMaxLength": true,
+                "pattern": null,
+                "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                "clearable": false
+              },
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 3,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 16,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "text_1793712503742_2",
+                "alias": "text_3",
+                "type": "text",
+                "text": "b)",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              },
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 2,
+                  "gridColumnRange": 1,
+                  "gridRow": 3,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": -25,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 120,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": 750,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "text-field_1793712503742_2",
+                "alias": "text-field_2",
+                "label": "",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-field",
+                "appearance": "outline",
+                "textAlign": "left",
+                "minLength": null,
+                "minLengthWarnMessage": "Eingabe zu kurz",
+                "maxLength": null,
+                "maxLengthWarnMessage": "Eingabe zu lang",
+                "isLimitedToMaxLength": true,
+                "pattern": null,
+                "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                "clearable": false
+              },
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 4,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 16,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "text_1793712503742_3",
+                "alias": "text_4",
+                "type": "text",
+                "text": "c)",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              },
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 2,
+                  "gridColumnRange": 1,
+                  "gridRow": 4,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 120,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": 750,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "text-field_1793712503742_3",
+                "alias": "text-field_3",
+                "label": "",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-field",
+                "appearance": "outline",
+                "textAlign": "left",
+                "minLength": null,
+                "minLengthWarnMessage": "Eingabe zu kurz",
+                "maxLength": null,
+                "maxLengthWarnMessage": "Eingabe zu lang",
+                "isLimitedToMaxLength": true,
+                "pattern": null,
+                "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                "clearable": false
+              }
+            ],
+            "height": 400,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": false,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 25,
+                "unit": "px"
+              },
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50
+      }
+    ]
+  }
+}

@@ -11,6 +11,13 @@ const crossBrowserSpecs = [
   '**/review-task-links.spec.ts',
   '**/critical-journeys-cross-browser.spec.ts',
   '**/item-explorer-reduced-view.spec.ts',
+  '**/synthetic-aspect.spec.ts',
+  '**/synthetic-aspect-media.spec.ts',
+  '**/synthetic-players.spec.ts',
+  '**/synthetic-players-media.spec.ts',
+  '**/synthetic-generations.spec.ts',
+  '**/synthetic-aspect-acceptance.spec.ts',
+  '**/synthetic-generations-compatibility.spec.ts',
 ];
 
 if (process.env['NODE_ENV'] !== 'test' || !databaseName.toLowerCase().includes('e2e')) {
@@ -30,7 +37,7 @@ export default defineConfig({
   workers: 1,
   timeout: 60_000,
   expect: { timeout: 10_000 },
-  reporter: [['html', { open: 'never' }], ['list']],
+  reporter: [['html', { open: 'never' }], ['list'], ['./e2e/synthetic-media-reporter.ts']],
   use: {
     baseURL: `http://127.0.0.1:${frontendPort}`,
     trace: 'retain-on-failure',

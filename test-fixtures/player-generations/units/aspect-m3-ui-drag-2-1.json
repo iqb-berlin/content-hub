@@ -1,0 +1,334 @@
+{
+  "id": "aspect-m3-ui-drag-2-1",
+  "name": "ASPECT Assistent: Drag & Drop – drag-2-1",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "stateVariables": [],
+    "enableSectionNumbering": false,
+    "sectionNumberingPosition": "left",
+    "showUnitNavNext": false,
+    "version": "4.13.0",
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": null,
+                  "gridColumnRange": 1,
+                  "gridRow": null,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "stimulus",
+                "alias": "STIMULUS",
+                "type": "text",
+                "text": "<p>Am See teilen wir Wasser und Äpfel. Markiere die Lebensmittel.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 400,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          },
+          {
+            "elements": [
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 20,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "text_1793712909495_1",
+                "alias": "text_1",
+                "type": "text",
+                "text": "<p indentsize=\"20\" style=\"padding-left: 0px; text-indent: 0px; margin-bottom: 0px; margin-top: 0px;\">Ausflug an den See: Wasser, Brot und Äpfel. Dies sind synthetische Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              },
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 20,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": true,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "id": "text_1793712909495_2",
+                "alias": "text_2",
+                "type": "text",
+                "text": "<p indentsize=\"20\" style=\"padding-left: 0px; text-indent: 0px; margin-bottom: 0px; margin-top: 0px;\">Ausflug an den See: Wasser, Brot und Äpfel. Dies sind synthetische Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              },
+              {
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 3,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 40,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 240,
+                  "height": 100,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": 250,
+                  "minHeight": 57,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "#ededed",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "itemBackgroundColor": "#c9e0e0"
+                },
+                "id": "drop-list_1793712909496_1",
+                "alias": "drop-list_1",
+                "value": [
+                  {
+                    "text": "Wasser",
+                    "id": "value_1793712909496_1",
+                    "alias": "value_1",
+                    "originListID": "drop-list_1793712909496_1",
+                    "originListIndex": 0
+                  },
+                  {
+                    "text": "Brot",
+                    "id": "value_1793712909496_2",
+                    "alias": "value_2",
+                    "originListID": "drop-list_1793712909496_1",
+                    "originListIndex": 1
+                  }
+                ],
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "type": "drop-list",
+                "isSortList": true,
+                "onlyOneItem": false,
+                "connectedTo": [],
+                "copyOnDrop": false,
+                "allowReplacement": false,
+                "permanentPlaceholders": false,
+                "permanentPlaceholdersCC": true,
+                "orientation": "vertical",
+                "showNumbering": false,
+                "startNumberingAtZero": false,
+                "highlightReceivingDropList": true,
+                "highlightReceivingDropListColor": "#006064"
+              }
+            ],
+            "height": 400,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50
+      }
+    ]
+  }
+}

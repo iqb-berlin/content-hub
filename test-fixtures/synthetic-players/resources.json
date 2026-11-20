@@ -1,0 +1,24 @@
+{
+  "geogebra": {
+    "version": "5.4.933.1",
+    "source": "https://download.geogebra.org/installers/5.4/geogebra-math-apps-bundle-5-4-933-1.zip",
+    "sha256": "409095947e065bce5bde20b8a6d56a60e2b3cb3cce6947e817a802513515ec0c",
+    "license": "https://www.geogebra.org/license"
+  },
+  "ib": {
+    "version": "9.9.0",
+    "revision": "3b6cd474a76f82087e632ad8de14f6818ad754ca",
+    "files": [
+      {
+        "file": "main.220e1b93.js",
+        "source": "https://raw.githubusercontent.com/DIPFtba/CBAItemBuilderSupportedRuntimes/3b6cd474a76f82087e632ad8de14f6818ad754ca/9.9.0/main.220e1b93.js",
+        "sha256": "126598c5211ed8cf88858fda0fcfee40f8cb454f83cae03919a3956e09b8f008"
+      },
+      {
+        "file": "main.043269d0.css",
+        "source": "https://raw.githubusercontent.com/DIPFtba/CBAItemBuilderSupportedRuntimes/3b6cd474a76f82087e632ad8de14f6818ad754ca/9.9.0/main.043269d0.css",
+        "sha256": "1b4a316d3e16860e5a8d1522c28cf7fd00d4edef141fb500f746920eb93964ca"
+      }
+    ]
+  }
+}

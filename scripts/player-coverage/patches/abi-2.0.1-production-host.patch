@@ -1,0 +1,15 @@
+--- a/src/app/app.component.ts
++++ b/src/app/app.component.ts
+@@ -2 +2 @@
+-  AfterViewInit, Component, Inject
++  AfterViewInit, Component
+@@ -4,0 +5 @@
++import { environment } from '../environments/environment';
+@@ -16 +17 @@
+-  @Inject('IS_PRODUCTION_MODE') readonly isProductionMode: boolean;
++  readonly isProductionMode = environment.production;
+--- a/projects/player-component/src/app/player.component.ts
++++ b/projects/player-component/src/app/player.component.ts
+@@ -10 +10 @@
+-    <p>player-component alive!</p>
++    <p></p>

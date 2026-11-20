@@ -5,11 +5,12 @@ import { ApiService } from './core/services/api.service';
 import { applyLanguage, applyTheme } from './core/utils/app-settings.util';
 import { forkJoin } from 'rxjs';
 import { BuildVersion } from './core/models/api.models';
+import { VeronaWidgetHostComponent } from './shared/components/verona-widget-host.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, VeronaWidgetHostComponent],
   template: `
     <header class="app-header">
       <a routerLink="/" class="header-left logo" aria-label="Content Hub – Startseite">
@@ -53,6 +54,7 @@ import { BuildVersion } from './core/models/api.models';
     <main class="app-main">
       <router-outlet />
     </main>
+    <app-verona-widget-host />
     <footer class="app-footer">
       @if (buildVersion) {
         <span [class.version-mismatch]="versionMismatch" [title]="versionTitle"

@@ -1,0 +1,127 @@
+{
+  "id": "aspect-m1-page-alwaysVisibleAspectRatio-1",
+  "name": "ASPECT 1: page.alwaysVisibleAspectRatio = 2",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "version": "3.10.0",
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "input",
+                "type": "text-field",
+                "width": 180,
+                "height": 120,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "label": "Deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": true,
+                "hasArrowKeys": false,
+                "showSoftwareKeyboard": false,
+                "softwareKeyboardShowFrench": false,
+                "appearance": "outline",
+                "minLength": null,
+                "minLengthWarnMessage": "Eingabe zu kurz",
+                "maxLength": null,
+                "maxLengthWarnMessage": "Eingabe zu lang",
+                "isLimitedToMaxLength": false,
+                "pattern": null,
+                "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                "hasKeyboardIcon": false,
+                "clearable": false
+              },
+              {
+                "id": "instruction",
+                "type": "text",
+                "width": 180,
+                "height": 98,
+                "position": {
+                  "fixedSize": false,
+                  "dynamicPositioning": true,
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "useMinHeight": false,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": 0,
+                  "marginRight": 0,
+                  "marginTop": 0,
+                  "marginBottom": 0,
+                  "zIndex": 0
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "lineHeight": 135,
+                  "fontColor": "#000000",
+                  "font": "Roboto",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false
+                },
+                "text": "<p><strong>Ausflug an den See – page</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": true,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr",
+            "activeAfterID": null,
+            "activeAfterIdDelay": 0
+          }
+        ],
+        "hasMaxWidth": false,
+        "maxWidth": 900,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 2
+      }
+    ]
+  }
+}

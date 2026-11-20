@@ -1,0 +1,318 @@
+{
+  "runtimeCompatibilityVersion": "9.9.0",
+  "name": "Synthetic",
+  "pages": [
+    {
+      "name": "FirstPage",
+      "isRightToLeft": false,
+      "closable": true,
+      "content": {
+        "type": "CbaContainer",
+        "config": {
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 600,
+            "height": 400
+          },
+          "font": {
+            "name": "Arial",
+            "size": 16,
+            "alignmentHorizontal": "left",
+            "bold": false,
+            "italic": false,
+            "underlined": false
+          },
+          "color": {
+            "text": {
+              "default": "rgba(0,0,0,1)",
+              "disabled": "rgba(167,166,170,1)"
+            },
+            "background": {
+              "default": "rgba(255,255,255,1)"
+            }
+          },
+          "border": {
+            "style": "solid",
+            "width": 1,
+            "radius": 0,
+            "color": {
+              "default": "rgba(22,107,140,1)",
+              "disabled": "rgba(210,210,210,1)"
+            }
+          },
+          "transform": {},
+          "state": {
+            "disabled": false,
+            "selected": false,
+            "hidden": false
+          },
+          "text": {},
+          "image": {
+            "displayMode": "none"
+          },
+          "cursor": {
+            "standard": "auto"
+          },
+          "tabIndex": 0,
+          "event": {},
+          "classifiers": [],
+          "link": {},
+          "userDefinedId": "frame",
+          "pageEditId": "frame",
+          "trace": {
+            "skipTrace": false,
+            "type": "Container"
+          },
+          "autoLayoutLayer": "none",
+          "cssClassNames": [
+            "frame"
+          ],
+          "cbaChildren": [
+            {
+              "type": "CbaSingleLineInputField",
+              "config": {
+                "position": {
+                  "x": 30,
+                  "y": 45,
+                  "width": 260,
+                  "height": 40
+                },
+                "font": {
+                  "name": "Arial",
+                  "size": 16,
+                  "alignmentHorizontal": "left",
+                  "bold": false,
+                  "italic": false,
+                  "underlined": false
+                },
+                "color": {
+                  "text": {
+                    "default": "rgba(0,0,0,1)",
+                    "disabled": "rgba(167,166,170,1)"
+                  },
+                  "background": {
+                    "default": "rgba(255,255,255,1)"
+                  }
+                },
+                "border": {
+                  "style": "solid",
+                  "width": 1,
+                  "radius": 0,
+                  "color": {
+                    "default": "rgba(22,107,140,1)",
+                    "disabled": "rgba(210,210,210,1)"
+                  }
+                },
+                "transform": {},
+                "state": {
+                  "disabled": false,
+                  "selected": false,
+                  "hidden": false
+                },
+                "text": {},
+                "image": {
+                  "displayMode": "none"
+                },
+                "cursor": {
+                  "standard": "auto"
+                },
+                "tabIndex": 0,
+                "event": {},
+                "classifiers": [],
+                "link": {},
+                "userDefinedId": "answer",
+                "pageEditId": "answer",
+                "trace": {
+                  "skipTrace": false,
+                  "type": "SingleLineInputField"
+                },
+                "autoLayoutLayer": "none",
+                "cssClassNames": [
+                  "answer"
+                ]
+              }
+            },
+            {
+              "type": "CbaCheckbox",
+              "config": {
+                "position": {
+                  "x": 30,
+                  "y": 100,
+                  "width": 250,
+                  "height": 40
+                },
+                "font": {
+                  "name": "Arial",
+                  "size": 16,
+                  "alignmentHorizontal": "left",
+                  "bold": false,
+                  "italic": false,
+                  "underlined": false
+                },
+                "color": {
+                  "text": {
+                    "default": "rgba(0,0,0,1)",
+                    "disabled": "rgba(167,166,170,1)"
+                  },
+                  "background": {
+                    "default": "rgba(255,255,255,1)"
+                  }
+                },
+                "border": {
+                  "style": "solid",
+                  "width": 1,
+                  "radius": 0,
+                  "color": {
+                    "default": "rgba(22,107,140,1)",
+                    "disabled": "rgba(210,210,210,1)"
+                  }
+                },
+                "transform": {},
+                "state": {
+                  "disabled": false,
+                  "selected": false,
+                  "hidden": false
+                },
+                "text": {
+                  "label": "Wasser mitnehmen"
+                },
+                "image": {
+                  "displayMode": "none"
+                },
+                "cursor": {
+                  "standard": "auto"
+                },
+                "tabIndex": 0,
+                "event": {},
+                "classifiers": [],
+                "link": {},
+                "userDefinedId": "water",
+                "pageEditId": "water",
+                "trace": {
+                  "skipTrace": false,
+                  "type": "Checkbox"
+                },
+                "autoLayoutLayer": "none",
+                "cssClassNames": [
+                  "water"
+                ],
+                "textWrap": false,
+                "label": {
+                  "distance": 10,
+                  "position": "right"
+                },
+                "controlIconSize": 18
+              }
+            },
+            {
+              "type": "CbaButton",
+              "config": {
+                "position": {
+                  "x": 30,
+                  "y": 170,
+                  "width": 180,
+                  "height": 45
+                },
+                "font": {
+                  "name": "Arial",
+                  "size": 16,
+                  "alignmentHorizontal": "left",
+                  "bold": false,
+                  "italic": false,
+                  "underlined": false
+                },
+                "color": {
+                  "text": {
+                    "default": "rgba(0,0,0,1)",
+                    "disabled": "rgba(167,166,170,1)"
+                  },
+                  "background": {
+                    "default": "rgba(255,255,255,1)"
+                  }
+                },
+                "border": {
+                  "style": "solid",
+                  "width": 1,
+                  "radius": 0,
+                  "color": {
+                    "default": "rgba(22,107,140,1)",
+                    "disabled": "rgba(210,210,210,1)"
+                  }
+                },
+                "transform": {},
+                "state": {
+                  "disabled": false,
+                  "selected": false,
+                  "hidden": false
+                },
+                "text": {
+                  "label": "Nächste Aufgabe"
+                },
+                "image": {
+                  "displayMode": "none"
+                },
+                "cursor": {
+                  "standard": "auto"
+                },
+                "tabIndex": 0,
+                "event": {},
+                "classifiers": [],
+                "link": {},
+                "userDefinedId": "next",
+                "pageEditId": "next",
+                "trace": {
+                  "skipTrace": false,
+                  "type": "Button"
+                },
+                "autoLayoutLayer": "none",
+                "cssClassNames": [
+                  "next"
+                ],
+                "highlight": "none",
+                "selectionHandlerType": "next_task",
+                "toggleType": "none"
+              }
+            }
+          ],
+          "selectGroups": [],
+          "propagationGroups": []
+        }
+      }
+    }
+  ],
+  "valueMaps": [],
+  "variables": [
+    {
+      "name": "ANSWER",
+      "type": "string",
+      "value": ""
+    }
+  ],
+  "tasks": [
+    {
+      "name": "FirstTask",
+      "withEditContextMenu": false,
+      "initialPage": "FirstPage",
+      "itemWidth": 600,
+      "itemHeight": 400,
+      "traceVariableValues": false,
+      "cssStyles": "",
+      "itemHighlightColor": "rgba(255,204,102,1)",
+      "highlightColors": [],
+      "namedCalculations": [],
+      "scoreResult": {
+        "attributes": {
+          "name": "FirstTask",
+          "result": 0
+        },
+        "lists": []
+      }
+    }
+  ],
+  "usedResources": {
+    "resources": [],
+    "externalResources": []
+  },
+  "dependencies": []
+}

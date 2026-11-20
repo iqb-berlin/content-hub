@@ -1,0 +1,25 @@
+{
+  "id": "mono-ternary",
+  "name": "Speed Mono: Drei Antwortoptionen",
+  "definition": "Wasser ist nass.\nvariable_id_value::ANSWER\nvariable_id_time::TIME\nbutton_label_A::Richtig\nbutton_label_B::Falsch\nbutton_label_C::Unklar\nmessage_no_next::Synthetischer Durchgang abgeschlossen.\nmax_width_px::500",
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "ANSWER",
+        "alias": "ANSWER",
+        "label": "Speed Mono: Drei Antwortoptionen",
+        "sourceType": "BASE",
+        "codeModel": "MANUAL_ONLY",
+        "manualInstruction": "<p>Synthetisches Beispiel. Die Kodierung bleibt lesbar; dieser Player verwendet ein eigenes Antwortformat.</p>",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Prüfantwort"
+          }
+        ]
+      }
+    ]
+  }
+}

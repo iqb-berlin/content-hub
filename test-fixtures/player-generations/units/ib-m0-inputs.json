@@ -1,0 +1,12 @@
+{
+  "id": "ib-m0-inputs",
+  "name": "ib 0.2.0: Ausflug an den See",
+  "definition": {
+    "runtimeVersion": "9.9.0",
+    "item": "Synthetic",
+    "task": "FirstTask",
+    "scope": "A",
+    "package": "GeoGebra/synthetic-ib",
+    "folder": "demo"
+  }
+}

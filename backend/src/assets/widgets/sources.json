@@ -1,0 +1,17 @@
+{
+  "repository": "https://github.com/iqb-berlin/verona-widgets-chemistry",
+  "version": "1.1.0",
+  "license": "MIT",
+  "files": [
+    {
+      "file": "periodic-table.html",
+      "sha256": "475d6ef61cb6584c7ae10b6942b9b80571e4bd4089ce489f4132a3afa5ba85c3",
+      "source": "https://github.com/iqb-berlin/verona-widgets-chemistry/releases/download/1.1.0/verona-widget-periodic-table-1.1.0.html"
+    },
+    {
+      "file": "molecule-editor.html",
+      "sha256": "3ac0ad530e12d673d232ea136a152870bc8482ed3d3dfee7b809bc9d1008ff65",
+      "source": "https://github.com/iqb-berlin/verona-widgets-chemistry/releases/download/1.1.0/verona-widget-molecule-editor-1.1.0.html"
+    }
+  ]
+}

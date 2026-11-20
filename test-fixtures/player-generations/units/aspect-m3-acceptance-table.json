@@ -1,0 +1,1851 @@
+{
+  "id": "aspect-m3-acceptance-table",
+  "name": "ASPECT-Abnahme: Tabelle mit feststehender Kopfzeile",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "version": "4.13.0",
+    "stateVariables": [],
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "p0_e1",
+                "alias": "P0_V1",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 2,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 30,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 250,
+                  "height": 200,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "borderWidth": 1,
+                  "borderColor": "black",
+                  "borderStyle": "solid",
+                  "borderRadius": 0
+                },
+                "type": "table",
+                "gridColumnSizes": [
+                  {
+                    "value": 1,
+                    "unit": "fr"
+                  },
+                  {
+                    "value": 1,
+                    "unit": "fr"
+                  }
+                ],
+                "gridRowSizes": [
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  },
+                  {
+                    "value": 72,
+                    "unit": "px"
+                  }
+                ],
+                "elements": [
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 1,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_0",
+                    "alias": "TABLE_CELL_0",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 2,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_1",
+                    "alias": "TABLE_CELL_1",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 3,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_2",
+                    "alias": "TABLE_CELL_2",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 4,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_3",
+                    "alias": "TABLE_CELL_3",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 5,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_4",
+                    "alias": "TABLE_CELL_4",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 6,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_5",
+                    "alias": "TABLE_CELL_5",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 7,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_6",
+                    "alias": "TABLE_CELL_6",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 8,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_7",
+                    "alias": "TABLE_CELL_7",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 9,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_8",
+                    "alias": "TABLE_CELL_8",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 10,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_9",
+                    "alias": "TABLE_CELL_9",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 11,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_10",
+                    "alias": "TABLE_CELL_10",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 12,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_11",
+                    "alias": "TABLE_CELL_11",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 13,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_12",
+                    "alias": "TABLE_CELL_12",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 14,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_13",
+                    "alias": "TABLE_CELL_13",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 15,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_14",
+                    "alias": "TABLE_CELL_14",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 16,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_15",
+                    "alias": "TABLE_CELL_15",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 17,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_16",
+                    "alias": "TABLE_CELL_16",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 18,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_17",
+                    "alias": "TABLE_CELL_17",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 19,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_18",
+                    "alias": "TABLE_CELL_18",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  },
+                  {
+                    "isRelevantForPresentationComplete": true,
+                    "position": {
+                      "xPosition": 0,
+                      "yPosition": 0,
+                      "gridColumn": 1,
+                      "gridColumnRange": 1,
+                      "gridRow": 20,
+                      "gridRowRange": 1,
+                      "marginLeft": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginRight": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginTop": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "marginBottom": {
+                        "value": 0,
+                        "unit": "px"
+                      },
+                      "zIndex": 0
+                    },
+                    "dimensions": {
+                      "width": 180,
+                      "height": 120,
+                      "isWidthFixed": false,
+                      "isHeightFixed": false,
+                      "minWidth": null,
+                      "maxWidth": null,
+                      "minHeight": null,
+                      "maxHeight": null
+                    },
+                    "styling": {
+                      "backgroundColor": "transparent",
+                      "fontColor": "#000000",
+                      "fontSize": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "lineHeight": 135
+                    },
+                    "id": "table_cell_19",
+                    "alias": "TABLE_CELL_19",
+                    "label": "Deine Antwort",
+                    "value": null,
+                    "required": false,
+                    "requiredWarnMessage": "Eingabe erforderlich",
+                    "readOnly": false,
+                    "inputAssistancePreset": null,
+                    "inputAssistanceCustomKeys": "",
+                    "inputAssistanceCustomStyle": "medium",
+                    "inputAssistancePosition": "floating",
+                    "inputAssistanceFloatingStartPosition": "startBottom",
+                    "restrictedToInputAssistanceChars": false,
+                    "hasArrowKeys": false,
+                    "hasBackspaceKey": false,
+                    "showSoftwareKeyboard": true,
+                    "addInputAssistanceToKeyboard": true,
+                    "hideNativeKeyboard": true,
+                    "keyStyle": "round",
+                    "type": "text-field",
+                    "appearance": "outline",
+                    "textAlign": "left",
+                    "minLength": null,
+                    "minLengthWarnMessage": "Eingabe zu kurz",
+                    "maxLength": null,
+                    "maxLengthWarnMessage": "Eingabe zu lang",
+                    "isLimitedToMaxLength": true,
+                    "pattern": null,
+                    "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                    "clearable": false,
+                    "gridRow": 1,
+                    "gridColumn": 1
+                  }
+                ],
+                "tableEdgesEnabled": true,
+                "headerEnabled": true,
+                "headerRows": [
+                  [
+                    {
+                      "text": "Gegenstand"
+                    },
+                    {
+                      "text": "Anzahl"
+                    }
+                  ]
+                ],
+                "stickyHeader": true
+              },
+              {
+                "id": "p0_e3",
+                "alias": "P0_V3",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 10,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 98,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "type": "text",
+                "text": "<p><strong>Ausflug an den See – table: Grundaufgabe</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "markingMode": "selection",
+                "markingPanels": [],
+                "highlightableOrange": false,
+                "highlightableTurquoise": false,
+                "highlightableYellow": false,
+                "hasSelectionPopup": false,
+                "columnCount": 1
+              }
+            ],
+            "height": 600,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 30,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50,
+        "id": "variant-0"
+      }
+    ],
+    "enableSectionNumbering": false,
+    "sectionNumberingPosition": "left",
+    "showUnitNavNext": false
+  }
+}

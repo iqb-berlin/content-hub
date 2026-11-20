@@ -1,0 +1,25 @@
+--- a/projects/common/components/elements/text-field/text-field.component.html
++++ b/projects/common/components/elements/text-field/text-field.component.html
+@@ -28,7 +28,7 @@
+     <div matSuffix
+          class="fx-row-center-baseline">
+       <!--        TODO nicht zu sehen-->
+-      <button *ngIf="elementModel.clearable"
++      <button *ngIf="elementModel.clearable && !elementModel.readOnly"
+               type="button"
+               mat-icon-button aria-label="Clear"
+               (click)="elementFormControl.setValue('')">
+--- a/projects/player/src/app/directives/element-form-group.directive.ts
++++ b/projects/player/src/app/directives/element-form-group.directive.ts
+@@ -31,7 +31,10 @@
+     elementModels.forEach(elementModel => {
+       const initialValue = this.elementModelElementCodeMappingService
+         .mapToElementModelValue(this.unitStateService.getElementCodeById(elementModel.id)?.value, elementModel);
+-      const formControl = new UntypedFormControl(initialValue, ElementFormGroupDirective.getValidators(elementModel));
++      const formControl = new UntypedFormControl(
++        elementModel.readOnly && ['checkbox', 'radio', 'radio-group-images', 'dropdown', 'slider', 'likert-row'].includes(elementModel.type)
++          ? { value: initialValue, disabled: true } : initialValue,
++        ElementFormGroupDirective.getValidators(elementModel));
+       this.form.addControl(elementModel.id, formControl);
+       formControl.valueChanges
+         .pipe(takeUntil(this.ngUnsubscribe))

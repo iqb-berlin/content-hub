@@ -1,0 +1,5 @@
+{
+  "id": "abi-m1-inputs",
+  "name": "abi 1.0.0: Ausflug an den See",
+  "definition": "titel::Ausflug an den See\nheader::Synthetische Eingaben\ntextbox::Was nimmst du mit?::0::ANSWER::::40##1\ntextbox::Begründung::0::LONG::::120##3\ncheckbox::Wasser mitnehmen::0::WATER\nmultiplechoice::0::CHOICE##0::Bahnhof::See::Schule\nselectlist::Verkehrsmittel::0::LIST##1::Bus::Fahrrad\nmultiselectlist::Proviant::0::MULTI##3::Brot::Wasser::Äpfel"
+}

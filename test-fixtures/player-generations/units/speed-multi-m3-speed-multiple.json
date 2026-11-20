@@ -1,0 +1,33 @@
+{
+  "id": "speed-multi-m3-speed-multiple",
+  "name": "speed-multi 3.3.0: Speed Multi: Mehrfachauswahl",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "2.1.0",
+    "layout": "column",
+    "questionType": "text",
+    "answerType": "text",
+    "instructionText": "Speed Multi: Mehrfachauswahl",
+    "questions": [
+      {
+        "text": "Wähle den See.",
+        "answers": [
+          {
+            "text": "See"
+          },
+          {
+            "text": "Bahnhof"
+          }
+        ],
+        "correctAnswer": [
+          0,
+          1
+        ]
+      }
+    ],
+    "multipleSelection": true,
+    "formats": [
+      "multiple-selection"
+    ]
+  }
+}

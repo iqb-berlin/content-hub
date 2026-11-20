@@ -1,0 +1,27 @@
+{
+  "id": "speed-multi-m3-speed-inline",
+  "name": "speed-multi 3.3.0: Speed Multi: Eingebettete Auswahl",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "2.1.0",
+    "layout": "column",
+    "questionType": "inline-answers",
+    "answerType": "text",
+    "instructionText": "Speed Multi: Eingebettete Auswahl",
+    "questions": [
+      {
+        "text": "Mia fährt zum See.",
+        "answerPosition": 2,
+        "answers": [
+          {
+            "text": "See"
+          },
+          {
+            "text": "Bahnhof"
+          }
+        ],
+        "correctAnswer": 0
+      }
+    ]
+  }
+}

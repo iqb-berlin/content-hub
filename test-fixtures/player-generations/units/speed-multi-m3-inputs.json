@@ -1,0 +1,25 @@
+{
+  "id": "speed-multi-m3-inputs",
+  "name": "speed-multi 3.3.0: Ausflug an den See",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "2.1.0",
+    "layout": "column",
+    "questionType": "text",
+    "answerType": "text",
+    "questions": [
+      {
+        "text": "Wasser ist nass.",
+        "answers": [
+          {
+            "text": "Richtig"
+          },
+          {
+            "text": "Falsch"
+          }
+        ],
+        "correctAnswer": 0
+      }
+    ]
+  }
+}

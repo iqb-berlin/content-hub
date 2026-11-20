@@ -1,0 +1,25 @@
+{
+  "id": "abi-dynamic",
+  "name": "ABI: Bedingungen und Unterformulare",
+  "definition": "iqb-scripted::1.2\ntitle::Synthetische ABI-Unterformulare\ncheckbox::ANSWER::0::Zusatzfrage anzeigen\nif-start::ANSWER::true\ninput-text::DETAIL::0::Zusatzantwort\nif-else\ntext::Noch keine Zusatzfrage\nif-end\nrepeat-start::COUNT::Wie viele Haltepunkte?::Haltepunkt::3\ninput-text::PLACE::0::Ort\nrepeat-end\nnav-button-group::previous##next",
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "ANSWER",
+        "alias": "ANSWER",
+        "label": "ABI: Bedingungen und Unterformulare",
+        "sourceType": "BASE",
+        "codeModel": "MANUAL_ONLY",
+        "manualInstruction": "<p>Synthetisches Beispiel. Die Kodierung bleibt lesbar; dieser Player verwendet ein eigenes Antwortformat.</p>",
+        "codes": [
+          {
+            "id": 1,
+            "type": "FULL_CREDIT",
+            "score": 1,
+            "label": "Prüfantwort"
+          }
+        ]
+      }
+    ]
+  }
+}

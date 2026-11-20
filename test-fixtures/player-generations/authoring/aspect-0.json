@@ -1,0 +1,1751 @@
+{
+  "source": "https://github.com/iqb-berlin/verona-modules-aspect",
+  "ref": "0.1.0",
+  "derivation": "Original editor model defaults and declared property types. Rendering methods excluded only from the temporary Node build; original editor/player HTML is unchanged.",
+  "sourceFiles": {
+    "projects/common/unit.ts": "8fffde1fb38d9bdf3ff0c4e3fbf47241abf564b91285aad5e2cb7843b2c1d68b",
+    "projects/editor/src/app/UnitFactory.ts": "9fc7995ac4a5664616ecf2e48da3ce7b43d95d65638edb5491b1feb1fcd8286e"
+  },
+  "base": {
+    "veronaModuleVersion": "0.0.1",
+    "pages": [
+      {
+        "id": "page1",
+        "sections": [
+          {
+            "elements": [],
+            "width": 1100,
+            "height": 400,
+            "backgroundColor": "#FFFAF0",
+            "dynamicPositioning": false,
+            "gridColumnSizes": "1fr 1fr",
+            "gridRowSizes": "1fr"
+          }
+        ],
+        "width": 1100,
+        "margin": 8,
+        "backgroundColor": "white",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left"
+      }
+    ]
+  },
+  "types": {
+    "text": {
+      "defaults": {
+        "text": "Example Text",
+        "type": "text",
+        "id": "element_1",
+        "zIndex": 0,
+        "width": 180,
+        "height": 60,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0,
+        "fontColor": "blue",
+        "font": "Arial",
+        "fontSize": 18,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "backgroundColor": "lightgrey"
+      },
+      "schema": {
+        "text": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 74
+        },
+        "fontColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 49
+        },
+        "font": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 50
+        },
+        "fontSize": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 51
+        },
+        "bold": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 52
+        },
+        "italic": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 53
+        },
+        "underline": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 54
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        },
+        "backgroundColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 65
+        }
+      }
+    },
+    "button": {
+      "defaults": {
+        "label": "Button Text",
+        "type": "button",
+        "id": "element_2",
+        "zIndex": 0,
+        "width": 180,
+        "height": 60,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0,
+        "fontColor": "blue",
+        "font": "Arial",
+        "fontSize": 18,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "backgroundColor": "lightgrey"
+      },
+      "schema": {
+        "label": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 78
+        },
+        "fontColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 49
+        },
+        "font": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 50
+        },
+        "fontSize": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 51
+        },
+        "bold": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 52
+        },
+        "italic": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 53
+        },
+        "underline": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 54
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        },
+        "backgroundColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 65
+        }
+      }
+    },
+    "text-field": {
+      "defaults": {
+        "minWarnMessage": "Eingabe zu kurz",
+        "maxWarnMessage": "Eingabe zu lang",
+        "pattern": "",
+        "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+        "type": "text-field",
+        "id": "element_3",
+        "zIndex": 0,
+        "width": 180,
+        "height": 60,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0,
+        "label": "Example Label",
+        "value": "",
+        "required": false,
+        "requiredWarnMessage": "Eingabe erforderlich",
+        "fontColor": "blue",
+        "font": "Arial",
+        "fontSize": 18,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "backgroundColor": "lightgrey"
+      },
+      "schema": {
+        "value": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 82
+        },
+        "minLength": {
+          "type": "number | undefined",
+          "source": "projects/common/unit.ts",
+          "line": 83
+        },
+        "minWarnMessage": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 84
+        },
+        "maxLength": {
+          "type": "number | undefined",
+          "source": "projects/common/unit.ts",
+          "line": 85
+        },
+        "maxWarnMessage": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 86
+        },
+        "pattern": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 87
+        },
+        "patternWarnMessage": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 88
+        },
+        "label": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 58
+        },
+        "required": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 60
+        },
+        "requiredWarnMessage": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 61
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        },
+        "fontColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 49
+        },
+        "font": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 50
+        },
+        "fontSize": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 51
+        },
+        "bold": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 52
+        },
+        "italic": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 53
+        },
+        "underline": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 54
+        },
+        "backgroundColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 65
+        }
+      }
+    },
+    "text-area": {
+      "defaults": {
+        "resizeEnabled": false,
+        "type": "text-area",
+        "id": "element_4",
+        "zIndex": 0,
+        "width": 180,
+        "height": 100,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0,
+        "label": "Example Label",
+        "value": "",
+        "required": false,
+        "requiredWarnMessage": "Eingabe erforderlich",
+        "fontColor": "blue",
+        "font": "Arial",
+        "fontSize": 18,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "backgroundColor": "lightgrey"
+      },
+      "schema": {
+        "value": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 92
+        },
+        "resizeEnabled": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 93
+        },
+        "label": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 58
+        },
+        "required": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 60
+        },
+        "requiredWarnMessage": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 61
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        },
+        "fontColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 49
+        },
+        "font": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 50
+        },
+        "fontSize": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 51
+        },
+        "bold": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 52
+        },
+        "italic": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 53
+        },
+        "underline": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 54
+        },
+        "backgroundColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 65
+        }
+      }
+    },
+    "checkbox": {
+      "defaults": {
+        "type": "checkbox",
+        "id": "element_5",
+        "zIndex": 0,
+        "width": 180,
+        "height": 60,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0,
+        "label": "Label Checkbox",
+        "required": false,
+        "requiredWarnMessage": "Eingabe erforderlich",
+        "fontColor": "blue",
+        "font": "Arial",
+        "fontSize": 18,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "backgroundColor": "lightgrey"
+      },
+      "schema": {
+        "value": {
+          "type": "boolean | undefined",
+          "source": "projects/common/unit.ts",
+          "line": 97
+        },
+        "label": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 58
+        },
+        "required": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 60
+        },
+        "requiredWarnMessage": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 61
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        },
+        "fontColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 49
+        },
+        "font": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 50
+        },
+        "fontSize": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 51
+        },
+        "bold": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 52
+        },
+        "italic": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 53
+        },
+        "underline": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 54
+        },
+        "backgroundColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 65
+        }
+      }
+    },
+    "dropdown": {
+      "defaults": {
+        "options": [],
+        "type": "dropdown",
+        "id": "element_6",
+        "zIndex": 0,
+        "width": 180,
+        "height": 60,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0,
+        "label": "Label Dropdown",
+        "required": false,
+        "requiredWarnMessage": "Eingabe erforderlich",
+        "fontColor": "blue",
+        "font": "Arial",
+        "fontSize": 18,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "backgroundColor": "lightgrey"
+      },
+      "schema": {
+        "label": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 101
+        },
+        "options": {
+          "type": "string[]",
+          "source": "projects/common/unit.ts",
+          "line": 102
+        },
+        "value": {
+          "type": "number | undefined",
+          "source": "projects/common/unit.ts",
+          "line": 103
+        },
+        "required": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 60
+        },
+        "requiredWarnMessage": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 61
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        },
+        "fontColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 49
+        },
+        "font": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 50
+        },
+        "fontSize": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 51
+        },
+        "bold": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 52
+        },
+        "italic": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 53
+        },
+        "underline": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 54
+        },
+        "backgroundColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 65
+        }
+      }
+    },
+    "radio": {
+      "defaults": {
+        "options": [],
+        "alignment": "row",
+        "type": "radio",
+        "id": "element_7",
+        "zIndex": 0,
+        "width": 180,
+        "height": 75,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0,
+        "label": "Label Optionsfeld",
+        "required": false,
+        "requiredWarnMessage": "Eingabe erforderlich",
+        "fontColor": "blue",
+        "font": "Arial",
+        "fontSize": 18,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "backgroundColor": "lightgrey"
+      },
+      "schema": {
+        "label": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 107
+        },
+        "options": {
+          "type": "string[]",
+          "source": "projects/common/unit.ts",
+          "line": 108
+        },
+        "alignment": {
+          "type": "\"row\" | \"column\"",
+          "values": [
+            "row",
+            "column"
+          ],
+          "source": "projects/common/unit.ts",
+          "line": 109
+        },
+        "value": {
+          "type": "number | undefined",
+          "source": "projects/common/unit.ts",
+          "line": 110
+        },
+        "required": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 60
+        },
+        "requiredWarnMessage": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 61
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        },
+        "fontColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 49
+        },
+        "font": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 50
+        },
+        "fontSize": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 51
+        },
+        "bold": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 52
+        },
+        "italic": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 53
+        },
+        "underline": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 54
+        },
+        "backgroundColor": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 65
+        }
+      }
+    },
+    "image": {
+      "defaults": {
+        "type": "image",
+        "id": "element_8",
+        "zIndex": 0,
+        "width": 180,
+        "height": 60,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0
+      },
+      "schema": {
+        "src": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 114
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        }
+      }
+    },
+    "audio": {
+      "defaults": {
+        "type": "audio",
+        "id": "element_9",
+        "zIndex": 0,
+        "width": 180,
+        "height": 60,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0
+      },
+      "schema": {
+        "src": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 118
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        }
+      }
+    },
+    "video": {
+      "defaults": {
+        "type": "video",
+        "id": "element_10",
+        "zIndex": 0,
+        "width": 180,
+        "height": 60,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0
+      },
+      "schema": {
+        "src": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 122
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        }
+      }
+    },
+    "correction": {
+      "defaults": {
+        "text": "dummy",
+        "sentences": [],
+        "type": "correction",
+        "id": "element_11",
+        "zIndex": 0,
+        "width": 180,
+        "height": 60,
+        "dynamicPositioning": false,
+        "xPosition": 0,
+        "yPosition": 0,
+        "gridColumnStart": 1,
+        "gridColumnEnd": 2,
+        "gridRowStart": 1,
+        "gridRowEnd": 2,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "marginTop": 0,
+        "marginBottom": 0
+      },
+      "schema": {
+        "text": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 69
+        },
+        "sentences": {
+          "type": "string[]",
+          "source": "projects/common/unit.ts",
+          "line": 70
+        },
+        "type": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 30
+        },
+        "id": {
+          "type": "string",
+          "source": "projects/common/unit.ts",
+          "line": 31
+        },
+        "zIndex": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 32
+        },
+        "width": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 33
+        },
+        "height": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 34
+        },
+        "dynamicPositioning": {
+          "type": "boolean",
+          "source": "projects/common/unit.ts",
+          "line": 35
+        },
+        "xPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 36
+        },
+        "yPosition": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 37
+        },
+        "gridColumnStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 38
+        },
+        "gridColumnEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 39
+        },
+        "gridRowStart": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 40
+        },
+        "gridRowEnd": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 41
+        },
+        "marginLeft": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 42
+        },
+        "marginRight": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 43
+        },
+        "marginTop": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 44
+        },
+        "marginBottom": {
+          "type": "number",
+          "source": "projects/common/unit.ts",
+          "line": 45
+        }
+      }
+    }
+  },
+  "contexts": {
+    "page": {
+      "id": {
+        "type": "string",
+        "source": "projects/common/unit.ts",
+        "line": 8
+      },
+      "sections": {
+        "type": "UnitPageSection[]",
+        "source": "projects/common/unit.ts",
+        "line": 9
+      },
+      "width": {
+        "type": "number",
+        "source": "projects/common/unit.ts",
+        "line": 10
+      },
+      "margin": {
+        "type": "number",
+        "source": "projects/common/unit.ts",
+        "line": 11
+      },
+      "backgroundColor": {
+        "type": "string",
+        "source": "projects/common/unit.ts",
+        "line": 12
+      },
+      "alwaysVisible": {
+        "type": "boolean",
+        "source": "projects/common/unit.ts",
+        "line": 13
+      },
+      "alwaysVisiblePagePosition": {
+        "type": "\"left\" | \"right\" | \"top\" | \"bottom\"",
+        "values": [
+          "left",
+          "right",
+          "top",
+          "bottom"
+        ],
+        "source": "projects/common/unit.ts",
+        "line": 14
+      }
+    },
+    "section": {
+      "elements": {
+        "type": "UnitUIElement[]",
+        "source": "projects/common/unit.ts",
+        "line": 19
+      },
+      "width": {
+        "type": "number",
+        "source": "projects/common/unit.ts",
+        "line": 20
+      },
+      "height": {
+        "type": "number",
+        "source": "projects/common/unit.ts",
+        "line": 21
+      },
+      "backgroundColor": {
+        "type": "string",
+        "source": "projects/common/unit.ts",
+        "line": 22
+      },
+      "dynamicPositioning": {
+        "type": "boolean",
+        "source": "projects/common/unit.ts",
+        "line": 23
+      },
+      "gridColumnSizes": {
+        "type": "string",
+        "source": "projects/common/unit.ts",
+        "line": 24
+      },
+      "gridRowSizes": {
+        "type": "string",
+        "source": "projects/common/unit.ts",
+        "line": 25
+      }
+    }
+  }
+}

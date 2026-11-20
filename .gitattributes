@@ -1,0 +1,10 @@
+test-fixtures/synthetic-aspect/iqb-player-aspect-3.0.1.html linguist-vendored -text -whitespace
+
+test-fixtures/synthetic-players/players/*.html linguist-vendored -text -whitespace
+
+test-fixtures/player-generations/players/*.html linguist-vendored -text -whitespace
+
+# Generated definitions and editor snapshots are reviewed through their generator and matrix.
+test-fixtures/player-generations/units/*.json linguist-generated
+test-fixtures/player-generations/pool.json linguist-generated
+test-fixtures/player-generations/authoring/*.json linguist-generated

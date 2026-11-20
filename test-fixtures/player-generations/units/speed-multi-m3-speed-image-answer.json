@@ -1,0 +1,28 @@
+{
+  "id": "speed-multi-m3-speed-image-answer",
+  "name": "speed-multi 3.3.0: Speed Multi: Bildantwort",
+  "definition": {
+    "type": "speedtest-unit-defintion",
+    "version": "2.1.0",
+    "layout": "column",
+    "questionType": "text",
+    "answerType": "image",
+    "instructionText": "Speed Multi: Bildantwort",
+    "questions": [
+      {
+        "text": "Wähle den See.",
+        "answers": [
+          {
+            "text": "See",
+            "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4="
+          },
+          {
+            "text": "Bahnhof",
+            "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjQwIDEyMCI+PHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMzUiIGZpbGw9IiMxNjZiOGMiLz48cmVjdCB4PSIxNDUiIHk9IjI1IiB3aWR0aD0iNzAiIGhlaWdodD0iNzAiIGZpbGw9IiNlMTljMzAiLz48L3N2Zz4="
+          }
+        ],
+        "correctAnswer": 0
+      }
+    ]
+  }
+}

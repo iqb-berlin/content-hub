@@ -1,0 +1,5 @@
+{
+  "id": "abi-m3-dynamic",
+  "name": "abi 3.3.3: bedingte und wiederholte Fragen",
+  "definition": "iqb-scripted::1.0\ntitle::Synthetische ABI-Unterformulare\ncheckbox::ANSWER::0::Zusatzfrage anzeigen\nif-start::ANSWER::true\ninput-text::DETAIL::0::Zusatzantwort\nif-else\ntext::Noch keine Zusatzfrage\nif-end\nrepeat-start::COUNT::Wie viele Haltepunkte?::Haltepunkt::3\ninput-text::PLACE::0::Ort\nrepeat-end\nnav-button-group::previous##next"
+}

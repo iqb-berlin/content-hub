@@ -1,0 +1,88 @@
+{
+  "id": "aspect-m0-page-margin-1",
+  "name": "ASPECT 0: page.margin = 2",
+  "definition": {
+    "veronaModuleVersion": "iqb-aspect-module@0.0.1",
+    "pages": [
+      {
+        "id": "page1",
+        "sections": [
+          {
+            "elements": [
+              {
+                "minWarnMessage": "Eingabe zu kurz",
+                "maxWarnMessage": "Eingabe zu lang",
+                "pattern": "",
+                "patternWarnMessage": "Eingabe entspricht nicht der Vorgabe",
+                "type": "text-field",
+                "id": "input",
+                "zIndex": 0,
+                "width": 600,
+                "height": 60,
+                "dynamicPositioning": false,
+                "xPosition": 20,
+                "yPosition": 120,
+                "gridColumnStart": 1,
+                "gridColumnEnd": 2,
+                "gridRowStart": 1,
+                "gridRowEnd": 2,
+                "marginLeft": 0,
+                "marginRight": 0,
+                "marginTop": 0,
+                "marginBottom": 0,
+                "label": "Deine Antwort",
+                "value": "",
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "fontColor": "blue",
+                "font": "Arial",
+                "fontSize": 18,
+                "bold": true,
+                "italic": false,
+                "underline": false,
+                "backgroundColor": "lightgrey"
+              },
+              {
+                "text": "<p><strong>Ausflug an den See – page</strong></p><p>Erprobe das Element. Alle Angaben sind künstliche Testdaten.</p>",
+                "type": "text",
+                "id": "instruction",
+                "zIndex": 0,
+                "width": 700,
+                "height": 60,
+                "dynamicPositioning": false,
+                "xPosition": 20,
+                "yPosition": 0,
+                "gridColumnStart": 1,
+                "gridColumnEnd": 2,
+                "gridRowStart": 1,
+                "gridRowEnd": 2,
+                "marginLeft": 0,
+                "marginRight": 0,
+                "marginTop": 0,
+                "marginBottom": 0,
+                "fontColor": "blue",
+                "font": "Arial",
+                "fontSize": 18,
+                "bold": true,
+                "italic": false,
+                "underline": false,
+                "backgroundColor": "lightgrey"
+              }
+            ],
+            "width": 1100,
+            "height": 600,
+            "backgroundColor": "#FFFAF0",
+            "dynamicPositioning": false,
+            "gridColumnSizes": "1fr",
+            "gridRowSizes": "1fr"
+          }
+        ],
+        "width": 1100,
+        "margin": 2,
+        "backgroundColor": "white",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left"
+      }
+    ]
+  }
+}

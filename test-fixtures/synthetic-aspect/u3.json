@@ -1,0 +1,218 @@
+{
+  "id": "u3",
+  "name": "Offene Antwort manuell bewerten",
+  "definition": {
+    "type": "aspect-unit-definition",
+    "version": "4.6.0",
+    "stateVariables": [],
+    "pages": [
+      {
+        "sections": [
+          {
+            "elements": [
+              {
+                "id": "heading-manual",
+                "alias": "heading-manual",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 1,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 180,
+                  "height": 60,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#243b4d",
+                  "fontSize": 18,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 150
+                },
+                "type": "text",
+                "text": "<p style=\"color:#54748a;font-size:14px\">OFFENES FORMAT · SYNTHETISCHE DEMO</p><h2>Eine Antwort begründen</h2><p>Warum ist es sinnvoll, bei einem Ausflug Wasser mitzunehmen? Begründe deine Antwort.</p>"
+              },
+              {
+                "id": "internal-BEGRUENDUNG",
+                "alias": "BEGRUENDUNG",
+                "isRelevantForPresentationComplete": true,
+                "position": {
+                  "xPosition": 0,
+                  "yPosition": 0,
+                  "gridColumn": 1,
+                  "gridColumnRange": 1,
+                  "gridRow": 4,
+                  "gridRowRange": 1,
+                  "marginLeft": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginRight": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginTop": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "marginBottom": {
+                    "value": 0,
+                    "unit": "px"
+                  },
+                  "zIndex": 0
+                },
+                "dimensions": {
+                  "width": 230,
+                  "height": 132,
+                  "isWidthFixed": false,
+                  "isHeightFixed": false,
+                  "minWidth": null,
+                  "maxWidth": null,
+                  "minHeight": null,
+                  "maxHeight": null
+                },
+                "styling": {
+                  "backgroundColor": "transparent",
+                  "fontColor": "#000000",
+                  "fontSize": 20,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "lineHeight": 135
+                },
+                "label": "Begründe deine Antwort",
+                "value": null,
+                "required": false,
+                "requiredWarnMessage": "Eingabe erforderlich",
+                "readOnly": false,
+                "inputAssistancePreset": null,
+                "inputAssistanceCustomKeys": "",
+                "inputAssistanceCustomStyle": "medium",
+                "inputAssistancePosition": "floating",
+                "inputAssistanceFloatingStartPosition": "startBottom",
+                "restrictedToInputAssistanceChars": false,
+                "hasArrowKeys": false,
+                "hasBackspaceKey": false,
+                "showSoftwareKeyboard": true,
+                "addInputAssistanceToKeyboard": true,
+                "hideNativeKeyboard": true,
+                "keyStyle": "round",
+                "type": "text-area",
+                "appearance": "outline",
+                "textAlign": "left",
+                "resizeEnabled": false,
+                "hasDynamicRowCount": true,
+                "hasAutoHeight": false,
+                "rowCount": 4,
+                "expectedCharactersCount": 135,
+                "hasReturnKey": false,
+                "showWordCount": false
+              }
+            ],
+            "height": 400,
+            "backgroundColor": "#ffffff",
+            "dynamicPositioning": true,
+            "autoColumnSize": true,
+            "autoRowSize": true,
+            "gridColumnSizes": [
+              {
+                "value": 1,
+                "unit": "fr"
+              }
+            ],
+            "gridRowSizes": [
+              {
+                "value": "auto",
+                "unit": ""
+              },
+              {
+                "value": "auto",
+                "unit": ""
+              }
+            ],
+            "visibilityDelay": 0,
+            "animatedVisibility": false,
+            "enableReHide": false,
+            "logicalConnectiveOfRules": "disjunction",
+            "visibilityRules": [],
+            "ignoreNumbering": false
+          }
+        ],
+        "hasMaxWidth": true,
+        "maxWidth": 750,
+        "margin": 24,
+        "backgroundColor": "#ffffff",
+        "alwaysVisible": false,
+        "alwaysVisiblePagePosition": "left",
+        "alwaysVisibleAspectRatio": 50
+      }
+    ],
+    "enableSectionNumbering": false,
+    "sectionNumberingPosition": "left",
+    "showUnitNavNext": false
+  },
+  "codingScheme": {
+    "variableCodings": [
+      {
+        "id": "coding-BEGRUENDUNG",
+        "alias": "BEGRUENDUNG",
+        "label": "Offene Begründung",
+        "sourceType": "BASE",
+        "codeModel": "MANUAL_ONLY",
+        "manualInstruction": "<p>Die Antwort soll einen <strong>nachvollziehbaren Zusammenhang</strong> zwischen Textstelle und Schlussfolgerung herstellen.</p>",
+        "codes": [
+          {
+            "id": 2,
+            "type": "FULL_CREDIT",
+            "score": 2,
+            "label": "Vollständige Begründung",
+            "manualInstruction": "<p><strong>2 Punkte:</strong> Die Antwort nennt die Textstelle und erläutert den Zusammenhang. Beispiel: „Sie nehmen Wasser mit, damit sie unterwegs etwas trinken können.“</p>"
+          },
+          {
+            "id": 1,
+            "type": "PARTIAL_CREDIT",
+            "score": 1,
+            "label": "Ansatz vorhanden",
+            "manualInstruction": "<p><strong>1 Punkt:</strong> Ein passender Grund wird genannt; die Verknüpfung zur Textstelle fehlt.</p>"
+          },
+          {
+            "id": 0,
+            "type": "NO_CREDIT",
+            "score": 0,
+            "label": "Kein passender Grund",
+            "manualInstruction": "<p><strong>0 Punkte:</strong> Keine passende oder eine widersprüchliche Begründung.</p>"
+          }
+        ]
+      }
+    ]
+  }
+}

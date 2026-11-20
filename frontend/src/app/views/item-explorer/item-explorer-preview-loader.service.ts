@@ -1,3 +1,4 @@
+import { preparePlayerHtml } from '../../core/utils/player-html-compatibility';
 import { Injectable } from '@angular/core';
 import {
   Observable,
@@ -208,7 +209,9 @@ export class ItemExplorerPreviewLoader {
           }
           return response.text();
         })
-        .then((content) => {
+        .then(async (rawContent) => {
+          const content =
+            phase === 'player-html' ? await preparePlayerHtml(rawContent) : rawContent;
           if (subscriber.closed) return;
           subscriber.next(content);
           subscriber.complete();
