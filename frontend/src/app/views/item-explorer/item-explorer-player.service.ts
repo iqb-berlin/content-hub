@@ -89,11 +89,43 @@ export class ItemExplorerPlayerService implements OnDestroy {
   private pendingFlowPage: string | null = null;
   private playerPageIds: string[] = [];
   private declaredFlowPageIds: string[] = [];
+  private knownPlayerPageIds: string[] = [];
+
+  private get usesPlayerPageOrder(): boolean {
+    return this.knownPlayerPageIds.some(
+      (id) =>
+        !/^(0|[1-9]\d*)$/.test(id) ||
+        (this.declaredFlowPageIds.length > 0 && this.declaredFlowPageIds[Number(id)] !== id),
+    );
+  }
+
+  private pageIndexForId(id: string): number {
+    if (this.usesPlayerPageOrder) return this.knownPlayerPageIds.indexOf(id);
+    return /^(0|[1-9]\d*)$/.test(id) ? Number(id) : -1;
+  }
+
+  private rememberVisiblePages(visible: string[]): void {
+    // Keep hidden IDs next to their last known neighbours, while respecting the new report's order.
+    if (
+      visible.length === this.playerPageIds.length &&
+      visible.every((id, i) => id === this.playerPageIds[i])
+    )
+      return;
+    const order = [...visible];
+    let nextIndex = order.length;
+    for (let i = this.knownPlayerPageIds.length - 1; i >= 0; i--) {
+      const id = this.knownPlayerPageIds[i];
+      const index = order.indexOf(id);
+      if (index < 0) order.splice(nextIndex, 0, id);
+      else nextIndex = index;
+    }
+    this.knownPlayerPageIds = order;
+    this.playerPageIds = visible;
+  }
 
   private get flowNavigationPageIds(): string[] {
     // ASPECT numbers its task pages, while other players supply their own identifiers.
-    if (this.playerPageIds.some((id) => this.declaredFlowPageIds[Number(id)] !== id))
-      return this.playerPageIds;
+    if (this.usesPlayerPageOrder) return this.playerPageIds;
     return this.declaredFlowPageIds.length ? this.declaredFlowPageIds : this.playerPageIds;
   }
 
@@ -139,9 +171,11 @@ export class ItemExplorerPlayerService implements OnDestroy {
     if (index >= 0) return pages[index + delta];
     // Conditional visibility may hide the current page while later pages remain available.
     const candidates = delta === 1 ? pages : [...pages].reverse();
-    return candidates.find((id) =>
-      delta === 1 ? Number(id) > this.currentPage - 1 : Number(id) < this.currentPage - 1,
-    );
+    const currentIndex = this.currentPage - 1;
+    return candidates.find((id) => {
+      const candidateIndex = this.pageIndexForId(id);
+      return delta === 1 ? candidateIndex > currentIndex : candidateIndex < currentIndex;
+    });
   }
 
   navigateFlowPage(delta: -1 | 1): void {
@@ -162,11 +196,10 @@ export class ItemExplorerPlayerService implements OnDestroy {
     const id = String(value);
     if (!id || (this.pendingFlowPage !== null && id !== this.pendingFlowPage)) return;
     this.currentPlayerPageId = id;
-    const numericId = /^(0|[1-9]\d*)$/.test(id);
-    const index = numericId ? Number(id) : this.playerPageIds.indexOf(id);
+    const index = this.pageIndexForId(id);
     if (index >= 0 && Number.isSafeInteger(index)) this.currentPage = index + 1;
     this.pendingFlowPage = null;
-    if (!numericId) this.clearLegacyPageNavigationTimers();
+    if (this.usesPlayerPageOrder || index < 0) this.clearLegacyPageNavigationTimers();
   }
 
   private focusRetryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -385,13 +418,14 @@ export class ItemExplorerPlayerService implements OnDestroy {
           const state = playerMessage['playerState'];
           const pages = state?.validPages;
           if (pages && typeof pages === 'object') {
-            this.playerPageIds = Array.isArray(pages)
+            const visiblePageIds = Array.isArray(pages)
               ? pages
                   .map((page: any) => page?.id ?? page)
                   .filter((id: unknown) => typeof id === 'string' || typeof id === 'number')
                   .map(String)
               : Object.keys(pages);
-            this.totalPages = this.playerPageIds.length || this.totalPages;
+            this.rememberVisiblePages(visiblePageIds);
+            this.totalPages = visiblePageIds.length || this.totalPages;
           }
           if (state?.currentPage !== undefined) this.acceptPlayerPage(state.currentPage);
           else if (pages && this.pendingFlowPage === null)
@@ -540,6 +574,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
 
     const startPageId =
       regularFlow && this.flowStarted ? this.currentPlayerPageId : startPage?.toString();
+    if (!regularFlow || !this.flowStarted) this.knownPlayerPageIds = [];
     this.startSessionCounter += 1;
     this.beginResponseSession(sessionId, origin, dataParts);
     if (regularFlow) {

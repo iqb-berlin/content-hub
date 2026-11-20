@@ -702,6 +702,15 @@ export class FilesService {
         );
         return metadata?.file.id === fileId;
       }
+      // The file-based Unit view can already exist before the index is synchronized.
+      const view = await this.unitParserService.getUnitViewFromFiles(
+        apId,
+        unitId,
+      );
+      return (view?.dependencies ?? []).some(
+        (dependency: { type: string; fileId: string }) =>
+          dependency.type === "METADATA" && dependency.fileId === fileId,
+      );
     }
     return false;
   }

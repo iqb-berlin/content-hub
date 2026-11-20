@@ -12,6 +12,7 @@ import {
   User,
 } from "../src/database/entities";
 import { UnitParserService } from "../src/files/unit-parser.service";
+import { UnitViewResolver } from "../src/files/unit-view.resolver";
 import { FilesService } from "../src/files/files.service";
 import { parseVomd } from "../src/files/unit-file-parsing";
 import { ReviewManifestService } from "../src/review/review-manifest.service";
@@ -284,6 +285,72 @@ describe("Published reviewer column boundary (HTTP)", () => {
     if (db && apId) await db.getRepository(Ap).delete(apId);
     if (app) await app.close();
     if (temp) await rm(temp, { recursive: true, force: true });
+  });
+
+  it("opens only the referenced metadata of a file-based unit before it is added to the index", async () => {
+    const configRepo = db.getRepository(ApAccessConfig);
+    const config = await configRepo.findOneByOrFail({ id: configId });
+    const files = db.getRepository(ApFile);
+    const unitId = "NEW";
+    const contentByName = {
+      "NEW.xml": "<Unit><Id>NEW</Id><Reference>new.vomd</Reference></Unit>",
+      "new.vomd": '{"profiles":[],"items":[]}',
+      "unrelated.vomd": '{"profiles":[],"items":[]}',
+    };
+    const resolveView = jest
+      .spyOn(app.get(UnitParserService), "getUnitViewFromFiles")
+      .mockImplementation(
+        async (id, unit) =>
+          (await app.get(UnitViewResolver).resolve(id, unit)).value,
+      );
+    try {
+      for (const [originalName, content] of Object.entries(contentByName)) {
+        const filePath = join(temp, originalName);
+        await writeFile(filePath, content);
+        await files.save({
+          apId,
+          originalName,
+          filePath,
+          fileSize: Buffer.byteLength(content),
+        });
+      }
+      await configRepo.update(configId, {
+        featureConfig: {
+          ...config.featureConfig,
+          allowFileDownload: false,
+          enableUnitView: true,
+        },
+      });
+      const { body } = await request(server)
+        .get(`/api/ap/${apId}/files/unit-view/${unitId}`)
+        .set(headers("reader"))
+        .expect(200);
+      expect(body.id).toBe(unitId);
+      const metadata = body.dependencies.find(
+        (dep: { type: string }) => dep.type === "METADATA",
+      );
+      await request(server)
+        .get(metadata.downloadUrl)
+        .set(headers("reader"))
+        .expect(200);
+      const unrelated = await files.findOneByOrFail({
+        apId,
+        originalName: "unrelated.vomd",
+      });
+      await request(server)
+        .get(`/api/ap/${apId}/files/${unrelated.id}/download`)
+        .query({ unitId })
+        .set(headers("reader"))
+        .expect(403);
+    } finally {
+      resolveView.mockRestore();
+      await configRepo.save({
+        id: configId,
+        featureConfig: config.featureConfig,
+      });
+      for (const originalName of Object.keys(contentByName))
+        await files.delete({ apId, originalName });
+    }
   });
 
   it("keeps defaults and drafts readable until publish, then enforces users, credentials and admin previews", async () => {

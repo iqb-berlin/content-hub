@@ -10,7 +10,7 @@ jest.mock("fs/promises", () => ({
 describe("UnitViewResolver", () => {
   beforeEach(() => jest.mocked(fs.readFile).mockReset());
 
-  it("returns the selected XML metadata download with the unit context", async () => {
+  it("returns the selected XML metadata download using the same file lookup key", async () => {
     const unitId = "unit + 2";
     const cache = {
       get: async () => ({
@@ -25,9 +25,10 @@ describe("UnitViewResolver", () => {
     jest
       .mocked(fs.readFile)
       .mockResolvedValueOnce(
-        `<Unit><Id>${unitId}</Id><Reference>current.vomd</Reference></Unit>`,
+        "<Unit><Id>internal-id</Id><Reference>current.vomd</Reference></Unit>",
       );
     const { value } = await new UnitViewResolver(cache).resolve("ap-1", unitId);
+    expect(value.id).toBe("internal-id");
     expect(value.dependencies).toEqual([
       {
         originalName: "current.vomd",

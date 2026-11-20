@@ -127,7 +127,7 @@ export class UnitViewResolver {
         dependencies.push({
           type: "METADATA",
           originalName: metadataFile.originalName,
-          downloadUrl: `/api/ap/${apId}/files/${metadataFile.id}/download?unitId=${encodeURIComponent(parsed.unitId)}`,
+          downloadUrl: `/api/ap/${apId}/files/${metadataFile.id}/download?unitId=${encodeURIComponent(unitId)}`,
           fileId: metadataFile.id,
         });
       }

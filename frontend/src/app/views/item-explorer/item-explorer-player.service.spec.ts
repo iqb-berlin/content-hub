@@ -140,6 +140,65 @@ describe('ItemExplorerPlayerService', () => {
     player.ngOnDestroy();
   });
 
+  it('lets a user leave a hidden named page when one later page is available', () => {
+    vi.useFakeTimers();
+    const { player, dom, request } = createPlayer();
+    player.itemExplorerConditionalVisibilityEnabled = true;
+    player.definitionContent = JSON.stringify({ pages: [{}, {}] });
+    player.changePreviewMode('flow');
+    player.start(request);
+    const report = (currentPage: string, validPages: string[]) =>
+      player.handlePlayerMessage(
+        {
+          type: 'vopStateChangedNotification',
+          sessionId: player.activePlayerSessionId,
+          playerState: { currentPage, validPages },
+        },
+        { ready: true, solutionActive: false },
+      );
+    report('intro', ['intro', 'question']);
+    expect(player.canNavigateFlowForward).toBe(true);
+    report('intro', ['question']);
+    expect(player.showFlowPageNavigation).toBe(true);
+    expect(player.canNavigateFlowForward).toBe(true);
+    expect(player.canNavigateFlowBackward).toBe(false);
+    player.navigateFlowPage(1);
+    expect(dom.postMessage.mock.lastCall?.[0].target).toBe('question');
+    report('question', ['intro']);
+    player.navigateFlowPage(-1);
+    expect(dom.postMessage.mock.lastCall?.[0].target).toBe('intro');
+    player.ngOnDestroy();
+  });
+
+  it('matches a numeric opaque ID to the target page when capturing a reference', () => {
+    vi.useFakeTimers();
+    const { player, request, dom, voud } = createPlayer();
+    voud.resolvePlayerTargetLocation.mockReturnValue({ absolutePageIndex: 1, scrollPageIndex: 1 });
+    Object.assign(dom, { isTargetVisible: () => true });
+    player.itemExplorerConditionalVisibilityEnabled = true;
+    player.definitionContent = JSON.stringify({ pages: [{}, {}] });
+    player.changePreviewMode('flow');
+    player.start(request);
+    const report = (validPages: string[]) =>
+      player.handlePlayerMessage(
+        {
+          type: 'vopStateChangedNotification',
+          sessionId: player.activePlayerSessionId,
+          unitState: { dataParts: { elementCodes: '[]' } },
+          timeStamp: Date.now(),
+          playerState: { currentPage: '20', validPages },
+        },
+        { ready: true, solutionActive: false },
+      );
+    report(['intro', '20']);
+    expect(player.flowPageNumber).toBe(2);
+    expect(player.capturePreviewContext(request)).toMatchObject({ page: 1 });
+    player.start(request);
+    report(['20']);
+    expect(player.capturePreviewContext(request)).toMatchObject({ page: 1 });
+    player.ngOnDestroy();
+  });
+
   it('can leave a hidden flow page even when only one other page is valid', () => {
     vi.useFakeTimers();
     const { player, dom, request } = createPlayer();
