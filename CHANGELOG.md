@@ -23,8 +23,17 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ### Database migrations
 
+Classification: `manual`
+
 - `1785000000000-AcpIndex05Compliance` adds validation state and relative file paths.
 - `1795200000000-PreserveAcpSnapshotMetadata` preserves package and file metadata for restores.
+
+### Rollback
+
+- Version 0.7.0 omits the required relative path when writing uploads and
+  snapshot files. Returning to 0.7.0 requires restoring the matching
+  pre-upgrade database and upload backup. See the rollback and restore
+  procedure in [the release guide](docs/operations/releases.md#rollback-and-restore).
 
 ## [0.7.0] - Unreleased
 
