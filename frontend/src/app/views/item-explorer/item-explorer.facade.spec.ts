@@ -423,6 +423,39 @@ describe('ItemExplorerFacade comment counts', () => {
     expect(component.comments.itemCommentCounts['unit-1\u0000item-1']).toBe(2);
   });
 
+  it('shares counts and thread updates between a canonical item and its previous raw ID', () => {
+    const component = createFacade({
+      api: {
+        getItemCommentCounts: () =>
+          of({
+            revision: 'catalog',
+            counts: [
+              {
+                unitId: 'unit-1',
+                itemId: 'unit-1_item-1',
+                itemIdAlias: 'item-1',
+                count: 2,
+                codingCount: 1,
+              },
+            ],
+          }),
+      },
+    });
+    component.apId = 'ap-1';
+    component.comments.itemCommentsEnabled = true;
+    const raw = item('raw', 'item-1');
+    const canonical = item('prefixed', 'unit-1_item-1');
+    component.refreshItemComments(false);
+    expect(component.getItemCommentCount(raw)).toBe(2);
+    expect(component.getItemCommentCount(canonical)).toBe(2);
+    expect(component.getCodingCommentCount(raw)).toBe(1);
+
+    component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'unit-1_item-1', count: 3 });
+    expect(component.getItemCommentCount(raw)).toBe(3);
+    component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'item-1', count: 4 });
+    expect(component.getItemCommentCount(canonical)).toBe(4);
+  });
+
   it('keeps distinct raw and prefixed item IDs separate', () => {
     const component = createFacade();
     component.items = [item('raw', 'item-1'), item('prefixed', 'unit-1_item-1')];

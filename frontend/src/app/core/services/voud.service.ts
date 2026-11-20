@@ -19,6 +19,9 @@ export interface PlayerTargetLocation {
   isAlwaysVisiblePage: boolean;
 }
 
+export type PlayerTargetIdentifierKind = 'id' | 'alias';
+type PlayerTargetLocations = Record<PlayerTargetIdentifierKind, Map<string, PlayerTargetLocation>>;
+
 export interface PlayerResponseTarget {
   responseId: string;
   elementType: string;
@@ -52,6 +55,7 @@ interface IdentifierNodeMatch {
 
 @Injectable({ providedIn: 'root' })
 export class VoudService {
+  private locationIndex?: { definition: string; locations: PlayerTargetLocations };
   private readonly conditionalVisibilityDefaults = new Map<string, unknown>([
     ['visibilityRules', []],
     ['visibilityDelay', 0],
@@ -144,29 +148,53 @@ export class VoudService {
   resolvePlayerTargetLocation(
     definition: string,
     variableId: string,
+    kind?: PlayerTargetIdentifierKind,
   ): PlayerTargetLocation | undefined {
-    const target = String(variableId || '').trim();
+    const target = String(variableId || '')
+      .trim()
+      .toLowerCase();
     if (!target) return undefined;
+    const locations = this.getPlayerTargetLocations(definition);
+    // A public reference keeps the same alias-first lookup as findTargetNode.
+    return kind
+      ? locations[kind].get(target)
+      : (locations.alias.get(target) ?? locations.id.get(target));
+  }
 
+  private getPlayerTargetLocations(definition: string): PlayerTargetLocations {
+    if (this.locationIndex?.definition === definition) return this.locationIndex.locations;
+    const ids = new Map<string, PlayerTargetLocation>();
+    const aliases = new Map<string, PlayerTargetLocation>();
     try {
-      const unitDefinition = this.parseDefinition(definition);
-      const pages: any[] = Array.isArray(unitDefinition?.pages) ? unitDefinition.pages : [];
-      const match = this.findTargetNode(pages, target);
-      if (!match) return undefined;
-
-      const isAlwaysVisiblePage = this.isPageAlwaysVisible(pages[match.pageIndex]);
-      const scrollPageIndex = pages
-        .slice(0, match.pageIndex)
-        .filter((page) => !this.isPageAlwaysVisible(page)).length;
-      return {
-        absolutePageIndex: match.pageIndex,
-        scrollPageIndex: isAlwaysVisiblePage ? undefined : scrollPageIndex,
-        isAlwaysVisiblePage,
-      };
+      const pages = this.parseDefinition(definition)?.pages;
+      let scrollPageIndex = 0;
+      if (Array.isArray(pages)) {
+        pages.forEach((page, absolutePageIndex) => {
+          const isAlwaysVisiblePage = this.isPageAlwaysVisible(page);
+          const location = {
+            absolutePageIndex,
+            isAlwaysVisiblePage,
+            scrollPageIndex: isAlwaysVisiblePage ? undefined : scrollPageIndex,
+          };
+          if (!isAlwaysVisiblePage) scrollPageIndex++;
+          for (const { node } of collectVoudNodeEntries(page)) {
+            const id = String(node['id'] || '')
+              .trim()
+              .toLowerCase();
+            const alias = String(node['alias'] || '')
+              .trim()
+              .toLowerCase();
+            if (id && !ids.has(id)) ids.set(id, location);
+            if (alias && !aliases.has(alias)) aliases.set(alias, location);
+          }
+        });
+      }
     } catch (e) {
       console.error('Error resolving player target location from VOUD:', e);
-      return undefined;
     }
+    const locations = { id: ids, alias: aliases };
+    this.locationIndex = { definition, locations };
+    return locations;
   }
 
   /**

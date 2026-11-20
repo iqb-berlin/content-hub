@@ -53,6 +53,7 @@ export class ItemExplorerCommentsService implements OnDestroy {
   itemCommentSessionToken = 0;
   commentExportInProgress = false;
   commentExportError = '';
+  private readonly itemCommentAliases = new Map<string, string>();
   private itemCommentCountsRequestToken = 0;
   private commentRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -91,7 +92,8 @@ export class ItemExplorerCommentsService implements OnDestroy {
     if (event.refreshToken !== undefined && event.refreshToken !== this.itemCommentRefreshToken) {
       return;
     }
-    const key = this.itemCommentTargetKey(event.unitId, event.itemId);
+    const receivedKey = this.itemCommentTargetKey(event.unitId, event.itemId);
+    const key = this.itemCommentAliases.get(receivedKey) ?? receivedKey;
     const count = Math.max(0, Number(event.count) || 0);
     // Even an unchanged count is a newer observation than an in-flight batch.
     this.itemCommentCountStateVersion += 1;
@@ -125,18 +127,18 @@ export class ItemExplorerCommentsService implements OnDestroy {
       .subscribe({
         next: (snapshot) => {
           if (token !== this.itemCommentCountsRequestToken) return;
-          const nextCounts = Object.fromEntries(
-            (snapshot.counts || []).map((entry) => [
-              this.itemCommentTargetKey(entry.unitId, entry.itemId),
-              entry.count,
-            ]),
-          );
-          const nextCodingCounts = Object.fromEntries(
-            (snapshot.counts || []).map((entry) => [
-              this.itemCommentTargetKey(entry.unitId, entry.itemId),
-              entry.codingCount || 0,
-            ]),
-          );
+          const nextCounts: Record<string, number> = {};
+          const nextCodingCounts: Record<string, number> = {};
+          this.itemCommentAliases.clear();
+          for (const entry of snapshot.counts || []) {
+            const key = this.itemCommentTargetKey(entry.unitId, entry.itemId);
+            nextCounts[key] = entry.count;
+            nextCodingCounts[key] = entry.codingCount || 0;
+            if (entry.itemIdAlias) {
+              const alias = this.itemCommentTargetKey(entry.unitId, entry.itemIdAlias);
+              this.itemCommentAliases.set(alias, key);
+            }
+          }
           for (const [key, changeVersion] of this.itemCommentCountChangeVersions) {
             if (changeVersion > stateVersion) {
               nextCounts[key] = this.itemCommentCounts[key] || 0;
@@ -194,6 +196,8 @@ export class ItemExplorerCommentsService implements OnDestroy {
     counts: Record<string, number>,
   ): string {
     const exactKey = this.itemCommentTargetKey(unitId, itemId);
+    const alias = this.itemCommentAliases.get(exactKey);
+    if (alias) return alias;
     if (Object.prototype.hasOwnProperty.call(counts, exactKey)) return exactKey;
     const prefix = `${unitId}_`;
     // Match the backend: exact canonical ID first, then a unit-prefixed request alias.
@@ -214,6 +218,7 @@ export class ItemExplorerCommentsService implements OnDestroy {
 
     this.stopCommentAutoRefresh();
     this.itemCommentCountSessionIdentity = nextIdentity;
+    this.itemCommentAliases.clear();
     this.itemCommentSessionToken += 1;
     this.commentExportInProgress = false;
     this.commentExportError = '';

@@ -47,7 +47,7 @@ const playerHtml = `<!doctype html><html><body><main id="view">Warte auf Start</
 
 async function installContent(
   page: Page,
-  options: { enableCommenting?: boolean; codingScheme?: object } = {},
+  options: { enableCommenting?: boolean; codingScheme?: object; commentTargets?: string[] } = {},
 ) {
   await installOidcSession(page, managerId, 'e2e-manager');
   await page.route(`**/api/view/ap/${apId}`, async (route) => {
@@ -57,7 +57,9 @@ async function installContent(
       ...data.featureConfig,
       showMetadata: true,
       enableCommenting: options.enableCommenting === true,
-      ...(options.enableCommenting ? { commentTargets: ['UNIT', 'BOOKLET'] } : {}),
+      ...(options.enableCommenting
+        ? { commentTargets: options.commentTargets || ['UNIT', 'BOOKLET'] }
+        : {}),
     };
     await route.fulfill({ json: data });
   });
@@ -138,6 +140,280 @@ async function installContent(
       },
     }),
   );
+}
+
+for (const fileCatalog of [false, true]) {
+  test(`synchronizes sparse review pages, preserves drafts and reveals ${fileCatalog ? 'derived file-catalog' : 'base'} coding`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await installContent(page, { enableCommenting: true, commentTargets: ['ITEM', 'CODING'] });
+    const aliases = ['FIRST', 'SECOND', 'THIRD'];
+    const items = aliases.map((variableId, index) => ({ id: `I${index + 1}`, variableId }));
+    const definition = {
+      pages: [
+        { alwaysVisible: true },
+        ...aliases.map((alias) => ({
+          elements: [{ id: `input-${alias}`, alias, type: 'text-field' }],
+        })),
+      ],
+    };
+    const codingAliases = fileCatalog ? ['FIRST_RESULT', 'internal-0', 'THIRD_RESULT'] : aliases;
+    const codingScheme = {
+      variableCodings: [
+        ...(fileCatalog
+          ? aliases.map((alias, index) => ({
+              id: `base-${index}`,
+              alias,
+              sourceType: 'BASE',
+              codes: [],
+            }))
+          : []),
+        ...codingAliases.map((alias, index) => ({
+          id: `internal-${index}`,
+          alias,
+          sourceType: fileCatalog ? 'SUM_SCORE' : 'BASE',
+          ...(fileCatalog ? { deriveSources: [`base-${index}`] } : {}),
+          manualInstruction: `<p>Kodieranweisung zu Item ${index + 1}.</p>`.repeat(16),
+          codes: [{ id: 1, type: 'FULL_CREDIT', score: 1 }],
+        })),
+      ],
+    };
+    const sparsePlayer = `<!doctype html><html><body>
+    <h2 id="page"></h2><button id="next">Intern weiter</button><button id="previous">Intern zurück</button>
+    <button id="response">Nur Antwort melden</button><button id="repeat">Antwort mit gleicher Seite melden</button>
+    <script>
+      let sessionId, currentPage = '0';
+      const validPages = [{id:'0'}, {id:'2'}];
+      function report(includePage = true) {
+        parent.postMessage({type:'vopStateChangedNotification', sessionId,
+          unitState:{dataParts:{elementCodes:'[]'}},
+          ...(includePage ? {playerState:{validPages,currentPage}} : {})}, '*');
+      }
+      function render() { document.getElementById('page').textContent = 'Item ' + (Number(currentPage)+1); }
+      addEventListener('message', event => {
+        const msg = event.data;
+        if (msg.type === 'vopStartCommand') { sessionId = msg.sessionId; currentPage = msg.playerConfig.startPage; render(); report(); }
+        if (msg.type === 'vopPageNavigationCommand' && msg.sessionId === sessionId) { currentPage = msg.target; render(); report(); }
+      });
+      document.getElementById('next').onclick = () => { currentPage = '2'; render(); report(); };
+      document.getElementById('previous').onclick = () => { currentPage = '0'; render(); report(); };
+      document.getElementById('response').onclick = () => report(false);
+      document.getElementById('repeat').onclick = () => report();
+      parent.postMessage({type:'vopReadyNotification'}, '*');
+    </script></body></html>`;
+    await page.route(`**/api/view/ap/${apId}/units/review-u*`, (route) =>
+      route.fulfill({
+        json: {
+          id: 'review-u1',
+          name: 'Drei Items',
+          items: fileCatalog ? [] : items,
+          navigationItems: items.map((item, index) =>
+            fileCatalog ? { ...item, variableReadOnlyId: `internal-${index}` } : item,
+          ),
+          codingScheme,
+          dependencies: [
+            { type: 'PLAYER', downloadUrl: '/review-sync/player' },
+            { type: 'UNIT_DEFINITION', downloadUrl: '/review-sync/definition' },
+          ],
+        },
+      }),
+    );
+    await page.route('**/review-sync/*', (route) =>
+      new URL(route.request().url()).pathname.endsWith('/player')
+        ? route.fulfill({ contentType: 'text/html', body: sparsePlayer })
+        : route.fulfill({ json: definition }),
+    );
+    await page.route(`**/api/ap/${apId}/review/comments/availability?*`, (route) =>
+      route.fulfill({ json: { codingCommentsAvailable: true } }),
+    );
+    await page.route(`**/api/ap/${apId}/review/comments?*`, (route) =>
+      route.fulfill({
+        json: {
+          revision: '1',
+          target: Object.fromEntries(new URL(route.request().url()).searchParams),
+          visibilityMode: 'PRIVATE',
+          comments: [],
+        },
+      }),
+    );
+    await page.goto(reviewUrl);
+    const item = page.getByRole('combobox', { name: 'Item', exact: true });
+    const editor = page.locator('.new-comment-form textarea');
+    const player = page.frameLocator('iframe');
+    await expect(page.locator('.page-info')).toHaveText('Seite 1 / 2');
+    await page.getByRole('button', { name: 'Nächste Seite →' }).click();
+    await expect(player.getByRole('heading', { name: 'Item 3' })).toBeVisible();
+    await expect(item).toHaveValue('I3');
+    await expect(page.locator('.page-info')).toHaveText('Seite 2 / 2');
+    await page.getByRole('button', { name: 'Musterlösung anzeigen', exact: true }).click();
+    await expect(page.locator('.current-coding h4')).toContainText(codingAliases[2]);
+    await expect(page.locator('.current-coding h4')).toBeInViewport({ ratio: 1 });
+    await editor.fill('Entwurf für das sichtbare dritte Item');
+    await item.selectOption('I2');
+    await expect(page.locator('.current-coding h4')).toContainText(codingAliases[1]);
+    await editor.fill('Expliziter Entwurf für Item 2');
+    for (const name of ['Nur Antwort melden', 'Antwort mit gleicher Seite melden']) {
+      await player.getByRole('button', { name, exact: true }).click();
+      await expect(item).toHaveValue('I2');
+      await expect(editor).toHaveValue('Expliziter Entwurf für Item 2');
+    }
+    await player.getByRole('button', { name: 'Intern zurück' }).click();
+    await expect(item).toHaveValue('I1');
+    await expect(page.locator('.current-coding h4')).toContainText(codingAliases[0]);
+    await expect(editor).toHaveValue('');
+    await player.getByRole('button', { name: 'Intern weiter' }).click();
+    await expect(item).toHaveValue('I3');
+    await expect(editor).toHaveValue('Entwurf für das sichtbare dritte Item');
+  });
+}
+
+for (const scenario of [
+  'legacy alias collision',
+  'uncoded item',
+  'uncoded item with coded sibling',
+  'file-only item coding',
+] as const) {
+  test(`review navigation handles ${scenario}`, async ({ page }) => {
+    const fileOnly = scenario === 'file-only item coding';
+    const collision = scenario === 'legacy alias collision';
+    const sharedPage = scenario === 'uncoded item with coded sibling';
+    const uncoded = scenario === 'uncoded item' || sharedPage;
+    const aliases = sharedPage
+      ? ['FIRST', 'UNCODED', 'SECOND']
+      : ['FIRST', collision ? 'A' : 'SECOND'];
+    const codes = [{ id: 1, type: 'FULL_CREDIT', score: 1 }];
+    const items = aliases.map((_, index) => ({
+      id: `I${index + 1}`,
+      variableId: collision ? ['A', 'B'][index] : aliases[index],
+    }));
+    const codingScheme = {
+      variableCodings: [
+        ...aliases.flatMap((alias, index) =>
+          uncoded && index === 1
+            ? []
+            : [
+                {
+                  id: collision ? ['A', 'B'][index] : `base-${index}`,
+                  alias,
+                  sourceType: 'BASE',
+                  codes,
+                },
+              ],
+        ),
+        ...(fileOnly
+          ? aliases.map((_, index) => ({
+              id: `RESULT_${index + 1}`,
+              sourceType: 'SUM_SCORE',
+              deriveSources: [`base-${index}`],
+              codes,
+            }))
+          : []),
+      ],
+    };
+    await installContent(page, {
+      enableCommenting: !fileOnly,
+      commentTargets: ['ITEM', 'CODING'],
+    });
+    await page.route(`**/api/view/ap/${apId}/units/review-u*`, (route) =>
+      route.fulfill({
+        json: {
+          id: 'review-u1',
+          name: sharedPage ? 'Drei Items auf zwei Seiten' : 'Zwei Items',
+          items: fileOnly ? [] : items,
+          navigationItems: fileOnly
+            ? items.map((item, index) => ({
+                id: item.id,
+                variableReadOnlyId: `RESULT_${index + 1}`,
+              }))
+            : items,
+          codingScheme,
+          dependencies: [
+            { type: 'PLAYER', downloadUrl: '/review-regression/player' },
+            { type: 'UNIT_DEFINITION', downloadUrl: '/review-regression/definition' },
+          ],
+        },
+      }),
+    );
+    await page.route('**/review-regression/*', (route) =>
+      new URL(route.request().url()).pathname.endsWith('/player')
+        ? route.fulfill({ contentType: 'text/html', body: playerHtml })
+        : route.fulfill({
+            json: {
+              pages: (sharedPage
+                ? [[aliases[0]], aliases.slice(1)]
+                : aliases.map((alias) => [alias])
+              ).map((pageAliases) => ({
+                elements: pageAliases.map((alias) => ({ alias, type: 'text-field' })),
+              })),
+            },
+          }),
+    );
+    const countRequests: string[] = [];
+    const availabilityRequests: (string | null)[] = [];
+    await page.route(`**/api/ap/${apId}/review/comments/counts`, (route) => {
+      countRequests.push(route.request().url());
+      return route.abort();
+    });
+    await page.route(`**/api/ap/${apId}/review/comments/availability?*`, (route) => {
+      availabilityRequests.push(new URL(route.request().url()).searchParams.get('unitId'));
+      return route.fulfill({ json: { codingCommentsAvailable: true } });
+    });
+    await page.route(`**/api/ap/${apId}/review/comments?*`, (route) =>
+      route.fulfill({
+        json: {
+          revision: '1',
+          target: Object.fromEntries(new URL(route.request().url()).searchParams),
+          visibilityMode: 'PRIVATE',
+          comments: [],
+        },
+      }),
+    );
+    await page.goto(reviewUrl);
+    await page.getByRole('button', { name: 'Kodierung anzeigen', exact: true }).click();
+    const activeCoding = page.locator('.current-coding h4');
+    await expect(activeCoding).toContainText(fileOnly ? 'RESULT_1' : 'FIRST');
+    await page.getByRole('button', { name: 'Nächste Seite →' }).click();
+    await expect(
+      page.frameLocator('iframe').getByText('Player-Seite 2', { exact: true }),
+    ).toBeVisible();
+    if (uncoded) await expect(activeCoding).toHaveCount(0);
+    else await expect(activeCoding).toContainText(fileOnly ? 'RESULT_2' : 'A');
+    const item = page.getByRole('combobox', { name: 'Item', exact: true });
+    if (fileOnly) {
+      await expect(item).toHaveCount(0);
+      expect(availabilityRequests).toEqual([]);
+    } else if (!sharedPage) await expect(item).toHaveValue('I2');
+    const pageItem = page.getByRole('combobox', { name: 'Item auf dieser Seite', exact: true });
+    const editor = page.locator('.new-comment-form textarea');
+    if (sharedPage) {
+      await expect(pageItem).toHaveValue('');
+      await pageItem.selectOption('I2');
+      await editor.fill('Entwurf für das unkodierte Item');
+      await pageItem.selectOption('I3');
+      await expect(activeCoding).toContainText('SECOND');
+      await expect(editor).toHaveValue('');
+      await editor.fill('Entwurf für das kodierte Nachbaritem');
+      await pageItem.selectOption('I2');
+      await expect(activeCoding).toHaveCount(0);
+      await expect(editor).toHaveValue('Entwurf für das unkodierte Item');
+    }
+    await page.frameLocator('iframe').getByRole('button', { name: 'Intern zurück' }).click();
+    await expect(activeCoding).toContainText(fileOnly ? 'RESULT_1' : 'FIRST');
+    if (!fileOnly) await expect(item).toHaveValue('I1');
+    if (sharedPage) {
+      await page.getByRole('button', { name: 'Nächste Seite →' }).click();
+      await expect(pageItem).toHaveValue('');
+      await expect(activeCoding).toHaveCount(0);
+      await pageItem.selectOption('I2');
+      await expect(editor).toHaveValue('Entwurf für das unkodierte Item');
+      await pageItem.selectOption('I3');
+      await expect(activeCoding).toContainText('SECOND');
+      await expect(editor).toHaveValue('Entwurf für das kodierte Nachbaritem');
+    }
+    expect(countRequests).toEqual([]);
+    if (!fileOnly) expect([...new Set(availabilityRequests)]).toEqual(['review-u1']);
+  });
 }
 
 test('keeps the comment editor visible when expanding coding with category and group controls', async ({
