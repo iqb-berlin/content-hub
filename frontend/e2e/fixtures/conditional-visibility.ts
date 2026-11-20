@@ -207,12 +207,16 @@ export function responseVisibilityDefinition() {
 }
 
 /** A generated silent WAV and a stimulus that stays visible as playback advances. */
-export function persistentMediaVisibilityDefinition() {
+export function persistentMediaVisibilityDefinition({
+  durationSeconds = 2,
+  maxRuns = null,
+}: { durationSeconds?: number; maxRuns?: number | null } = {}) {
   const definition = conditionalVisibilityDefinition();
   const page = definition.pages[1];
   const section = page.sections[0];
   const text = section.elements[0];
-  const wav = Buffer.alloc(44 + 32000);
+  const dataBytes = 16000 * durationSeconds;
+  const wav = Buffer.alloc(44 + dataBytes);
   wav.write('RIFF', 0);
   wav.writeUInt32LE(wav.length - 8, 4);
   wav.write('WAVEfmt ', 8);
@@ -224,7 +228,7 @@ export function persistentMediaVisibilityDefinition() {
   wav.writeUInt16LE(2, 32);
   wav.writeUInt16LE(16, 34);
   wav.write('data', 36);
-  wav.writeUInt32LE(32000, 40);
+  wav.writeUInt32LE(dataBytes, 40);
   definition.stateVariables = [];
   definition.pages = [
     {
@@ -249,7 +253,7 @@ export function persistentMediaVisibilityDefinition() {
                 defaultVolume: 0,
                 minVolume: 0,
                 minRuns: 0,
-                maxRuns: null,
+                maxRuns,
                 loop: false,
                 showHint: false,
               },

@@ -40,6 +40,7 @@ import { PendingPersonalSessionStorageService } from '../../core/services/pendin
 import { usesLegacyAspectDropListIds } from '../../core/services/voud-drop-lists';
 import { PlayerTargetLocation, VoudService } from '../../core/services/voud.service';
 import { ReviewNavigationResolver } from './review-navigation';
+import { ReviewPlayerPreviewDirective } from './review-player-preview.directive';
 import {
   CodingVariableLike,
   mergePlayerSolutionIntoDataParts,
@@ -79,7 +80,13 @@ function isUnitDefinition(dependency: { type?: string }): boolean {
 @Component({
   selector: 'app-unit-view',
   standalone: true,
-  imports: [BreadcrumbComponent, FormsModule, ItemCommentThreadComponent, CommonModule],
+  imports: [
+    BreadcrumbComponent,
+    FormsModule,
+    ItemCommentThreadComponent,
+    CommonModule,
+    ReviewPlayerPreviewDirective,
+  ],
   template: `
     @if (unit) {
       @if (!embedded) {
@@ -176,6 +183,7 @@ function isUnitDefinition(dependency: { type?: string }): boolean {
       }
 
       <div
+        #unitLayout
         class="unit-layout"
         [class.with-panel]="
           (reviewMode && !reviewPanelCollapsed) || (panelVisible && resolvedPanelMode === 'split')
@@ -184,18 +192,37 @@ function isUnitDefinition(dependency: { type?: string }): boolean {
         [style.--review-panel-width.px]="reviewPanelWidth"
       >
         <div class="player-area" [class.print-mode]="printMode !== 'off'">
-          <div class="player-container card" [class.print-mode]="printMode !== 'off'">
+          <div
+            class="player-container card"
+            [class.print-mode]="printMode !== 'off'"
+            [appReviewPlayerPreview]="reviewMode && playerSrcDoc ? unitLayout : null"
+            (reviewPreviewHidden)="pauseReviewPlayerMedia()"
+            #reviewPreview="reviewPlayerPreview"
+          >
             @if (playerSrcDoc) {
-              <iframe
-                #playerFrame
-                [srcdoc]="playerSrcDoc"
-                class="player-iframe"
-                [style.height]="playerHeight"
-                [class.print-mode]="printMode !== 'off'"
-                sandbox="allow-scripts allow-same-origin allow-downloads"
-                (load)="onPlayerLoaded()"
-              >
-              </iframe>
+              <div class="player-preview-clip">
+                <div class="player-preview-viewport">
+                  <iframe
+                    #playerFrame
+                    [srcdoc]="playerSrcDoc"
+                    class="player-iframe"
+                    [style.height]="playerHeight"
+                    [class.print-mode]="printMode !== 'off'"
+                    sandbox="allow-scripts allow-same-origin allow-downloads"
+                    (load)="onPlayerLoaded()"
+                  >
+                  </iframe>
+                </div>
+              </div>
+              @if (reviewPreview.tooSmall()) {
+                <div class="player-preview-notice" role="status">
+                  <strong>Abweichende Darstellung</strong>
+                  <p>
+                    Wählen Sie „Reviewbereich ausblenden“, um die Aufgabe in voller Größe
+                    anzuzeigen.
+                  </p>
+                </div>
+              }
             } @else {
               <div class="empty-state">
                 <div style="font-size:2.5rem;margin-bottom:12px">🎮</div>
@@ -712,6 +739,41 @@ function isUnitDefinition(dependency: { type?: string }): boolean {
       .review-mode .player-iframe:not(.print-mode) {
         min-height: 100%;
       }
+      .player-preview-clip,
+      .player-preview-viewport {
+        display: contents;
+      }
+      .review-mode .player-container.review-player-preview {
+        --review-player-reference-height: calc(
+          var(--review-content-height) - 2 * var(--review-player-border-width, 0px)
+        );
+        height: auto;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .review-player-preview .player-preview-clip {
+        display: block;
+        position: relative;
+        height: calc(var(--review-player-reference-height) * var(--review-player-scale));
+        overflow: clip;
+      }
+      .review-player-preview .player-preview-viewport {
+        display: block;
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: var(--review-player-reference-width);
+        height: var(--review-player-reference-height);
+        overflow: auto;
+        transform: scale(var(--review-player-scale));
+        transform-origin: top left;
+      }
+      .review-player-preview-too-small .player-preview-clip {
+        height: 0;
+        visibility: hidden;
+      }
+      .player-preview-notice {
+        padding: 16px;
+      }
       .review-mode .player-iframe.print-mode {
         height: 100% !important;
         min-height: 100%;
@@ -777,7 +839,7 @@ function isUnitDefinition(dependency: { type?: string }): boolean {
         min-height: min(180px, 50%);
         overflow-y: auto;
       }
-      .review-mode .player-container.print-mode {
+      .review-mode .player-container.print-mode:not(.review-player-preview) {
         height: var(--review-content-height);
         min-height: var(--review-content-height);
         max-height: var(--review-content-height);
@@ -1076,6 +1138,8 @@ function isUnitDefinition(dependency: { type?: string }): boolean {
 })
 export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('playerFrame') playerFrame!: ElementRef<HTMLIFrameElement>;
+  @ViewChild(ReviewPlayerPreviewDirective)
+  private reviewPlayerPreview?: ReviewPlayerPreviewDirective;
   @ViewChild('reviewPanelScrollContent')
   private reviewPanelScrollContent?: ElementRef<HTMLElement>;
   @ViewChild('reviewCodingContent')
@@ -1236,6 +1300,16 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private retiringResponseSource: { window: Window; sessionId: string } | null = null;
   private responseChangedAt: number | null = null;
   private playerInputDocument: Document | null = null;
+  private readonly playerMediaPlayHandler = (event: Event) => {
+    const MediaElement = this.playerInputDocument?.defaultView?.HTMLMediaElement;
+    if (
+      this.reviewPlayerPreview?.tooSmall() &&
+      MediaElement &&
+      event.target instanceof MediaElement
+    ) {
+      event.target.pause();
+    }
+  };
   private playerDragStart: { x: number; y: number; pointerId: number } | null = null;
   private solutionRequestTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly playerInputHandler = () => {
@@ -1758,12 +1832,22 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.solutionRequestPending = false;
   }
 
+  pauseReviewPlayerMedia() {
+    this.playerInputDocument
+      ?.querySelectorAll<HTMLMediaElement>('audio, video')
+      .forEach((media) => {
+        if (!media.paused) media.pause();
+      });
+  }
+
   private observePlayerInputs() {
     this.stopObservingPlayerInputs();
     if (!this.reviewMode) return;
     const doc = this.playerFrame?.nativeElement?.contentDocument;
     if (!doc) return;
     this.playerInputDocument = doc;
+    doc.addEventListener('play', this.playerMediaPlayHandler, true);
+    if (this.reviewPlayerPreview?.tooSmall()) this.pauseReviewPlayerMedia();
     doc.addEventListener('input', this.playerInputHandler, true);
     doc.addEventListener('click', this.playerControlHandler, true);
     doc.addEventListener('keydown', this.playerControlHandler, true);
@@ -1774,6 +1858,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private stopObservingPlayerInputs() {
+    this.playerInputDocument?.removeEventListener('play', this.playerMediaPlayHandler, true);
     this.playerInputDocument?.removeEventListener('input', this.playerInputHandler, true);
     this.playerInputDocument?.removeEventListener('click', this.playerControlHandler, true);
     this.playerInputDocument?.removeEventListener('keydown', this.playerControlHandler, true);
