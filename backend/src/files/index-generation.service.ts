@@ -8,6 +8,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
+import { isDeepStrictEqual } from "node:util";
 import { XMLParser } from "fast-xml-parser";
 import { Repository } from "typeorm";
 import { Acp, AcpFile } from "../database/entities";
@@ -222,7 +223,7 @@ export class IndexGenerationService {
         : undefined;
       assessmentParts.push(
         existingPart
-          ? this.mergeGeneratedPart(existingPart, generatedPart)
+          ? this.mergeGeneratedPart(existingPart, generatedPart, warnings)
           : generatedPart,
       );
     }
@@ -244,8 +245,25 @@ export class IndexGenerationService {
       status: "IN_DEVELOPMENT",
       ...(assessmentParts.length ? { assessmentParts } : {}),
     };
-    delete (candidateIndex as any).units;
-    delete (candidateIndex as any).scales;
+    // Only remove compatibility mirrors. Unassigned legacy data needs migration.
+    for (const field of ["units", "scales"] as const) {
+      const root = candidateIndex[field];
+      if (!Array.isArray(root)) continue;
+      const byId = new Map<string, any[]>();
+      for (const part of this.asArray<any>(acp.acpIndex.assessmentParts)) {
+        for (const entry of this.asArray(part?.[field])) {
+          const matches = byId.get(entry?.id) || [];
+          matches.push(entry);
+          byId.set(entry?.id, matches);
+        }
+      }
+      if (
+        root.every((entry) =>
+          byId.get(entry?.id)?.some((other) => isDeepStrictEqual(other, entry)),
+        )
+      )
+        delete candidateIndex[field];
+    }
     if (!assessmentParts.length) delete candidateIndex.assessmentParts;
     const validation = await this.acpIndexService.validateCandidate(
       acpId,
@@ -478,29 +496,52 @@ export class IndexGenerationService {
     return crypto.createHash("sha256").update(digest).digest("hex");
   }
 
-  private mergeGeneratedPart(existing: any, generated: any): any {
-    const existingUnits = new Map(
-      this.asArray(existing?.units).map((unit: any) => [unit.id, unit]),
+  private mergeGeneratedPart(
+    existing: any,
+    generated: any,
+    warnings: string[],
+  ): any {
+    const generatedUnits = new Map<string, any>(
+      generated.units.map((unit: any) => [unit.id, unit]),
     );
-    const mergeById = (before: any, after: any) => {
-      const entries = new Map(
-        this.asArray(before).map((entry: any) => [entry.id, entry]),
-      );
-      for (const entry of this.asArray(after)) entries.set(entry.id, entry);
-      return Array.from(entries.values());
+    const units = this.asArray(existing.units).map((unit) => {
+      const fromFile = generatedUnits.get(unit.id);
+      if (!fromFile) {
+        warnings.push(
+          `Unit ${unit.id} in Part ${existing.id} ist nur im bisherigen Index vorhanden und bleibt erhalten.`,
+        );
+        return unit;
+      }
+      generatedUnits.delete(unit.id);
+      const dependencies = this.asArray(unit.dependencies);
+      return {
+        ...fromFile,
+        ...unit,
+        dependencies: [
+          ...dependencies,
+          ...fromFile.dependencies.filter(
+            (entry: any) =>
+              !dependencies.some(
+                (old) => old.id === entry.id && old.type === entry.type,
+              ),
+          ),
+        ],
+      };
+    });
+    const addNew = (before: any, after: any) => {
+      const original = this.asArray(before);
+      const ids = new Set(original.map((entry) => entry.id));
+      return [
+        ...original,
+        ...this.asArray(after).filter((entry) => !ids.has(entry.id)),
+      ];
     };
     return {
-      ...existing,
       ...generated,
-      units: generated.units.map((unit: any) => ({
-        ...(existingUnits.get(unit.id) || {}),
-        ...unit,
-      })),
-      bookletModules: mergeById(
-        existing.bookletModules,
-        generated.bookletModules,
-      ),
-      instruments: mergeById(existing.instruments, generated.instruments),
+      ...existing,
+      units: [...units, ...generatedUnits.values()],
+      bookletModules: addNew(existing.bookletModules, generated.bookletModules),
+      instruments: addNew(existing.instruments, generated.instruments),
     };
   }
 

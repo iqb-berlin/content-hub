@@ -61,8 +61,14 @@ describe("IndexGenerationService", () => {
             units: [
               {
                 id: "shared",
-                dependencies: [],
+                dependencies: [{ id: "manual.html", type: "WIDGET" }],
+                name: "Manuell benannt",
                 items: [{ id: "item-1", sourceVariable: "score" }],
+              },
+              {
+                id: "only-in-index",
+                dependencies: [{ id: "manual.html", type: "WIDGET" }],
+                items: [{ id: "x", sourceVariable: "v" }],
               },
             ],
           },
@@ -121,7 +127,7 @@ describe("IndexGenerationService", () => {
     const preview = await service.preview("acp");
     const parts = (preview.candidateIndex as any).assessmentParts;
     expect(parts.map((part: any) => [part.id, part.units.length])).toEqual([
-      ["ma1", 2],
+      ["ma1", 3],
       ["sp1", 2],
       ["manual", 1],
     ]);
@@ -134,6 +140,15 @@ describe("IndexGenerationService", () => {
     expect(parts[0].units[0].items).toEqual([
       { id: "item-1", sourceVariable: "score" },
     ]);
+    expect(parts[0].units[1]).toEqual(acp.acpIndex.assessmentParts[0].units[1]);
+    expect(parts[0].units[0].name).toBe("Manuell benannt");
+    expect(parts[0].units[0].dependencies).toContainEqual({
+      id: "manual.html",
+      type: "WIDGET",
+    });
+    expect(preview.warnings).toContainEqual(
+      expect.stringContaining("only-in-index"),
+    );
     expect(parts[2]).toEqual(acp.acpIndex.assessmentParts[1]);
     expect(preview.validation.valid).toBe(true);
     expect(preview.validation.publishable).toBe(false);
