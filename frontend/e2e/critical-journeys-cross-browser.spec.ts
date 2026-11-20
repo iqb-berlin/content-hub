@@ -69,7 +69,7 @@ test('unit navigation renders real ASPECT content and applies display modes', as
     .filter({ hasText: journeyUnitName })
     .getByRole('link', { name: 'Ansehen' })
     .click();
-  await expect(page).toHaveURL(`/view/${unitAp}/unit/${journeyUnitId}`);
+  await expect(page).toHaveURL(`/view/${unitAp}/part/journey-part/unit/${journeyUnitId}`);
   const player = page.frameLocator('iframe.player-iframe');
   await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();
   await player.getByRole('radio', { name: 'zum See', exact: true }).check();

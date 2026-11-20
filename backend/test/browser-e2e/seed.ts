@@ -900,11 +900,14 @@ async function seed(): Promise<void> {
       const realTask =
         project.name.startsWith("review") ||
         project.name.startsWith("explorer-");
-      const apIndex = structuredClone(regressionAp.apIndex);
+      const apIndex: Record<string, any> =
+        project.name === "files" || project.name === "snapshots"
+          ? {
+              version: "1.0.0",
+              name: [{ lang: "de", value: `Browser E2E ${project.name}` }],
+            }
+          : structuredClone(regressionAp.apIndex);
       apIndex.packageId = `browser-e2e-${project.name}`;
-      if (project.name === "files" || realTask) {
-        apIndex.assessmentParts = [];
-      }
       if (realTask) {
         apIndex.assessmentParts = [
           {

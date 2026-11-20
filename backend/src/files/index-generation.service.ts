@@ -337,7 +337,7 @@ export class IndexGenerationService {
     warnings: string[],
   ): any | null {
     const metadata = parsed.Metadata || {};
-    const id = String(metadata.Id || "").trim();
+    const id = String(metadata.Id || parsed.Id || "").trim();
     if (!id) {
       warnings.push(
         `Unit-Datei ${file.relativePath || file.originalName} enthält keine ID.`,
@@ -347,7 +347,7 @@ export class IndexGenerationService {
     const dependencies: any[] = [
       { id: file.relativePath || file.originalName, type: "UNIT_INDEX" },
     ];
-    const metadataRef = this.text(metadata.Reference);
+    const metadataRef = this.text(metadata.Reference || parsed.Reference);
     const definitionRef = this.text(parsed.DefinitionRef);
     const codingRef = this.text(parsed.CodingSchemeRef);
     if (definitionRef)
@@ -399,9 +399,9 @@ export class IndexGenerationService {
     }
     return {
       id,
-      name: String(metadata.Label || id),
-      ...(metadata.Description
-        ? { description: String(metadata.Description) }
+      name: String(metadata.Label || parsed.Label || id),
+      ...(metadata.Description || parsed.Description
+        ? { description: String(metadata.Description || parsed.Description) }
         : {}),
       lang: "de",
       dependencies,

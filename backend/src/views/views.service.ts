@@ -53,6 +53,11 @@ import {
   simpleItemListKey,
 } from "./simple-item-list-projection";
 
+const viewDependencyTypes = new Map([
+  ["UNIT_UI_DEFINITION", "UNIT_DEFINITION"],
+  ["UNIT_CODING_SCHEME", "CODING_SCHEME"],
+]);
+
 const MAX_PERSONAL_ITEM_ROWS = 10_000;
 const MAX_EXPORT_ROW_KEY_LENGTH = 500;
 
@@ -327,7 +332,7 @@ export class ViewsService {
         )
           metadataFiles.push(file);
         fileRefs.push({
-          type: dep.type,
+          type: viewDependencyTypes.get(dep.type) ?? dep.type,
           originalName: file.originalName,
           downloadUrl: `/api/ap/${apId}/files/${file.id}/download`,
           fileId: file.id,
