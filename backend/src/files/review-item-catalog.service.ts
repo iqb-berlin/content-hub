@@ -153,6 +153,33 @@ export class ReviewItemCatalogService {
     return { items, metadataFile: metadata?.file };
   }
 
+  async getUnitMetadata(apId: string, unit: CatalogIndexUnit) {
+    const unitId = unit.id.trim();
+    const [source, files] = await Promise.all([
+      this.findUnitXml(apId, unitId),
+      this.indexMetadataFiles(apId, unit),
+    ]);
+    return this.readUnitMetadata(unitId, source, files, apId);
+  }
+
+  private async indexMetadataFiles(apId: string, unit: CatalogIndexUnit) {
+    const references = (
+      Array.isArray(unit.dependencies) ? unit.dependencies : []
+    )
+      .filter((entry) => String(entry?.type).toLowerCase() === "metadata")
+      .map((entry) => entry.id)
+      .filter((id): id is string => typeof id === "string");
+    const files = references.length
+      ? await this.fileRepository.find({
+          where: { apId, originalName: In(references) },
+        })
+      : [];
+    return references.flatMap((id) => {
+      const file = files.find(({ originalName }) => originalName === id);
+      return file ? [file] : [];
+    });
+  }
+
   private async readUnitMetadata(
     unitId: string,
     source: UnitXmlData | undefined,
@@ -191,25 +218,10 @@ export class ReviewItemCatalogService {
       (entry) => entry?.id === unitId,
     );
     if (!unit) return { codingCommentsAvailable, itemIds: new Set() };
-    const references = (
-      Array.isArray(unit.dependencies) ? unit.dependencies : []
-    )
-      .filter((entry) => String(entry?.type).toLowerCase() === "metadata")
-      .map((entry) => entry.id)
-      .filter((id): id is string => typeof id === "string");
-    const files = references.length
-      ? await this.fileRepository.find({
-          where: { apId, originalName: In(references) },
-        })
-      : [];
-    const indexMetadata = references.flatMap((id) => {
-      const file = files.find(({ originalName }) => originalName === id);
-      return file ? [file] : [];
-    });
     const metadata = await this.readUnitMetadata(
       unitId,
       source,
-      indexMetadata,
+      await this.indexMetadataFiles(apId, unit),
       apId,
     );
     const entries = this.mergeItems([unit], metadata?.items ?? [], new Set());
@@ -303,11 +315,11 @@ export class ReviewItemCatalogService {
     unitId: string,
     files: readonly (ApFile | undefined)[],
     onUnreadable?: () => void,
-  ): Promise<{ file: ApFile; items: CatalogFileItem[] } | undefined> {
+  ) {
     for (const file of new Set(files)) {
       if (!file) continue;
-      const items = await this.readMetadata(unitId, file);
-      if (items) return { file, items };
+      const metadata = await this.readMetadata(unitId, file);
+      if (metadata) return { file, ...metadata };
       onUnreadable?.();
     }
     return undefined;
@@ -629,24 +641,25 @@ export class ReviewItemCatalogService {
     return [...unique.values()];
   }
 
-  private async readMetadata(
-    unitId: string,
-    file: ApFile,
-  ): Promise<CatalogFileItem[] | undefined> {
+  private async readMetadata(unitId: string, file: ApFile) {
     try {
       const parsed = parseVomd(
         await readFile(file.filePath, "utf8"),
         false,
         this.logger,
       );
-      return parsed?.items.filter(isValidVomdItem).map((item, rowNumber) => ({
-        ...this.itemVariableReferences(item),
-        unitId,
-        itemId: item.id.trim(),
-        description: item.description,
-        useUnitAliasAsPrefix: item.useUnitAliasAsPrefix,
-        rowNumber,
-      }));
+      if (!parsed) return undefined;
+      const items: CatalogFileItem[] = parsed.items
+        .filter(isValidVomdItem)
+        .map((item, rowNumber) => ({
+          ...this.itemVariableReferences(item),
+          unitId,
+          itemId: item.id.trim(),
+          description: item.description,
+          useUnitAliasAsPrefix: item.useUnitAliasAsPrefix,
+          rowNumber,
+        }));
+      return { items, unitProfiles: parsed.unitProfiles };
     } catch {
       return undefined;
     }

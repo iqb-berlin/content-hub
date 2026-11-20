@@ -1,3 +1,5 @@
+import { FilesController } from "../files/files.controller";
+import { ServerApiController } from "../api/server-api.controller";
 import { BadRequestException, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { firstValueFrom, of, throwError } from "rxjs";
@@ -43,6 +45,43 @@ describe("AP response serialization boundaries", () => {
         handle: () => of(value),
       }),
     );
+
+  it.each([
+    [
+      FilesController,
+      FilesController.prototype.getUnitView,
+      "dependencies",
+      "/api",
+    ],
+    [
+      ServerApiController,
+      ServerApiController.prototype.replaceCodingSchemes,
+      "replacedFiles",
+      "/api/server",
+    ],
+  ] as const)(
+    "serializes download links for %s",
+    async (controller, handler, field, base) => {
+      const path = "/pkg/files/file/download";
+      const response = { [field]: [{ downloadUrl: base + "/ap" + path }] };
+      for (const mode of ["ap", "acp"]) {
+        const ctx = {
+          getClass: () => controller,
+          getHandler: () => handler,
+          switchToHttp: () => ({
+            getRequest: () => ({ apTerminology: mode, path: base + "/ap/pkg" }),
+          }),
+        } as unknown as ExecutionContext;
+        await expect(
+          firstValueFrom(
+            interceptor.intercept(ctx, { handle: () => of(response) }),
+          ),
+        ).resolves.toEqual({
+          [field]: [{ downloadUrl: base + "/" + mode + path }],
+        });
+      }
+    },
+  );
 
   it("preserves dictionary keys that resemble aliases", async () => {
     const tags = { apId: ["first row"], acpId: ["second row"] };

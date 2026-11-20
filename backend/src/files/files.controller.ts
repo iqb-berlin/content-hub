@@ -224,6 +224,7 @@ export class FilesController {
   }
 
   @Get("unit-view/:unitId")
+  @ApResponseEnvelopes("dependencies")
   @UseGuards(ApAccessGuard)
   @ApiOperation({
     summary: "Get unit view data from uploaded files (player, definition)",
@@ -358,7 +359,7 @@ export class FilesController {
     @Request() req: any,
   ) {
     const file = await this.filesService.findByIdForAp(apId, fileId);
-    await this.ensureFileContentAccess(apId, file.originalName, req);
+    await this.ensureFileContentAccess(apId, file, req);
     return this.filesService.getPreviewForAp(apId, fileId);
   }
 
@@ -508,7 +509,7 @@ export class FilesController {
   ) {
     const startedAt = performance.now();
     const file = await this.filesService.findByIdForAp(apId, fileId);
-    await this.ensureFileContentAccess(apId, file.originalName, req);
+    await this.ensureFileContentAccess(apId, file, req);
 
     const etagValue = String(
       file.checksum ||
@@ -587,7 +588,7 @@ export class FilesController {
 
   private async ensureFileContentAccess(
     apId: string,
-    originalName: string,
+    file: { id: string; originalName: string },
     req: any,
   ): Promise<void> {
     const isManager =
@@ -598,8 +599,13 @@ export class FilesController {
 
     const featureConfig = await this.filesService.getFeatureConfig(apId);
     const isDependency = req.reviewerColumnPolicy?.restricted
-      ? await this.filesService.isRuntimeDependencyFile(apId, originalName)
-      : await this.filesService.isUnitDependencyFile(apId, originalName);
+      ? await this.filesService.isRuntimeDependencyFile(apId, file.originalName)
+      : await this.filesService.isUnitDependencyFile(
+          apId,
+          file.originalName,
+          typeof req.query?.unitId === "string" ? req.query.unitId : undefined,
+          file.id,
+        );
     await this.capabilities.resolve(req);
     const canDownloadForView =
       isDependency &&

@@ -36,6 +36,7 @@ import {
   UploadMultipleOptions,
 } from "./file-mutation.service";
 import { FileStorageService } from "./file-storage.service";
+import { ReviewItemCatalogService } from "./review-item-catalog.service";
 import { isReviewTranscript } from "../review/review-transcripts";
 export type FilePreviewMode =
   | "text"
@@ -167,6 +168,7 @@ export class FilesService {
     private readonly fileMutationService: FileMutationService,
     private readonly fileStorageService: FileStorageService,
     private readonly reviewManifestService: ReviewManifestService,
+    private readonly reviewItemCatalog: ReviewItemCatalogService,
   ) {
     this.storagePath = this.configService.get<string>(
       "FILE_STORAGE_PATH",
@@ -432,32 +434,16 @@ export class FilesService {
 
   async getReviewTranscripts(apId: string, unitId: string) {
     const unit = findUnitInIndex(await this.getApIndex(apId), unitId);
-    const dependencies: { type?: unknown; id?: unknown }[] = Array.isArray(
-      unit?.dependencies,
-    )
-      ? unit.dependencies
-      : [];
-    const metadata = dependencies.find(
-      (entry) =>
-        typeof entry?.type === "string" &&
-        entry.type.toUpperCase() === "METADATA",
-    );
-    if (
-      typeof metadata?.id !== "string" ||
-      this.getFileExtension(metadata.id) !== "vomd"
-    ) {
-      return [];
-    }
-    const file = await this.fileRepository.findOne({
-      where: { apId, originalName: metadata.id },
-    });
-    if (!file) return [];
-    const parsed = this.unitParserService.parseVomd(
-      await this.readTextFileForPreview(file),
-    );
-    return this.extractVomdUnitEntries(parsed?.unitProfiles ?? []).filter(
+    if (!unit) return [];
+    const metadata = await this.reviewItemCatalog.getUnitMetadata(apId, unit);
+    if (!metadata || !this.isVomdFile(metadata.file.originalName)) return [];
+    return this.extractVomdUnitEntries(metadata.unitProfiles).filter(
       isReviewTranscript,
     );
+  }
+
+  private isVomdFile(name: string): boolean {
+    return /\.vomd(?:\.json)?$/i.test(name);
   }
 
   async getPreviewForAp(
@@ -507,7 +493,7 @@ export class FilesService {
         structuredData = structuredXml;
         mode = "structured";
       }
-    } else if (extension === "vomd") {
+    } else if (this.isVomdFile(file.originalName)) {
       const structuredVomd = this.buildVomdPreview(rawContent);
       if (structuredVomd) {
         structuredData = structuredVomd;
@@ -689,7 +675,12 @@ export class FilesService {
     return false;
   }
 
-  async isUnitDependencyFile(apId: string, fileName: string): Promise<boolean> {
+  async isUnitDependencyFile(
+    apId: string,
+    fileName: string,
+    unitId?: string,
+    fileId?: string,
+  ): Promise<boolean> {
     const index = await this.getApIndex(apId);
     for (const unit of getIndexUnits(index)) {
       if (`${unit.id}.xml` === fileName) {
@@ -701,6 +692,25 @@ export class FilesService {
           return true;
         }
       }
+    }
+    if (unitId && fileId && this.isVomdFile(fileName)) {
+      const unit = findUnitInIndex(index, unitId);
+      if (unit) {
+        const metadata = await this.reviewItemCatalog.getUnitMetadata(
+          apId,
+          unit,
+        );
+        return metadata?.file.id === fileId;
+      }
+      // The file-based Unit view can already exist before the index is synchronized.
+      const view = await this.unitParserService.getUnitViewFromFiles(
+        apId,
+        unitId,
+      );
+      return (view?.dependencies ?? []).some(
+        (dependency: { type: string; fileId: string }) =>
+          dependency.type === "METADATA" && dependency.fileId === fileId,
+      );
     }
     return false;
   }

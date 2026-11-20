@@ -2332,25 +2332,27 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     if (!metadataDep?.fileId) return;
 
     this.metadataLoading = true;
-    this.metadataRequest = this.api.getFilePreview(this.apId, metadataDep.fileId).subscribe({
-      next: (preview) => {
-        if (token !== this.unitLoadToken) return;
-        const structuredData = preview.structuredData;
-        if (structuredData?.type !== 'vomd') {
-          this.metadataError = 'Die referenzierte Metadatendatei ist keine gültige VOMD-Datei.';
+    this.metadataRequest = this.api
+      .getFilePreview(this.apId, metadataDep.fileId, this.unitId)
+      .subscribe({
+        next: (preview) => {
+          if (token !== this.unitLoadToken) return;
+          const structuredData = preview.structuredData;
+          if (structuredData?.type !== 'vomd') {
+            this.metadataError = 'Die referenzierte Metadatendatei ist keine gültige VOMD-Datei.';
+            this.metadataLoading = false;
+            return;
+          }
+          this.unitMetadata = structuredData.unitProfiles || [];
+          this.metadataError = '';
           this.metadataLoading = false;
-          return;
-        }
-        this.unitMetadata = structuredData.unitProfiles || [];
-        this.metadataError = '';
-        this.metadataLoading = false;
-      },
-      error: () => {
-        if (token !== this.unitLoadToken) return;
-        this.metadataLoading = false;
-        this.metadataError = 'Aufgabenmetadaten konnten nicht geladen werden.';
-      },
-    });
+        },
+        error: () => {
+          if (token !== this.unitLoadToken) return;
+          this.metadataLoading = false;
+          this.metadataError = 'Aufgabenmetadaten konnten nicht geladen werden.';
+        },
+      });
   }
 
   private loadCodingSchemeSource(unit: UnitViewData, token: number, signal?: AbortSignal) {
