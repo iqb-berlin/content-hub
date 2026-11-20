@@ -166,8 +166,11 @@ test('keeps the comment editor visible when expanding coding with category and g
         target: { targetType: 'UNIT', unitId: 'review-u1' },
         revision: '1',
         visibilityMode: 'GROUP',
-        groups: [{ id: 'review-group', name: 'Review-Gruppe', archived: false }],
-        defaultGroupId: 'review-group',
+        groups: [
+          { id: 'review-group', name: 'Gruppe A', archived: false },
+          { id: 'other-group', name: 'Gruppe B', archived: false },
+        ],
+        defaultGroupId: null,
         categories: [{ id: 'coding', name: 'Kodierung', archived: false }],
         comments: [],
       },
@@ -177,6 +180,7 @@ test('keeps the comment editor visible when expanding coding with category and g
   const category = page.getByRole('combobox', { name: 'Kategorie für neuen Kommentar' });
   const group = page.getByRole('combobox', { name: 'Review-Gruppe', exact: true });
   await category.selectOption('coding');
+  await group.selectOption('review-group');
   const editor = page.getByRole('textbox', { name: /Kommentar zur Aufgabe/ });
   const draft = 'Die Kodieranweisung soll auch sinngemäße Antworten berücksichtigen.';
   await editor.fill(draft);
@@ -206,6 +210,109 @@ test('keeps the comment editor visible when expanding coding with category and g
     path: testInfo.outputPath('review-coding-comment-editor.png'),
     fullPage: true,
   });
+});
+
+test('shows static comment fields when there is no category or group choice', async ({ page }) => {
+  await installContent(page, { enableCommenting: true });
+  const commentsPath = `/api/ap/${apId}/review/comments`;
+  const group = { id: 'review-group', name: 'Gruppe A', archived: false };
+  let available = true;
+  let releaseSettings!: () => void;
+  const settingsReady = new Promise<void>((resolve) => {
+    releaseSettings = resolve;
+  });
+  await page.route(`**${commentsPath}?*`, async (route) => {
+    await settingsReady;
+    await route.fulfill({
+      json: {
+        target: { targetType: 'UNIT', unitId: 'review-u1' },
+        revision: available ? 'one-group' : 'no-group',
+        visibilityMode: 'GROUP',
+        groups: available ? [group] : [],
+        defaultGroupId: available ? group.id : null,
+        categories: [],
+        comments: [],
+      },
+    });
+  });
+  await page.route(`**${commentsPath}`, (route) => route.fulfill({ status: 201, json: {} }));
+
+  const form = page.locator('.new-comment-form');
+  const submit = form.getByRole('button', { name: 'Kommentieren' });
+  try {
+    await page.goto(reviewUrl);
+    await form.getByRole('textbox').fill('Kommentar ohne Kategorie');
+  } finally {
+    releaseSettings();
+  }
+  await expect(form.getByText('Ohne Kategorie', { exact: true })).toBeVisible();
+  await expect(form.getByText('Review-Gruppe: Gruppe A', { exact: true })).toBeVisible();
+  await expect(form.getByRole('combobox')).toHaveCount(0);
+  await expect(form.getByRole('button', { name: 'Review-Gruppe übernehmen' })).toHaveCount(0);
+  const posted = page.waitForRequest(
+    (request) => request.method() === 'POST' && new URL(request.url()).pathname === commentsPath,
+  );
+  await submit.click();
+  expect((await posted).postDataJSON()).toEqual({
+    targetType: 'UNIT',
+    unitId: 'review-u1',
+    commentText: 'Kommentar ohne Kategorie',
+    groupId: group.id,
+  });
+
+  available = false;
+  await page.reload();
+  await expect(form.getByText('Keine Review-Gruppe verfügbar.')).toBeVisible();
+  await expect(form.getByRole('combobox')).toHaveCount(0);
+  await form.getByRole('textbox').fill('Entwurf ohne verfügbare Gruppe');
+  await expect(submit).toBeDisabled();
+});
+
+test('focuses the editor after confirming the review group or removing an archived category', async ({
+  page,
+}) => {
+  await installContent(page, { enableCommenting: true });
+  await page.route(`**/api/ap/${apId}/review/comments?*`, (route) =>
+    route.fulfill({
+      json: {
+        target: { targetType: 'UNIT', unitId: 'review-u1' },
+        revision: 'one-group-with-archived-category',
+        visibilityMode: 'GROUP',
+        groups: [{ id: 'review-group', name: 'Gruppe A', archived: false }],
+        defaultGroupId: null,
+        categories: [{ id: 'archived', name: 'Fachlich', archived: true }],
+        comments: [
+          {
+            id: 'own-comment',
+            authorLabel: 'Review-Verantwortliche',
+            commentText: 'Gespeicherter Kommentar',
+            createdAt: '2026-01-01T10:00:00Z',
+            groupId: 'review-group',
+            categoryId: 'archived',
+            categoryName: 'Fachlich',
+            isOwn: true,
+            version: 1,
+          },
+        ],
+      },
+    }),
+  );
+
+  await page.goto(reviewUrl);
+  const form = page.locator('.new-comment-form');
+  const commentEditor = form.getByRole('textbox');
+  await commentEditor.fill('Entwurf');
+  await expect(form.getByRole('button', { name: 'Kommentieren' })).toBeDisabled();
+  await form.getByRole('button', { name: 'Review-Gruppe übernehmen' }).press('Enter');
+  await expect(commentEditor).toBeFocused();
+  await expect(form.getByRole('button', { name: 'Kommentieren' })).toBeEnabled();
+
+  await page.getByRole('button', { name: 'Bearbeiten', exact: true }).click();
+  const editForm = page.locator('.edit-form');
+  await expect(editForm.getByText('Fachlich (archiviert)')).toBeVisible();
+  await editForm.getByRole('button', { name: 'Kategorie entfernen' }).press('Enter');
+  await expect(editForm.getByRole('textbox')).toBeFocused();
+  await expect(editForm.getByText('Ohne Kategorie')).toBeVisible();
 });
 
 test('shows readable coding and a reversible partial solution in the booklet review', async ({

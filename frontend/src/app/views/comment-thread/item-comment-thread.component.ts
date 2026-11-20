@@ -133,6 +133,10 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     return (this.snapshot?.categories || []).filter((category) => !category.archived);
   }
 
+  get availableGroups() {
+    return (this.snapshot?.groups || []).filter((group) => !group.archived);
+  }
+
   unavailableCategoryName(id: string): string {
     if (!id || this.availableCategories.some((category) => category.id === id)) return '';
     const category = this.snapshot?.categories?.find((entry) => entry.id === id);
@@ -326,15 +330,17 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     this.threadRequest = request.pipe(timeout(10_000), takeUntil(this.destroy$)).subscribe({
       next: (snapshot) => {
         if (token !== this.requestToken) return;
+        const previousGroupId = this.drafts.selectedGroups.get(this.targetKey);
         this.snapshot = snapshot;
         this.accessDenied = false;
         if (snapshot.visibilityMode !== 'GROUP') this.selectedGroupId = '';
         if (
           this.selectedGroupId &&
-          !snapshot.groups?.some((group) => group.id === this.selectedGroupId && !group.archived)
+          !this.availableGroups.some((group) => group.id === this.selectedGroupId)
         )
           this.selectedGroupId = '';
-        if (!this.selectedGroupId && !this.newCommentText)
+        // An absent entry means this is the first snapshot for the draft's target.
+        if (!this.selectedGroupId && (!this.newCommentText || previousGroupId === undefined))
           this.selectedGroupId = snapshot.defaultGroupId || '';
 
         this.countChanged.emit({

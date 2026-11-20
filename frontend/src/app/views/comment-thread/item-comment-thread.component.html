@@ -38,7 +38,8 @@
         </div>
 
         <div class="new-comment-form">
-          @if (snapshot?.categories?.length || selectedCategoryId) {
+          @let groups = availableGroups;
+          @if (availableCategories.length) {
             <label
               >Kategorie
               <select
@@ -55,21 +56,48 @@
                 }
               </select>
             </label>
+          } @else if (snapshot) {
+            <span>{{ unavailableCategoryName(selectedCategoryId) || 'Ohne Kategorie' }}</span>
+            @if (selectedCategoryId) {
+              <button
+                type="button"
+                class="link-button"
+                [disabled]="busy"
+                (click)="selectedCategoryId = ''; newCommentEditor.focus()"
+              >
+                Kategorie entfernen
+              </button>
+            }
           }
           @if (snapshot?.visibilityMode === 'GROUP') {
-            <label
-              >Review-Gruppe
-              <select [(ngModel)]="selectedGroupId">
-                <option value="">Bitte Gruppe wählen</option>
-                @for (group of snapshot?.groups || []; track group.id) {
-                  @if (!group.archived) {
+            @if (groups.length > 1) {
+              <label
+                >Review-Gruppe
+                <select [(ngModel)]="selectedGroupId">
+                  <option value="">Bitte Gruppe wählen</option>
+                  @for (group of groups; track group.id) {
                     <option [value]="group.id">{{ group.name }}</option>
                   }
-                }
-              </select>
-            </label>
+                </select>
+              </label>
+            } @else if (groups[0]; as group) {
+              <span>Review-Gruppe: {{ group.name }}</span>
+              @if (!selectedGroupId) {
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  [disabled]="busy"
+                  (click)="selectedGroupId = group.id; newCommentEditor.focus()"
+                >
+                  Review-Gruppe übernehmen
+                </button>
+              }
+            } @else {
+              <span>Keine Review-Gruppe verfügbar.</span>
+            }
           }
           <textarea
+            #newCommentEditor
             rows="3"
             maxlength="10000"
             [placeholder]="newCommentPlaceholder"
@@ -78,7 +106,12 @@
           <button
             type="button"
             class="btn btn-primary btn-sm"
-            [disabled]="!snapshot || !newCommentText.trim() || busy"
+            [disabled]="
+              !snapshot ||
+              !newCommentText.trim() ||
+              busy ||
+              (snapshot.visibilityMode === 'GROUP' && groups.length <= 1 && !selectedGroupId)
+            "
             (click)="submitComment()"
           >
             Kommentieren
@@ -149,12 +182,13 @@
 
                 @if (replyingTo === thread.id) {
                   <div class="reply-form">
-                    @if (snapshot?.categories?.length || replyCategoryId(thread.id)) {
+                    @let categoryId = replyCategoryId(thread.id);
+                    @if (availableCategories.length) {
                       <label
                         >Kategorie
                         <select
                           aria-label="Kategorie für Antwort"
-                          [ngModel]="replyCategoryId(thread.id)"
+                          [ngModel]="categoryId"
                           (ngModelChange)="setReplyCategoryId(thread.id, $event)"
                           [disabled]="busy"
                         >
@@ -162,15 +196,28 @@
                           @for (category of availableCategories; track category.id) {
                             <option [value]="category.id">{{ category.name }}</option>
                           }
-                          @if (unavailableCategoryName(replyCategoryId(thread.id)); as name) {
-                            <option [value]="replyCategoryId(thread.id)" disabled>
+                          @if (unavailableCategoryName(categoryId); as name) {
+                            <option [value]="categoryId" disabled>
                               {{ name }}
                             </option>
                           }
                         </select>
                       </label>
+                    } @else if (snapshot) {
+                      <span>{{ unavailableCategoryName(categoryId) || 'Ohne Kategorie' }}</span>
+                      @if (categoryId) {
+                        <button
+                          type="button"
+                          class="link-button"
+                          [disabled]="busy"
+                          (click)="setReplyCategoryId(thread.id, ''); replyEditor.focus()"
+                        >
+                          Kategorie entfernen
+                        </button>
+                      }
                     }
                     <textarea
+                      #replyEditor
                       rows="2"
                       maxlength="10000"
                       placeholder="Antwort schreiben …"
@@ -242,7 +289,7 @@
       <p class="comment-text">Dieser Kommentar wurde gelöscht.</p>
     } @else if (editingCommentId === comment.id) {
       <div class="edit-form">
-        @if (snapshot?.categories?.length || editCategoryId) {
+        @if (availableCategories.length) {
           <label
             >Kategorie
             <select
@@ -261,8 +308,20 @@
               }
             </select>
           </label>
+        } @else if (snapshot) {
+          <span>{{ unavailableCategoryName(editCategoryId) || 'Ohne Kategorie' }}</span>
+          @if (editCategoryId) {
+            <button
+              type="button"
+              class="link-button"
+              [disabled]="busy"
+              (click)="editCategoryId = ''; editCommentEditor.focus()"
+            >
+              Kategorie entfernen
+            </button>
+          }
         }
-        <textarea rows="3" maxlength="10000" [(ngModel)]="editText"></textarea>
+        <textarea #editCommentEditor rows="3" maxlength="10000" [(ngModel)]="editText"></textarea>
         <div>
           <button
             type="button"

@@ -178,9 +178,10 @@ test('imports a task package, renders it, activates review and retains a partici
     const comments = participant.getByRole('region', {
       name: 'Kommentare zum Testheft Review E2E',
     });
-    await comments
-      .getByRole('combobox', { name: 'Review-Gruppe' })
-      .selectOption({ label: 'E2E Review-Gruppe' });
+    await expect(
+      comments.getByText('Review-Gruppe: E2E Review-Gruppe', { exact: true }),
+    ).toBeVisible();
+    await expect(comments.getByRole('combobox', { name: 'Review-Gruppe' })).toHaveCount(0);
     await comments
       .getByPlaceholder('Kommentar zum Testheft Review E2E …')
       .fill('Die Aufgabe ist verständlich.');
