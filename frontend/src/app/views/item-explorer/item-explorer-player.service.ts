@@ -85,11 +85,15 @@ export class ItemExplorerPlayerService implements OnDestroy {
 
   private workingAnswerData: Record<string, any> | null = null;
   private flowStarted = false;
-  private pendingFlowPage: number | null = null;
+  private currentPlayerPageId = '0';
+  private pendingFlowPage: string | null = null;
   private playerPageIds: string[] = [];
   private declaredFlowPageIds: string[] = [];
 
   private get flowNavigationPageIds(): string[] {
+    // ASPECT numbers its task pages, while other players supply their own identifiers.
+    if (this.playerPageIds.some((id) => this.declaredFlowPageIds[Number(id)] !== id))
+      return this.playerPageIds;
     return this.declaredFlowPageIds.length ? this.declaredFlowPageIds : this.playerPageIds;
   }
 
@@ -98,7 +102,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
   }
 
   get flowPageNumber(): number {
-    return this.flowNavigationPageIds.indexOf(String(this.currentPage - 1)) + 1;
+    return this.flowNavigationPageIds.indexOf(this.currentPlayerPageId) + 1;
   }
 
   get showFlowPageNavigation(): boolean {
@@ -143,15 +147,26 @@ export class ItemExplorerPlayerService implements OnDestroy {
   navigateFlowPage(delta: -1 | 1): void {
     if (this.destroyed || (delta !== -1 && delta !== 1) || !this.canNavigateFlowPage(delta)) return;
     const target = this.flowPageTarget(delta);
-    const page = Number(target);
-    if (!Number.isInteger(page) || page < 0) return;
+    if (target === undefined) return;
     this.clearLegacyPageNavigationTimers();
-    this.pendingFlowPage = page;
+    this.pendingFlowPage = target;
     this.sendToPlayer({
       type: 'vopPageNavigationCommand',
       sessionId: this.activePlayerSessionId,
       target,
     });
+  }
+
+  private acceptPlayerPage(value: unknown): void {
+    if (typeof value !== 'number' && typeof value !== 'string') return;
+    const id = String(value);
+    if (!id || (this.pendingFlowPage !== null && id !== this.pendingFlowPage)) return;
+    this.currentPlayerPageId = id;
+    const numericId = /^(0|[1-9]\d*)$/.test(id);
+    const index = numericId ? Number(id) : this.playerPageIds.indexOf(id);
+    if (index >= 0 && Number.isSafeInteger(index)) this.currentPage = index + 1;
+    this.pendingFlowPage = null;
+    if (!numericId) this.clearLegacyPageNavigationTimers();
   }
 
   private focusRetryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -366,19 +381,9 @@ export class ItemExplorerPlayerService implements OnDestroy {
             break;
           }
         }
-        if (playerMessage['playerState']?.currentPage !== undefined) {
-          const page = Number(playerMessage['playerState'].currentPage);
-          if (
-            Number.isInteger(page) &&
-            page >= 0 &&
-            (this.pendingFlowPage === null || page === this.pendingFlowPage)
-          ) {
-            this.currentPage = page + 1;
-            this.pendingFlowPage = null;
-          }
-        }
         {
-          const pages = playerMessage['playerState']?.validPages;
+          const state = playerMessage['playerState'];
+          const pages = state?.validPages;
           if (pages && typeof pages === 'object') {
             this.playerPageIds = Array.isArray(pages)
               ? pages
@@ -388,6 +393,9 @@ export class ItemExplorerPlayerService implements OnDestroy {
               : Object.keys(pages);
             this.totalPages = this.playerPageIds.length || this.totalPages;
           }
+          if (state?.currentPage !== undefined) this.acceptPlayerPage(state.currentPage);
+          else if (pages && this.pendingFlowPage === null)
+            this.acceptPlayerPage(this.currentPlayerPageId);
         }
         // Capture response data from unitState.dataParts
         if (
@@ -409,9 +417,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
         break;
 
       case 'vopPageNavigationCommand':
-        if (playerMessage['target'] !== undefined) {
-          this.currentPage = playerMessage['target'] + 1;
-        }
+        this.acceptPlayerPage(playerMessage['target']);
         break;
 
       case 'vopResizeNotification':
@@ -532,6 +538,8 @@ export class ItemExplorerPlayerService implements OnDestroy {
     const usesPagedNavigation = this.pagingMode !== 'view-all' && this.pagingMode !== 'print-ids';
     const playerDefinition = this.getPlayerDefinitionContent();
 
+    const startPageId =
+      regularFlow && this.flowStarted ? this.currentPlayerPageId : startPage?.toString();
     this.startSessionCounter += 1;
     this.beginResponseSession(sessionId, origin, dataParts);
     if (regularFlow) {
@@ -545,7 +553,8 @@ export class ItemExplorerPlayerService implements OnDestroy {
     // Aspect may initially report page 0 before accepting the restored page.
     // Keep that transient notification from resetting a quick solution toggle.
     this.pendingFlowPage =
-      regularFlow && startPage !== undefined && startPage > 0 ? startPage : null;
+      regularFlow && startPageId !== undefined && startPageId !== '0' ? startPageId : null;
+    this.currentPlayerPageId = startPageId ?? '0';
     this.currentPage = (startPage ?? 0) + 1;
     if (navigation && (navigation.length || triggerIds.length)) {
       this.presentation = {
@@ -580,7 +589,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
               : 'off',
         logPolicy: 'disabled',
         directDownloadUrl: GEOGEBRA_PLAYER_RESOURCE_BASE,
-        startPage: startPage !== undefined ? startPage.toString() : undefined,
+        startPage: startPageId,
         // Item selection and coding are coordinated by the Explorer navigation.
         enabledNavigationTargets: [],
       },
@@ -589,7 +598,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
       this.pagingMode === 'print-ids' ? request.printLabels : {},
     );
     if (navigation === undefined)
-      this.scheduleLegacyPageNavigation(sessionId, startPage, usesPagedNavigation);
+      this.scheduleLegacyPageNavigation(sessionId, startPageId, usesPagedNavigation);
 
     if (usesPagedNavigation) {
       this.playerHeight = '100%';
@@ -762,13 +771,11 @@ export class ItemExplorerPlayerService implements OnDestroy {
 
   private scheduleLegacyPageNavigation(
     sessionId: string,
-    startPage: number | undefined,
+    target: string | undefined,
     enabled: boolean,
   ) {
     this.clearLegacyPageNavigationTimers();
-    if (!enabled || startPage === undefined) return;
-
-    const target = startPage.toString();
+    if (!enabled || target === undefined) return;
     this.legacyPageNavigationDelaysMs.forEach((delayMs) => {
       const timer = setTimeout(() => {
         this.sendToPlayer({

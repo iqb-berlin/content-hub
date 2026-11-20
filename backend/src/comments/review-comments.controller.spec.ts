@@ -14,6 +14,7 @@ describe("ReviewCommentsController", () => {
       createReviewComment: jest.fn().mockResolvedValue({ id: "c-2" }),
       updateOwnComment: jest.fn().mockResolvedValue({ id: "c-1", version: 2 }),
       deleteOwnComment: jest.fn().mockResolvedValue(undefined),
+      getUnitCommentAvailability: jest.fn(),
       getItemCommentCounts: jest.fn().mockResolvedValue({ counts: [] }),
       exportReviewCommentsCsv: jest.fn().mockResolvedValue(Buffer.from("csv")),
       exportReviewCommentsXlsx: jest
@@ -42,6 +43,30 @@ describe("ReviewCommentsController", () => {
     };
     controller = new ReviewCommentsController(commentsService, reviewPolicy);
   });
+
+  it.each([true, false])(
+    "applies the published column restriction (%s) to historical target labels",
+    async (restricted) => {
+      const target = {
+        id: "I",
+        label: "Item description",
+        targetTypes: ["ITEM", "CODING"],
+      };
+      commentsService.getUnitCommentAvailability.mockResolvedValue({
+        codingCommentsAvailable: true,
+        additionalItems: [target],
+      });
+      const result = await controller.getUnitCommentAvailability("ap-1", "U", {
+        reviewerColumnPolicy: { restricted },
+      });
+      expect(result).toEqual({
+        codingCommentsAvailable: true,
+        additionalItems: [
+          { ...target, label: restricted ? target.id : target.label },
+        ],
+      });
+    },
+  );
 
   it("resolves stable OIDC and credential actors for item thread operations", async () => {
     await controller.getItemThread("ap-1", " unit-1 ", " item-1 ", {

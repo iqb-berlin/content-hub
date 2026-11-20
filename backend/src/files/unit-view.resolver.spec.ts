@@ -8,6 +8,36 @@ jest.mock("fs/promises", () => ({
 }));
 
 describe("UnitViewResolver", () => {
+  beforeEach(() => jest.mocked(fs.readFile).mockReset());
+
+  it("returns the selected XML metadata download with the unit context", async () => {
+    const unitId = "unit + 2";
+    const cache = {
+      get: async () => ({
+        signature: "current",
+        files: [
+          { originalName: unitId + ".xml", filePath: "unit.xml" },
+          { originalName: "current.vomd.json", id: "fallback" },
+          { originalName: "current.vomd", id: "exact" },
+        ],
+      }),
+    } as unknown as FileCatalogCache;
+    jest
+      .mocked(fs.readFile)
+      .mockResolvedValueOnce(
+        `<Unit><Id>${unitId}</Id><Reference>current.vomd</Reference></Unit>`,
+      );
+    const { value } = await new UnitViewResolver(cache).resolve("ap-1", unitId);
+    expect(value.dependencies).toEqual([
+      {
+        originalName: "current.vomd",
+        fileId: "exact",
+        type: "METADATA",
+        downloadUrl: "/api/ap/ap-1/files/exact/download?unitId=unit%20%2B%202",
+      },
+    ]);
+  });
+
   it("rebuilds an invalidated AP without evicting other AP views", async () => {
     const catalogs: Record<string, ApFile[]> = {
       "ap-1": [

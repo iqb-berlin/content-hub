@@ -107,6 +107,39 @@ describe('ItemExplorerPlayerService', () => {
     player.ngOnDestroy();
   });
 
+  it('navigates and restores named flow pages by their player IDs', () => {
+    vi.useFakeTimers();
+    const { player, dom, request } = createPlayer();
+    player.itemExplorerConditionalVisibilityEnabled = true;
+    player.definitionContent = JSON.stringify({ pages: [{}, {}] });
+    player.changePreviewMode('flow');
+    player.start(request);
+    const report = (id: string) =>
+      player.handlePlayerMessage(
+        {
+          type: 'vopStateChangedNotification',
+          sessionId: player.activePlayerSessionId,
+          playerState: { currentPage: id, validPages: [{ id: 'intro' }, { id: 'question' }] },
+        },
+        { ready: true, solutionActive: false },
+      );
+    report('intro');
+    expect(player.flowPageNumber).toBe(1);
+    expect(player.canNavigateFlowForward).toBe(true);
+    player.navigateFlowPage(1);
+    expect(dom.postMessage.mock.lastCall?.[0].target).toBe('question');
+    report('intro');
+    expect(player.canNavigateFlowBackward).toBe(false);
+    report('question');
+    expect(player.flowPageNumber).toBe(2);
+    player.start(request);
+    expect(dom.postMessage.mock.lastCall?.[0].playerConfig.startPage).toBe('question');
+    report('question');
+    player.navigateFlowPage(-1);
+    expect(dom.postMessage.mock.lastCall?.[0].target).toBe('intro');
+    player.ngOnDestroy();
+  });
+
   it('can leave a hidden flow page even when only one other page is valid', () => {
     vi.useFakeTimers();
     const { player, dom, request } = createPlayer();

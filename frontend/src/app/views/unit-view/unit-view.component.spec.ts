@@ -2602,7 +2602,7 @@ describe('UnitViewComponent', () => {
     expect(component.showCodingScheme).toBe(true);
     expect(component.showCommentBtn).toBe(true);
     expect(component.showBookletCommentBtn).toBe(true);
-    expect(api.getFilePreview).toHaveBeenCalledWith('ap-1', 'metadata-u1');
+    expect(api.getFilePreview).toHaveBeenCalledWith('ap-1', 'metadata-u1', 'u1');
     expect(fetchMock).toHaveBeenCalledWith('/coding-u1', {
       signal: expect.any(AbortSignal),
     });
