@@ -39,21 +39,21 @@ class ApplyIndexGenerationDto extends IndexGenerationOptionsDto {
   expectedUpdatedAt!: string;
 }
 
-@ApiTags("ACP Index Generation")
+@ApiTags("AP Index Generation")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("ACP_MANAGER")
-@Controller("files/:acpId/index-generation")
+@Roles("AP_MANAGER")
+@Controller("files/:apId/index-generation")
 export class IndexGenerationController {
   constructor(private readonly generationService: IndexGenerationService) {}
 
   @Post("preview")
-  @ApiOperation({ summary: "Preview an ACP index generated from files" })
+  @ApiOperation({ summary: "Preview an AP index generated from files" })
   preview(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() options: IndexGenerationOptionsDto = {},
   ) {
-    return this.generationService.preview(acpId, options || {});
+    return this.generationService.preview(apId, options || {});
   }
 
   @Post("apply")
@@ -61,9 +61,9 @@ export class IndexGenerationController {
     summary: "Apply an unchanged, snapshot-backed generation preview",
   })
   apply(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() input: ApplyIndexGenerationDto,
   ) {
-    return this.generationService.apply(acpId, input);
+    return this.generationService.apply(apId, input);
   }
 }

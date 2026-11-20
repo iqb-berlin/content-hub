@@ -1,7 +1,7 @@
 import { expect, Page, test } from '@playwright/test';
 import { installOidcSession } from './oidc-test-session';
 
-const ACP_ID = '10000000-0000-4000-8000-000000000101';
+const AP_ID = '10000000-0000-4000-8000-000000000101';
 const MANAGER_ID = '10000000-0000-4000-8000-000000000002';
 const MANAGER_USERNAME = 'e2e-manager';
 
@@ -21,7 +21,7 @@ async function loginAsManager(page: Page): Promise<void> {
 }
 
 async function openExplorer(page: Page): Promise<void> {
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await expect(page.getByRole('heading', { name: 'Item-Explorer' })).toBeVisible();
   await expect(page.locator('tbody tr')).toHaveCount(6);
 }
@@ -100,7 +100,7 @@ test('loads direct, fallback, partial-credit and legacy response states through 
 
 test('cancels stale selections during a rapid unit switch', async ({ page }) => {
   await loginAsManager(page);
-  await page.route(`**/api/acp/${ACP_ID}/files/unit-view/**`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/files/unit-view/**`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname.endsWith('/unit-view/u1')) {
       await new Promise((resolve) => setTimeout(resolve, 2400));
@@ -144,7 +144,7 @@ test('does not retain unit-view or asset failures and recovers on retry', async 
   await loginAsManager(page);
   let failUnitView = true;
   let firstUnitRequests = 0;
-  await page.route(`**/api/acp/${ACP_ID}/files/unit-view/u1*`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/files/unit-view/u1*`, async (route) => {
     firstUnitRequests += 1;
     if (failUnitView) {
       await new Promise((resolve) => setTimeout(resolve, 2400));
@@ -184,7 +184,7 @@ test('does not retain unit-view or asset failures and recovers on retry', async 
 
   let failAssets = true;
   let failedAssetRequests = 0;
-  await page.route(`**/api/acp/${ACP_ID}/files/*/download*`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/files/*/download*`, async (route) => {
     if (failAssets) {
       failedAssetRequests += 1;
       await route.fulfill({ status: 503, body: 'Synthetic asset failure' });
@@ -282,7 +282,7 @@ test('renders the preview without document overflow on desktop and narrow screen
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
     .toBe(true);
   await page.screenshot({
-    path: '/tmp/content-pool-item-explorer-desktop.png',
+    path: '/tmp/content-hub-item-explorer-desktop.png',
     fullPage: true,
   });
 
@@ -296,93 +296,52 @@ test('renders the preview without document overflow on desktop and narrow screen
   expect(previewBounds!.x).toBeGreaterThanOrEqual(0);
   expect(previewBounds!.x + previewBounds!.width).toBeLessThanOrEqual(391);
   await page.screenshot({
-    path: '/tmp/content-pool-item-explorer-mobile.png',
+    path: '/tmp/content-hub-item-explorer-mobile.png',
     fullPage: true,
   });
 });
 
-test('keeps coding, draft, published and read-only perspectives functional', async ({ page }) => {
+// Coding, draft/published separation and reader reload are exercised on all
+// browsers in critical-journeys-cross-browser.spec.ts with isolated APs.
+
+test('edits, saves, reloads and deletes current-session player answers', async ({ page }) => {
   await loginAsManager(page);
   await openExplorer(page);
-  await expect(page.locator('.table-panel .player-target-badge')).toHaveCount(0);
-  await selectAndReadResponseState(page, rowIds.direct, 'i1');
-  await expect(page.locator('iframe.player-iframe')).toBeVisible();
-
-  await page.getByRole('button', { name: 'Kodierung', exact: true }).click();
-  const codingDialog = page.getByRole('heading', { name: /Kodierung – Regression Aufgabe 1/ });
-  await expect(codingDialog).toBeVisible();
-  const codingFocus = page.getByTestId('coding-variable-focus');
-  await expect(codingFocus).toContainText('Kodierung für Item');
-  await expect(codingFocus).not.toContainText('Interne Kodier-ID');
-  await expect(codingFocus).not.toContainText('Player-/Anzeige-Ziel');
-  await expect(page.getByRole('heading', { name: 'Kodiervariable V1' })).toBeVisible();
-  await expect(page.getByText('Bezeichnung: Direkte Antwort', { exact: true })).toBeVisible();
-  await expect(page.getByText('Richtig')).toBeVisible();
-  await page.getByRole('button', { name: /Schließen/ }).click();
-
-  const patchResponse = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'PATCH' &&
-      response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft`) &&
-      response.ok(),
-  );
-  await page.getByText('Vorschau einstellen ▾', { exact: true }).click();
-  await page.getByText('Zuordnung korrigieren …', { exact: true }).click();
-  await page.getByLabel('Manuelles Sprungziel').fill('V2');
-  await page.getByRole('button', { name: 'Übernehmen' }).click();
-  await patchResponse;
-  await expect(page.getByText(/Manueller Override aktiv:/)).toContainText('V2');
-
-  const readOnlyList = page.waitForResponse(
-    (response) =>
-      response.url().includes(`/api/acp/${ACP_ID}/files/item-list`) &&
-      response.url().includes('perspective=read-only') &&
-      response.ok(),
-  );
-  await page.getByRole('button', { name: 'Leseansicht' }).click();
-  await readOnlyList;
-  await expect(page.getByText('Leseansicht aktiv.')).toBeVisible();
-  await expect(page.getByText(/unveröffentlichter Explorer-Entwurf/)).toBeVisible();
-  await expect(page.getByRole('button', { name: /Itemparameter/ })).toHaveCount(0);
-
-  const editorList = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return (
-      url.pathname.endsWith(`/api/acp/${ACP_ID}/files/item-list`) &&
-      !url.searchParams.has('perspective') &&
-      response.ok()
-    );
-  });
-  await page.getByRole('button', { name: 'Bearbeitungsansicht' }).click();
-  await editorList;
-  await expect(page.locator(rowIds.direct)).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByText(/Manueller Override aktiv:/)).toContainText('V2');
-
-  const saveButton = page.getByRole('button', { name: 'Änderungen prüfen …', exact: true });
-  await expect(saveButton).toBeEnabled();
-  await saveButton.click();
-  await expect(
-    page.getByRole('heading', { name: 'Änderungsübersicht vor Speichern' }),
-  ).toBeVisible();
-  const publishResponse = page.waitForResponse(
+  await selectAndReadResponseState(page, rowIds.legacy, 'i4');
+  const answer = page.frameLocator('iframe.player-iframe').getByLabel('Testantwort');
+  await answer.fill('Neue Antwort aus der aktiven Sitzung');
+  await page.getByText('Weitere Aktionen ▾', { exact: true }).last().click();
+  await page.getByRole('button', { name: 'Player-Eingaben speichern …', exact: true }).click();
+  const saved = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
-      response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft/save`) &&
+      new URL(response.url()).pathname.endsWith('/items/i4/response-state') &&
       response.ok(),
   );
-  await page.getByRole('button', { name: 'Veröffentlichen' }).click();
-  await publishResponse;
-  await expect(page.locator('.status-pill')).toContainText(/Gespeichert|Unverändert/);
-
-  const publishedReadOnlyList = page.waitForResponse(
+  await page.getByRole('button', { name: '💾 Speichern', exact: true }).click();
+  const saveResponse = await saved;
+  expect(saveResponse.request().postDataJSON().responseData.answer).toBe(
+    'Neue Antwort aus der aktiven Sitzung',
+  );
+  await page.reload();
+  await selectAndReadResponseState(page, rowIds.legacy, 'i4');
+  await expect(answer).toHaveValue('Neue Antwort aus der aktiven Sitzung');
+  await page.getByText('Weitere Aktionen ▾', { exact: true }).last().click();
+  await page
+    .getByRole('button', { name: 'Gespeicherte Player-Eingaben löschen …', exact: true })
+    .click();
+  const deleted = page.waitForResponse(
     (response) =>
-      response.url().includes(`/api/acp/${ACP_ID}/files/item-list`) &&
-      response.url().includes('perspective=read-only') &&
+      response.request().method() === 'DELETE' &&
+      new URL(response.url()).pathname.endsWith('/items/i4/response-state') &&
       response.ok(),
   );
-  await page.getByRole('button', { name: 'Leseansicht' }).click();
-  await publishedReadOnlyList;
-  await expect(page.getByText('Leseansicht aktiv.')).toBeVisible();
-  await expect(page.getByText(/unveröffentlichter Explorer-Entwurf/)).toHaveCount(0);
-  await expect(page.locator('iframe.player-iframe')).toBeVisible();
+  await page
+    .getByRole('button', { name: /Löschen/, exact: false })
+    .last()
+    .click();
+  await deleted;
+  await page.reload();
+  const state = await selectAndReadResponseState(page, rowIds.legacy, 'i4');
+  expect(state.state?.responseData?.answer).toBeUndefined();
 });

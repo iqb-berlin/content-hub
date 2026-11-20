@@ -22,6 +22,7 @@ type EditableCommentCategory = Omit<CommentCategory, 'id'> & { id?: string };
 
 interface ReviewConfig {
   enableReview: boolean;
+  hideReviewMetadata?: boolean;
   hideReviewDeveloperNames?: boolean;
   visibilityMode: 'PRIVATE' | 'SHARED' | 'GROUP';
   configVersion: number;
@@ -259,12 +260,16 @@ interface ReviewConfig {
       }
     `,
   ],
-  template: `<a class="btn btn-outline btn-sm" [routerLink]="['/view', acpId]"
-      >← Zur ACP-Übersicht</a
-    >
+  template: `<a class="btn btn-outline btn-sm" [routerLink]="['/view', apId]">← Zur AP-Übersicht</a>
     <div class="page-header">
       <h1>Review</h1>
-      <p>Review vorbereiten und Rückmeldungen auswerten.</p>
+      <p>
+        {{
+          access?.canManageReview
+            ? 'Review vorbereiten und Rückmeldungen auswerten.'
+            : 'Kommentare ansehen und herunterladen.'
+        }}
+      </p>
     </div>
     @if (error) {
       <p class="alert alert-error" role="alert">{{ error }}</p>
@@ -273,13 +278,7 @@ interface ReviewConfig {
       <span
         ><strong>Review:</strong>
         {{
-          config
-            ? savedEnabled
-              ? 'Aktiv'
-              : 'Inaktiv'
-            : access?.canReview
-              ? 'Zugänglich'
-              : 'Nicht zugänglich'
+          config ? (savedEnabled ? 'Aktiv' : 'Inaktiv') : access?.enableReview ? 'Aktiv' : 'Inaktiv'
         }}</span
       >
       @if (access?.canManageReview) {
@@ -287,15 +286,17 @@ interface ReviewConfig {
       }
     </div>
     <nav class="review-navigation" aria-label="Review-Bereiche">
-      <button
-        class="btn"
-        [class.btn-primary]="activeSection === 'preparation'"
-        [attr.aria-pressed]="activeSection === 'preparation'"
-        (click)="activeSection = 'preparation'"
-      >
-        Vorbereitung
-      </button>
-      @if (access?.canReview) {
+      @if (access?.canManageReview) {
+        <button
+          class="btn"
+          [class.btn-primary]="activeSection === 'preparation'"
+          [attr.aria-pressed]="activeSection === 'preparation'"
+          (click)="activeSection = 'preparation'"
+        >
+          Vorbereitung
+        </button>
+      }
+      @if (access?.canReadReviewComments) {
         <button
           class="btn"
           [class.btn-primary]="activeSection === 'analysis'"
@@ -401,7 +402,20 @@ interface ReviewConfig {
         <fieldset [disabled]="busy">
           <legend>Metadaten in der Prüfansicht</legend>
           <label>
-            <input type="checkbox" [(ngModel)]="config.hideReviewDeveloperNames" />
+            <input type="checkbox" [(ngModel)]="config.hideReviewMetadata" />
+            Reiter „Metadaten“ ausblenden
+          </label>
+          <p>
+            Blendet den gesamten Metadaten-Reiter in der Testheft-Prüfansicht für alle
+            Review-Teilnehmenden aus. Hörtranskripte bleiben im Reviewbereich sichtbar. Die
+            Einstellung gilt nach dem Speichern.
+          </p>
+          <label>
+            <input
+              type="checkbox"
+              [(ngModel)]="config.hideReviewDeveloperNames"
+              [disabled]="config.hideReviewMetadata === true"
+            />
             Namen und Kürzel der Aufgabenentwickler/innen ausblenden
           </label>
           <p>
@@ -414,9 +428,9 @@ interface ReviewConfig {
         <h2>2. Prüfansicht testen</h2>
         <p>Testheft auswählen und die Ansicht für das Review prüfen.</p>
         @if (manifest.booklets?.length) {
-          <app-booklet-selection [acpId]="acpId" [booklets]="manifest.booklets" />
+          <app-booklet-selection [apId]="apId" [booklets]="manifest.booklets" />
         } @else {
-          <p>Dieser ACP enthält noch keine Testhefte.</p>
+          <p>Dieser AP enthält noch keine Testhefte.</p>
         }
       }
       @if (access?.canManageReview && config) {
@@ -479,7 +493,7 @@ interface ReviewConfig {
                     />
                     <span class="member-name">{{ member.label }}</span>
                     @if (member.kind === 'credential') {
-                      <small class="member-kind">ACP-Zugang</small>
+                      <small class="member-kind">AP-Zugang</small>
                     }
                   </label>
                 }
@@ -552,7 +566,7 @@ interface ReviewConfig {
       }
     }
     @if (activeSection === 'analysis') {
-      @if (access?.canReview) {
+      @if (access?.canReadReviewComments) {
         <section class="card analysis-card">
           <div class="readiness-header">
             <h2>Kommentare ({{ filteredComments.length }})</h2>
@@ -617,7 +631,7 @@ interface ReviewConfig {
                   {{
                     access?.canManageReview
                       ? 'Kommentare aller Personen'
-                      : 'Alle sichtbaren Kommentare'
+                      : 'Eigene Kommentare und Review-Gruppen'
                   }}
                 </option>
                 <option value="personal">Eigene Kommentare</option>
@@ -720,7 +734,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
       )[type] || type
     );
   }
-  acpId = '';
+  apId = '';
   access: any;
   manifest: any;
   error = '';
@@ -760,16 +774,17 @@ export class ReviewComponent implements OnInit, OnDestroy {
     @Inject(ApiService) private api: ApiService,
   ) {}
   ngOnInit() {
-    this.acpId =
-      this.route.snapshot.paramMap.get('acpId') ||
-      this.route.parent?.snapshot.paramMap.get('acpId') ||
+    if (this.route.snapshot.data?.['section'] === 'analysis') this.activeSection = 'analysis';
+    this.apId =
+      this.route.snapshot.paramMap.get('apId') ||
+      this.route.parent?.snapshot.paramMap.get('apId') ||
       '';
     this.load();
     this.readinessPoll = setInterval(() => {
       if (this.access?.canManageReview && !this.readinessBusy) this.loadReadiness();
     }, 30000);
     this.poll = setInterval(() => {
-      if (this.access?.canReview) this.loadComments();
+      if (this.access?.canReadReviewComments) this.loadComments();
     }, 8000);
   }
   ngOnDestroy() {
@@ -780,34 +795,37 @@ export class ReviewComponent implements OnInit, OnDestroy {
   }
   load(reloadConfig = true) {
     this.requests.add(
-      this.api.getCapabilities(this.acpId).subscribe({
+      this.api.getCapabilities(this.apId).subscribe({
         next: (access) => {
           this.access = access;
-          if (!access.canManageReview && access.canReview) this.activeSection = 'analysis';
+          if (!access.canManageReview && access.canReadReviewComments)
+            this.activeSection = 'analysis';
           if (access.canManageReview && reloadConfig) {
             this.loadConfig();
             this.loadReadiness();
           }
           if (access.canReview) {
             this.requests.add(
-              this.api.getReview(this.acpId).subscribe({
+              this.api.getReview(this.apId).subscribe({
                 next: (data) => (this.manifest = data),
                 error: () => (this.error = 'Review konnte nicht geladen werden.'),
               }),
             );
+          }
+          if (access.canReadReviewComments) {
             this.loadComments();
           } else {
-            this.error = 'Review ist deaktiviert oder nicht zugänglich.';
+            this.error = 'Kommentare sind nicht zugänglich.';
             this.comments = [];
           }
         },
-        error: () => (this.error = 'Kein Zugriff auf diesen ACP.'),
+        error: () => (this.error = 'Kein Zugriff auf diesen AP.'),
       }),
     );
   }
   loadConfig() {
     this.requests.add(
-      this.api.getReviewConfig(this.acpId).subscribe({
+      this.api.getReviewConfig(this.apId).subscribe({
         next: (config) => {
           this.removedCategories = [];
           this.deletedCategoryIds = [];
@@ -822,7 +840,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
       }),
     );
     this.requests.add(
-      this.api.getReviewMembers(this.acpId).subscribe({
+      this.api.getReviewMembers(this.apId).subscribe({
         next: (members) => (this.members = members),
         error: () => (this.error = 'Gruppenmitglieder konnten nicht geladen werden.'),
       }),
@@ -854,7 +872,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
   loadReadiness() {
     const generation = this.readinessGeneration;
     this.requests.add(
-      this.api.getReviewReadiness(this.acpId).subscribe({
+      this.api.getReviewReadiness(this.apId).subscribe({
         next: (result) => {
           if (!this.readinessBusy && generation === this.readinessGeneration) {
             this.readiness = result;
@@ -966,7 +984,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
     this.readinessBusy = true;
     this.error = '';
     this.requests.add(
-      this.api.checkReviewReadiness(this.acpId).subscribe({
+      this.api.checkReviewReadiness(this.apId).subscribe({
         next: (readiness) => {
           this.readiness = readiness;
           this.readinessBusy = false;
@@ -980,7 +998,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
   }
   loadComments() {
     if (this.commentsRequest && !this.commentsRequest.closed) return;
-    this.commentsRequest = this.api.getVisibleReviewComments(this.acpId).subscribe({
+    this.commentsRequest = this.api.getVisibleReviewComments(this.apId).subscribe({
       next: (comments) => {
         this.comments = comments;
         this.commentsError = '';
@@ -1007,7 +1025,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
       this.readinessBusy = true;
       this.error = '';
       this.requests.add(
-        this.api.checkReviewReadiness(this.acpId).subscribe({
+        this.api.checkReviewReadiness(this.apId).subscribe({
           next: (readiness) => {
             this.readiness = readiness;
             this.readinessBusy = false;
@@ -1043,7 +1061,7 @@ export class ReviewComponent implements OnInit, OnDestroy {
     this.error = '';
     this.requests.add(
       this.api
-        .configureReview(this.acpId, {
+        .configureReview(this.apId, {
           ...this.config,
           deletedGroupIds: this.deletedGroupIds,
           deletedCategoryIds: this.deletedCategoryIds,
@@ -1089,17 +1107,17 @@ export class ReviewComponent implements OnInit, OnDestroy {
     const filters = this.exportAll ? {} : this.displayFilters;
     const download =
       format === 'csv'
-        ? this.api.exportMyReviewCommentsCsv(this.acpId, filters)
+        ? this.api.exportMyReviewCommentsCsv(this.apId, filters)
         : format === 'xlsx'
-          ? this.api.exportMyReviewCommentsXlsx(this.acpId, filters)
-          : this.api.exportVisibleReviewComments(this.acpId, filters);
+          ? this.api.exportMyReviewCommentsXlsx(this.apId, filters)
+          : this.api.exportVisibleReviewComments(this.apId, filters);
     this.requests.add(
       download.subscribe({
         next: (blob) => {
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `review-${this.acpId}${personal ? '-mine' : ''}.${format || 'xlsx'}`;
+          link.download = `review-${this.apId}${personal ? '-mine' : ''}.${format || 'xlsx'}`;
           link.click();
           setTimeout(() => URL.revokeObjectURL(url), 1000);
         },

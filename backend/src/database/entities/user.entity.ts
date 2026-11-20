@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from "typeorm";
-import { AcpUserRole } from "./acp-user-role.entity";
+import { ApUserRole } from "./ap-user-role.entity";
 import { Comment } from "./comment.entity";
 
 @Entity("users")
@@ -32,8 +32,8 @@ export class User {
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt!: Date;
 
-  @OneToMany(() => AcpUserRole, (role) => role.user)
-  acpRoles!: AcpUserRole[];
+  @OneToMany(() => ApUserRole, (role) => role.user)
+  apRoles!: ApUserRole[];
 
   @OneToMany(() => Comment, (comment) => comment.user)
   comments!: Comment[];

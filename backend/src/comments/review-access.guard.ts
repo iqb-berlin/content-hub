@@ -4,17 +4,17 @@ import {
   Injectable,
   ForbiddenException,
 } from "@nestjs/common";
-import { AcpAccessGuard } from "../auth/guards/acp-access.guard";
-import { AcpCapabilitiesService } from "../auth/capabilities/acp-capabilities.service";
+import { ApAccessGuard } from "../auth/guards/ap-access.guard";
+import { ApCapabilitiesService } from "../auth/capabilities/ap-capabilities.service";
 
 @Injectable()
 export class ReviewAccessGuard implements CanActivate {
   constructor(
-    private readonly acpAccessGuard: AcpAccessGuard,
-    private readonly capabilities: AcpCapabilitiesService,
+    private readonly apAccessGuard: ApAccessGuard,
+    private readonly capabilities: ApCapabilitiesService,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    await this.acpAccessGuard.canActivate(context);
+    await this.apAccessGuard.canActivate(context);
     const req = context.switchToHttp().getRequest();
     const grants = await this.capabilities.resolve(req);
     const read = req.method === "GET" || req.method === "HEAD";

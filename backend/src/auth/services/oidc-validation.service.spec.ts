@@ -25,7 +25,7 @@ describe("OidcValidationService", () => {
     const config: Record<string, string | undefined> = {
       OIDC_ISSUER_URL: "http://keycloak:8080/realms/iqb",
       OIDC_PUBLIC_ISSUER_URL: undefined,
-      OIDC_CLIENT_ID: "contentpool",
+      OIDC_CLIENT_ID: "contenthub",
     };
 
     configService = {
@@ -56,7 +56,7 @@ describe("OidcValidationService", () => {
         sub: "oidc-sub-1",
         preferred_username: "oidc-user",
         realm_access: { roles: ["user"] },
-        resource_access: { contentpool: { roles: ["user"] } },
+        resource_access: { contenthub: { roles: ["user"] } },
       },
     } as any);
 
@@ -66,7 +66,7 @@ describe("OidcValidationService", () => {
       displayName: "OIDC User",
       oidcSub: "oidc-sub-1",
       isAppAdmin: true,
-      acpRoles: [],
+      apRoles: [],
     };
 
     userRepository.findOne.mockResolvedValue(existingUser);
@@ -92,7 +92,7 @@ describe("OidcValidationService", () => {
       displayName: "OIDC User 2",
       oidcSub: "oidc-sub-2",
       isAppAdmin: false,
-      acpRoles: [],
+      apRoles: [],
     };
 
     userRepository.findOne.mockResolvedValue(existingUser);
@@ -124,7 +124,7 @@ describe("OidcValidationService", () => {
       displayName: "Linked User",
       oidcSub: undefined,
       isAppAdmin: true,
-      acpRoles: [],
+      apRoles: [],
     };
 
     userRepository.findOne
@@ -162,7 +162,7 @@ describe("OidcValidationService", () => {
     userRepository.create.mockImplementationOnce((entity) => ({
       ...entity,
       id: "user-new",
-      acpRoles: [],
+      apRoles: [],
     }));
     userRepository.save.mockImplementationOnce(async (entity) => entity);
 

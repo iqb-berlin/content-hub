@@ -13,7 +13,7 @@ function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
     imprintHtml: '<p>Impressum</p>',
     privacyHtml: '<p>Datenschutz</p>',
     accessibilityHtml: '<p>Barrierefreiheit</p>',
-    defaultAcpIndex: { quality: 'baseline' },
+    defaultApIndex: { quality: 'baseline' },
     geoGebraBundle: null,
     ...overrides,
   };
@@ -48,7 +48,7 @@ describe('SettingsComponent', () => {
 
     expect(component.settings?.language).toBe('de');
     expect(component.theme['--color-primary']).toBe('#1a5276');
-    expect(component.defaultAcpIndexJson).toContain('"quality": "baseline"');
+    expect(component.defaultApIndexJson).toContain('"quality": "baseline"');
   });
 
   it('shows parse error for invalid default index JSON', () => {
@@ -58,14 +58,14 @@ describe('SettingsComponent', () => {
 
     const component = new SettingsComponent(api as any);
     component.ngOnInit();
-    component.defaultAcpIndexJson = '{invalid json';
+    component.defaultApIndexJson = '{invalid json';
     component.save();
 
     expect(component.error).toContain('gültiges JSON-Objekt');
     expect(api.updateSettings).not.toHaveBeenCalled();
   });
 
-  it('saves settings with theme and default ACP index', () => {
+  it('saves settings with theme and default AP index', () => {
     const settings = createSettings();
     api.getSettings.mockReturnValue(of(settings));
     api.updateSettings.mockReturnValue(of(createSettings({ language: 'en' })));
@@ -75,7 +75,7 @@ describe('SettingsComponent', () => {
     component.ngOnInit();
 
     component.theme['--color-primary'] = '#123456';
-    component.defaultAcpIndexJson = JSON.stringify({ custom: true });
+    component.defaultApIndexJson = JSON.stringify({ custom: true });
     component.settings!.language = 'en';
     component.save();
 
@@ -83,7 +83,7 @@ describe('SettingsComponent', () => {
       expect.objectContaining({
         language: 'en',
         theme: expect.objectContaining({ '--color-primary': '#123456' }),
-        defaultAcpIndex: { custom: true },
+        defaultApIndex: { custom: true },
       }),
     );
     expect(dispatchSpy).toHaveBeenCalled();

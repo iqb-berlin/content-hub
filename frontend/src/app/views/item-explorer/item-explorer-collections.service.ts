@@ -15,7 +15,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
   private readonly destroy$ = new ReplaySubject<void>(1);
   private readonly collectionsChanged = new Subject<void>();
   readonly collectionsChanged$ = this.collectionsChanged.asObservable();
-  private acpId = '';
+  private apId = '';
   private identity: string | null = null;
   private perspective: ItemExplorerPerspective = 'read-only';
   private items: ExplorerItem[] = [];
@@ -26,13 +26,13 @@ export class ItemExplorerCollectionsService implements OnDestroy {
   ) {}
 
   configure(context: {
-    acpId: string;
+    apId: string;
     identity: string | null;
     perspective: ItemExplorerPerspective;
     items: ExplorerItem[];
     itemsAvailable: boolean;
   }): void {
-    this.acpId = context.acpId;
+    this.apId = context.apId;
     this.identity = context.identity;
     this.perspective = context.perspective;
     this.items = context.items;
@@ -187,7 +187,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
     this.collectionLoadState = 'loading';
     if (!preserveError) this.collectionError = '';
     this.api
-      .getItemCollections(this.acpId, this.perspective)
+      .getItemCollections(this.apId, this.perspective)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (payload) => {
@@ -228,7 +228,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
     try {
       const payload = await firstValueFrom(
         this.api
-          .createItemCollection(this.acpId, name, this.perspective)
+          .createItemCollection(this.apId, name, this.perspective)
           .pipe(takeUntil(this.destroy$)),
       );
       if (!this.isCurrentItemCollectionSession(session)) return null;
@@ -253,7 +253,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
       const payload = await firstValueFrom(
         this.api
           .activateItemCollection(
-            this.acpId,
+            this.apId,
             collectionId || null,
             this.perspective,
             this.collectionViewMode,
@@ -321,7 +321,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
     try {
       const payload = await firstValueFrom(
         this.api
-          .deleteItemCollection(this.acpId, collection.id, this.perspective)
+          .deleteItemCollection(this.apId, collection.id, this.perspective)
           .pipe(takeUntil(this.destroy$)),
       );
       if (!this.isCurrentItemCollectionSession(session)) return;
@@ -345,7 +345,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
     try {
       const blob = await firstValueFrom(
         this.api
-          .exportItemCollectionCsv(this.acpId, collection.id, this.perspective)
+          .exportItemCollectionCsv(this.apId, collection.id, this.perspective)
           .pipe(takeUntil(this.destroy$)),
       );
       if (!this.isCurrentItemCollectionSession(session)) return;
@@ -381,7 +381,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
     try {
       const payload = await firstValueFrom(
         this.api
-          .copyItemCollection(this.acpId, collection.id, this.perspective)
+          .copyItemCollection(this.apId, collection.id, this.perspective)
           .pipe(takeUntil(this.destroy$)),
       );
       if (!this.isCurrentItemCollectionSession(session)) return;
@@ -435,7 +435,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
     try {
       const result = await firstValueFrom(
         this.api
-          .mutateItemCollectionRows(this.acpId, collection.id, {
+          .mutateItemCollectionRows(this.apId, collection.id, {
             baseVersion: previous.version,
             perspective: this.perspective,
             ...mutation,
@@ -486,7 +486,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
       const payload = await firstValueFrom(
         this.api
           .updateItemCollection(
-            this.acpId,
+            this.apId,
             collection.id,
             { baseVersion: previous.version, ...update },
             this.perspective,
@@ -546,7 +546,7 @@ export class ItemExplorerCollectionsService implements OnDestroy {
     try {
       const payload = await firstValueFrom(
         this.api
-          .activateItemCollection(this.acpId, this.activeCollectionId, this.perspective, nextMode)
+          .activateItemCollection(this.apId, this.activeCollectionId, this.perspective, nextMode)
           .pipe(takeUntil(this.destroy$)),
       );
       if (!this.isCurrentItemCollectionSession(session)) return;

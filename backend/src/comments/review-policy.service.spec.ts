@@ -15,8 +15,8 @@ describe("ReviewPolicyService", () => {
     expect(
       policy.resolveActor({
         user: { type: "oidc", sub: "user-1", username: "AB" },
-        acpAccessLevel: "READ_ONLY",
-        acpCapabilities: ["review:participate"],
+        apAccessLevel: "READ_ONLY",
+        apCapabilities: ["review:participate"],
       }),
     ).toEqual({
       userId: "user-1",
@@ -33,7 +33,7 @@ describe("ReviewPolicyService", () => {
           sub: "credential-1",
           username: "reader",
         },
-        acpAccessLevel: "CREDENTIAL",
+        apAccessLevel: "CREDENTIAL",
       }),
     ).toEqual(
       expect.objectContaining({
@@ -45,8 +45,8 @@ describe("ReviewPolicyService", () => {
     expect(
       policy.isManagerRequest({
         user: { isAppAdmin: false },
-        acpAccessLevel: "ADMIN",
-        acpCapabilities: ["review:manage"],
+        apAccessLevel: "ADMIN",
+        apCapabilities: ["review:manage"],
       }),
     ).toBe(true);
   });
@@ -75,31 +75,31 @@ describe("ReviewPolicyService", () => {
     expect(() =>
       policy.assertCanParticipateRequest({
         user: { sub: "user-1" },
-        acpAccessLevel: "READ_ONLY",
-        acpCapabilities: ["review:participate"],
+        apAccessLevel: "READ_ONLY",
+        apCapabilities: ["review:participate"],
       }),
     ).not.toThrow();
     expect(() =>
       policy.assertCanParticipateRequest({
         user: { sub: "user-1" },
-        acpAccessLevel: "PUBLIC",
-        acpCapabilities: ["review:participate"],
+        apAccessLevel: "PUBLIC",
+        apCapabilities: ["review:participate"],
       }),
     ).not.toThrow();
     expect(() =>
       policy.assertCanParticipateRequest({
         user: { sub: "user-1" },
-        acpAccessLevel: "UNRELATED",
+        apAccessLevel: "UNRELATED",
       }),
     ).toThrow(ForbiddenException);
     expect(() =>
-      policy.assertCanParticipateRequest({ acpAccessLevel: "PUBLIC" }),
+      policy.assertCanParticipateRequest({ apAccessLevel: "PUBLIC" }),
     ).toThrow(ForbiddenException);
   });
 
   it("rejects anonymous and disabled item review access", async () => {
     await expect(
-      policy.assertItemCommentAccess("acp-1", {
+      policy.assertItemCommentAccess("ap-1", {
         authorLabel: "?",
         isManager: false,
       }),
@@ -109,7 +109,7 @@ describe("ReviewPolicyService", () => {
       featureConfig: { enableReview: true, enableCommenting: false },
     });
     await expect(
-      policy.assertItemCommentAccess("acp-1", {
+      policy.assertItemCommentAccess("ap-1", {
         userId: "user-1",
         authorLabel: "AB",
         isManager: false,
@@ -139,14 +139,14 @@ describe("ReviewPolicyService", () => {
         };
         for (const target of [CommentTargetType.ITEM, CommentTargetType.UNIT]) {
           await expect(
-            policy.assertCommentAccess("acp-1", actor, target),
+            policy.assertCommentAccess("ap-1", actor, target),
           ).resolves.toBe("PRIVATE");
         }
-        await expect(policy.prepareVisibility("acp-1", actor)).resolves.toBe(
+        await expect(policy.prepareVisibility("ap-1", actor)).resolves.toBe(
           "PRIVATE",
         );
         await expect(
-          policy.assertItemAndCodingCountAccess("acp-1", actor),
+          policy.assertItemAndCodingCountAccess("ap-1", actor),
         ).resolves.toMatchObject({ targetTypes: [CommentTargetType.ITEM] });
         expect(
           policy.canViewComment("PRIVATE", actor, { userId: "other" } as any),
@@ -212,16 +212,63 @@ describe("ReviewPolicyService", () => {
       },
     });
     await expect(
-      policy.assertItemCommentAccess("acp-1", {
+      policy.assertItemCommentAccess("ap-1", {
         userId: "user-1",
         authorLabel: "AB",
         isManager: false,
       }),
     ).resolves.toBe("SHARED");
     await expect(
-      policy.isCommentingEnabled("acp-1", CommentTargetType.UNIT),
+      policy.isCommentingEnabled("ap-1", CommentTargetType.UNIT),
     ).resolves.toBe(false);
   });
+
+  it.each(["user", "credential"] as const)(
+    "limits overview visibility for %s identities without broadening PRIVATE threads",
+    async (kind) => {
+      accessConfigRepository.findOne.mockResolvedValue({
+        featureConfig: {
+          commentVisibilityMode: "SHARED",
+          ungroupedVisibilityMode: "SHARED",
+        },
+        reviewGroups: [
+          { id: "own", archived: false, members: [{ kind, id: "me" }] },
+          { id: "former", archived: true, members: [{ kind, id: "me" }] },
+          { id: "foreign", archived: false, members: [{ kind, id: "other" }] },
+        ],
+      });
+      const actor = {
+        [kind === "user" ? "userId" : "credentialId"]: "me",
+        authorLabel: "ME",
+        isManager: false,
+      };
+      await policy.prepareVisibility("ap", actor);
+      const own = { ...actor, groupId: null } as any;
+      const peer = { userId: "peer", groupId: "own" } as any;
+      const foreign = { userId: "peer", groupId: "foreign" } as any;
+      const archived = { userId: "peer", groupId: "former" } as any;
+      const ungrouped = { userId: "peer", groupId: null } as any;
+      for (const mode of ["PRIVATE", "GROUP", "SHARED"] as const) {
+        expect(policy.canViewOverviewComment(mode, actor, own)).toBe(true);
+        expect(policy.canViewOverviewComment(mode, actor, peer)).toBe(
+          mode !== "PRIVATE",
+        );
+        for (const hidden of [foreign, archived, ungrouped]) {
+          expect(policy.canViewOverviewComment(mode, actor, hidden)).toBe(
+            false,
+          );
+          expect(
+            policy.canViewOverviewComment(
+              mode,
+              { ...actor, isManager: true },
+              hidden,
+            ),
+          ).toBe(true);
+        }
+      }
+      expect(policy.canViewComment("SHARED", actor, foreign)).toBe(true);
+    },
+  );
 
   it("requires explicit opt-in for new booklet and coding targets", async () => {
     accessConfigRepository.findOne.mockResolvedValue({
@@ -232,13 +279,13 @@ describe("ReviewPolicyService", () => {
       },
     });
     await expect(
-      policy.isCommentingEnabled("acp-1", CommentTargetType.ITEM),
+      policy.isCommentingEnabled("ap-1", CommentTargetType.ITEM),
     ).resolves.toBe(true);
     await expect(
-      policy.isCommentingEnabled("acp-1", CommentTargetType.CODING),
+      policy.isCommentingEnabled("ap-1", CommentTargetType.CODING),
     ).resolves.toBe(false);
     await expect(
-      policy.isCommentingEnabled("acp-1", CommentTargetType.BOOKLET),
+      policy.isCommentingEnabled("ap-1", CommentTargetType.BOOKLET),
     ).resolves.toBe(false);
 
     accessConfigRepository.findOne.mockResolvedValue({
@@ -250,7 +297,7 @@ describe("ReviewPolicyService", () => {
     });
     await expect(
       policy.assertCommentAccess(
-        "acp-1",
+        "ap-1",
         { credentialId: "credential-1", authorLabel: "CR", isManager: false },
         CommentTargetType.CODING,
       ),

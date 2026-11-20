@@ -29,6 +29,7 @@ export interface ItemExplorerTableColumnContext {
   enableItemCollections: boolean;
 }
 export interface ItemExplorerTableFilterContext extends ItemExplorerTableColumnContext {
+  globalFilterText?: string;
   itemCommentCountsAvailable: boolean;
   commentCountsByRow: ReadonlyMap<string, number>;
   itemTags: Readonly<Record<string, readonly string[]>>;
@@ -455,7 +456,7 @@ export class ItemExplorerTableService {
   }
 
   applyFilter(context: ItemExplorerTableFilterContext, items: readonly ExplorerItem[]) {
-    const term = this.filterText.toLowerCase();
+    const term = (context.globalFilterText ?? this.filterText).toLowerCase();
     const activeCollectionRowKeys = context.activeCollectionRowKeys;
 
     this.filteredItems = items.filter((item) => {

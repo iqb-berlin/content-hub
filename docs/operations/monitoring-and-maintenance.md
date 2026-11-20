@@ -29,7 +29,7 @@ These endpoints are also used by the Docker health checks in production.
 
 The compose files already define health checks for:
 
-- ContentPool API,
+- Content Hub API,
 - nginx or frontend container,
 - PostgreSQL containers,
 - Keycloak.
@@ -47,7 +47,7 @@ Use targeted logs instead of tailing everything when possible.
 Examples:
 
 ```bash
-docker compose -f docker-compose.prod.yml logs --since 15m content-pool-api
+docker compose -f docker-compose.prod.yml logs --since 15m content-hub-api
 docker compose -f docker-compose.prod.yml logs --since 15m keycloak
 docker compose -f docker-compose.prod.yml logs --since 15m nginx
 ```
@@ -64,7 +64,7 @@ Good times to inspect logs:
 
 The application records server API activity in a dedicated audit table. Use that data when:
 
-- an external system claims it updated an ACP,
+- an external system claims it updated an AP,
 - a transfer appears incomplete,
 - you need to identify which client used which endpoint,
 - you want a record of failures and HTTP status outcomes.
@@ -73,12 +73,12 @@ The application records server API activity in a dedicated audit table. Use that
 
 At minimum, backup:
 
-- the ContentPool PostgreSQL database,
+- the Content Hub PostgreSQL database,
 - the Keycloak PostgreSQL database,
 - the uploads volume.
 
 Suggested cadence depends on traffic, but the key rule is simple: backing up only the
-database is not enough because ACP files are stored separately.
+database is not enough because AP files are stored separately.
 
 ## Upgrade Routine
 
@@ -90,8 +90,8 @@ A safe upgrade flow is:
 4. deploy,
 5. watch health and logs,
 6. test login,
-7. test one ACP manager workflow,
-8. test one read-only ACP workflow.
+7. test one AP manager workflow,
+8. test one read-only AP workflow.
 
 ## Incident Triage Guide
 
@@ -123,15 +123,15 @@ Check:
 - whether files were overwritten or cleaned up during a recent upload conflict strategy,
 - validation errors and file metadata in the database.
 
-### Viewer cannot access an ACP
+### Viewer cannot access an AP
 
 Check:
 
-- ACP access model,
+- AP access model,
 - assigned roles,
 - credential token or user session,
 - feature flags,
-- whether the ACP is public or restricted.
+- whether the AP is public or restricted.
 
 ## Release Readiness
 
@@ -140,7 +140,7 @@ Before a release:
 1. verify automated tests,
 2. run health checks,
 3. confirm database migration posture,
-4. validate login and at least one ACP workflow,
+4. validate login and at least one AP workflow,
 5. use the root release checklist.
 
 ## Documentation Maintenance

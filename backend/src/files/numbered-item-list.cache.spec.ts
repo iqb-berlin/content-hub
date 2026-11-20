@@ -30,8 +30,8 @@ describe("NumberedItemListCache", () => {
     });
     const cache = new NumberedItemListCache();
 
-    const first = cache.getOrLoad("acp-1", "parse", "revision-1", load);
-    const coalesced = cache.getOrLoad("acp-1", "parse", "revision-1", load);
+    const first = cache.getOrLoad("ap-1", "parse", "revision-1", load);
+    const coalesced = cache.getOrLoad("ap-1", "parse", "revision-1", load);
     await Promise.resolve();
     release();
 
@@ -42,7 +42,7 @@ describe("NumberedItemListCache", () => {
       expect.objectContaining({ status: "coalesced" }),
     );
     await expect(
-      cache.getOrLoad("acp-1", "parse", "revision-2", load),
+      cache.getOrLoad("ap-1", "parse", "revision-2", load),
     ).resolves.toEqual(expect.objectContaining({ status: "hit" }));
     expect(load).toHaveBeenCalledTimes(1);
   });
@@ -51,12 +51,12 @@ describe("NumberedItemListCache", () => {
     const cache = new NumberedItemListCache();
 
     await expect(
-      cache.getOrLoad("acp-1", "parse", "revision-1", async () => {
+      cache.getOrLoad("ap-1", "parse", "revision-1", async () => {
         throw new Error("unstable revision");
       }),
     ).rejects.toThrow("unstable revision");
     await expect(
-      cache.getOrLoad("acp-1", "parse", "revision-1", async () => ({
+      cache.getOrLoad("ap-1", "parse", "revision-1", async () => ({
         itemList: emptyItemList,
         rowRevision: "revision-1",
         rowNumberingMs: 3,

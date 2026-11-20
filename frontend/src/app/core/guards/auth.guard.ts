@@ -74,37 +74,37 @@ function createAdminAccessUrlTree(accessService: AccessService, nextUrl: string)
   });
 }
 
-export const acpManagerGuard: CanActivateFn = (route, state) => {
+export const apManagerGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const apiService = inject(ApiService);
   const accessService = inject(AccessService);
-  const acpId = route.paramMap.get('acpId') || '';
+  const apId = route.paramMap.get('apId') || '';
 
   if (!authService.isLoggedIn) {
     return accessService.createAccessUrlTree('login_required', {
       context: 'manage',
-      acpId: acpId || undefined,
+      apId: apId || undefined,
       nextUrl: state.url,
     });
   }
 
   if (authService.isAdmin) return true;
 
-  if (!acpId) {
+  if (!apId) {
     return accessService.createAccessUrlTree('insufficient_rights', {
       context: 'manage',
       nextUrl: state.url,
     });
   }
 
-  return apiService.getAcp(acpId).pipe(
+  return apiService.getAp(apId).pipe(
     map(() => true),
     catchError((err) => {
       if (err?.status === 401) {
         return of(
           accessService.createAccessUrlTree('login_required', {
             context: 'manage',
-            acpId,
+            apId,
             nextUrl: state.url,
           }),
         );
@@ -113,7 +113,7 @@ export const acpManagerGuard: CanActivateFn = (route, state) => {
       return of(
         accessService.createAccessUrlTree('insufficient_rights', {
           context: 'manage',
-          acpId,
+          apId,
           nextUrl: state.url,
         }),
       );

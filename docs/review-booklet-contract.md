@@ -7,7 +7,7 @@ bestätigt**. #60 und die weiteren Review-Tickets sind nicht Teil dieser Änderu
 ## Upload und Auffindbarkeit
 
 Die bestehende Upload-Nachverarbeitung erkennt Booklet-XMLs und trägt ihre
-Metadaten-ID sowie den Dateinamen automatisch im ACP-Index ein. Neue Booklets
+Metadaten-ID sowie den Dateinamen automatisch im AP-Index ein. Neue Booklets
 werden im ersten Assessment-Part in einem eigenen Instrument registriert.
 Vorhandene Dateiverknüpfungen werden an ihrer bisherigen Position ergänzt;
 manuelle Namen, Modulzuordnungen und andere Instrumente bleiben erhalten.
@@ -16,7 +16,7 @@ mehrere Dateien mit derselben Booklet-ID und ungültige Booklet-Dateien werden
 als Warnungen gemeldet und nicht stillschweigend neu zugeordnet.
 
 Nach abgeschlossener Upload-Verarbeitung erscheinen Booklets in der
-ACP-Übersicht als „Testheft“ beziehungsweise unter „Testhefte und Aufgabenfolgen“.
+AP-Übersicht als „Testheft“ beziehungsweise unter „Testhefte und Aufgabenfolgen“.
 Ein erneuter Upload stößt die Synchronisierung auch für bereits vorhandene
 Booklet-Dateien an; alternativ steht die bestehende Synchronisierungs-API zur Verfügung. Aufgaben und Player-Dateien müssen
 weiterhin vorhanden sein; fehlende Unit-Referenzen meldet die Validierung.
@@ -24,7 +24,7 @@ weiterhin vorhanden sein; fehlende Unit-Referenzen meldet die Validierung.
 ## Unterstützte Eingaben
 
 - Referenzen unter `assessmentParts[].instruments[].testcenterBooklet[]`.
-- `definitionId` benennt eine im selben ACP hochgeladene Booklet-XML-Datei.
+- `definitionId` benennt eine im selben AP hochgeladene Booklet-XML-Datei.
 - Die kanonische ID stammt aus `testcenterBooklet.id`, alternativ aus
   `Booklet/Metadata/Id`. Sind beide angegeben, müssen sie übereinstimmen.
 - `Booklet/Units` enthält Units und rekursive `Testlet`-Blöcke in Dokumentreihenfolge.
@@ -58,22 +58,73 @@ Der Booklet-Download verwendet das Manifest und exportiert mehrfach referenziert
 Units nur einmal. Bei einer unbekannten Booklet-ID erfolgt kein Rückfall auf ein
 zufällig gleichnamiges Modul.
 
+### Direktlinks zu Aufgaben (#245)
+
+Die Testheftansicht zeigt die Booklet-ID als Überschrift und im Navigationspfad.
+Testheftwechsel, Aufgabennavigation und Darstellungswerkzeuge sind getrennt
+angeordnet. Auf schmalen Bildschirmen steht der Reviewbereich unter der Aufgabe;
+auf breiten Bildschirmen bleibt seine Breite per Ziehen und Pfeiltasten einstellbar.
+
+In der Testheftansicht bietet „Direktlink zur Aufgabe“ einen Link zur aktuellen
+Aufgabe. Ein normaler Klick kopiert die vollständige Linkadresse und bestätigt
+dies mit „Link kopiert.“. Blockiert der Browser den Zugriff auf die Zwischenablage,
+erscheint die Adresse als markierbarer Text zum manuellen Kopieren. Die Rückmeldung
+wird beim Aufgaben- oder Testheftwechsel entfernt.
+Die Aufgabenliste enthält für jedes Vorkommen einen eigenen Link.
+Alle Links lassen sich weiterhin über das Browsermenü kopieren oder in einem neuen
+Tab öffnen; Strg-/Cmd-Klick behält ebenfalls das native Browserverhalten bei.
+Zurück, Weiter und die Aufgabenliste aktualisieren ebenfalls die URL;
+Neuladen sowie Zurück/Vorwärts im Browser stellen die Auswahl wieder her.
+
+`/view/:apId/sequence/:bookletId?kind=booklet&occurrence=:linkId`
+adressiert ein bestimmtes Vorkommen, auch wenn dieselbe Aufgabe mehrmals im
+Testheft enthalten ist. Neue Links verwenden eine 16-stellige, URL-sichere
+`linkId`, zum Beispiel `?kind=booklet&occurrence=Y5gRx3-5hT2cV0WQ`.
+Das Backend berechnet sie ohne Speicherung aus Booklet-ID, geordnetem
+Navigationsbaum und Position des Vorkommens. Der Baum berücksichtigt Unit-IDs,
+Aliase sowie Block-IDs und Verschachtelung. Änderungen an dieser Struktur
+machen alle bisherigen Kurzlinks dieses Testhefts ungültig. Anzeigetitel,
+XML-Formatierung und Dateinamen ändern die Kurzlinks nicht; Änderungen an
+anderen Testheften ebenfalls nicht.
+
+Das Format verwendet SHA-256 mit der Kennzeichnung `booklet-task-link-v1`:
+Zuerst wird der Navigationsbaum gehasht, dann zusammen mit dem
+nullbasierten Vorkommensindex erneut gehasht. Die ersten 16
+Base64url-Zeichen (96 Bit) bilden die `linkId`. Die Baumdarstellung enthält
+`[kind, id, children]` für Blöcke und `[kind, id, alias-or-null]` für Units;
+Bezeichnungen und Quellpfade sind ausgeschlossen. Dieses Format ist Teil
+des Linkvertrags und muss bei unveränderter Struktur stabil bleiben.
+
+Bisherige lange `occurrenceId`-Links werden weiterhin aufgelöst. Ältere
+Antworten ohne `linkId` verwenden beim Erzeugen von Links die vorhandene
+`occurrenceId`; ohne beide Kennungen gibt es `position` als einsbasierte
+Position in der Aufgabenliste. Diese älteren Linkformen bieten keine
+Absicherung gegen Strukturänderungen. Links ohne Auswahl öffnen weiterhin
+die erste Aufgabe. Beim Testheftwechsel wird die Auswahl zurückgesetzt.
+
+Bei unbekannten, mehrdeutigen oder ungültigen Zielen erscheint der Hinweis,
+dass der Direktlink ungültig oder veraltet ist; die Ansicht zeigt die erste
+Aufgabe an. Veraltete Kurzlinks fallen nicht auf eine inzwischen anders
+belegte Strukturposition zurück. Der nächste Navigationsschritt erzeugt
+wieder einen gültigen Link. Die Links verwenden weiterhin die reguläre
+AP-Zugriffsprüfung.
+
 ## Laufzeitmodell und Fehler
 
 Ein gemeinsames Manifest enthält Booklets, verschachtelte Blöcke, geordnete
-Unit-Vorkommen und einen separaten ACP-weiten Inhaltskatalog. Eine
+Unit-Vorkommen und einen separaten AP-weiten Inhaltskatalog. Eine
 `occurrenceId` unterscheidet Navigationspositionen anhand von Booklet-ID und
 Strukturpfad; die Unit-ID bleibt bei wiederholter Verwendung identisch.
 Navigationspositionen sind nicht als dauerhafte Kommentar-IDs vorgesehen.
 
-Uploadvalidierung und ACP-Konsistenzprüfung melden XML-Fehler, fehlende
+Uploadvalidierung und AP-Konsistenzprüfung melden XML-Fehler, fehlende
 Referenzen und ID-Konflikte mit dem jeweiligen Strukturpfad. Ein Booklet mit
 fehlender XML-Datei kann über vorhandene Legacy-Module angezeigt werden;
 der fehlende Dateibezug wird weiterhin gemeldet. Es gibt keine automatische
 Kommentar-Migration und keine Aktivierung einer neuen Review-Funktion.
 
 Die Aufgabenfolge zeigt Blockpfade und Aliase an. Wiederholte Unit-Vorkommen
-bleiben einzeln auswählbar. Die vorhandene ACP-Oberfläche bleibt der gemeinsame
+bleiben einzeln auswählbar. Die vorhandene AP-Oberfläche bleibt der gemeinsame
 Einstiegspunkt für das Content Package.
 
 ## Beispiel und Prüfung

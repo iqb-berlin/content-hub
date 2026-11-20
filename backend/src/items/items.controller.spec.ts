@@ -41,7 +41,7 @@ describe("ItemsController", () => {
     };
 
     stateService = {
-      getAllStatesForAcp: jest.fn().mockResolvedValue([{ itemId: "item-1" }]),
+      getAllStatesForAp: jest.fn().mockResolvedValue([{ itemId: "item-1" }]),
       saveResponseState: jest.fn().mockResolvedValue({ success: true }),
       getResponseState: jest.fn().mockResolvedValue({ state: { value: 1 } }),
       getResponseStateWithFallback: jest
@@ -85,11 +85,11 @@ describe("ItemsController", () => {
   });
 
   it("returns filtered items", async () => {
-    const result = await controller.getItems("acp-1", "abc", "label", "asc");
+    const result = await controller.getItems("ap-1", "abc", "label", "asc");
 
     expect(result).toEqual([{ itemId: "item-1" }]);
     expect(itemsService.getFilteredItems).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "abc",
       "label",
       "asc",
@@ -98,12 +98,12 @@ describe("ItemsController", () => {
 
   it("rejects item reads for non-managers when the item list is disabled", async () => {
     itemsService.canUseItemList.mockResolvedValue(false);
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "READ_ONLY" };
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "READ_ONLY" };
 
     await expect(
-      controller.getItems("acp-1", undefined, undefined, undefined, req),
+      controller.getItems("ap-1", undefined, undefined, undefined, req),
     ).rejects.toThrow(ForbiddenException);
-    await expect(controller.getItem("acp-1", "item-1", req)).rejects.toThrow(
+    await expect(controller.getItem("ap-1", "item-1", req)).rejects.toThrow(
       ForbiddenException,
     );
     expect(itemsService.getFilteredItems).not.toHaveBeenCalled();
@@ -112,17 +112,17 @@ describe("ItemsController", () => {
 
   it("allows managers to read items when the item list is disabled", async () => {
     itemsService.canUseItemList.mockResolvedValue(false);
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "MANAGER" };
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "MANAGER" };
 
     await expect(
-      controller.getItems("acp-1", undefined, undefined, undefined, req),
+      controller.getItems("ap-1", undefined, undefined, undefined, req),
     ).resolves.toEqual([{ itemId: "item-1" }]);
     expect(itemsService.canUseItemList).not.toHaveBeenCalled();
   });
 
   it("returns item tags for manager users", async () => {
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "MANAGER" };
-    const result = await controller.getItemTags("acp-1", req);
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "MANAGER" };
+    const result = await controller.getItemTags("ap-1", req);
 
     expect(result).toEqual({ item1: ["A"] });
     expect(itemsService.canUseItemTags).not.toHaveBeenCalled();
@@ -130,28 +130,28 @@ describe("ItemsController", () => {
 
   it("rejects item tags for non-managers when feature disabled", async () => {
     itemsService.canUseItemTags.mockResolvedValueOnce(false);
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "PUBLIC" };
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "PUBLIC" };
 
-    await expect(controller.getItemTags("acp-1", req)).rejects.toThrow(
+    await expect(controller.getItemTags("ap-1", req)).rejects.toThrow(
       ForbiddenException,
     );
   });
 
   it("returns item tags for non-managers when feature enabled", async () => {
     itemsService.canUseItemTags.mockResolvedValueOnce(true);
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "PUBLIC" };
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "PUBLIC" };
 
-    const result = await controller.getItemTags("acp-1", req);
+    const result = await controller.getItemTags("ap-1", req);
 
     expect(result).toEqual({ item1: ["A"] });
   });
 
   it("saves item tags for non-managers when feature enabled", async () => {
     itemsService.canUseItemTags.mockResolvedValueOnce(true);
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "PUBLIC" };
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "PUBLIC" };
 
     await controller.saveItemTags(
-      "acp-1",
+      "ap-1",
       { tags: { item1: ["A"] } } as any,
       req,
     );
@@ -159,7 +159,7 @@ describe("ItemsController", () => {
     expect(
       itemExplorerStateService.publishTagsImmediately,
     ).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { item1: ["A"] },
       expect.objectContaining({
         actor: { type: "user", id: "u-1" },
@@ -169,14 +169,14 @@ describe("ItemsController", () => {
   });
 
   it("uses empty map when save item tags payload has no tags", async () => {
-    const req = { user: { isAppAdmin: true }, acpAccessLevel: "PUBLIC" };
+    const req = { user: { isAppAdmin: true }, apAccessLevel: "PUBLIC" };
 
-    await controller.saveItemTags("acp-1", {} as any, req);
+    await controller.saveItemTags("ap-1", {} as any, req);
 
     expect(
       itemExplorerStateService.publishTagsImmediately,
     ).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {},
       expect.objectContaining({ changeType: "REPLACE_ITEM_TAGS" }),
     );
@@ -184,15 +184,15 @@ describe("ItemsController", () => {
 
   it("rejects save item tags for non-managers when feature disabled", async () => {
     itemsService.canUseItemTags.mockResolvedValueOnce(false);
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "PUBLIC" };
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "PUBLIC" };
 
     await expect(
-      controller.saveItemTags("acp-1", { tags: {} } as any, req),
+      controller.saveItemTags("ap-1", { tags: {} } as any, req),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it("returns single item", async () => {
-    await expect(controller.getItem("acp-1", "item-1")).resolves.toEqual({
+    await expect(controller.getItem("ap-1", "item-1")).resolves.toEqual({
       itemId: "item-1",
     });
   });
@@ -200,7 +200,7 @@ describe("ItemsController", () => {
   it("uploads empirical difficulties directly when not in draft mode", async () => {
     const file = { buffer: Buffer.from("csv-data") } as Express.Multer.File;
     const result = await controller.uploadEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       file,
       "false",
       "7",
@@ -215,7 +215,7 @@ describe("ItemsController", () => {
       }),
     );
     expect(itemsService.uploadEmpiricalDifficulties).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       file.buffer,
       {
         persist: false,
@@ -226,11 +226,11 @@ describe("ItemsController", () => {
     );
     expect(
       itemsService.ensureShowOnlyItemsWithEmpiricalDifficulty,
-    ).toHaveBeenCalledWith("acp-1");
+    ).toHaveBeenCalledWith("ap-1");
     expect(
       itemExplorerStateService.publishItemPropertiesImmediately,
     ).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {
         "item-1": { id: "item-1", empiricalDifficulty: 0.7 },
       },
@@ -245,7 +245,7 @@ describe("ItemsController", () => {
     const req = { user: { sub: "u-1" } };
 
     const result = await controller.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       file,
       "true",
       "4",
@@ -253,7 +253,7 @@ describe("ItemsController", () => {
     );
 
     expect(itemsService.uploadItemParameters).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       file.buffer,
       {
         persist: false,
@@ -261,7 +261,7 @@ describe("ItemsController", () => {
       },
     );
     expect(itemExplorerStateService.patchDraft).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {
         itemProperties: {
           "item-1": { infit: 1.05, itemTimeSeconds: 30 },
@@ -301,7 +301,7 @@ describe("ItemsController", () => {
     });
 
     const preview = await controller.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       file,
       "true",
       "4",
@@ -322,7 +322,7 @@ describe("ItemsController", () => {
       nextItemProperties: { "item-1": { empiricalDifficulty: 0.5 } },
     });
     await controller.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       file,
       "true",
       "4",
@@ -331,7 +331,7 @@ describe("ItemsController", () => {
     );
 
     expect(itemsService.uploadItemParameters).toHaveBeenLastCalledWith(
-      "acp-1",
+      "ap-1",
       file.buffer,
       {
         persist: false,
@@ -354,7 +354,7 @@ describe("ItemsController", () => {
     const file = { buffer: Buffer.from("csv-data") } as Express.Multer.File;
 
     const result = await controller.uploadItemParameters(
-      "acp-1",
+      "ap-1",
       file,
       "true",
       "4",
@@ -363,7 +363,7 @@ describe("ItemsController", () => {
 
     expect(
       itemsService.ensureShowOnlyItemsWithEmpiricalDifficulty,
-    ).toHaveBeenCalledWith("acp-1");
+    ).toHaveBeenCalledWith("ap-1");
     expect(result).toEqual(
       expect.objectContaining({
         showOnlyItemsWithEmpiricalDifficulty: true,
@@ -376,7 +376,7 @@ describe("ItemsController", () => {
     const req = { user: { sub: "u-1" } };
 
     const result = await controller.uploadEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       file,
       "true",
       "11",
@@ -384,11 +384,11 @@ describe("ItemsController", () => {
     );
 
     expect(itemExplorerStateService.getStateForViewer).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       true,
     );
     expect(itemsService.uploadEmpiricalDifficulties).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       file.buffer,
       expect.objectContaining({
         persist: false,
@@ -396,7 +396,7 @@ describe("ItemsController", () => {
       }),
     );
     expect(itemExplorerStateService.patchDraft).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.objectContaining({
         itemProperties: {
           "item-1": { id: "item-1", empiricalDifficulty: 0.7 },
@@ -416,28 +416,28 @@ describe("ItemsController", () => {
     );
     expect(
       itemsService.ensureShowOnlyItemsWithEmpiricalDifficulty,
-    ).toHaveBeenCalledWith("acp-1");
+    ).toHaveBeenCalledWith("ap-1");
   });
 
   it("uses undefined baseVersion when draft upload baseVersion is invalid", async () => {
     const file = { buffer: Buffer.from("csv-data") } as Express.Multer.File;
 
-    await controller.uploadEmpiricalDifficulties("acp-1", file, "true", "abc", {
+    await controller.uploadEmpiricalDifficulties("ap-1", file, "true", "abc", {
       user: { sub: "u-1" },
     } as any);
 
     expect(itemExplorerStateService.patchDraft).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.any(Object),
       expect.objectContaining({ baseVersion: undefined }),
     );
   });
 
   it("clears empirical difficulties directly when not in draft mode", async () => {
-    await controller.clearEmpiricalDifficulties("acp-1", "false", "3");
+    await controller.clearEmpiricalDifficulties("ap-1", "false", "3");
 
     expect(itemsService.clearEmpiricalDifficulties).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {
         persist: false,
         itemPropertiesOverride: {
@@ -448,7 +448,7 @@ describe("ItemsController", () => {
     expect(
       itemExplorerStateService.publishItemPropertiesImmediately,
     ).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { "item-1": { id: "item-1" } },
       expect.objectContaining({
         changeType: "CLEAR_EMPIRICAL_DIFFICULTY",
@@ -469,7 +469,7 @@ describe("ItemsController", () => {
     const file = { buffer: Buffer.from("csv-data") } as Express.Multer.File;
 
     await expect(
-      controller.uploadEmpiricalDifficulties("acp-1", file, "false"),
+      controller.uploadEmpiricalDifficulties("ap-1", file, "false"),
     ).rejects.toThrow(ConflictException);
     expect(itemsService.uploadEmpiricalDifficulties).not.toHaveBeenCalled();
   });
@@ -478,21 +478,21 @@ describe("ItemsController", () => {
     const req = { user: { sub: "u-1" } };
 
     const result = await controller.clearEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       "true",
       "4",
       req as any,
     );
 
     expect(itemsService.clearEmpiricalDifficulties).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.objectContaining({
         persist: false,
         itemPropertiesOverride: { "item-1": { id: "item-1" } },
       }),
     );
     expect(itemExplorerStateService.patchDraft).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.any(Object),
       expect.objectContaining({
         changeType: "CLEAR_EMPIRICAL_DIFFICULTY",
@@ -507,37 +507,37 @@ describe("ItemsController", () => {
 
   it("uses undefined baseVersion when draft clear baseVersion is invalid", async () => {
     await controller.clearEmpiricalDifficulties(
-      "acp-1",
+      "ap-1",
       "true",
       "not-a-number",
       { user: { sub: "u-1" } } as any,
     );
 
     expect(itemExplorerStateService.patchDraft).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.any(Object),
       expect.objectContaining({ baseVersion: undefined }),
     );
   });
 
-  it("returns all response states for ACP", async () => {
+  it("returns all response states for AP", async () => {
     await expect(
-      controller.getAllResponseStates("acp-1", {} as any),
+      controller.getAllResponseStates("ap-1", {} as any),
     ).resolves.toEqual([{ itemId: "item-1" }]);
 
-    expect(stateService.getAllStatesForAcp).toHaveBeenCalledWith("acp-1", true);
+    expect(stateService.getAllStatesForAp).toHaveBeenCalledWith("ap-1", true);
   });
 
   it("saves response state", async () => {
     await controller.saveResponseState(
-      "acp-1",
+      "ap-1",
       "item-1",
       { unitId: "unit-1", responseData: { answer: 1 } },
       {} as any,
     );
 
     expect(stateService.saveResponseState).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "item-1",
       "unit-1",
       { answer: 1 },
@@ -548,12 +548,12 @@ describe("ItemsController", () => {
 
   it("returns existing response state and fallback null when missing", async () => {
     await expect(
-      controller.getResponseState("acp-1", "item-1", "unit-1"),
+      controller.getResponseState("ap-1", "item-1", "unit-1"),
     ).resolves.toEqual({
       state: { value: 1 },
     });
     expect(stateService.getResponseState).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "item-1",
       "unit-1",
       undefined,
@@ -561,7 +561,7 @@ describe("ItemsController", () => {
 
     stateService.getResponseState.mockResolvedValueOnce(null);
     await expect(
-      controller.getResponseState("acp-1", "item-2", "unit-1"),
+      controller.getResponseState("ap-1", "item-2", "unit-1"),
     ).resolves.toEqual({
       state: null,
     });
@@ -570,14 +570,14 @@ describe("ItemsController", () => {
   it("returns response state with fallback", async () => {
     const itemList = [{ itemId: "item-1", unitId: "unit-1" }];
     await expect(
-      controller.getResponseStateWithFallback("acp-1", "item-1", {
+      controller.getResponseStateWithFallback("ap-1", "item-1", {
         unitId: "unit-1",
         itemList,
       }),
     ).resolves.toEqual({ state: {}, isFallback: true });
 
     expect(stateService.getResponseStateWithFallback).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "item-1",
       "unit-1",
       itemList,
@@ -587,17 +587,17 @@ describe("ItemsController", () => {
 
   it("rejects direct response-state read without unitId", async () => {
     await expect(
-      controller.getResponseState("acp-1", "item-1", undefined),
+      controller.getResponseState("ap-1", "item-1", undefined),
     ).rejects.toThrow('Query parameter "unitId" is required.');
   });
 
   it("deletes response state", async () => {
     await expect(
-      controller.deleteResponseState("acp-1", "item-1", "unit-1", {} as any),
+      controller.deleteResponseState("ap-1", "item-1", "unit-1", {} as any),
     ).resolves.toEqual({ success: true });
 
     expect(stateService.deleteResponseState).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "item-1",
       "unit-1",
       true,
@@ -607,7 +607,7 @@ describe("ItemsController", () => {
 
   it("rejects response-state delete without unitId", async () => {
     await expect(
-      controller.deleteResponseState("acp-1", "item-1", undefined, {} as any),
+      controller.deleteResponseState("ap-1", "item-1", undefined, {} as any),
     ).rejects.toThrow('Query parameter "unitId" is required.');
   });
 });

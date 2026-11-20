@@ -19,11 +19,54 @@ grep -q 'up -d --wait --wait-timeout 180' "$ROOT_DIR/scripts/restore.sh" || {
   exit 1
 }
 
-temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/content-pool-script-test.XXXXXX")"
+temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/content-hub-script-test.XXXXXX")"
 trap 'rm -rf "$temp_dir"' EXIT
 mkdir -p "$temp_dir/scripts" "$temp_dir/bin"
 cp "$ROOT_DIR/.env.example" "$temp_dir/.env"
 cp "$ROOT_DIR/scripts/update.sh" "$ROOT_DIR/scripts/deploy-common.sh" "$temp_dir/scripts/"
+
+(
+  # Exercise the same bundle-to-target copy used by install.sh and update.sh.
+  . "$ROOT_DIR/scripts/deploy-common.sh"
+  runtime_source="$temp_dir/runtime-source"
+  runtime_target="$temp_dir/runtime-target"
+  runbook="docs/operations/content-hub-branding.md"
+  mkdir -p "$runtime_source"
+  "$ROOT_DIR/scripts/build-runtime-bundle.sh" "$temp_dir/branding-runtime.tar.gz" >/dev/null
+  tar -xzf "$temp_dir/branding-runtime.tar.gz" -C "$runtime_source"
+
+  ch_install_runtime_artifacts "$runtime_source" "$runtime_target" >/dev/null
+  cmp "$ROOT_DIR/$runbook" "$runtime_target/$runbook"
+
+  # Updates must replace a stale runbook while retaining unrelated local docs.
+  printf 'old branding instructions\n' >"$runtime_target/$runbook"
+  printf 'local operator notes\n' >"$runtime_target/docs/operator-notes.txt"
+  ch_install_runtime_artifacts "$runtime_source" "$runtime_target" >/dev/null
+  cmp "$ROOT_DIR/$runbook" "$runtime_target/$runbook"
+  test "$(cat "$runtime_target/docs/operator-notes.txt")" = 'local operator notes'
+
+  # Only one version of the renamed provider may be loaded by Keycloak.
+  printf 'new provider\n' >"$runtime_source/keycloak/providers/content-hub-keycloak-altcha.jar"
+  printf 'old provider\n' >"$runtime_target/keycloak/providers/content-pool-keycloak-altcha.jar"
+  ch_install_runtime_artifacts "$runtime_source" "$runtime_target" >/dev/null
+  test ! -f "$runtime_target/keycloak/providers/content-pool-keycloak-altcha.jar"
+  cmp "$runtime_source/keycloak/providers/content-hub-keycloak-altcha.jar" "$runtime_target/keycloak/providers/content-hub-keycloak-altcha.jar"
+  mkdir -p "$temp_dir/old-provider/keycloak/providers"
+  printf 'old provider\n' >"$temp_dir/old-provider/keycloak/providers/content-pool-keycloak-altcha.jar"
+  tar -C "$temp_dir/old-provider" -czf "$temp_dir/old-provider.tgz" keycloak
+  (
+    cd "$runtime_target"
+    tar -xzf "$temp_dir/old-provider.tgz"
+    ch_reconcile_provider_archive "$temp_dir/old-provider.tgz"
+    test ! -f keycloak/providers/content-hub-keycloak-altcha.jar
+    test -f keycloak/providers/content-pool-keycloak-altcha.jar
+  )
+
+  # Older release bundles did not contain this optional document.
+  rm "$runtime_source/$runbook"
+  ch_install_runtime_artifacts "$runtime_source" "$temp_dir/legacy-runtime-target" >/dev/null
+  test ! -e "$temp_dir/legacy-runtime-target/$runbook"
+)
 
 cat > "$temp_dir/bin/docker" <<'SH'
 #!/usr/bin/env bash
@@ -71,22 +114,34 @@ runtime_sha="$(sha256sum "$fixture_dir/runtime.tar.gz" | awk '{print $1}')"
   # shellcheck source=deploy-common.sh
   . "$ROOT_DIR/scripts/deploy-common.sh"
   cp "$ROOT_DIR/.env.example" "$fixture_dir/legacy.env"
-  cp_env_set "$fixture_dir/legacy.env" COMPOSE_PROJECT_NAME legacy-content-pool
-  cp_apply_manifest_env "$fixture_dir/legacy.env" "$fixture_dir/release-manifest.json" \
+  ch_env_set "$fixture_dir/legacy.env" COMPOSE_PROJECT_NAME legacy-content-pool
+  ch_apply_manifest_env "$fixture_dir/legacy.env" "$fixture_dir/release-manifest.json" \
     staging "$ROOT_DIR/scripts/release_manifest.py"
-  test "$(cp_env_get "$fixture_dir/legacy.env" COMPOSE_PROJECT_NAME)" = legacy-content-pool
+  test "$(ch_env_get "$fixture_dir/legacy.env" COMPOSE_PROJECT_NAME)" = legacy-content-pool
+
+  printf 'CONTENT_POOL_HOST=iqb-contentpool.de\n' >"$fixture_dir/aliases.env"
+  test "$(ch_env_get "$fixture_dir/aliases.env" CONTENT_HUB_HOST)" = iqb-contentpool.de
+  printf 'CONTENT_HUB_HOST=\n' >>"$fixture_dir/aliases.env"
+  test "$(ch_env_get "$fixture_dir/aliases.env" CONTENT_HUB_HOST)" = iqb-contentpool.de
+  ch_env_set "$fixture_dir/aliases.env" CONTENT_HUB_HOST iqb-contentpool.de
+  test "$(ch_env_get "$fixture_dir/aliases.env" CONTENT_POOL_HOST)" = iqb-contentpool.de
+  printf 'CONTENT_HUB_HOST=conflicting.example.com\n' >>"$fixture_dir/aliases.env"
+  if (ch_env_get "$fixture_dir/aliases.env" CONTENT_HUB_HOST) >/dev/null 2>&1; then
+    echo 'conflicting legacy configuration was accepted' >&2
+    exit 1
+  fi
 
   cp "$ROOT_DIR/.env.example" "$fixture_dir/fresh.env"
-  cp_apply_manifest_env "$fixture_dir/fresh.env" "$fixture_dir/release-manifest.json" \
+  ch_apply_manifest_env "$fixture_dir/fresh.env" "$fixture_dir/release-manifest.json" \
     staging "$ROOT_DIR/scripts/release_manifest.py"
-  test "$(cp_env_get "$fixture_dir/fresh.env" COMPOSE_PROJECT_NAME)" = content-pool-staging
+  test "$(ch_env_get "$fixture_dir/fresh.env" COMPOSE_PROJECT_NAME)" = content-hub-staging
 
   mkdir -p "$fixture_dir/backup-check"
   printf 'backup fixture\n' >"$fixture_dir/backup-check/probe.txt"
-  cp_write_sha256s "$fixture_dir/backup-check" probe.txt
-  cp_verify_sha256s "$fixture_dir/backup-check"
+  ch_write_sha256s "$fixture_dir/backup-check" probe.txt
+  ch_verify_sha256s "$fixture_dir/backup-check"
   printf 'corrupt\n' >>"$fixture_dir/backup-check/probe.txt"
-  if cp_verify_sha256s "$fixture_dir/backup-check" >/dev/null 2>&1; then
+  if ch_verify_sha256s "$fixture_dir/backup-check" >/dev/null 2>&1; then
     echo "backup checksum verification accepted corrupted data" >&2
     exit 1
   fi
@@ -94,7 +149,7 @@ runtime_sha="$(sha256sum "$fixture_dir/runtime.tar.gz" | awk '{print $1}')"
 (
   # shellcheck source=deploy-common.sh
   . "$ROOT_DIR/scripts/deploy-common.sh"
-  cp_prepare_release example/repository v0.2.0-rc.1 staging \
+  ch_prepare_release example/repository v0.2.0-rc.1 staging \
     "$fixture_dir/release-manifest.json" "$fixture_dir/prepared" >/dev/null
   test -f "$fixture_dir/prepared/runtime/probe.txt"
 )
@@ -102,7 +157,7 @@ runtime_sha="$(sha256sum "$fixture_dir/runtime.tar.gz" | awk '{print $1}')"
 printf 'corrupt\n' >>"$fixture_dir/runtime.tar.gz"
 if (
   . "$ROOT_DIR/scripts/deploy-common.sh"
-  cp_prepare_release example/repository v0.2.0-rc.1 staging \
+  ch_prepare_release example/repository v0.2.0-rc.1 staging \
     "$fixture_dir/release-manifest.json" "$fixture_dir/corrupt" >/dev/null 2>&1
 ); then
   echo "release preparation accepted a checksum mismatch" >&2
@@ -144,7 +199,7 @@ if [[ "${1:-}" == compose ]]; then
   if [[ "${2:-}" == version ]]; then exit 0; fi
   service="${*: -1}"
   case "$service" in
-    content-pool-api) printf 'legacy-api-id\n' ;;
+    content-hub-api) printf 'legacy-api-id\n' ;;
     nginx) printf 'legacy-nginx-id\n' ;;
   esac
   exit 0
@@ -179,9 +234,9 @@ chmod +x "$temp_dir/bin/docker"
     --mode server --environment production --adopt-current v0.1.3 >/dev/null
   # shellcheck source=deploy-common.sh
   . ./scripts/deploy-common.sh
-  test "$(cp_env_get .env COMPOSE_PROJECT_NAME)" = legacy-project
-  test "$(cp_env_get .env RELEASE_VERSION)" = v0.1.3
-  cp_verify_sha256s baselines/v0.1.3
+  test "$(ch_env_get .env COMPOSE_PROJECT_NAME)" = legacy-project
+  test "$(ch_env_get .env RELEASE_VERSION)" = v0.1.3
+  ch_verify_sha256s baselines/v0.1.3
   rollback_plan="$(PATH="$temp_dir/bin:$PATH" ./scripts/update.sh \
     --mode server --environment production --rollback-to v0.1.3 --dry-run)"
   grep -q 'Would use local legacy baseline' <<<"$rollback_plan"
@@ -195,6 +250,58 @@ assert data["images"]["backend"].endswith("@sha256:" + "0" * 63 + "1")
 assert data["images"]["frontend"].endswith("@sha256:" + "0" * 63 + "2")
 assert data["runtime"]["archive"] == "runtime.tgz"
 PY
+)
+
+cat > "$temp_dir/bin/docker" <<'SH'
+#!/usr/bin/env bash
+set -eu
+if [[ "$1" == compose ]]; then
+  case "$*" in
+    *'config --services'*) printf 'content-pool-api\ncontent-pool-db\nnginx\n' ;;
+    *'ps -q content-pool-db'*) [[ "${TRANSITION_MISSING_DB:-false}" == true ]] || printf 'legacy-db-id\n' ;;
+    *'stop content-pool-api content-pool-db'*) printf 'stopped\n' >"$TRANSITION_STOP_LOG" ;;
+    *) exit 1 ;;
+  esac
+elif [[ "$1" == inspect ]]; then
+  case "$*" in
+    *com.docker.compose.service*) printf 'content-pool-db\n' ;;
+    *com.docker.compose.project*) printf 'legacy-content-pool\n' ;;
+    *Mounts*) printf 'legacy-content-pool_content-pool-db-data\n' ;;
+    *) exit 1 ;;
+  esac
+else
+  exit 1
+fi
+SH
+chmod +x "$temp_dir/bin/docker"
+(
+  . "$ROOT_DIR/scripts/deploy-common.sh"
+  export PATH="$temp_dir/bin:$PATH"
+  export TRANSITION_STOP_LOG="$temp_dir/stopped-services"
+  CONTENT_HUB_COMPOSE_ARGS=(-f docker-compose.server.yml)
+  transition_env="$temp_dir/transition.env"
+  printf 'CONTENT_POOL_HOST=iqb-contentpool.de\nPOSTGRES_DB=content_pool\nPOSTGRES_USER=content_pool\nOIDC_CLIENT_ID=contentpool\n' >"$transition_env"
+  ch_prepare_identifier_transition "$temp_dir/runtime-source" "$transition_env" >/dev/null
+  test "$(ch_env_get "$transition_env" CONTENT_HUB_HOST)" = iqb-contentpool.de
+  test "$(ch_env_get "$transition_env" CONTENT_HUB_DB_VOLUME)" = legacy-content-pool_content-pool-db-data
+  test "$(ch_env_get "$transition_env" COMPOSE_PROJECT_NAME)" = legacy-content-pool
+  test "$(ch_env_get "$transition_env" POSTGRES_DB)" = content_pool
+  test "$(ch_env_get "$transition_env" OIDC_CLIENT_ID)" = contentpool
+  test -f "$TRANSITION_STOP_LOG"
+  # A mismatched volume must stop the transition before touching services.
+  rm "$TRANSITION_STOP_LOG"
+  ch_env_set "$transition_env" CONTENT_HUB_DB_VOLUME different-volume
+  if (ch_prepare_identifier_transition "$temp_dir/runtime-source" "$transition_env") >/dev/null 2>&1; then
+    echo 'database volume mismatch was accepted' >&2
+    exit 1
+  fi
+  test ! -f "$TRANSITION_STOP_LOG"
+  # A stopped/unavailable old database must never select an empty new volume.
+  export TRANSITION_MISSING_DB=true
+  if (ch_prepare_identifier_transition "$temp_dir/runtime-source" "$transition_env") >/dev/null 2>&1; then
+    echo 'unavailable legacy database was accepted' >&2
+    exit 1
+  fi
 )
 
 echo "Deployment script checks passed"

@@ -89,13 +89,13 @@ jobs:
       postgres:
         image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
         env:
-          POSTGRES_DB: contentpool_e2e
-          POSTGRES_USER: contentpool
-          POSTGRES_PASSWORD: contentpool_dev
+          POSTGRES_DB: contenthub_e2e
+          POSTGRES_USER: contenthub
+          POSTGRES_PASSWORD: contenthub_dev
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U contentpool -d contentpool_e2e"
+          --health-cmd "pg_isready -U contenthub -d contenthub_e2e"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -103,9 +103,9 @@ jobs:
       NODE_ENV: test
       DB_HOST: localhost
       DB_PORT: 5432
-      DB_USERNAME: contentpool
-      DB_PASSWORD: contentpool_dev
-      DB_DATABASE: contentpool_e2e
+      DB_USERNAME: contenthub
+      DB_PASSWORD: contenthub_dev
+      DB_DATABASE: contenthub_e2e
       DB_SYNCHRONIZE: true
       DB_RUN_MIGRATIONS: false
       JWT_SECRET: ci-test-secret-at-least-32-characters
@@ -130,13 +130,13 @@ jobs:
       postgres:
         image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
         env:
-          POSTGRES_DB: contentpool_migrations
-          POSTGRES_USER: contentpool
-          POSTGRES_PASSWORD: contentpool_dev
+          POSTGRES_DB: contenthub_migrations
+          POSTGRES_USER: contenthub
+          POSTGRES_PASSWORD: contenthub_dev
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U contentpool -d contentpool_migrations"
+          --health-cmd "pg_isready -U contenthub -d contenthub_migrations"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -144,9 +144,9 @@ jobs:
       NODE_ENV: test
       DB_HOST: localhost
       DB_PORT: 5432
-      DB_USERNAME: contentpool
-      DB_PASSWORD: contentpool_dev
-      DB_DATABASE: contentpool_migrations
+      DB_USERNAME: contenthub
+      DB_PASSWORD: contenthub_dev
+      DB_DATABASE: contenthub_migrations
       DB_SYNCHRONIZE: false
       DB_RUN_MIGRATIONS: false
       JWT_SECRET: ci-test-secret-at-least-32-characters
@@ -173,14 +173,14 @@ jobs:
             echo "No previous stable release tag; compatibility test skipped"
             exit 0
           fi
-          upgrade_dir="${RUNNER_TEMP}/content-pool-previous-release"
-          docker exec "$POSTGRES_SERVICE_ID" createdb -U contentpool contentpool_upgrade
+          upgrade_dir="${RUNNER_TEMP}/content-hub-previous-release"
+          docker exec "$POSTGRES_SERVICE_ID" createdb -U contenthub contenthub_upgrade
           git worktree add --detach "$upgrade_dir" "$previous_tag"
           npm --prefix "$upgrade_dir/backend" ci
-          DB_DATABASE=contentpool_upgrade npm --prefix "$upgrade_dir/backend" run migration:run
-          DB_DATABASE=contentpool_upgrade npm --prefix backend run migration:run
+          DB_DATABASE=contenthub_upgrade npm --prefix "$upgrade_dir/backend" run migration:run
+          DB_DATABASE=contenthub_upgrade npm --prefix backend run migration:run
           docker exec -i "$POSTGRES_SERVICE_ID" psql -v ON_ERROR_STOP=1 \
-            -U contentpool -d contentpool_upgrade <<'SQL'
+            -U contenthub -d contenthub_upgrade <<'SQL'
           insert into acp (id, package_id, name)
           values ('11111111-1111-4111-8111-111111111111', 'compatibility-fixture', 'Compatibility fixture');
           insert into item_response_states (acp_id, item_id, unit_id, response_data)
@@ -215,7 +215,7 @@ jobs:
           npm --prefix "$upgrade_dir/backend" run build
           (
             cd "$upgrade_dir/backend"
-            NODE_ENV=production PORT=3001 DB_DATABASE=contentpool_upgrade DB_RUN_MIGRATIONS=false \
+            NODE_ENV=production PORT=3001 DB_DATABASE=contenthub_upgrade DB_RUN_MIGRATIONS=false \
               npm run start:prod >"${RUNNER_TEMP}/previous-backend.log" 2>&1 &
             echo $! >"${RUNNER_TEMP}/previous-backend.pid"
           )
@@ -272,13 +272,13 @@ jobs:
       postgres:
         image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
         env:
-          POSTGRES_DB: contentpool_e2e
-          POSTGRES_USER: contentpool
-          POSTGRES_PASSWORD: contentpool_dev
+          POSTGRES_DB: contenthub_e2e
+          POSTGRES_USER: contenthub
+          POSTGRES_PASSWORD: contenthub_dev
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U contentpool -d contentpool_e2e"
+          --health-cmd "pg_isready -U contenthub -d contenthub_e2e"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -286,9 +286,9 @@ jobs:
       NODE_ENV: test
       DB_HOST: localhost
       DB_PORT: 5432
-      DB_USERNAME: contentpool
-      DB_PASSWORD: contentpool_dev
-      DB_DATABASE: contentpool_e2e
+      DB_USERNAME: contenthub
+      DB_PASSWORD: contenthub_dev
+      DB_DATABASE: contenthub_e2e
       DB_SYNCHRONIZE: true
       DB_RUN_MIGRATIONS: false
       JWT_SECRET: ci-test-secret-at-least-32-characters

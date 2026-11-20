@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectorRef,
   Component,
   OnInit,
@@ -7,6 +8,7 @@ import {
   ElementRef,
   Inject,
   Input,
+  Injector,
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
@@ -17,7 +19,13 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { CodingAsText, CodingSchemeTextFactory } from '@iqb/responses';
 import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
-import { FeatureConfig, FilePreviewVomdData, UnitViewData } from '../../core/models/api.models';
+import {
+  FeatureConfig,
+  FilePreviewVomdData,
+  ReviewNavigationItem,
+  UnitCommentAvailability,
+  UnitViewData,
+} from '../../core/models/api.models';
 import {
   GEOGEBRA_PLAYER_RESOURCE_BASE,
   rewriteGeoGebraAssetUrls,
@@ -29,7 +37,9 @@ import { ItemCommentThreadComponent } from '../comment-thread/item-comment-threa
 import { CommentThreadDrafts } from '../comment-thread/comment-thread-drafts';
 import { AuthService } from '../../core/services/auth.service';
 import { PendingPersonalSessionStorageService } from '../../core/services/pending-personal-session-storage.service';
-import { VoudService } from '../../core/services/voud.service';
+import { usesLegacyAspectDropListIds } from '../../core/services/voud-drop-lists';
+import { PlayerTargetLocation, VoudService } from '../../core/services/voud.service';
+import { ReviewNavigationResolver } from './review-navigation';
 import {
   CodingVariableLike,
   mergePlayerSolutionIntoDataParts,
@@ -44,6 +54,12 @@ type ReviewCodingAsText = Omit<CodingAsText, 'codes'> & {
   })[];
 };
 
+interface ReviewPageCoding {
+  locations: PlayerTargetLocation[];
+  directLocation?: PlayerTargetLocation;
+  coding?: ReviewCodingAsText;
+}
+
 type UnitPagingMode =
   | 'buttons'
   | 'separate'
@@ -52,7 +68,13 @@ type UnitPagingMode =
   | 'view-all'
   | 'print-ids';
 
-type ReviewCommentScope = 'unit' | 'item' | 'booklet';
+type ReviewCommentScope = 'unit' | 'item' | 'booklet' | 'coding';
+
+function isUnitDefinition(dependency: { type?: string }): boolean {
+  return ['unit_definition', 'unitdefinition', 'definition'].includes(
+    String(dependency?.type || '').toLowerCase(),
+  );
+}
 
 @Component({
   selector: 'app-unit-view',
@@ -145,7 +167,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         <app-item-comment-thread
           [drafts]="commentDrafts"
           [sessionToken]="commentSessionToken"
-          [acpId]="acpId"
+          [apId]="apId"
           [targetType]="'UNIT'"
           [unitId]="unitId"
           [unitName]="unit.name"
@@ -240,6 +262,44 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
       </div>
 
       <ng-template #panelContent>
+        @if (reviewMode && showCodingScheme) {
+          <section class="review-coding-panel" aria-label="Kodierung">
+            <button
+              class="btn btn-outline btn-sm btn-state"
+              type="button"
+              (click)="toggleReviewCoding()"
+              [attr.aria-expanded]="reviewCodingVisible"
+              aria-controls="review-coding-content"
+            >
+              {{ reviewCodingVisible ? 'Kodierung ausblenden' : 'Kodierung anzeigen' }}
+            </button>
+            @if (reviewPageItems.length > 1) {
+              <label class="comment-item-select">
+                Item auf dieser Seite
+                <select aria-label="Item auf dieser Seite" [(ngModel)]="selectedReviewItemId">
+                  @if (!selectedReviewItemId) {
+                    <option value="" disabled>Item auswählen</option>
+                  }
+                  @for (item of reviewPageItems; track item.id) {
+                    <option [value]="item.id">{{ item.label }}</option>
+                  }
+                </select>
+              </label>
+            }
+            @if (reviewCodingVisible) {
+              <div
+                #reviewCodingContent
+                id="review-coding-content"
+                class="review-coding-body"
+                role="region"
+                aria-label="Kodierinformationen"
+                tabindex="0"
+              >
+                <ng-container [ngTemplateOutlet]="codingContent"></ng-container>
+              </div>
+            }
+          </section>
+        }
         <div class="panel-tabs" role="group" aria-label="Zusatzdaten">
           @if (reviewMode) {
             <button
@@ -250,6 +310,17 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
               (click)="activeTab = 'comments'"
             >
               Kommentare
+            </button>
+          }
+          @if (reviewTranscripts.length) {
+            <button
+              class="tab"
+              type="button"
+              [class.active]="activeTab === 'transcripts'"
+              [attr.aria-pressed]="activeTab === 'transcripts'"
+              (click)="activeTab = 'transcripts'"
+            >
+              Hörtranskripte
             </button>
           }
           @if (showMetadata) {
@@ -263,7 +334,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
               Metadaten
             </button>
           }
-          @if (showCodingScheme) {
+          @if (showCodingScheme && !reviewMode) {
             <button
               class="tab"
               type="button"
@@ -287,7 +358,14 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
           }
         </div>
 
-        <div class="panel-content">
+        <div
+          #reviewPanelScrollContent
+          class="panel-content"
+          (focusin)="rememberReviewCommentEditor($event)"
+        >
+          @if (reviewTranscriptError) {
+            <p class="help-text" role="status">{{ reviewTranscriptError }}</p>
+          }
           @if (activeTab === 'comments') {
             @if (commentScopeOptions.length) {
               @if (commentScopeOptions.length > 1) {
@@ -300,36 +378,49 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                   </select>
                 </label>
               }
-              @if (commentScope === 'item' && showItemCommentBtn) {
+              @if (commentScope === 'item' || commentScope === 'coding') {
                 @if (commentItemsLoading) {
                   <p class="help-text" role="status">Items werden geladen …</p>
-                } @else if (commentItemsError) {
-                  <p class="alert alert-error" role="alert">{{ commentItemsError }}</p>
+                } @else if (
+                  commentItemsError || (commentScope === 'coding' && !hasCodingCommentItems)
+                ) {
+                  @if (commentItemsError) {
+                    <p class="alert alert-error" role="alert">{{ commentItemsError }}</p>
+                  } @else {
+                    <p class="help-text" role="status">
+                      Für diese Aufgabe ist keine kommentierbare Kodierung verfügbar.
+                    </p>
+                  }
                   <button
                     type="button"
                     class="btn btn-outline btn-sm comment-items-retry"
                     (click)="loadCommentItems()"
                   >
-                    Items erneut laden
+                    {{ commentItemsError ? 'Items erneut laden' : 'Kodierkommentare erneut laden' }}
                   </button>
                 } @else if (commentItems.length) {
-                  <label class="comment-item-select">
-                    Item
-                    <select aria-label="Item" [(ngModel)]="selectedCommentItemId">
-                      @for (item of commentItems; track item.id) {
-                        <option [value]="item.id">{{ item.label }}</option>
-                      }
-                    </select>
-                  </label>
+                  @if (showCommentItemPicker) {
+                    <label class="comment-item-select">
+                      Item
+                      <select aria-label="Item" [(ngModel)]="selectedCommentItemId">
+                        @if (!selectedCommentItemId) {
+                          <option value="" disabled>Item zum Kommentieren auswählen</option>
+                        }
+                        @for (item of commentItems; track item.id) {
+                          <option [value]="item.id">{{ item.label }}</option>
+                        }
+                      </select>
+                    </label>
+                  }
                   <app-item-comment-thread
                     [drafts]="commentDrafts"
                     [sessionToken]="commentSessionToken"
-                    [acpId]="acpId"
-                    [targetType]="'ITEM'"
+                    [apId]="apId"
+                    [targetType]="commentScope === 'coding' ? 'CODING' : 'ITEM'"
                     [unitId]="unitId"
                     [unitName]="unit.name"
                     [itemId]="selectedCommentItemId"
-                    [enabled]="showItemCommentBtn"
+                    [enabled]="true"
                     [initiallyOpen]="true"
                     [hideToggle]="true"
                   />
@@ -342,7 +433,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                 <app-item-comment-thread
                   [drafts]="commentDrafts"
                   [sessionToken]="commentSessionToken"
-                  [acpId]="acpId"
+                  [apId]="apId"
                   [targetType]="'BOOKLET'"
                   [bookletId]="bookletId"
                   [bookletName]="bookletName"
@@ -354,7 +445,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                 <app-item-comment-thread
                   [drafts]="commentDrafts"
                   [sessionToken]="commentSessionToken"
-                  [acpId]="acpId"
+                  [apId]="apId"
                   [targetType]="'UNIT'"
                   [unitId]="unitId"
                   [unitName]="unit.name"
@@ -367,14 +458,23 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
               <div class="comment-unavailable" role="status">
                 <strong>Kommentare sind für dieses Konto nicht verfügbar.</strong>
                 <p>
-                  Die Kommentarfunktion ist deaktiviert oder es fehlt die ACP-Berechtigung „Review
+                  Die Kommentarfunktion ist deaktiviert oder es fehlt die AP-Berechtigung „Review
                   teilnehmen“.
                 </p>
               </div>
             }
           }
 
-          @if (activeTab === 'metadata') {
+          @if (activeTab === 'transcripts' && reviewTranscripts.length) {
+            <dl class="meta-dl transcript-dl">
+              @for (entry of reviewTranscripts; track $index) {
+                <dt>{{ entry.label || entry.id }}</dt>
+                <dd>{{ entry.value }}</dd>
+              }
+            </dl>
+          }
+
+          @if (activeTab === 'metadata' && showMetadata) {
             @if (metadataLoading) {
               <p class="help-text">Aufgabenmetadaten werden geladen...</p>
             } @else if (visibleUnitMetadata.length) {
@@ -391,125 +491,8 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
             }
           }
 
-          @if (activeTab === 'coding') {
-            <div class="coding-content">
-              @if (reviewMode && !codingSchemeLoading) {
-                <div class="solution-info" role="status">
-                  <strong>{{
-                    solutionVisible ? 'Musterlösung eingeblendet' : 'Musterlösung'
-                  }}</strong>
-                  <p>{{ reviewSolution.prefill.message }}</p>
-                  @if (printMode !== 'off') {
-                    <p>Zum Anzeigen der Musterlösung eine interaktive Seitendarstellung wählen.</p>
-                  }
-                  @if (solutionRequestError) {
-                    <p role="alert">{{ solutionRequestError }}</p>
-                  }
-                  @if (reviewSolution.unavailableVariables.length) {
-                    <p>
-                      Ohne eindeutige Player-Lösung:
-                      {{ reviewSolution.unavailableVariables.join(', ') }}
-                    </p>
-                  }
-                  @if (solutionVisible) {
-                    <p>Beim Ausblenden werden die eigenen Eingaben wiederhergestellt.</p>
-                  }
-                </div>
-              }
-              @if (codingSchemeLoading) {
-                <p class="help-text">Kodierung wird geladen...</p>
-              } @else if (codingSchemeAsText?.length) {
-                <label class="coding-filter">
-                  <span>Kodiervariablen filtern</span>
-                  <input
-                    type="search"
-                    aria-label="Kodiervariablen filtern"
-                    placeholder="ID, Name oder Code"
-                    [(ngModel)]="codingFilterText"
-                  />
-                </label>
-                @if (!reviewMode && hiddenCodingVariableCount > 0) {
-                  <label class="coding-visibility-toggle">
-                    <input type="checkbox" [(ngModel)]="showAllCodingVariables" />
-                    <span>
-                      Alle Variablen anzeigen
-                      <small>({{ hiddenCodingVariableCount }} weitere)</small>
-                    </span>
-                  </label>
-                }
-                @if (visibleCodingSchemeAsText.length) {
-                  @for (coding of visibleCodingSchemeAsText; track coding.id) {
-                    <section class="coding-variable">
-                      <h4>
-                        {{ reviewMode ? coding.id : coding.label || coding.id }}
-                        @if (reviewMode && coding.label && coding.label !== coding.id) {
-                          <span> – {{ coding.label }}</span>
-                        }
-                      </h4>
-                      @if (reviewMode && coding.source) {
-                        <p class="help-text">{{ coding.source }}</p>
-                      }
-                      @if (reviewMode && coding.processing) {
-                        <p class="help-text">{{ coding.processing }}</p>
-                      }
-                      @if (coding.manualInstructionText) {
-                        <div class="coding-instruction">
-                          <strong>Variablenanweisung</strong>
-                          <div [innerHTML]="coding.manualInstructionText"></div>
-                        </div>
-                      }
-                      <div class="coding-codes">
-                        @for (code of coding.codes; track code.id) {
-                          <div class="coding-code">
-                            <strong>{{ reviewMode ? 'Code ' : '' }}{{ code.id }}</strong>
-                            <span class="coding-score"
-                              >({{ code.score
-                              }}{{
-                                reviewMode ? (code.score === 1 ? ' Punkt' : ' Punkte') : ''
-                              }})</span
-                            >
-                            <span>{{ code.label }}</span>
-                          </div>
-                          @if (reviewMode && code.description && code.description !== code.label) {
-                            <p>{{ code.description }}</p>
-                          }
-                          @if (code.manualInstructionText) {
-                            <div class="coding-instruction code-instruction">
-                              <strong>Kodieranweisung</strong>
-                              <div [innerHTML]="code.manualInstructionText"></div>
-                            </div>
-                          }
-                          @if (reviewMode && code.ruleSetDescriptions.length) {
-                            <div class="coding-instruction code-instruction">
-                              <strong>
-                                Kodierregeln:
-                                {{
-                                  code.ruleSetOperatorAnd
-                                    ? 'Alle folgenden Bedingungen müssen'
-                                    : 'Mindestens eine der folgenden Bedingungen muss'
-                                }}
-                                zutreffen
-                              </strong>
-                              <ul>
-                                @for (rule of code.ruleSetDescriptions; track $index) {
-                                  <li>{{ rule }}</li>
-                                }
-                              </ul>
-                            </div>
-                          }
-                        }
-                      </div>
-                    </section>
-                  }
-                } @else {
-                  <p class="help-text">Keine passende Kodiervariable gefunden.</p>
-                }
-              } @else if (codingSchemeError) {
-                <p class="help-text" role="alert">{{ codingSchemeError }}</p>
-              } @else {
-                <p class="help-text">Keine Kodierung verfügbar.</p>
-              }
-            </div>
+          @if (activeTab === 'coding' && !reviewMode) {
+            <ng-container [ngTemplateOutlet]="codingContent"></ng-container>
           }
 
           @if (activeTab === 'richtext') {
@@ -520,6 +503,127 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
                 <p class="help-text">Keine Zusatztexte verfügbar.</p>
               }
             </div>
+          }
+        </div>
+      </ng-template>
+
+      <ng-template #codingContent>
+        <div class="coding-content">
+          @if (reviewMode && !codingSchemeLoading) {
+            <div class="solution-info" role="status">
+              <strong>{{ solutionVisible ? 'Musterlösung eingeblendet' : 'Musterlösung' }}</strong>
+              <p>{{ reviewSolution.prefill.message }}</p>
+              @if (printMode !== 'off') {
+                <p>Zum Anzeigen der Musterlösung eine interaktive Seitendarstellung wählen.</p>
+              }
+              @if (solutionRequestError) {
+                <p role="alert">{{ solutionRequestError }}</p>
+              }
+              @if (reviewSolution.unavailableVariables.length) {
+                <p>
+                  Ohne eindeutige Player-Lösung:
+                  {{ reviewSolution.unavailableVariables.join(', ') }}
+                </p>
+              }
+              @if (solutionVisible) {
+                <p>Beim Ausblenden werden die eigenen Eingaben wiederhergestellt.</p>
+              }
+            </div>
+          }
+          @if (codingSchemeLoading) {
+            <p class="help-text">Kodierung wird geladen...</p>
+          } @else if (codingSchemeAsText?.length) {
+            <label class="coding-filter">
+              <span>Kodiervariablen filtern</span>
+              <input
+                type="search"
+                aria-label="Kodiervariablen filtern"
+                placeholder="ID, Name oder Code"
+                [(ngModel)]="codingFilterText"
+              />
+            </label>
+            @if (!reviewMode && hiddenCodingVariableCount > 0) {
+              <label class="coding-visibility-toggle">
+                <input type="checkbox" [(ngModel)]="showAllCodingVariables" />
+                <span>
+                  Alle Variablen anzeigen
+                  <small>({{ hiddenCodingVariableCount }} weitere)</small>
+                </span>
+              </label>
+            }
+            @if (visibleCodingSchemeAsText.length) {
+              @for (coding of visibleCodingSchemeAsText; track coding.id) {
+                <section
+                  class="coding-variable"
+                  [class.current-coding]="reviewMode && coding.id === activeReviewCodingId"
+                  [attr.data-coding-id]="coding.id"
+                >
+                  <h4>
+                    {{ reviewMode ? coding.id : coding.label || coding.id }}
+                    @if (reviewMode && coding.label && coding.label !== coding.id) {
+                      <span> – {{ coding.label }}</span>
+                    }
+                  </h4>
+                  @if (reviewMode && coding.source) {
+                    <p class="help-text">{{ coding.source }}</p>
+                  }
+                  @if (reviewMode && coding.processing) {
+                    <p class="help-text">{{ coding.processing }}</p>
+                  }
+                  @if (coding.manualInstructionText) {
+                    <div class="coding-instruction">
+                      <strong>Variablenanweisung</strong>
+                      <div [innerHTML]="coding.manualInstructionText"></div>
+                    </div>
+                  }
+                  <div class="coding-codes">
+                    @for (code of coding.codes; track code.id) {
+                      <div class="coding-code">
+                        <strong>{{ reviewMode ? 'Code ' : '' }}{{ code.id }}</strong>
+                        <span class="coding-score"
+                          >({{ code.score
+                          }}{{ reviewMode ? (code.score === 1 ? ' Punkt' : ' Punkte') : '' }})</span
+                        >
+                        <span>{{ code.label }}</span>
+                      </div>
+                      @if (reviewMode && code.description && code.description !== code.label) {
+                        <p>{{ code.description }}</p>
+                      }
+                      @if (code.manualInstructionText) {
+                        <div class="coding-instruction code-instruction">
+                          <strong>Kodieranweisung</strong>
+                          <div [innerHTML]="code.manualInstructionText"></div>
+                        </div>
+                      }
+                      @if (reviewMode && code.ruleSetDescriptions.length) {
+                        <div class="coding-instruction code-instruction">
+                          <strong>
+                            Kodierregeln:
+                            {{
+                              code.ruleSetOperatorAnd
+                                ? 'Alle folgenden Bedingungen müssen'
+                                : 'Mindestens eine der folgenden Bedingungen muss'
+                            }}
+                            zutreffen
+                          </strong>
+                          <ul>
+                            @for (rule of code.ruleSetDescriptions; track $index) {
+                              <li>{{ rule }}</li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                    }
+                  </div>
+                </section>
+              }
+            } @else {
+              <p class="help-text">Keine passende Kodiervariable gefunden.</p>
+            }
+          } @else if (codingSchemeError) {
+            <p class="help-text" role="alert">{{ codingSchemeError }}</p>
+          } @else {
+            <p class="help-text">Keine Kodierung verfügbar.</p>
           }
         </div>
       </ng-template>
@@ -645,9 +749,32 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
         max-height: var(--review-content-height);
         overflow: hidden;
       }
+      .review-coding-panel {
+        display: flex;
+        flex-direction: column;
+        flex: 0 1 auto;
+        min-height: 0;
+        max-height: 50%;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .review-coding-panel > button {
+        flex: none;
+        align-self: flex-start;
+      }
+      .review-coding-body {
+        min-height: 0;
+        margin-top: 12px;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      .review-coding-panel + .panel-tabs {
+        margin-top: 0;
+      }
       .review-mode .meta-panel.split .panel-content {
         flex: 1;
-        min-height: 0;
+        min-height: min(180px, 50%);
         overflow-y: auto;
       }
       .review-mode .player-container.print-mode {
@@ -732,6 +859,7 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
 
       .panel-tabs {
         display: flex;
+        flex-wrap: wrap;
         flex: none;
         gap: 0;
         border-bottom: 1px solid var(--color-border);
@@ -772,6 +900,16 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
       .meta-dl dd {
         margin: 0;
         overflow-wrap: anywhere;
+      }
+      .transcript-dl {
+        display: block;
+      }
+      .transcript-dl dt {
+        margin-bottom: 6px;
+      }
+      .transcript-dl dd {
+        margin-bottom: 16px;
+        white-space: pre-wrap;
       }
 
       h4 {
@@ -817,6 +955,9 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
       }
       .coding-variable + .coding-variable {
         margin-top: 12px;
+      }
+      .coding-variable.current-coding {
+        border-color: var(--color-primary);
       }
       .coding-variable h4 {
         margin-top: 0;
@@ -897,7 +1038,14 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
           overflow: visible;
         }
         .review-mode .meta-panel.split .panel-content {
+          min-height: 0;
           max-height: none;
+        }
+        .review-coding-panel {
+          max-height: none;
+        }
+        .review-coding-body {
+          max-height: 45dvh;
         }
         .panel-resize-handle {
           display: none;
@@ -928,8 +1076,13 @@ type ReviewCommentScope = 'unit' | 'item' | 'booklet';
 })
 export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('playerFrame') playerFrame!: ElementRef<HTMLIFrameElement>;
+  @ViewChild('reviewPanelScrollContent')
+  private reviewPanelScrollContent?: ElementRef<HTMLElement>;
+  @ViewChild('reviewCodingContent')
+  private reviewCodingContent?: ElementRef<HTMLElement>;
+  private reviewCommentEditor: HTMLTextAreaElement | null = null;
 
-  @Input() acpId = '';
+  @Input() apId = '';
   @Input() unitId = '';
   @Input() partId = '';
   @Input() bookletId = '';
@@ -947,16 +1100,27 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   currentPage = 1;
   totalPages = 1;
   private playerPageIds: (string | number)[] = [];
+  private definitionHasSingleScrollPage = false;
+  // The player ID stays stable when validPages omits or reorders pages.
+  private currentPlayerPageId = '0';
   playerSessionId: string | null = null;
   private personalResponseSession = false;
 
   // Panel state
   panelVisible = false;
   panelMode: 'split' | 'overlay' = 'split';
-  activeTab: 'comments' | 'metadata' | 'coding' | 'richtext' = 'metadata';
+  activeTab: 'comments' | 'transcripts' | 'metadata' | 'coding' | 'richtext' = 'metadata';
   isNarrowLayout = false;
   reviewPanelCollapsed = false;
-  reviewPanelWidth = 420;
+  reviewCodingVisible = false;
+  private activeReviewCoding?: ReviewCodingAsText;
+  private reviewCodingTargets: ReviewPageCoding[] = [];
+  private reviewItemTargets = new Map<string, ReviewPageCoding>();
+
+  get activeReviewCodingId(): string {
+    return this.activeReviewCoding?.id || '';
+  }
+  reviewPanelWidth = 360;
 
   // Feature config
   showMetadata = false;
@@ -965,22 +1129,78 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   showMetadataToggle = false;
   showCommentBtn = false;
   showItemCommentBtn = false;
+  showCodingCommentBtn = false;
   showBookletCommentBtn = false;
   showDownloadBtn = false;
   showAudioVideoCodingVariables = true;
   hideReviewDeveloperNames = false;
   commentScope: ReviewCommentScope = 'unit';
-  commentItems: { id: string; label: string }[] = [];
+  private reviewItems: (ReviewNavigationItem & { label: string })[] = [];
+  reviewPageItems: typeof this.reviewItems = [];
   commentItemsLoading = false;
   commentItemsError = '';
-  private readonly selectedCommentItems = new Map<string, string>();
+  codingCommentsAvailable = false;
+  private additionalCommentItems: NonNullable<UnitCommentAvailability['additionalItems']> = [];
+  private historicalCommentItemId = '';
+  private reviewItemId = '';
+  private manualReviewItemSelection = false;
+
+  get commentItems(): typeof this.reviewItems {
+    if (!this.showItemCommentBtn && !this.showCodingCommentBtn) return [];
+    const active =
+      this.commentScope !== 'coding' || this.codingCommentsAvailable ? this.reviewItems : [];
+    const activeIds = new Set(active.map(({ id }) => id));
+    return [...active, ...this.additionalItemsForScope.filter(({ id }) => !activeIds.has(id))];
+  }
+
+  private get additionalItemsForScope() {
+    const type =
+      this.commentScope === 'coding' ? 'CODING' : this.commentScope === 'item' ? 'ITEM' : undefined;
+    return type
+      ? this.additionalCommentItems.filter(({ targetTypes }) => targetTypes.includes(type))
+      : [];
+  }
+
+  get hasCodingCommentItems(): boolean {
+    return this.codingCommentsAvailable || this.additionalItemsForScope.length > 0;
+  }
+
+  get showCommentItemPicker(): boolean {
+    return (
+      !(this.reviewMode && this.showCodingScheme && this.reviewPageItems.length > 1) ||
+      this.additionalItemsForScope.length > 0 ||
+      (this.commentScope === 'coding' && !this.codingCommentsAvailable)
+    );
+  }
 
   get selectedCommentItemId(): string {
-    return this.selectedCommentItems.get(`${this.acpId}\u0000${this.unitId}`) || '';
+    if (!this.showItemCommentBtn && !this.showCodingCommentBtn) return '';
+    if (this.additionalItemsForScope.some(({ id }) => id === this.historicalCommentItemId))
+      return this.historicalCommentItemId;
+    if (this.commentScope === 'coding' && !this.codingCommentsAvailable)
+      return this.additionalItemsForScope.some(({ id }) => id === this.reviewItemId)
+        ? this.reviewItemId
+        : '';
+    return this.reviewItemId;
   }
 
   set selectedCommentItemId(value: string) {
-    this.selectedCommentItems.set(`${this.acpId}\u0000${this.unitId}`, value);
+    if (this.additionalItemsForScope.some(({ id }) => id === value)) {
+      this.historicalCommentItemId = value;
+    } else {
+      this.selectedReviewItemId = value;
+    }
+  }
+
+  get selectedReviewItemId(): string {
+    return this.reviewItemId;
+  }
+
+  set selectedReviewItemId(value: string) {
+    this.historicalCommentItemId = '';
+    this.manualReviewItemSelection = !!value;
+    this.reviewItemId = value;
+    this.setActiveReviewCoding(this.reviewItemTargets.get(value)?.coding);
   }
 
   get commentScopeOptions(): { value: ReviewCommentScope; label: string }[] {
@@ -988,6 +1208,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       { value: 'unit', label: 'Aufgabe', enabled: this.showCommentBtn },
       { value: 'item', label: 'Item', enabled: this.showItemCommentBtn },
       { value: 'booklet', label: 'Testheft', enabled: this.showBookletCommentBtn },
+      { value: 'coding', label: 'Kodierung', enabled: this.showCodingCommentBtn },
     ];
     return scopes.filter((scope) => scope.enabled);
   }
@@ -998,6 +1219,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   codingFilterText = '';
   showAllCodingVariables = false;
   unitMetadata: FilePreviewVomdData['unitProfiles'] = [];
+  reviewTranscripts: FilePreviewVomdData['unitProfiles'] = [];
+  reviewTranscriptError = '';
   metadataLoading = false;
   metadataError = '';
   codingSchemeAsText: ReviewCodingAsText[] | null = null;
@@ -1013,10 +1236,34 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private retiringResponseSource: { window: Window; sessionId: string } | null = null;
   private responseChangedAt: number | null = null;
   private playerInputDocument: Document | null = null;
+  private playerDragStart: { x: number; y: number; pointerId: number } | null = null;
   private solutionRequestTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly playerInputHandler = () => {
     if (this.reviewMode && !this.solutionVisible && this.printMode === 'off')
       this.responseChangedAt = Date.now();
+  };
+  private readonly playerDragStartHandler = (event: PointerEvent) => {
+    if (
+      !(event.target as Element | null)?.closest?.(
+        '[data-aspect-draggable="true"], .cdk-drag, [draggable="true"]',
+      )
+    )
+      return;
+    this.playerDragStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+  };
+  private readonly playerDragEndHandler = (event: PointerEvent) => {
+    const start = this.playerDragStart;
+    this.playerDragStart = null;
+    if (
+      start &&
+      start.pointerId === event.pointerId &&
+      Math.hypot(event.clientX - start.x, event.clientY - start.y) >= 5
+    ) {
+      this.playerInputHandler();
+    }
+  };
+  private readonly playerDragCancelHandler = () => {
+    this.playerDragStart = null;
   };
   private readonly playerControlHandler = (event: Event) => {
     const key = (event as KeyboardEvent).key;
@@ -1044,6 +1291,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private playerRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   definitionContent: string | null = null;
+  private useLegacyDropListIds = false;
   private playerFrameReady = false;
   private unitLoadToken = 0;
   private initialized = false;
@@ -1051,6 +1299,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   private featureConfigRequest: Subscription | null = null;
   private unitRequest: Subscription | null = null;
   private metadataRequest: Subscription | null = null;
+  private transcriptsRequest: Subscription | null = null;
   private commentItemsRequest: Subscription | null = null;
   private commentItemsLoadToken = 0;
   private unitAbortController: AbortController | null = null;
@@ -1086,6 +1335,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     @Inject(AuthService) private auth: AuthService,
     @Inject(PendingPersonalSessionStorageService)
     private personalSession: PendingPersonalSessionStorageService,
+    @Inject(Injector) private injector: Injector,
   ) {}
 
   get printMode(): 'off' | 'on' | 'on-with-ids' {
@@ -1095,8 +1345,16 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   get visibleUnitMetadata(): FilePreviewVomdData['unitProfiles'] {
-    if (!this.reviewMode || !this.hideReviewDeveloperNames) return this.unitMetadata;
+    if (!this.reviewMode) return this.unitMetadata;
     return this.unitMetadata.filter((entry) => {
+      if (
+        this.reviewTranscripts.some(
+          (text) =>
+            text.id === entry.id && text.label === entry.label && text.value === entry.value,
+        )
+      )
+        return false;
+      if (!this.hideReviewDeveloperNames) return true;
       const normalize = (value: string) =>
         value
           .toLowerCase()
@@ -1159,7 +1417,9 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private get availableCodingSchemeAsText(): ReviewCodingAsText[] {
-    const codings = this.codingSchemeAsText || [];
+    const raw = this.codingSchemeAsText || [];
+    const active = this.reviewMode ? this.activeReviewCoding : undefined;
+    const codings = active ? raw.map((coding) => (coding.id === active.id ? active : coding)) : raw;
     const hideAudioVideoVariables = this.reviewMode || !this.showAudioVideoCodingVariables;
     return hideAudioVideoVariables
       ? codings.filter((coding) => !this.isAudioVideoCodingVariable(coding))
@@ -1175,14 +1435,17 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       const identity = this.personalSession.resolveIdentityFromToken(this.auth.getToken());
       if (identity !== this.commentIdentity) {
         this.commentDrafts.clear();
-        this.selectedCommentItems.clear();
+        this.reviewItemId = '';
+        this.historicalCommentItemId = '';
+        this.manualReviewItemSelection = false;
         this.commentIdentity = identity;
         this.commentSessionToken += 1;
         this.loadCommentItems();
+        this.syncReviewPage();
         this.changeDetector.markForCheck();
       }
     });
-    this.acpId = this.acpId || this.route.snapshot.paramMap.get('acpId') || '';
+    this.apId = this.apId || this.route.snapshot.paramMap.get('apId') || '';
     this.unitId = this.unitId || this.route.snapshot.paramMap.get('unitId') || '';
     this.partId = this.partId || this.route.snapshot.paramMap.get('partId') || '';
 
@@ -1210,18 +1473,21 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       } else this.loadFeatureConfig();
     }
 
-    if (changes['acpId'] || changes['unitId'] || changes['partId']) this.loadUnit();
+    if (changes['apId'] || changes['unitId'] || changes['partId']) this.loadUnit();
+    else if (changes['reviewMode'] || changes['bookletId']) this.loadReviewTranscripts();
   }
 
   private loadFeatureConfig() {
     this.featureConfigRequest?.unsubscribe();
-    this.featureConfigRequest = this.api.getAcpStartPage(this.acpId).subscribe((data) => {
+    this.featureConfigRequest = this.api.getApStartPage(this.apId).subscribe((data) => {
       this.applyFeatureConfig(data?.featureConfig || {});
     });
   }
 
   private applyFeatureConfig(featureConfig: FeatureConfig) {
-    this.showMetadata = this.reviewMode || !!featureConfig.showMetadata;
+    this.showMetadata = this.reviewMode
+      ? featureConfig.hideReviewMetadata !== true
+      : !!featureConfig.showMetadata;
     this.showCodingScheme = this.reviewMode || !!featureConfig.showCodingScheme;
     this.showRichText = !this.reviewMode && !!featureConfig.showRichText;
     this.showMetadataToggle = this.showMetadata || this.showCodingScheme || this.showRichText;
@@ -1234,6 +1500,11 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       this.reviewMode &&
       featureConfig.enableCommenting &&
       commentTargets.includes('ITEM')
+    );
+    this.showCodingCommentBtn = !!(
+      this.reviewMode &&
+      featureConfig.enableCommenting &&
+      commentTargets.includes('CODING')
     );
     this.showBookletCommentBtn = !!(
       this.reviewMode &&
@@ -1254,46 +1525,35 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     else if (this.showRichText) this.activeTab = 'richtext';
     if (!this.showMetadataToggle) this.panelVisible = false;
     this.loadCommentItems();
+    this.rebuildReviewNavigation();
   }
 
   private resetCommentItems() {
     this.commentItemsLoadToken += 1;
     this.commentItemsRequest?.unsubscribe();
     this.commentItemsRequest = null;
-    this.commentItems = [];
     this.commentItemsLoading = false;
     this.commentItemsError = '';
+    this.codingCommentsAvailable = false;
+    this.additionalCommentItems = [];
   }
 
   loadCommentItems() {
     this.resetCommentItems();
-    if (!this.showItemCommentBtn || !this.unit || this.unit.id !== this.unitId) return;
+    if (
+      (!this.showItemCommentBtn && !this.showCodingCommentBtn) ||
+      !this.unit ||
+      this.unit.id !== this.unitId
+    )
+      return;
     const token = this.commentItemsLoadToken;
     const unitId = this.unitId;
-    const names = new Map(
-      (this.unit.items || []).map((item) => [
-        String(item.id || '').trim(),
-        typeof item.name === 'string' ? item.name.trim() : '',
-      ]),
-    );
     this.commentItemsLoading = true;
-    // Counts include every canonical target, even without comments, and do not
-    // require Item Explorer access. Raw unit metadata alone may omit file items.
-    this.commentItemsRequest = this.api.getItemCommentCounts(this.acpId).subscribe({
-      next: (snapshot) => {
+    this.commentItemsRequest = this.api.getUnitCommentAvailability(this.apId, unitId).subscribe({
+      next: ({ codingCommentsAvailable, additionalItems }) => {
         if (token !== this.commentItemsLoadToken) return;
-        const ids = new Set(
-          snapshot.counts.filter((item) => item.unitId === unitId).map((item) => item.itemId),
-        );
-        this.commentItems = [...ids]
-          .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
-          .map((id) => ({
-            id,
-            label: names.get(id) && names.get(id) !== id ? `${names.get(id)} (${id})` : id,
-          }));
-        if (!ids.has(this.selectedCommentItemId)) {
-          this.selectedCommentItemId = this.commentItems[0]?.id || '';
-        }
+        this.codingCommentsAvailable = codingCommentsAvailable;
+        this.additionalCommentItems = additionalItems ?? [];
         this.commentItemsLoading = false;
         this.changeDetector.markForCheck();
       },
@@ -1308,7 +1568,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   private loadUnit() {
     this.stopReviewPanelResize();
-    if (!this.acpId || !this.unitId) return;
+    this.reviewCommentEditor = null;
+    if (!this.apId || !this.unitId) return;
     const requestToken = ++this.unitLoadToken;
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
@@ -1318,9 +1579,20 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.stopAutoResize();
     this.unit = null;
     this.playerSrcDoc = null;
+    this.useLegacyDropListIds = false;
     this.playerFrameReady = false;
     this.playerSessionId = null;
     this.playerPageIds = [];
+    this.definitionHasSingleScrollPage = false;
+    this.currentPlayerPageId = '0';
+    this.reviewCodingTargets = [];
+    this.reviewItemTargets.clear();
+    this.reviewItems = [];
+    this.reviewPageItems = [];
+    this.reviewItemId = '';
+    this.historicalCommentItemId = '';
+    this.activeReviewCoding = undefined;
+    this.manualReviewItemSelection = false;
     this.personalResponseSession = false;
     this.currentPage = 1;
     this.totalPages = 1;
@@ -1342,16 +1614,32 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.clearPlayerRefresh();
     this.codingFilterText = '';
     this.showAllCodingVariables = false;
+    this.loadReviewTranscripts();
     const unitRequest = this.partId
-      ? this.api.getViewUnit(this.acpId, this.unitId, this.partId)
-      : this.api.getViewUnit(this.acpId, this.unitId);
+      ? this.api.getViewUnit(this.apId, this.unitId, this.partId)
+      : this.api.getViewUnit(this.apId, this.unitId);
     this.unitRequest = unitRequest.subscribe((u) => {
       if (requestToken !== this.unitLoadToken) return;
       this.unit = u;
+      const labels = new Map(
+        (u.items || []).map((item) => [
+          item.id,
+          typeof item.name === 'string' ? item.name.trim() : '',
+        ]),
+      );
+      // Older unit responses only supply AP-index items.
+      const items: ReviewNavigationItem[] = u.navigationItems ?? u.items ?? [];
+      this.reviewItems = items
+        .map((item) => {
+          const label = labels.get(item.id);
+          return { ...item, label: label && label !== item.id ? `${label} (${item.id})` : item.id };
+        })
+        .sort((left, right) => left.id.localeCompare(right.id, undefined, { numeric: true }));
+      this.syncReviewPage();
       this.loadCommentItems();
       this.breadcrumbs = [
-        { label: 'Assessment Content Pool', route: ['/'] },
-        { label: 'ACP', route: ['/view', this.acpId] },
+        { label: 'Content Hub', route: ['/'] },
+        { label: 'AP', route: ['/view', this.apId] },
         { label: u.name },
       ];
 
@@ -1376,13 +1664,13 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy() {
     this.authSubscription?.unsubscribe();
     this.commentDrafts.clear();
-    this.selectedCommentItems.clear();
     this.resetCommentItems();
     this.unitLoadToken += 1;
     this.retiringResponseSource = null;
     this.featureConfigRequest?.unsubscribe();
     this.unitRequest?.unsubscribe();
     this.metadataRequest?.unsubscribe();
+    this.transcriptsRequest?.unsubscribe();
     this.unitAbortController?.abort();
     this.clearPlayerRefresh();
     this.stopReviewPanelResize();
@@ -1429,8 +1717,10 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       this.printMode !== 'off'
     )
       return;
-    this.activeTab = 'coding';
+    this.reviewCodingVisible = true;
     this.reviewPanelCollapsed = false;
+    this.keepReviewCommentEditorVisible();
+    this.revealReviewCoding();
     this.changeDetector.markForCheck();
     if (!this.solutionVisible && this.reviewSolution.prefill.status !== 'available') return;
     this.solutionRequestError = '';
@@ -1481,12 +1771,25 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     doc.addEventListener('input', this.playerInputHandler, true);
     doc.addEventListener('click', this.playerControlHandler, true);
     doc.addEventListener('keydown', this.playerControlHandler, true);
+    doc.addEventListener('pointerdown', this.playerDragStartHandler, true);
+    doc.addEventListener('pointerup', this.playerDragEndHandler, true);
+    doc.addEventListener('pointercancel', this.playerDragCancelHandler, true);
+    doc.addEventListener('drop', this.playerInputHandler, true);
   }
 
   private stopObservingPlayerInputs() {
     this.playerInputDocument?.removeEventListener('input', this.playerInputHandler, true);
     this.playerInputDocument?.removeEventListener('click', this.playerControlHandler, true);
     this.playerInputDocument?.removeEventListener('keydown', this.playerControlHandler, true);
+    this.playerInputDocument?.removeEventListener('pointerdown', this.playerDragStartHandler, true);
+    this.playerInputDocument?.removeEventListener('pointerup', this.playerDragEndHandler, true);
+    this.playerInputDocument?.removeEventListener(
+      'pointercancel',
+      this.playerDragCancelHandler,
+      true,
+    );
+    this.playerInputDocument?.removeEventListener('drop', this.playerInputHandler, true);
+    this.playerDragStart = null;
     this.playerInputDocument = null;
   }
 
@@ -1509,6 +1812,12 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
     switch (msg.type) {
       case 'vopReadyNotification': {
+        const useLegacyDropListIds = usesLegacyAspectDropListIds(msg.metadata);
+        if (this.useLegacyDropListIds !== useLegacyDropListIds) {
+          this.useLegacyDropListIds = useLegacyDropListIds;
+          this.updateReviewSolution();
+          this.changeDetector.markForCheck();
+        }
         this.observePlayerInputs();
         this.playerFrameReady = true;
         this.startPlayerIfReady();
@@ -1587,11 +1896,32 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private updateCurrentPage(id: unknown) {
+    const previousId = this.currentPlayerPageId;
     const index = this.playerPageIds.findIndex((pageId) => String(pageId) === String(id));
-    if (index >= 0) this.currentPage = index + 1;
-    else if (!this.playerPageIds.length && typeof id === 'number' && Number.isInteger(id))
+    if (index >= 0) {
+      this.currentPage = index + 1;
+      this.currentPlayerPageId = String(id);
+    } else if (
+      !this.playerPageIds.length &&
+      typeof id === 'number' &&
+      Number.isInteger(id) &&
+      id >= 0
+    ) {
       this.currentPage = this.clampPage(id + 1);
-    else this.currentPage = this.clampPage(this.currentPage);
+      this.currentPlayerPageId = String(id);
+    } else {
+      const currentIndex = this.playerPageIds.findIndex(
+        (pageId) => String(pageId) === this.currentPlayerPageId,
+      );
+      this.currentPage = currentIndex >= 0 ? currentIndex + 1 : this.clampPage(this.currentPage);
+      const pageId = this.playerPageIds[this.currentPage - 1];
+      if (pageId !== undefined) this.currentPlayerPageId = String(pageId);
+    }
+    // Response-only reports and repeated page reports must preserve an explicit
+    // comment selection. Only a change of the actual player page follows the task.
+    if (this.currentPlayerPageId !== previousId) {
+      this.syncReviewPage(true);
+    }
   }
 
   private sendToPlayer(msg: any) {
@@ -1606,6 +1936,11 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     if (!Number.isFinite(target) || target < 1 || target > this.totalPages) return;
 
     this.currentPage = target;
+    const targetId = String(this.playerPageIds[target - 1] ?? target - 1);
+    if (targetId !== this.currentPlayerPageId) {
+      this.currentPlayerPageId = targetId;
+      this.syncReviewPage(true);
+    }
     this.sendToPlayer({
       type: 'vopPageNavigationCommand',
       sessionId: this.playerSessionId,
@@ -1621,6 +1956,186 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   toggleReviewPanel() {
     this.stopReviewPanelResize();
     this.reviewPanelCollapsed = !this.reviewPanelCollapsed;
+    if (!this.reviewPanelCollapsed) this.revealReviewCoding();
+  }
+
+  rememberReviewCommentEditor(event: FocusEvent) {
+    if (this.reviewMode && event.target instanceof HTMLTextAreaElement) {
+      this.reviewCommentEditor = event.target;
+    }
+  }
+
+  toggleReviewCoding() {
+    this.reviewCodingVisible = !this.reviewCodingVisible;
+    if (this.reviewCodingVisible) {
+      this.keepReviewCommentEditorVisible();
+      this.revealReviewCoding();
+    }
+  }
+
+  private rebuildReviewNavigation() {
+    this.reviewCodingTargets = [];
+    this.reviewItemTargets.clear();
+    const definition = this.definitionContent;
+    if (!this.reviewMode || !definition) return;
+    const codings = this.codingSchemeAsText || [];
+    const resolver = new ReviewNavigationResolver(
+      this.codingVariables,
+      codings.map((coding) => coding.id),
+      (identifier, kind) => this.voud.resolvePlayerTargetLocation(definition, identifier, kind),
+    );
+    const codingsById = new Map(
+      codings
+        .filter((coding) => !this.isAudioVideoCodingVariable(coding))
+        .map((coding) => [coding.id, coding]),
+    );
+    codings.forEach((coding, index) => {
+      if (!codingsById.has(coding.id) || !this.isRelevantCodingVariable(coding)) return;
+      const target = resolver.forVariable(index);
+      if (target) this.reviewCodingTargets.push({ locations: target.locations, coding });
+    });
+    for (const item of this.reviewItems) {
+      const target = resolver.forItem(item, [item.id, ...(item.fallbackIds || [])]);
+      if (!target) continue;
+      let coding = target.codingId ? codingsById.get(target.codingId) : undefined;
+      const source = target.sourceCodingId ? codingsById.get(target.sourceCodingId) : undefined;
+      if (coding && source) {
+        // Apply the Item Explorer's inheritance to this item only. Two items
+        // referring to the same aggregate can point to different source instructions.
+        coding = {
+          ...coding,
+          manualInstructionText: coding.manualInstructionText || source.manualInstructionText,
+          codes: coding.codes.length ? coding.codes : source.codes,
+        };
+      }
+      this.reviewItemTargets.set(item.id, {
+        locations: target.locations,
+        directLocation: target.directLocation,
+        coding: coding && this.isRelevantCodingVariable(coding) ? coding : undefined,
+      });
+    }
+    this.syncReviewPage();
+  }
+
+  private syncReviewPage(pageChanged = false) {
+    if (!this.reviewMode) return;
+    if (pageChanged) this.historicalCommentItemId = '';
+    if (!this.definitionContent) {
+      const definitionPending = this.unit?.dependencies?.some(isUnitDefinition);
+      // The earlier review also allowed item comments on tasks with no player definition.
+      if (!definitionPending && !this.manualReviewItemSelection)
+        this.reviewItemId = this.reviewItems[0]?.id ?? '';
+      return;
+    }
+
+    const onPage = (location: PlayerTargetLocation) =>
+      location.scrollPageIndex !== undefined &&
+      String(location.scrollPageIndex) === this.currentPlayerPageId;
+    const scrollItems = this.reviewItems.filter(({ id }) => {
+      const target = this.reviewItemTargets.get(id);
+      return target?.directLocation
+        ? onPage(target.directLocation)
+        : target?.locations.some(onPage);
+    });
+    const permanentItems = this.reviewItems.filter(({ id }) => {
+      const target = this.reviewItemTargets.get(id);
+      return (
+        target?.directLocation?.isAlwaysVisiblePage ??
+        (target?.locations.length &&
+          target.locations.every((location) => location.isAlwaysVisiblePage))
+      );
+    });
+    const items = scrollItems.length ? scrollItems : permanentItems;
+    this.reviewPageItems = items;
+
+    if (
+      pageChanged &&
+      !items.some(({ id }) => id === this.reviewItemId) &&
+      !permanentItems.some(({ id }) => id === this.reviewItemId)
+    ) {
+      this.manualReviewItemSelection = false;
+    }
+    if (this.manualReviewItemSelection) {
+      const selected = permanentItems.find(({ id }) => id === this.reviewItemId);
+      if (selected && items.length > 1 && !items.includes(selected))
+        this.reviewPageItems = [...items, selected];
+    } else {
+      const soleItem =
+        this.definitionHasSingleScrollPage && this.reviewItems.length === 1
+          ? this.reviewItems[0]
+          : undefined;
+      const legacyItem =
+        soleItem && !this.reviewItemTargets.get(soleItem.id)?.locations.length
+          ? soleItem
+          : undefined;
+      this.reviewItemId =
+        items.length === 1 ? items[0].id : items.length === 0 ? (legacyItem?.id ?? '') : '';
+    }
+
+    if (this.reviewItemId || items.length) {
+      this.setActiveReviewCoding(this.reviewItemTargets.get(this.reviewItemId)?.coding);
+      return;
+    }
+    const pageCoding = this.reviewCodingTargets.find((target) => target.locations.some(onPage));
+    this.setActiveReviewCoding(pageCoding?.coding);
+  }
+
+  private setActiveReviewCoding(coding?: ReviewCodingAsText) {
+    if (!this.reviewMode || this.activeReviewCoding === coding) return;
+    this.activeReviewCoding = coding;
+    if (coding && !this.visibleCodingSchemeAsText.some((visible) => visible.id === coding.id))
+      this.codingFilterText = '';
+    this.revealReviewCoding();
+  }
+
+  private revealReviewCoding() {
+    if (!this.reviewMode || !this.reviewCodingVisible || this.reviewPanelCollapsed) return;
+    const unitLoadToken = this.unitLoadToken;
+    afterNextRender(
+      {
+        write: () => {
+          if (unitLoadToken !== this.unitLoadToken) return;
+          const content = this.reviewCodingContent?.nativeElement;
+          const coding = Array.from(
+            content?.querySelectorAll<HTMLElement>('[data-coding-id]') || [],
+          ).find((element) => element.dataset['codingId'] === this.activeReviewCodingId);
+          if (content && coding) {
+            // Scroll only the coding pane, keeping the comment editor and viewport in place.
+            content.scrollTop +=
+              coding.getBoundingClientRect().top - content.getBoundingClientRect().top;
+          }
+        },
+      },
+      { injector: this.injector },
+    );
+  }
+
+  private keepReviewCommentEditorVisible() {
+    const unitLoadToken = this.unitLoadToken;
+    // Expanding coding reduces the comment scroll area. Wait for its final size
+    // before revealing the current editor, without moving focus or recreating it.
+    afterNextRender(
+      {
+        write: () => {
+          if (
+            unitLoadToken !== this.unitLoadToken ||
+            !this.reviewMode ||
+            !this.reviewCodingVisible ||
+            this.reviewPanelCollapsed ||
+            this.activeTab !== 'comments'
+          )
+            return;
+          const content = this.reviewPanelScrollContent?.nativeElement;
+          if (!content) return;
+          const editor =
+            this.reviewCommentEditor && content.contains(this.reviewCommentEditor)
+              ? this.reviewCommentEditor
+              : content.querySelector<HTMLTextAreaElement>('.new-comment-form textarea');
+          editor?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+        },
+      },
+      { injector: this.injector },
+    );
   }
 
   startReviewPanelResize(event: PointerEvent) {
@@ -1656,7 +2171,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   downloadUnit() {
-    const url = `/api/acp/${this.acpId}/files?unitId=${this.unitId}&format=zip`;
+    const url = `/api/ap/${this.apId}/files?unitId=${this.unitId}&format=zip`;
     window.open(this.api.appendAuthToken(url), '_blank');
   }
 
@@ -1686,10 +2201,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private loadDefinitionSource(dependencies: any[], token: number, signal?: AbortSignal) {
-    const definitionDep = dependencies.find((d: any) => {
-      const type = String(d?.type || '').toLowerCase();
-      return type === 'unit_definition' || type === 'unitdefinition' || type === 'definition';
-    });
+    const definitionDep = dependencies.find(isUnitDefinition);
 
     if (!definitionDep?.downloadUrl) {
       this.definitionContent = null;
@@ -1712,6 +2224,26 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       });
   }
 
+  private loadReviewTranscripts() {
+    this.transcriptsRequest?.unsubscribe();
+    this.reviewTranscripts = [];
+    this.reviewTranscriptError = '';
+    if (this.activeTab === 'transcripts') this.activeTab = 'comments';
+    if (!this.reviewMode || !this.bookletId || !this.apId || !this.unitId) return;
+    this.transcriptsRequest = this.api
+      .getReviewTranscripts(this.apId, this.bookletId, this.unitId)
+      .subscribe({
+        next: (transcripts) => {
+          this.reviewTranscripts = transcripts;
+          this.changeDetector.markForCheck();
+        },
+        error: () => {
+          this.reviewTranscriptError = 'Hörtranskripte konnten nicht geladen werden.';
+          this.changeDetector.markForCheck();
+        },
+      });
+  }
+
   private loadMetadataSource(dependencies: any[], token: number) {
     const metadataDep = dependencies.find(
       (dependency: any) => String(dependency?.type || '').toLowerCase() === 'metadata',
@@ -1719,7 +2251,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     if (!metadataDep?.fileId) return;
 
     this.metadataLoading = true;
-    this.metadataRequest = this.api.getFilePreview(this.acpId, metadataDep.fileId).subscribe({
+    this.metadataRequest = this.api.getFilePreview(this.apId, metadataDep.fileId).subscribe({
       next: (preview) => {
         if (token !== this.unitLoadToken) return;
         const structuredData = preview.structuredData;
@@ -1821,6 +2353,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       this.codingSchemeError = 'Kodierung konnte nicht gelesen werden.';
     } finally {
       this.codingSchemeLoading = false;
+      this.rebuildReviewNavigation();
       this.changeDetector.markForCheck();
     }
   }
@@ -1839,7 +2372,11 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
         if (!this.definitionContent) return undefined;
         for (const id of [variable.alias, variable.id]) {
           if (typeof id !== 'string' || !id.trim()) continue;
-          const target = this.voud.resolvePlayerResponseTarget(this.definitionContent, id);
+          const target = this.voud.resolvePlayerResponseTarget(
+            this.definitionContent,
+            id,
+            this.useLegacyDropListIds,
+          );
           // The supported ASPECT player does not reliably render scalar toggle-button
           // prefills. Keep these variables in the readable coding fallback.
           if (target && target.elementType.trim().toLowerCase() !== 'toggle-button') return target;
@@ -1864,12 +2401,16 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       unitState: {
         dataParts:
           this.solutionVisible && this.reviewSolution.prefill.status === 'available'
-            ? mergePlayerSolutionIntoDataParts({}, this.reviewSolution.prefill.responses)
+            ? mergePlayerSolutionIntoDataParts(
+                {},
+                this.reviewSolution.prefill.responses,
+                this.reviewSolution.prefill.dropLists,
+              )
             : { ...this.responseData },
       },
       playerConfig: {
         stateReportPolicy: 'none',
-        startPage: String(this.playerPageIds[this.currentPage - 1] ?? this.currentPage - 1),
+        startPage: this.currentPlayerPageId,
         pagingMode:
           this.pagingMode === 'view-all' || this.pagingMode === 'print-ids'
             ? 'concat-scroll'
@@ -1886,6 +2427,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   private initializePageNavigation() {
     this.currentPage = 1;
+    this.currentPlayerPageId = '0';
     this.playerPageIds = [];
     try {
       const pages = JSON.parse(this.definitionContent || '').pages;
@@ -1902,6 +2444,8 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       // Other players may use a different definition format and report their pages themselves.
     }
     this.totalPages = Math.max(1, this.playerPageIds.length);
+    this.definitionHasSingleScrollPage = this.playerPageIds.length === 1;
+    this.rebuildReviewNavigation();
   }
 
   private applyPrintModeLayout() {

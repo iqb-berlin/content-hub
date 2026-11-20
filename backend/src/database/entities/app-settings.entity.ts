@@ -41,7 +41,7 @@ export class AppSettings {
   accessibilityHtml?: string;
 
   @Column({ name: "default_acp_index", type: "jsonb", default: {} })
-  defaultAcpIndex!: Record<string, unknown>;
+  defaultApIndex!: Record<string, unknown>;
 
   @Column({ name: "geogebra_bundle", type: "jsonb", nullable: true })
   geoGebraBundle?: GeoGebraBundleSettings | null;

@@ -71,14 +71,14 @@ export class AuthController {
   }
 
   @Post("credential-login")
-  @ApiOperation({ summary: "Login with ACP credentials" })
+  @ApiOperation({ summary: "Login with AP credentials" })
   async credentialLogin(
     @Body() credentialLoginDto: CredentialLoginDto,
     @Request() req: any,
   ) {
     const clientId = this.extractClientId(req);
     return this.authService.credentialLogin(
-      credentialLoginDto.acpId,
+      credentialLoginDto.apId,
       credentialLoginDto.username,
       credentialLoginDto.password,
       clientId,

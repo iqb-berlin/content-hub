@@ -9,13 +9,13 @@ describe("CommentsController", () => {
 
   beforeEach(() => {
     commentsService = {
-      findByAcp: jest.fn().mockResolvedValue([{ id: "c-1" }]),
+      findByAp: jest.fn().mockResolvedValue([{ id: "c-1" }]),
       findByCredential: jest.fn().mockResolvedValue([{ id: "c-cred" }]),
       findByUser: jest.fn().mockResolvedValue([{ id: "c-user" }]),
       createLegacyCompatibleComment: jest
         .fn()
         .mockResolvedValue({ id: "c-new" }),
-      deleteUnreferencedLegacyByAcp: jest
+      deleteUnreferencedLegacyByAp: jest
         .fn()
         .mockResolvedValue({ deletedCount: 3, retainedCount: 5 }),
       exportComments: jest.fn().mockResolvedValue([{ id: "c-export" }]),
@@ -42,25 +42,25 @@ describe("CommentsController", () => {
       isManagerRequest: jest.fn(
         (req) =>
           Boolean(req.user?.isAppAdmin) ||
-          req.acpAccessLevel === "MANAGER" ||
-          req.acpAccessLevel === "ADMIN",
+          req.apAccessLevel === "MANAGER" ||
+          req.apAccessLevel === "ADMIN",
       ),
     };
     controller = new CommentsController(commentsService, reviewPolicy);
   });
 
   it("returns all comments for managers", async () => {
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "MANAGER" };
-    const result = await controller.findAll("acp-1", req);
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "MANAGER" };
+    const result = await controller.findAll("ap-1", req);
 
     expect(result).toEqual([{ id: "c-1" }]);
-    expect(commentsService.findByAcp).toHaveBeenCalledWith("acp-1");
+    expect(commentsService.findByAp).toHaveBeenCalledWith("ap-1");
   });
 
   it("rejects all-comments access for non-managers", async () => {
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "PUBLIC" };
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "PUBLIC" };
 
-    await expect(controller.findAll("acp-1", req)).rejects.toThrow(
+    await expect(controller.findAll("ap-1", req)).rejects.toThrow(
       ForbiddenException,
     );
   });
@@ -73,11 +73,11 @@ describe("CommentsController", () => {
         username: "cred-user",
       },
     };
-    const result = await controller.findMine("acp-1", req);
+    const result = await controller.findMine("ap-1", req);
 
     expect(result).toEqual([{ id: "c-cred" }]);
     expect(commentsService.findByCredential).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "credential-1",
       expect.objectContaining({ credentialId: "credential-1" }),
     );
@@ -86,11 +86,11 @@ describe("CommentsController", () => {
 
   it("returns mine for OIDC users", async () => {
     const req = { user: { type: "oidc", sub: "u-1" } };
-    const result = await controller.findMine("acp-1", req);
+    const result = await controller.findMine("ap-1", req);
 
     expect(result).toEqual([{ id: "c-user" }]);
     expect(commentsService.findByUser).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "u-1",
       expect.objectContaining({ userId: "u-1" }),
     );
@@ -99,7 +99,7 @@ describe("CommentsController", () => {
   it("creates comment directly for managers", async () => {
     const req = {
       user: { type: "oidc", sub: "u-1", isAppAdmin: true },
-      acpAccessLevel: "PUBLIC",
+      apAccessLevel: "PUBLIC",
     };
     const dto = {
       targetType: CommentTargetType.ITEM,
@@ -107,11 +107,11 @@ describe("CommentsController", () => {
       commentText: "Hallo",
     };
 
-    const result = await controller.create("acp-1", dto as any, req);
+    const result = await controller.create("ap-1", dto as any, req);
 
     expect(result).toEqual({ id: "c-new" });
     expect(commentsService.createLegacyCompatibleComment).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {
         targetType: CommentTargetType.ITEM,
         targetId: "item-1",
@@ -123,29 +123,29 @@ describe("CommentsController", () => {
 
   it.each([
     [
-      "ACP manager",
+      "AP manager",
       {
         user: { type: "oidc", sub: "manager-1", isAppAdmin: false },
-        acpAccessLevel: "MANAGER",
+        apAccessLevel: "MANAGER",
       },
     ],
     [
       "app admin",
       {
         user: { type: "oidc", sub: "admin-1", isAppAdmin: true },
-        acpAccessLevel: "PUBLIC",
+        apAccessLevel: "PUBLIC",
       },
     ],
   ])(
-    "rejects the ACP ID as a legacy comment target for %s",
+    "rejects the AP ID as a legacy comment target for %s",
     async (_label, req) => {
       const dto = {
         targetType: CommentTargetType.UNIT,
-        targetId: "acp-1",
-        commentText: "Invalid ACP-level comment",
+        targetId: "ap-1",
+        commentText: "Invalid AP-level comment",
       };
 
-      await expect(controller.create("acp-1", dto, req)).rejects.toThrow(
+      await expect(controller.create("ap-1", dto, req)).rejects.toThrow(
         BadRequestException,
       );
       expect(reviewPolicy.isManagerRequest).not.toHaveBeenCalled();
@@ -162,18 +162,18 @@ describe("CommentsController", () => {
   ])("keeps valid %s targets available", async (targetType, targetId) => {
     const req = {
       user: { type: "oidc", sub: "manager-1", isAppAdmin: false },
-      acpAccessLevel: "MANAGER",
+      apAccessLevel: "MANAGER",
     };
 
     await expect(
       controller.create(
-        "acp-1",
+        "ap-1",
         { targetType, targetId, commentText: "Valid content comment" },
         req,
       ),
     ).resolves.toEqual({ id: "c-new" });
     expect(commentsService.createLegacyCompatibleComment).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       expect.objectContaining({
         targetType,
         targetId,
@@ -188,7 +188,7 @@ describe("CommentsController", () => {
     });
     const req = {
       user: { type: "credential", sub: "cred-id", username: "cred" },
-      acpAccessLevel: "PUBLIC",
+      apAccessLevel: "PUBLIC",
     };
     const dto = {
       targetType: CommentTargetType.UNIT,
@@ -196,7 +196,7 @@ describe("CommentsController", () => {
       commentText: "x",
     };
 
-    await expect(controller.create("acp-1", dto as any, req)).rejects.toThrow(
+    await expect(controller.create("ap-1", dto as any, req)).rejects.toThrow(
       ForbiddenException,
     );
   });
@@ -204,7 +204,7 @@ describe("CommentsController", () => {
   it("creates comment for credential users when commenting is enabled", async () => {
     const req = {
       user: { type: "credential", sub: "cred-id", username: "cred" },
-      acpAccessLevel: "PUBLIC",
+      apAccessLevel: "PUBLIC",
     };
     const dto = {
       targetType: CommentTargetType.ITEM,
@@ -212,10 +212,10 @@ describe("CommentsController", () => {
       commentText: "ok",
     };
 
-    await controller.create("acp-1", dto as any, req);
+    await controller.create("ap-1", dto as any, req);
 
     expect(commentsService.createLegacyCompatibleComment).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {
         targetType: CommentTargetType.ITEM,
         targetId: "item-1",
@@ -226,8 +226,8 @@ describe("CommentsController", () => {
   });
 
   it("deletes only safe legacy comments for managers", async () => {
-    const req = { user: { isAppAdmin: true }, acpAccessLevel: "PUBLIC" };
-    const result = await controller.deleteLegacyComments("acp-1", req);
+    const req = { user: { isAppAdmin: true }, apAccessLevel: "PUBLIC" };
+    const result = await controller.deleteLegacyComments("ap-1", req);
 
     expect(result).toEqual({
       message: "3 legacy comments deleted; 5 comments retained",
@@ -235,15 +235,15 @@ describe("CommentsController", () => {
       retainedCount: 5,
       scope: "UNRESOLVED_LEGACY_TASK_SEQUENCE",
     });
-    expect(commentsService.deleteUnreferencedLegacyByAcp).toHaveBeenCalledWith(
-      "acp-1",
+    expect(commentsService.deleteUnreferencedLegacyByAp).toHaveBeenCalledWith(
+      "ap-1",
     );
   });
 
   it("rejects legacy bulk deletion for non-managers", async () => {
-    const req = { user: { isAppAdmin: false }, acpAccessLevel: "PUBLIC" };
+    const req = { user: { isAppAdmin: false }, apAccessLevel: "PUBLIC" };
 
-    await expect(controller.deleteLegacyComments("acp-1", req)).rejects.toThrow(
+    await expect(controller.deleteLegacyComments("ap-1", req)).rejects.toThrow(
       ForbiddenException,
     );
   });
@@ -251,12 +251,12 @@ describe("CommentsController", () => {
   it("exports comments for manager users", async () => {
     const req = {
       user: { isAppAdmin: false, type: "oidc", sub: "u-1" },
-      acpAccessLevel: "MANAGER",
+      apAccessLevel: "MANAGER",
     };
-    const result = await controller.exportComments("acp-1", req);
+    const result = await controller.exportComments("ap-1", req);
 
     expect(result).toEqual([{ id: "c-export" }]);
-    expect(commentsService.exportComments).toHaveBeenCalledWith("acp-1");
+    expect(commentsService.exportComments).toHaveBeenCalledWith("ap-1");
   });
 
   it("exports comments for credential users with credential filter", async () => {
@@ -267,14 +267,14 @@ describe("CommentsController", () => {
         sub: "credential-1",
         username: "cred-user",
       },
-      acpAccessLevel: "PUBLIC",
+      apAccessLevel: "PUBLIC",
     };
 
-    const result = await controller.exportComments("acp-1", req);
+    const result = await controller.exportComments("ap-1", req);
 
     expect(result).toEqual([{ id: "c-export-cred" }]);
     expect(commentsService.exportCommentsByCredential).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "credential-1",
     );
   });
@@ -282,27 +282,24 @@ describe("CommentsController", () => {
   it("exports comments for OIDC users with user filter", async () => {
     const req = {
       user: { isAppAdmin: false, type: "oidc", sub: "u-42" },
-      acpAccessLevel: "PUBLIC",
+      apAccessLevel: "PUBLIC",
     };
 
-    await controller.exportComments("acp-1", req);
+    await controller.exportComments("ap-1", req);
 
-    expect(commentsService.exportComments).toHaveBeenCalledWith(
-      "acp-1",
-      "u-42",
-    );
+    expect(commentsService.exportComments).toHaveBeenCalledWith("ap-1", "u-42");
   });
 
   it("exports XLSX for manager users", async () => {
-    const req = { user: { isAppAdmin: true }, acpAccessLevel: "PUBLIC" };
+    const req = { user: { isAppAdmin: true }, apAccessLevel: "PUBLIC" };
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
-    await controller.exportCommentsXlsx("acp-1", req, res);
+    await controller.exportCommentsXlsx("ap-1", req, res);
 
-    expect(commentsService.exportCommentsXlsx).toHaveBeenCalledWith("acp-1");
+    expect(commentsService.exportCommentsXlsx).toHaveBeenCalledWith("ap-1");
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="comments-acp-1-all.xlsx"',
+      'attachment; filename="comments-ap-1-all.xlsx"',
     );
     expect(res.send).toHaveBeenCalledWith(Buffer.from("xlsx-all"));
   });
@@ -315,38 +312,38 @@ describe("CommentsController", () => {
         sub: "credential-1",
         username: "",
       },
-      acpAccessLevel: "PUBLIC",
+      apAccessLevel: "PUBLIC",
     };
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
-    await controller.exportCommentsXlsx("acp-1", req, res);
+    await controller.exportCommentsXlsx("ap-1", req, res);
 
     expect(commentsService.exportCommentsXlsxByCredential).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "credential-1",
     );
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="comments-acp-1-mine.xlsx"',
+      'attachment; filename="comments-ap-1-mine.xlsx"',
     );
   });
 
   it("exports XLSX for OIDC users with username fallback", async () => {
     const req = {
       user: { isAppAdmin: false, type: "oidc", sub: "u-2", username: "" },
-      acpAccessLevel: "PUBLIC",
+      apAccessLevel: "PUBLIC",
     };
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
-    await controller.exportCommentsXlsx("acp-1", req, res);
+    await controller.exportCommentsXlsx("ap-1", req, res);
 
     expect(commentsService.exportCommentsXlsx).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "u-2",
     );
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="comments-acp-1-mine.xlsx"',
+      'attachment; filename="comments-ap-1-mine.xlsx"',
     );
   });
 });

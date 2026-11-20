@@ -24,7 +24,7 @@ export interface LoginResponse {
 }
 
 export type ServerApiScope =
-  | 'acp.read'
+  | 'ap.read'
   | 'transfer.read'
   | 'transfer.write'
   | 'index.read'
@@ -38,7 +38,7 @@ export interface ApplicationToken {
   name: string;
   tokenPrefix: string;
   scopes: ServerApiScope[];
-  allowedAcpIds: string[] | null;
+  allowedApIds: string[] | null;
   active: boolean;
   expiresAt: string | null;
   lastUsedAt: string | null;
@@ -60,7 +60,7 @@ export interface CreateApplicationTokenRequest {
   name: string;
   scopes: ServerApiScope[];
   expiresAt?: string | null;
-  allowedAcpIds?: string[] | null;
+  allowedApIds?: string[] | null;
 }
 
 export interface CreatedApplicationToken extends ApplicationToken {
@@ -69,76 +69,76 @@ export interface CreatedApplicationToken extends ApplicationToken {
 
 export interface CredentialLoginResponse {
   accessToken: string;
-  acpId: string;
+  apId: string;
   username: string;
 }
 
-export type AcpRoleName = 'ACP_MANAGER' | 'READ_ONLY';
+export type ApRoleName = 'AP_MANAGER' | 'READ_ONLY';
 
-export interface AcpRole {
-  acpId: string;
-  acpName?: string;
-  role: AcpRoleName;
+export interface ApRole {
+  apId: string;
+  apName?: string;
+  role: ApRoleName;
 }
 
 export interface UserProfile extends User {
-  acpRoles: AcpRole[];
+  apRoles: ApRole[];
 }
 
-export interface CreateAcpRequest {
+export interface CreateApRequest {
   packageId: string;
   name: string;
   description?: string;
 }
 
-export interface UpdateAcpRequest {
+export interface UpdateApRequest {
   name?: string;
   description?: string;
 }
 
-export interface AssignAcpRoleRequest {
+export interface AssignApRoleRequest {
   capabilities?: string[];
   userId: string;
-  role: AcpRoleName;
+  role: ApRoleName;
 }
 
-export interface AssignableAcpUser {
+export interface AssignableApUser {
   id: string;
   username: string;
   displayName?: string | null;
 }
 
-export interface AcpRoleAssignment {
+export interface ApRoleAssignment {
   capabilities?: string[];
   id: string;
-  acpId: string;
+  apId: string;
   userId: string;
-  role: AcpRoleName;
+  role: ApRoleName;
   // Included by the list endpoint; assignment writes return the role alone.
-  user?: AssignableAcpUser;
+  user?: AssignableApUser;
 }
 
-export interface Acp {
+export interface Ap {
   id: string;
   packageId: string;
   name: string;
   description?: string | null;
-  acpIndex: Record<string, unknown>;
-  acpIndexSchemaId?: string;
-  acpIndexValidationStatus?:
+  apIndex: Record<string, unknown>;
+  apIndexSchemaId?: string;
+  apIndexValidationStatus?:
     | 'UNKNOWN'
     | 'CONFORMANT'
     | 'CONFORMANT_WITH_ISSUES'
     | 'LEGACY_NONCONFORMANT';
-  acpIndexValidationReport?: AcpIndexValidationReport;
+  apIndexValidationReport?: ApIndexValidationReport;
   settings: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface AcpFile {
+export interface ApFile {
   id: string;
-  acpId: string;
+  apId: string;
   filePath: string;
   originalName: string;
   relativePath: string;
@@ -157,7 +157,7 @@ export interface IndexSyncReport {
   warnings: string[];
 }
 
-export interface AcpIndexValidationIssue {
+export interface ApIndexValidationIssue {
   code: string;
   scope: 'schema' | 'semantic' | 'vocabulary' | 'file';
   severity: 'error' | 'warning' | 'info';
@@ -165,12 +165,12 @@ export interface AcpIndexValidationIssue {
   message: string;
 }
 
-export interface AcpIndexValidationReport {
+export interface ApIndexValidationReport {
   schemaId: 'acp-index@0.6';
   valid: boolean;
   publishable: boolean;
   checkedAt: string;
-  issues: AcpIndexValidationIssue[];
+  issues: ApIndexValidationIssue[];
   externalChecks: Array<{
     url: string;
     status: 'valid' | 'invalid' | 'cached' | 'unavailable';
@@ -178,9 +178,9 @@ export interface AcpIndexValidationReport {
   }>;
 }
 
-export interface AcpIndexGenerationPreview {
+export interface ApIndexGenerationPreview {
   candidateIndex: Record<string, any>;
-  validation: AcpIndexValidationReport;
+  validation: ApIndexValidationReport;
   sourceRevision: string;
   sourceUpdatedAt: string;
   assignments: Record<string, string>;
@@ -191,18 +191,18 @@ export interface AcpIndexGenerationPreview {
   canApply: boolean;
 }
 
-export interface AcpIndexMigrationPreview {
+export interface ApIndexMigrationPreview {
   candidateIndex: Record<string, any>;
   changes: Array<{ path: string; message: string }>;
-  unresolved: AcpIndexValidationIssue[];
-  validation: AcpIndexValidationReport;
+  unresolved: ApIndexValidationIssue[];
+  validation: ApIndexValidationReport;
   sourceUpdatedAt: string;
 }
 
 export type FileUploadConflictStrategy = 'reject' | 'overwrite' | 'keep-both';
 
 export interface FileUploadResponse {
-  files: AcpFile[];
+  files: ApFile[];
 }
 
 export type FileProcessingJobStatus = 'pending' | 'running' | 'completed' | 'failed';
@@ -244,7 +244,7 @@ export interface FileDeletionResponse {
 
 export interface FileProcessingJob {
   id: string;
-  acpId: string;
+  apId: string;
   jobType: FileProcessingJobType;
   status: FileProcessingJobStatus;
   phase: FileProcessingJobPhase;
@@ -271,6 +271,7 @@ export interface UploadValidationSummary {
   invalidFiles: number;
   semanticValid: boolean;
   semanticIssueCount: number;
+  semanticIssues?: ValidationIssue[];
   timestamp: string;
 }
 
@@ -421,11 +422,11 @@ export interface ValidationIssue {
   path?: string;
 }
 
-export interface AcpSnapshot {
+export interface ApSnapshot {
   id: string;
-  acpId: string;
+  apId: string;
   versionNumber: number;
-  acpIndexSnapshot: Record<string, any>;
+  apIndexSnapshot: Record<string, any>;
   changelog?: string;
   createdAt: string;
 }
@@ -444,7 +445,7 @@ export type AccessModel = 'PRIVATE' | 'PUBLIC' | 'REGISTERED' | 'CREDENTIALS_LIS
 
 export interface AccessConfig {
   id: string;
-  acpId: string;
+  apId: string;
   accessModel: AccessModel;
   allowRegistered?: boolean;
   featureConfig: FeatureConfig;
@@ -509,6 +510,7 @@ export interface ItemExplorerTableColumnLayout {
 }
 
 export interface FeatureConfig {
+  itemExplorerReducedView?: import('./item-explorer-reduced-view').ItemExplorerReducedView;
   showStudioItemComments?: boolean;
   // Preserve extension keys while requiring callers to narrow unknown values.
   [key: string]: unknown;
@@ -517,6 +519,7 @@ export interface FeatureConfig {
   allowFileDownload?: boolean;
   enableUnitView?: boolean;
   showMetadata?: boolean;
+  hideReviewMetadata?: boolean;
   hideReviewDeveloperNames?: boolean;
   showRichText?: boolean;
   showCodingScheme?: boolean;
@@ -582,7 +585,7 @@ export interface CommentCategory {
 
 export interface Comment {
   id: string;
-  acpId: string;
+  apId: string;
   userId?: string;
   credentialUsername?: string;
   credentialId?: string;
@@ -621,9 +624,29 @@ export interface CommentThreadSnapshot {
   comments: Comment[];
 }
 
+export interface ReviewItemVariableReferences {
+  variableId?: string;
+  sourceVariable?: string;
+  variableReadOnlyId?: string;
+}
+
+export interface UnitCommentAvailability {
+  codingCommentsAvailable: boolean;
+  additionalItems?: { id: string; label: string; targetTypes: ('ITEM' | 'CODING')[] }[];
+}
+
 export interface ItemCommentCountsSnapshot {
   revision: string;
-  counts: Array<{ unitId: string; itemId: string; count: number; codingCount: number }>;
+  codingUnitIds?: string[];
+  counts: Array<
+    ReviewItemVariableReferences & {
+      unitId: string;
+      itemId: string;
+      itemIdAlias?: string;
+      count: number;
+      codingCount: number;
+    }
+  >;
 }
 
 export interface AppSettings {
@@ -635,7 +658,7 @@ export interface AppSettings {
   imprintHtml?: string;
   privacyHtml?: string;
   accessibilityHtml?: string;
-  defaultAcpIndex: Record<string, any>;
+  defaultApIndex: Record<string, any>;
   geoGebraBundle?: GeoGebraBundleSettings | null;
 }
 
@@ -648,12 +671,17 @@ export interface GeoGebraBundleSettings {
   uploadedAt: string;
 }
 
-export interface PublicAcp {
+export interface PublicAp {
   id: string;
   name: string;
   description?: string;
   accessModel: AccessModel | 'ADMIN';
   requiresLogin?: boolean;
+}
+
+export interface ReviewNavigationItem extends ReviewItemVariableReferences {
+  id: string;
+  fallbackIds?: string[];
 }
 
 export interface UnitViewData {
@@ -663,6 +691,7 @@ export interface UnitViewData {
   description?: string;
   lang?: string;
   items: any[];
+  navigationItems?: ReviewNavigationItem[];
   dependencies: FileDependency[];
   codingScheme?: unknown;
   richText?: string;
@@ -773,7 +802,7 @@ export interface ItemExplorerStateEnvelope {
 
 export interface ItemExplorerChangeLogEntry {
   id: string;
-  acpId: string;
+  apId: string;
   changeType: string;
   beforeState: Record<string, unknown>;
   afterState: Record<string, unknown>;
@@ -793,6 +822,7 @@ export interface TaskSequence {
     id: string;
     name: string;
     occurrenceId?: string;
+    linkId?: string;
     alias?: string;
     blockPath?: string[];
   }[];

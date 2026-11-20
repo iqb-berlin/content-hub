@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MODULE_POM="${ROOT_DIR}/keycloak/extensions/altcha/pom.xml"
 PROVIDERS_DIR="${ROOT_DIR}/keycloak/providers"
-TARGET_JAR="${ROOT_DIR}/keycloak/extensions/altcha/target/content-pool-keycloak-altcha.jar"
-OUTPUT_JAR="${PROVIDERS_DIR}/content-pool-keycloak-altcha.jar"
+TARGET_JAR="${ROOT_DIR}/keycloak/extensions/altcha/target/content-hub-keycloak-altcha.jar"
+OUTPUT_JAR="${PROVIDERS_DIR}/content-hub-keycloak-altcha.jar"
 
 mkdir -p "$PROVIDERS_DIR"
 
@@ -26,4 +26,5 @@ else
 fi
 
 install -m 0644 "$TARGET_JAR" "$OUTPUT_JAR"
+rm -f "${PROVIDERS_DIR}/content-pool-keycloak-altcha.jar"
 echo "Built Keycloak ALTCHA provider: ${OUTPUT_JAR}"

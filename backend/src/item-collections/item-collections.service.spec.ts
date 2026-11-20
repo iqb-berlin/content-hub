@@ -62,22 +62,22 @@ describe("ItemCollectionsService", () => {
       },
     ]);
     await expect(
-      service.getAccessibleCollectionRowKeys("acp-1", owner, "own"),
+      service.getAccessibleCollectionRowKeys("ap-1", owner, "own"),
     ).resolves.toEqual(["uuid::A"]);
     expect(store.readSharedCollections).not.toHaveBeenCalled();
     await expect(
-      service.getAccessibleCollectionRowKeys("acp-1", owner, "shared"),
+      service.getAccessibleCollectionRowKeys("ap-1", owner, "shared"),
     ).resolves.toEqual(["uuid::B"]);
     expect(store.readSharedCollections).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       owner,
       expect.any(Number),
     );
     await expect(
-      service.getAccessibleCollectionRowKeys("acp-1", owner, "private"),
+      service.getAccessibleCollectionRowKeys("ap-1", owner, "private"),
     ).rejects.toThrow(NotFoundException);
     await expect(
-      service.getAccessibleCollectionRowKeys("acp-1", owner, "removed"),
+      service.getAccessibleCollectionRowKeys("ap-1", owner, "removed"),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -120,7 +120,7 @@ describe("ItemCollectionsService", () => {
       ],
     });
 
-    const result = await service.getItemCollections("acp-1", owner, true);
+    const result = await service.getItemCollections("ap-1", owner, true);
 
     expect(result.collections[0].unavailableRowKeys).toEqual(["removed"]);
     expect(result.collections[0].summary).toEqual({
@@ -152,7 +152,7 @@ describe("ItemCollectionsService", () => {
       ],
     };
     store.readPreferences.mockResolvedValue(basePreferences);
-    await expect(service.getItemCollections("acp-1", owner)).resolves.toEqual(
+    await expect(service.getItemCollections("ap-1", owner)).resolves.toEqual(
       expect.objectContaining({ collectionViewMode: "all" }),
     );
 
@@ -160,7 +160,7 @@ describe("ItemCollectionsService", () => {
       ...basePreferences,
       collectionViewMode: "invalid",
     });
-    await expect(service.getItemCollections("acp-1", owner)).resolves.toEqual(
+    await expect(service.getItemCollections("ap-1", owner)).resolves.toEqual(
       expect.objectContaining({ collectionViewMode: "all" }),
     );
   });
@@ -181,7 +181,7 @@ describe("ItemCollectionsService", () => {
       ],
     });
 
-    await expect(service.getItemCollections("acp-1", owner)).resolves.toEqual(
+    await expect(service.getItemCollections("ap-1", owner)).resolves.toEqual(
       expect.objectContaining({
         activeCollectionId: "collection-1",
         collectionViewMode: "all",
@@ -213,7 +213,7 @@ describe("ItemCollectionsService", () => {
     });
 
     const activated = await service.activateItemCollection(
-      "acp-1",
+      "ap-1",
       owner,
       "collection-1",
       false,
@@ -222,7 +222,7 @@ describe("ItemCollectionsService", () => {
     expect(activated.collectionViewMode).toBe("active");
 
     const deleted = await service.deleteItemCollection(
-      "acp-1",
+      "ap-1",
       owner,
       "collection-1",
     );
@@ -253,14 +253,14 @@ describe("ItemCollectionsService", () => {
     );
 
     await expect(
-      service.updateItemCollection("acp-1", owner, "collection-1", {
+      service.updateItemCollection("ap-1", owner, "collection-1", {
         baseVersion: 1,
         name: "Neu",
       }),
     ).rejects.toThrow(ConflictException);
 
     const result = await service.updateItemCollection(
-      "acp-1",
+      "ap-1",
       owner,
       "collection-1",
       { baseVersion: 2, name: "Neu", shared: true },
@@ -289,7 +289,7 @@ describe("ItemCollectionsService", () => {
     );
 
     await expect(
-      service.updateItemCollection("acp-1", owner, "collection-1", {
+      service.updateItemCollection("ap-1", owner, "collection-1", {
         baseVersion: 1,
         rowKeys: ["removed-row", "invented-row"],
       }),
@@ -323,7 +323,7 @@ describe("ItemCollectionsService", () => {
     });
 
     const result = await service.mutateItemCollectionRows(
-      "acp-1",
+      "ap-1",
       owner,
       "collection-1",
       { baseVersion: 1, addRowKeys: ["uuid-2::1", "uuid-2::1"] },
@@ -365,7 +365,7 @@ describe("ItemCollectionsService", () => {
     });
 
     const removed = await service.mutateItemCollectionRows(
-      "acp-1",
+      "ap-1",
       owner,
       "collection-1",
       { baseVersion: 4, removeRowKeys: ["removed-row"] },
@@ -374,7 +374,7 @@ describe("ItemCollectionsService", () => {
     expect(removed.version).toBe(5);
 
     const cleared = await service.mutateItemCollectionRows(
-      "acp-1",
+      "ap-1",
       owner,
       "collection-1",
       { baseVersion: 5, clear: true },
@@ -403,7 +403,7 @@ describe("ItemCollectionsService", () => {
     );
 
     const result = await service.mutateItemCollectionRows(
-      "acp-1",
+      "ap-1",
       owner,
       "collection-1",
       { baseVersion: 2, addRowKeys: ["uuid-1::1"] },
@@ -439,32 +439,32 @@ describe("ItemCollectionsService", () => {
     );
 
     await expect(
-      service.mutateItemCollectionRows("acp-1", owner, "collection-1", {
+      service.mutateItemCollectionRows("ap-1", owner, "collection-1", {
         baseVersion: 3,
         addRowKeys: [],
         removeRowKeys: [],
       }),
     ).rejects.toThrow(BadRequestException);
     await expect(
-      service.mutateItemCollectionRows("acp-1", owner, "collection-1", {
+      service.mutateItemCollectionRows("ap-1", owner, "collection-1", {
         baseVersion: 3,
         clear: false,
       }),
     ).rejects.toThrow(BadRequestException);
     await expect(
-      service.mutateItemCollectionRows("acp-1", owner, "collection-1", {
+      service.mutateItemCollectionRows("ap-1", owner, "collection-1", {
         baseVersion: 3,
         addRowKeys: ["unknown-row"],
       }),
     ).rejects.toThrow("Collections can only add existing item rows");
     await expect(
-      service.mutateItemCollectionRows("acp-1", owner, "collection-1", {
+      service.mutateItemCollectionRows("ap-1", owner, "collection-1", {
         baseVersion: 3,
         addRowKeys: ["extra-row"],
       }),
     ).rejects.toThrow("At most 10000 item rows");
     await expect(
-      service.mutateItemCollectionRows("acp-1", owner, "collection-1", {
+      service.mutateItemCollectionRows("ap-1", owner, "collection-1", {
         baseVersion: 2,
         removeRowKeys: ["row-1"],
       }),
@@ -490,7 +490,7 @@ describe("ItemCollectionsService", () => {
     });
 
     await expect(
-      service.createItemCollection("acp-1", owner, "Eine zu viel"),
+      service.createItemCollection("ap-1", owner, "Eine zu viel"),
     ).rejects.toThrow("At most 100 item collections can be stored");
   });
 
@@ -513,10 +513,10 @@ describe("ItemCollectionsService", () => {
     );
 
     await expect(
-      service.activateItemCollection("acp-1", owner, "missing"),
+      service.activateItemCollection("ap-1", owner, "missing"),
     ).rejects.toThrow(NotFoundException);
     const result = await service.deleteItemCollection(
-      "acp-1",
+      "ap-1",
       owner,
       "collection-1",
     );
@@ -524,7 +524,7 @@ describe("ItemCollectionsService", () => {
     expect(result.activeCollectionId).toBeNull();
   });
 
-  it("exposes only ACP-shared foreign collections as read-only views", async () => {
+  it("exposes only AP-shared foreign collections as read-only views", async () => {
     store.readPreferences.mockResolvedValue({
       collections: [
         {
@@ -553,7 +553,7 @@ describe("ItemCollectionsService", () => {
       },
     ]);
 
-    const result = await service.getItemCollections("acp-1", owner);
+    const result = await service.getItemCollections("ap-1", owner);
 
     expect(result.collections).toEqual([
       expect.objectContaining({
@@ -576,7 +576,7 @@ describe("ItemCollectionsService", () => {
     );
   });
 
-  it("returns a bounded ACP-wide shared collection result with a truncation marker", async () => {
+  it("returns a bounded AP-wide shared collection result with a truncation marker", async () => {
     const timestamp = "2026-07-01T10:00:00.000Z";
     store.readSharedCollections.mockResolvedValue(
       Array.from({ length: 1_001 }, (_, index) => ({
@@ -593,7 +593,7 @@ describe("ItemCollectionsService", () => {
       })),
     );
 
-    const result = await service.getItemCollections("acp-1", owner);
+    const result = await service.getItemCollections("ap-1", owner);
 
     expect(result.collections).toHaveLength(1_000);
     expect(result.collections[0]).toEqual(
@@ -604,7 +604,7 @@ describe("ItemCollectionsService", () => {
     );
     expect(result.sharedCollectionsTruncated).toBe(true);
     expect(store.readSharedCollections).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       owner,
       1_001,
     );
@@ -635,7 +635,7 @@ describe("ItemCollectionsService", () => {
     });
 
     const result = await service.copyItemCollection(
-      "acp-1",
+      "ap-1",
       owner,
       "foreign-shared",
     );
@@ -678,7 +678,7 @@ describe("ItemCollectionsService", () => {
     });
 
     const result = await service.activateItemCollection(
-      "acp-1",
+      "ap-1",
       owner,
       "foreign-shared",
       false,
@@ -699,7 +699,7 @@ describe("ItemCollectionsService", () => {
       }),
     );
     expect(store.mutate).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       owner,
       true,
       expect.any(Function),
@@ -713,13 +713,13 @@ describe("ItemCollectionsService", () => {
     );
 
     await expect(
-      service.updateItemCollection("acp-1", owner, "foreign-shared", {
+      service.updateItemCollection("ap-1", owner, "foreign-shared", {
         baseVersion: 1,
         name: "Manipuliert",
       }),
     ).rejects.toThrow(NotFoundException);
     await expect(
-      service.deleteItemCollection("acp-1", owner, "foreign-shared"),
+      service.deleteItemCollection("ap-1", owner, "foreign-shared"),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -762,12 +762,7 @@ describe("ItemCollectionsService", () => {
     });
 
     const csv = (
-      await service.exportItemCollectionCsv(
-        "acp-1",
-        owner,
-        "collection-1",
-        true,
-      )
+      await service.exportItemCollectionCsv("ap-1", owner, "collection-1", true)
     ).toString("utf8");
 
     expect(csv).toContain('"Auswahl A";"1";"unit-1";"Aufgabe 1"');

@@ -10,7 +10,7 @@ import { AuthService } from '../core/services/auth.service';
   template: `
     <div class="login-wrapper">
       <div class="card login-card">
-        <h1>ACP-Zugang</h1>
+        <h1>AP-Zugang</h1>
         <p class="subtitle">Anmeldung mit Zugangsdaten</p>
         @if (error) {
           <div class="alert alert-error">{{ error }}</div>
@@ -51,7 +51,7 @@ import { AuthService } from '../core/services/auth.service';
   ],
 })
 export class CredentialLoginComponent implements OnInit {
-  acpId = '';
+  apId = '';
   username = '';
   password = '';
   loading = false;
@@ -64,15 +64,15 @@ export class CredentialLoginComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.acpId = this.route.snapshot.paramMap.get('acpId') || '';
+    this.apId = this.route.snapshot.paramMap.get('apId') || '';
   }
 
   onSubmit() {
     this.loading = true;
     this.error = '';
-    this.auth.credentialLogin(this.acpId, this.username, this.password).subscribe({
+    this.auth.credentialLogin(this.apId, this.username, this.password).subscribe({
       next: () => {
-        this.router.navigate(['/view', this.acpId]);
+        this.router.navigate(['/view', this.apId]);
         this.loading = false;
       },
       error: (err) => {

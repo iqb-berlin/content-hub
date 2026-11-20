@@ -7,14 +7,14 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as fs from "fs/promises";
-import { AcpFile, Acp } from "../database/entities";
+import { ApFile, Ap } from "../database/entities";
 import {
-  ACP_INDEX_ALLOWED_STATUS_VALUES,
+  AP_INDEX_ALLOWED_STATUS_VALUES,
   getAssessmentParts,
   getIndexScales,
   getIndexUnits,
-  toRuntimeAcpIndex,
-} from "../acp/acp-index.utils";
+  toRuntimeApIndex,
+} from "../ap/ap-index.utils";
 import { FileProcessingProgressReporter } from "../files/file-processing-progress";
 
 export interface ValidationIssue {
@@ -37,6 +37,7 @@ export interface AutoValidationSummary {
   invalidFiles: number;
   semanticValid: boolean;
   semanticIssueCount: number;
+  semanticIssues: ValidationIssue[];
   timestamp: string;
 }
 
@@ -45,10 +46,10 @@ export class ValidationService {
   private readonly logger = new Logger(ValidationService.name);
 
   constructor(
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
     private readonly reviewManifestService: ReviewManifestService,
   ) {}
 
@@ -56,7 +57,7 @@ export class ValidationService {
    * Validate a single file (syntactic validation).
    */
   async validateFile(
-    file: AcpFile,
+    file: ApFile,
     buffer: Buffer,
     persist = true,
   ): Promise<ValidationResult> {
@@ -129,28 +130,14 @@ export class ValidationService {
 
   /**
    * Validate freshly uploaded files automatically and persist per-file results.
-   * Merges syntactic/schema checks with ACP-wide semantic checks.
+   * Keeps file results separate from AP-wide semantic checks in the summary.
    */
   async autoValidateUploadedFiles(
-    acpId: string,
-    files: AcpFile[],
+    apId: string,
+    files: ApFile[],
     progress?: FileProcessingProgressReporter,
     persistResults = true,
-  ): Promise<{ files: AcpFile[]; summary: AutoValidationSummary }> {
-    if (!files.length) {
-      return {
-        files: [],
-        summary: {
-          totalFiles: 0,
-          validFiles: 0,
-          invalidFiles: 0,
-          semanticValid: true,
-          semanticIssueCount: 0,
-          timestamp: new Date().toISOString(),
-        },
-      };
-    }
-
+  ): Promise<{ files: ApFile[]; summary: AutoValidationSummary }> {
     const syntacticAndSchemaResults = new Map<string, ValidationResult>();
 
     await progress?.startPhase("validate-files", files.length, {
@@ -183,7 +170,7 @@ export class ValidationService {
 
     await progress?.completePhase("Dateivaliderung abgeschlossen.");
 
-    const semanticResult = await this.validateAcpConsistency(acpId, progress);
+    const semanticResult = await this.validateApConsistency(apId, progress);
     const semanticIssues = semanticResult.issues.map((issue) => ({
       ...issue,
       scope: "semantic" as const,
@@ -202,21 +189,18 @@ export class ValidationService {
         ],
         timestamp: now,
       };
-      const mergedIssues = [...fileResult.issues, ...semanticIssues];
-      const mergedResult: ValidationResult = {
-        valid: fileResult.valid && semanticResult.valid,
-        issues: mergedIssues,
+      const result: ValidationResult = {
+        ...fileResult,
         timestamp: now,
       };
-      file.validationResult = mergedResult as unknown as Record<
-        string,
-        unknown
-      >;
-      return { file, result: mergedResult };
+      file.validationResult = result as unknown as Record<string, unknown>;
+      return { file, result };
     });
     const validatedFiles = validatedEntries.map((entry) => entry.file);
 
-    if (persistResults) await this.fileRepository.save(validatedFiles);
+    if (persistResults && validatedFiles.length) {
+      await this.fileRepository.save(validatedFiles);
+    }
 
     const validFiles = validatedEntries.filter(
       (entry) => entry.result.valid,
@@ -230,36 +214,37 @@ export class ValidationService {
         invalidFiles: validatedFiles.length - validFiles,
         semanticValid: semanticResult.valid,
         semanticIssueCount: semanticResult.issues.length,
+        semanticIssues,
         timestamp: now,
       },
     };
   }
 
   /**
-   * Semantic validation: check cross-references within an ACP.
+   * Semantic validation: check cross-references within an AP.
    */
-  async validateAcpConsistency(
-    acpId: string,
+  async validateApConsistency(
+    apId: string,
     progress?: FileProcessingProgressReporter,
   ): Promise<ValidationResult> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
       return {
         valid: false,
-        issues: [{ severity: "error", message: "ACP not found" }],
+        issues: [{ severity: "error", message: "AP not found" }],
         timestamp: new Date().toISOString(),
       };
     }
 
     const issues: ValidationIssue[] = [];
-    const index = toRuntimeAcpIndex(acp.acpIndex);
+    const index = toRuntimeApIndex(ap.apIndex);
     const units = getIndexUnits(index);
     const unitIds = new Set(
       units
         .map((u: any) => (typeof u?.id === "string" ? u.id : ""))
         .filter((id: string) => id.length > 0),
     );
-    const files = await this.fileRepository.find({ where: { acpId } });
+    const files = await this.fileRepository.find({ where: { apId } });
     const fileNames = new Set(files.map((f) => f.originalName));
     const assessmentParts = getAssessmentParts(index);
     const scalesInParts =
@@ -330,7 +315,7 @@ export class ValidationService {
     await progress?.startPhase("validate-semantic", semanticTotal, {
       message:
         semanticTotal > 0
-          ? "ACP-weite Referenzen und Skalen werden geprueft."
+          ? "AP-weite Referenzen und Skalen werden geprueft."
           : "Keine semantischen Referenzen zur Pruefung vorhanden.",
     });
 
@@ -430,7 +415,7 @@ export class ValidationService {
       }
     }
 
-    const manifest = await this.reviewManifestService.getManifest(acpId);
+    const manifest = await this.reviewManifestService.getManifest(apId);
     issues.push(...manifest.issues);
 
     const knownItemIds = this.collectKnownItemIds(units);
@@ -469,7 +454,7 @@ export class ValidationService {
     fileName: string,
     payload: unknown,
   ): ValidationIssue[] {
-    if (!this.looksLikeAcpIndex(fileName, payload)) {
+    if (!this.looksLikeApIndex(fileName, payload)) {
       return [];
     }
 
@@ -478,7 +463,7 @@ export class ValidationService {
         {
           severity: "error",
           message:
-            "ACP-Index schema check failed: top-level JSON must be an object",
+            "AP-Index schema check failed: top-level JSON must be an object",
           scope: "schema",
           path: "$",
         },
@@ -492,7 +477,7 @@ export class ValidationService {
       issues.push({
         severity: "error",
         message:
-          'ACP-Index schema: required field "packageId" is missing or empty',
+          'AP-Index schema: required field "packageId" is missing or empty',
         scope: "schema",
         path: "packageId",
       });
@@ -502,7 +487,7 @@ export class ValidationService {
       issues.push({
         severity: "error",
         message:
-          'ACP-Index schema: required field "version" is missing or empty',
+          'AP-Index schema: required field "version" is missing or empty',
         scope: "schema",
         path: "version",
       });
@@ -510,11 +495,11 @@ export class ValidationService {
 
     if (
       typeof index.status !== "string" ||
-      !ACP_INDEX_ALLOWED_STATUS_VALUES.includes(index.status as any)
+      !AP_INDEX_ALLOWED_STATUS_VALUES.includes(index.status as any)
     ) {
       issues.push({
         severity: "error",
-        message: `ACP-Index schema: "status" must be one of ${ACP_INDEX_ALLOWED_STATUS_VALUES.join(", ")}`,
+        message: `AP-Index schema: "status" must be one of ${AP_INDEX_ALLOWED_STATUS_VALUES.join(", ")}`,
         scope: "schema",
         path: "status",
       });
@@ -524,7 +509,7 @@ export class ValidationService {
       issues.push({
         severity: "error",
         message:
-          'ACP-Index schema: required field "assessmentParts" must be an array',
+          'AP-Index schema: required field "assessmentParts" must be an array',
         scope: "schema",
         path: "assessmentParts",
       });
@@ -540,7 +525,7 @@ export class ValidationService {
       if (!part || typeof part !== "object" || Array.isArray(part)) {
         issues.push({
           severity: "error",
-          message: "ACP-Index schema: assessmentPart entry must be an object",
+          message: "AP-Index schema: assessmentPart entry must be an object",
           scope: "schema",
           path: `assessmentParts[${partIndex}]`,
         });
@@ -551,7 +536,7 @@ export class ValidationService {
       if (modules !== undefined && !Array.isArray(modules)) {
         issues.push({
           severity: "error",
-          message: 'ACP-Index schema: "bookletModules" must be an array',
+          message: 'AP-Index schema: "bookletModules" must be an array',
           scope: "schema",
           path: `assessmentParts[${partIndex}].bookletModules`,
         });
@@ -565,7 +550,7 @@ export class ValidationService {
         if (!module || typeof module !== "object" || Array.isArray(module)) {
           issues.push({
             severity: "error",
-            message: "ACP-Index schema: bookletModule entry must be an object",
+            message: "AP-Index schema: bookletModule entry must be an object",
             scope: "schema",
             path: `assessmentParts[${partIndex}].bookletModules[${moduleIndex}]`,
           });
@@ -575,7 +560,7 @@ export class ValidationService {
         if (typeof module.id !== "string" || !module.id.trim()) {
           issues.push({
             severity: "error",
-            message: 'ACP-Index schema: bookletModule requires non-empty "id"',
+            message: 'AP-Index schema: bookletModule requires non-empty "id"',
             scope: "schema",
             path: `assessmentParts[${partIndex}].bookletModules[${moduleIndex}].id`,
           });
@@ -584,7 +569,7 @@ export class ValidationService {
         if (module.units !== undefined && !Array.isArray(module.units)) {
           issues.push({
             severity: "error",
-            message: 'ACP-Index schema: bookletModule "units" must be an array',
+            message: 'AP-Index schema: bookletModule "units" must be an array',
             scope: "schema",
             path: `assessmentParts[${partIndex}].bookletModules[${moduleIndex}].units`,
           });
@@ -595,7 +580,7 @@ export class ValidationService {
       if (instruments !== undefined && !Array.isArray(instruments)) {
         issues.push({
           severity: "error",
-          message: 'ACP-Index schema: "instruments" must be an array',
+          message: 'AP-Index schema: "instruments" must be an array',
           scope: "schema",
           path: `assessmentParts[${partIndex}].instruments`,
         });
@@ -615,7 +600,7 @@ export class ValidationService {
         ) {
           issues.push({
             severity: "error",
-            message: "ACP-Index schema: instrument entry must be an object",
+            message: "AP-Index schema: instrument entry must be an object",
             scope: "schema",
             path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}]`,
           });
@@ -627,7 +612,7 @@ export class ValidationService {
           issues.push({
             severity: "error",
             message:
-              'ACP-Index schema: instrument "testcenterBooklet" must be an array',
+              'AP-Index schema: instrument "testcenterBooklet" must be an array',
             scope: "schema",
             path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}].testcenterBooklet`,
           });
@@ -646,7 +631,7 @@ export class ValidationService {
           ) {
             issues.push({
               severity: "error",
-              message: "ACP-Index schema: booklet entry must be an object",
+              message: "AP-Index schema: booklet entry must be an object",
               scope: "schema",
               path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}].testcenterBooklet[${bookletIndex}]`,
             });
@@ -659,7 +644,7 @@ export class ValidationService {
           ) {
             issues.push({
               severity: "error",
-              message: 'ACP-Index schema: booklet "modules" must be an array',
+              message: 'AP-Index schema: booklet "modules" must be an array',
               scope: "schema",
               path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}].testcenterBooklet[${bookletIndex}].modules`,
             });
@@ -676,7 +661,7 @@ export class ValidationService {
               issues.push({
                 severity: "error",
                 message:
-                  "ACP-Index schema: module reference must be string, {moduleId}, or {id}",
+                  "AP-Index schema: module reference must be string, {moduleId}, or {id}",
                 scope: "schema",
                 path: `assessmentParts[${partIndex}].instruments[${instrumentIndex}].testcenterBooklet[${bookletIndex}].modules[${moduleRefIndex}]`,
               });
@@ -689,8 +674,9 @@ export class ValidationService {
     return issues;
   }
 
-  private looksLikeAcpIndex(fileName: string, payload: unknown): boolean {
-    if (fileName.toLowerCase().includes("acp-index")) {
+  private looksLikeApIndex(fileName: string, payload: unknown): boolean {
+    // Existing integrations still upload indexes exported under the ACP name.
+    if (/(?:ap|acp)-index/i.test(fileName)) {
       return true;
     }
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {

@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 
 interface InitScriptTarget {
-  addInitScript(script: (accessToken: string) => void, token: string): Promise<void>;
+  addInitScript(script: (accessToken: string) => void, token: string): Promise<unknown>;
 }
 
 function encode(value: object): string {
@@ -37,7 +37,7 @@ export async function installOidcSession(
 ): Promise<void> {
   const token = createOidcAppToken(userId, username);
   await target.addInitScript((accessToken) => {
-    localStorage.setItem('cp_token', accessToken);
-    localStorage.setItem('cp_auth_type', 'oidc');
+    localStorage.setItem('ch_token', accessToken);
+    localStorage.setItem('ch_auth_type', 'oidc');
   }, token);
 }

@@ -5,9 +5,16 @@
 
   <app-item-explorer-header />
 
-  <app-split-pane [initialLeftPercent]="45" [minLeftPx]="350" [minRightPx]="400">
+  <app-split-pane
+    [initialLeftPercent]="45"
+    [minLeftPx]="350"
+    [minRightPx]="400"
+    [hideRight]="!showExplorerItemPanel"
+  >
     <app-item-explorer-table left />
-    <app-item-explorer-preview right />
+    @if (showExplorerItemPanel) {
+      <app-item-explorer-preview right />
+    }
   </app-split-pane>
 
   <app-item-explorer-coding-dialog />

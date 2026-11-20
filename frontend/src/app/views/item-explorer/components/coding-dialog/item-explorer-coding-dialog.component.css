@@ -13,6 +13,44 @@
   padding: 12px 16px;
   border-radius: 8px;
 }
+.coding-information {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+.coding-information p {
+  margin: 6px 0 0;
+  color: var(--color-text-secondary);
+}
+.coding-information-exact {
+  background: rgba(39, 174, 96, 0.08);
+  border-color: rgba(39, 174, 96, 0.35);
+}
+.coding-information-warning {
+  background: rgba(243, 156, 18, 0.06);
+  border-color: rgba(243, 156, 18, 0.3);
+}
+.coding-answer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+.coding-answer {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 2fr);
+  gap: 12px;
+  align-items: baseline;
+}
+.coding-answer dt {
+  color: var(--color-text-secondary);
+}
+.coding-answer dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--color-text);
+}
 .coding-focus-info {
   background: rgba(41, 128, 185, 0.06);
   border: 1px solid rgba(41, 128, 185, 0.25);
@@ -71,6 +109,11 @@
   border-radius: 4px;
   color: #7e5109;
   line-height: 1.4;
+}
+.coding-structure-info {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
 }
 .codes-list {
   display: flex;
@@ -131,11 +174,20 @@
   color: var(--color-text);
 }
 .rule-list {
-  margin: 4px 0 0 44px;
+  margin: 4px 0 0;
   padding-left: 0;
   font-size: 0.8rem;
   color: var(--color-text-secondary);
   list-style-type: none;
+}
+.automatic-coding-rule {
+  margin: 4px 0 0 44px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+.rule-operator {
+  margin-left: 6px;
+  font-size: 0.75rem;
 }
 .rule-list li {
   position: relative;
@@ -161,4 +213,11 @@
 .sort-actions {
   display: flex;
   gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .coding-answer {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
 }

@@ -5,7 +5,7 @@ import unittest
 from production_exception import MARKER, ProductionExceptionError, validate_issue
 
 
-REPOSITORY = "iqb-berlin/content-pool-next"
+REPOSITORY = "iqb-berlin/content-hub"
 ISSUE_URL = f"https://github.com/{REPOSITORY}/issues/109"
 
 

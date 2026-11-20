@@ -65,7 +65,7 @@
             </#if>
 
             <div class="form-group form-group-buttons">
-                <a href="${url.loginUrl}" class="pf-c-button pf-m-link back-link">← Zurück zur Anmeldung</a>
+                <a href="${url.loginUrl}" class="pf-c-button pf-m-link back-link">Zurück zur Anmeldung</a>
                 <input type="submit" class="pf-c-button pf-m-primary" value="${msg("doRegister")}"/>
             </div>
         </form>

@@ -12,10 +12,10 @@ export class ItemResponseStateService {
 
   /**
    * Save or update response state for an item.
-   * Only ACP managers can save states.
+   * Only AP managers can save states.
    */
   async saveResponseState(
-    acpId: string,
+    apId: string,
     itemId: string,
     unitId: string,
     responseData: Record<string, any>,
@@ -23,15 +23,13 @@ export class ItemResponseStateService {
     rowKey?: string,
   ): Promise<ItemResponseState> {
     if (!userIsManager) {
-      throw new ForbiddenException(
-        "Only ACP managers can save response states",
-      );
+      throw new ForbiddenException("Only AP managers can save response states");
     }
 
     // Check if state already exists
     const explicitRowKey = this.normalizeRowKey(rowKey);
     const resolvedRowKey = this.resolveRowKey(explicitRowKey, unitId, itemId);
-    let state = await this.findState(acpId, itemId, unitId, explicitRowKey);
+    let state = await this.findState(apId, itemId, unitId, explicitRowKey);
 
     if (state) {
       // Update existing
@@ -42,7 +40,7 @@ export class ItemResponseStateService {
     } else {
       // Create new
       state = this.stateRepository.create({
-        acpId,
+        apId,
         itemId,
         unitId,
         rowKey: resolvedRowKey,
@@ -57,12 +55,12 @@ export class ItemResponseStateService {
    * Get response state for a specific item.
    */
   async getResponseState(
-    acpId: string,
+    apId: string,
     itemId: string,
     unitId: string,
     rowKey?: string,
   ): Promise<ItemResponseState | null> {
-    return this.findState(acpId, itemId, unitId, this.normalizeRowKey(rowKey));
+    return this.findState(apId, itemId, unitId, this.normalizeRowKey(rowKey));
   }
 
   /**
@@ -70,7 +68,7 @@ export class ItemResponseStateService {
    * Returns the state with metadata about whether it's a fallback.
    */
   async getResponseStateWithFallback(
-    acpId: string,
+    apId: string,
     itemId: string,
     unitId: string,
     itemList: { itemId: string; unitId: string; rowKey?: string }[],
@@ -98,7 +96,7 @@ export class ItemResponseStateService {
       ]),
     );
     const unitStates = await this.stateRepository.find({
-      where: { acpId, unitId, itemId: In(candidateItemIds) },
+      where: { apId, unitId, itemId: In(candidateItemIds) },
     });
     const directState = this.findStateInLoadedSet(
       unitStates,
@@ -139,10 +137,10 @@ export class ItemResponseStateService {
 
   /**
    * Delete response state for an item.
-   * Only ACP managers can delete states.
+   * Only AP managers can delete states.
    */
   async deleteResponseState(
-    acpId: string,
+    apId: string,
     itemId: string,
     unitId: string,
     userIsManager: boolean,
@@ -150,12 +148,12 @@ export class ItemResponseStateService {
   ): Promise<{ success: boolean }> {
     if (!userIsManager) {
       throw new ForbiddenException(
-        "Only ACP managers can delete response states",
+        "Only AP managers can delete response states",
       );
     }
 
     const state = await this.findState(
-      acpId,
+      apId,
       itemId,
       unitId,
       this.normalizeRowKey(rowKey),
@@ -172,30 +170,30 @@ export class ItemResponseStateService {
   }
 
   /**
-   * Get all response states for an ACP.
-   * Only ACP managers can view all states.
+   * Get all response states for an AP.
+   * Only AP managers can view all states.
    */
-  async getAllStatesForAcp(
-    acpId: string,
+  async getAllStatesForAp(
+    apId: string,
     userIsManager: boolean,
   ): Promise<ItemResponseState[]> {
     if (!userIsManager) {
       throw new ForbiddenException(
-        "Only ACP managers can view all response states",
+        "Only AP managers can view all response states",
       );
     }
 
     return this.stateRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { unitId: "ASC", itemId: "ASC", rowKey: "ASC" },
     });
   }
 
   /**
-   * Check if user is ACP manager (placeholder - actual check happens in controller).
+   * Check if user is AP manager (placeholder - actual check happens in controller).
    */
-  async checkIsManager(_acpId: string, _userId: string): Promise<boolean> {
-    // This is a placeholder - actual role checking should be done via AcpUserRole entity
+  async checkIsManager(_apId: string, _userId: string): Promise<boolean> {
+    // This is a placeholder - actual role checking should be done via ApUserRole entity
     // The controller will handle the actual authorization check
     return false;
   }
@@ -214,7 +212,7 @@ export class ItemResponseStateService {
   }
 
   private async findState(
-    acpId: string,
+    apId: string,
     itemId: string,
     unitId: string,
     explicitRowKey?: string,
@@ -222,7 +220,7 @@ export class ItemResponseStateService {
     const legacyRowKey = `${unitId}::${itemId}`;
     const requestedRowKey = explicitRowKey || legacyRowKey;
     const direct = await this.stateRepository.findOne({
-      where: { acpId, itemId, unitId, rowKey: requestedRowKey },
+      where: { apId, itemId, unitId, rowKey: requestedRowKey },
     });
     if (direct) {
       return direct;
@@ -231,7 +229,7 @@ export class ItemResponseStateService {
     if (!explicitRowKey) {
       return this.stateRepository.findOne({
         where: {
-          acpId,
+          apId,
           itemId,
           unitId,
           rowKey: Not(Like("%::%")),
@@ -245,7 +243,7 @@ export class ItemResponseStateService {
     }
 
     const legacy = await this.stateRepository.findOne({
-      where: { acpId, itemId, unitId, rowKey: legacyRowKey },
+      where: { apId, itemId, unitId, rowKey: legacyRowKey },
     });
     return legacy;
   }

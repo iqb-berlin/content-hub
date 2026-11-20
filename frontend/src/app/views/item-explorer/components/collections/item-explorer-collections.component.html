@@ -41,7 +41,7 @@
           tabindex="0"
           [title]="
             vm.activeItemCollection?.ownedByCurrentUser
-              ? 'Andere Zugangsberechtigte dieses ACP können diese Liste ansehen und kopieren. Persönliche Eingaben werden nicht geteilt.'
+              ? 'Andere Zugangsberechtigte dieses AP können diese Liste ansehen und kopieren. Persönliche Eingaben werden nicht geteilt.'
               : 'Geteilt von ' +
                 vm.activeItemCollection?.ownerLabel +
                 '. Sie können diese Liste ansehen und kopieren. Persönliche Eingaben werden nicht geteilt.'
@@ -51,7 +51,7 @@
       }
       <div class="collection-view-toggle" role="group" aria-label="Angezeigte Items">
         <button
-          title="Alle Items des ACP anzeigen; bestehende Suchfilter bleiben aktiv"
+          title="Alle Items des AP anzeigen; bestehende Suchfilter bleiben aktiv"
           class="btn btn-outline btn-sm btn-state"
           type="button"
           [attr.aria-pressed]="vm.collectionViewMode === 'all'"
@@ -538,7 +538,7 @@
   <form (ngSubmit)="saveCollectionSharing()">
     <h2 id="collection-share-title">Auswahlliste freigeben</h2>
     <p>
-      Andere Zugangsberechtigte dieses ACP können die Liste ansehen und kopieren. Persönliche
+      Andere Zugangsberechtigte dieses AP können die Liste ansehen und kopieren. Persönliche
       Eingaben werden nicht geteilt.
     </p>
     <label class="collection-share-toggle"
@@ -548,7 +548,7 @@
         [(ngModel)]="collectionShared"
         [disabled]="shareSaving"
       />
-      Für diesen ACP freigeben</label
+      Für diesen AP freigeben</label
     >
     <p class="personal-data-error" role="alert">{{ shareError }}</p>
     <div class="collection-name-actions">

@@ -1,6 +1,6 @@
 import { NotFoundException } from "@nestjs/common";
 import * as crypto from "crypto";
-import { Acp, AcpItemRowNumber } from "../database/entities";
+import { Ap, ApItemRowNumber } from "../database/entities";
 import {
   ItemRowNumberingService,
   NumberableItemRow,
@@ -8,8 +8,8 @@ import {
 
 describe("ItemRowNumberingService", () => {
   let service: ItemRowNumberingService;
-  let persisted: AcpItemRowNumber[];
-  let acpExists: boolean;
+  let persisted: ApItemRowNumber[];
+  let apExists: boolean;
   let repository: any;
   let transactionManager: any;
   let rootTransaction: jest.Mock;
@@ -25,7 +25,7 @@ describe("ItemRowNumberingService", () => {
 
   beforeEach(() => {
     persisted = [];
-    acpExists = true;
+    apExists = true;
     repository = {
       find: jest.fn(async ({ where }: any) => {
         const requestedHashes = where.rowKeyHash?.value;
@@ -34,39 +34,39 @@ describe("ItemRowNumberingService", () => {
           : null;
         return persisted.filter(
           (entry) =>
-            entry.acpId === where.acpId &&
+            entry.apId === where.apId &&
             (!hashSet || hashSet.has(entry.rowKeyHash)),
         );
       }),
-      maximum: jest.fn(async (_column: string, { acpId }: any) =>
+      maximum: jest.fn(async (_column: string, { apId }: any) =>
         persisted
-          .filter((entry) => entry.acpId === acpId)
+          .filter((entry) => entry.apId === apId)
           .reduce<
             number | null
           >((maximum, entry) => (maximum === null ? entry.rowNumber : Math.max(maximum, entry.rowNumber)), null),
       ),
-      create: jest.fn((entry: Partial<AcpItemRowNumber>) => ({
+      create: jest.fn((entry: Partial<ApItemRowNumber>) => ({
         id: `id-${entry.rowKey}`,
         ...entry,
       })),
-      save: jest.fn(async (entries: AcpItemRowNumber[]) => {
+      save: jest.fn(async (entries: ApItemRowNumber[]) => {
         persisted.push(...entries);
         return entries;
       }),
-      delete: jest.fn(async ({ acpId }: { acpId: string }) => {
-        persisted = persisted.filter((entry) => entry.acpId !== acpId);
+      delete: jest.fn(async ({ apId }: { apId: string }) => {
+        persisted = persisted.filter((entry) => entry.apId !== apId);
         return { affected: 1 };
       }),
     };
-    const acpQueryBuilder = {
+    const apQueryBuilder = {
       setLock: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
-      getOne: jest.fn(async () => (acpExists ? { id: "acp-1" } : null)),
+      getOne: jest.fn(async () => (apExists ? { id: "ap-1" } : null)),
     };
     transactionManager = {
       getRepository: jest.fn((entity) =>
-        entity === Acp
-          ? { createQueryBuilder: jest.fn(() => acpQueryBuilder) }
+        entity === Ap
+          ? { createQueryBuilder: jest.fn(() => apQueryBuilder) }
           : repository,
       ),
     };
@@ -83,7 +83,7 @@ describe("ItemRowNumberingService", () => {
   });
 
   it("initially numbers rows by natural alphanumeric Item-ID and Sub-ID", async () => {
-    const numbers = await service.assignNumbers("acp-1", [
+    const numbers = await service.assignNumbers("ap-1", [
       row("uuid-10", "UNIT_1", "ITEM_10"),
       row("uuid-2::2", "UNIT_1", "ITEM_2", "2"),
       row("uuid-2::1", "UNIT_1", "ITEM_2", "1"),
@@ -99,7 +99,7 @@ describe("ItemRowNumberingService", () => {
   });
 
   it("returns the persisted revision from the numbering transaction", async () => {
-    const assignment = await service.assignNumbersWithRevision("acp-1", [
+    const assignment = await service.assignNumbersWithRevision("ap-1", [
       row("uuid-1", "UNIT_1", "ITEM_1"),
       row("uuid-2", "UNIT_1", "ITEM_2"),
     ]);
@@ -108,7 +108,7 @@ describe("ItemRowNumberingService", () => {
       ["uuid-1", 1],
       ["uuid-2", 2],
     ]);
-    expect(assignment.revision).toBe(await service.getRevision("acp-1"));
+    expect(assignment.revision).toBe(await service.getRevision("ap-1"));
     expect(rootTransaction).toHaveBeenCalledTimes(1);
   });
 
@@ -117,7 +117,7 @@ describe("ItemRowNumberingService", () => {
       .fn()
       .mockResolvedValue([{ count: "1", hash: "transaction-hash" }]);
 
-    const assignment = await service.assignNumbersWithRevision("acp-1", [
+    const assignment = await service.assignNumbersWithRevision("ap-1", [
       row("uuid-1", "UNIT_1", "ITEM_1"),
     ]);
 
@@ -132,7 +132,7 @@ describe("ItemRowNumberingService", () => {
       .fn()
       .mockResolvedValue([{ count: "1", hash: "unused" }]);
 
-    await service.assignNumbers("acp-1", [row("uuid-1", "UNIT_1", "ITEM_1")]);
+    await service.assignNumbers("ap-1", [row("uuid-1", "UNIT_1", "ITEM_1")]);
 
     expect(repository.query).not.toHaveBeenCalled();
   });
@@ -141,25 +141,25 @@ describe("ItemRowNumberingService", () => {
     persisted = [
       {
         id: "1",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "first",
         rowKeyHash: hash("first"),
         rowNumber: 2,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
       {
         id: "2",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "second",
         rowKeyHash: hash("second"),
         rowNumber: 1,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
     ];
 
-    const first = await service.getRevision("acp-1");
+    const first = await service.getRevision("ap-1");
     persisted.reverse();
-    const second = await service.getRevision("acp-1");
+    const second = await service.getRevision("ap-1");
     persisted[0].rowNumber = 3;
-    const changed = await service.getRevision("acp-1");
+    const changed = await service.getRevision("ap-1");
 
     expect(first).toBe(second);
     expect(changed).not.toBe(first);
@@ -171,15 +171,15 @@ describe("ItemRowNumberingService", () => {
       .mockResolvedValue([{ count: "2", hash: "database-hash" }]);
     (service as any).rowNumberRepository.query = query;
 
-    await expect(service.getRevision("acp-1")).resolves.toBe("2:database-hash");
+    await expect(service.getRevision("ap-1")).resolves.toBe("2:database-hash");
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining("FROM acp_item_row_numbers"),
-      ["acp-1"],
+      ["ap-1"],
     );
   });
 
   it("sorts globally by Item-ID before using Unit-ID as a tie-breaker", async () => {
-    const numbers = await service.assignNumbers("acp-1", [
+    const numbers = await service.assignNumbers("ap-1", [
       row("unit-1-item-10", "UNIT_1", "ITEM_10"),
       row("unit-2-item-2", "UNIT_2", "ITEM_2"),
       row("unit-1-item-2", "UNIT_1", "ITEM_2"),
@@ -192,18 +192,18 @@ describe("ItemRowNumberingService", () => {
     ]);
   });
 
-  it("returns existing assignments without taking the ACP write lock", async () => {
+  it("returns existing assignments without taking the AP write lock", async () => {
     persisted = [
       {
         id: "1",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "current",
         rowKeyHash: hash("current"),
         rowNumber: 4,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
     ];
 
-    const numbers = await service.assignNumbers("acp-1", [
+    const numbers = await service.assignNumbers("ap-1", [
       row("current", "UNIT_1", "UNIT_1_ITEM_1"),
     ]);
 
@@ -219,7 +219,7 @@ describe("ItemRowNumberingService", () => {
 
     expect(longRowKey.length).toBeGreaterThan(500);
 
-    await service.assignNumbers("acp-1", [
+    await service.assignNumbers("ap-1", [
       row(longRowKey, "UNIT_1", "ITEM_1", "😀".repeat(39)),
     ]);
 
@@ -235,28 +235,28 @@ describe("ItemRowNumberingService", () => {
     persisted = [
       {
         id: "1",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "current",
         rowKeyHash: hash("current"),
         rowNumber: 1,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
       {
         id: "2",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "deleted",
         rowKeyHash: hash("deleted"),
         rowNumber: 2,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
       {
         id: "3",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "current-2",
         rowKeyHash: hash("current-2"),
         rowNumber: 4,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
     ];
 
-    const numbers = await service.assignNumbers("acp-1", [
+    const numbers = await service.assignNumbers("ap-1", [
       row("current", "UNIT_1", "ITEM_1"),
       row("new", "UNIT_1", "ITEM_2"),
       row("current-2", "UNIT_1", "ITEM_3"),
@@ -266,7 +266,7 @@ describe("ItemRowNumberingService", () => {
     expect(numbers.has("deleted")).toBe(false);
     expect(numbers.get("new")).toBe(5);
     expect(repository.maximum).toHaveBeenCalledWith("rowNumber", {
-      acpId: "acp-1",
+      apId: "ap-1",
     });
   });
 
@@ -274,21 +274,21 @@ describe("ItemRowNumberingService", () => {
     persisted = [
       {
         id: "1",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "current",
         rowKeyHash: hash("current"),
         rowNumber: 1,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
       {
         id: "2",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "deleted",
         rowKeyHash: hash("deleted"),
         rowNumber: 4,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
     ];
 
-    const numbers = await service.assignProvisionalNumbers("acp-1", [
+    const numbers = await service.assignProvisionalNumbers("ap-1", [
       row("current", "UNIT_1", "ITEM_1"),
       row("draft", "UNIT_1", "ITEM_2"),
     ]);
@@ -306,19 +306,19 @@ describe("ItemRowNumberingService", () => {
     persisted = [
       {
         id: "1",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "deleted",
         rowNumber: 2,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
       {
         id: "2",
-        acpId: "acp-1",
+        apId: "ap-1",
         rowKey: "item-10",
         rowNumber: 8,
-      } as AcpItemRowNumber,
+      } as ApItemRowNumber,
     ];
 
-    const numbers = await service.recalculateNumbers("acp-1", [
+    const numbers = await service.recalculateNumbers("ap-1", [
       row("item-10", "UNIT_1", "ITEM_10"),
       row("item-2", "UNIT_1", "ITEM_2"),
     ]);
@@ -335,13 +335,13 @@ describe("ItemRowNumberingService", () => {
 
   it("reuses a caller transaction for atomic recalculation", async () => {
     await service.recalculateNumbers(
-      "acp-1",
+      "ap-1",
       [row("item-1", "UNIT_1", "ITEM_1")],
       transactionManager,
     );
 
     expect(rootTransaction).not.toHaveBeenCalled();
-    expect(repository.delete).toHaveBeenCalledWith({ acpId: "acp-1" });
+    expect(repository.delete).toHaveBeenCalledWith({ apId: "ap-1" });
     expect(persisted[0]).toEqual(
       expect.objectContaining({ rowKey: "item-1", rowNumber: 1 }),
     );
@@ -353,7 +353,7 @@ describe("ItemRowNumberingService", () => {
     });
 
     await service.recalculateNumbers(
-      "acp-1",
+      "ap-1",
       [row("item-1", "UNIT_1", "ITEM_1")],
       transactionManager,
       validateBeforeReplace,
@@ -365,8 +365,8 @@ describe("ItemRowNumberingService", () => {
     );
   });
 
-  it("fails without mutating numbering when the ACP does not exist", async () => {
-    acpExists = false;
+  it("fails without mutating numbering when the AP does not exist", async () => {
+    apExists = false;
 
     await expect(
       service.assignNumbers("missing", [row("item", "UNIT_1", "ITEM_1")]),

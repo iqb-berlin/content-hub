@@ -15,7 +15,7 @@ describe("AdminController", () => {
       listApplicationTokens: jest.fn().mockResolvedValue([{ id: "token-1" }]),
       createApplicationToken: jest.fn().mockResolvedValue({
         id: "token-1",
-        token: "cp_secret",
+        token: "ch_secret",
       }),
       revokeApplicationToken: jest.fn().mockResolvedValue({
         id: "token-1",
@@ -63,14 +63,14 @@ describe("AdminController", () => {
   it("creates application tokens for the current admin user", async () => {
     const payload = {
       name: "Studio",
-      scopes: ["acp.read"],
+      scopes: ["ap.read"],
     };
 
     await expect(
       controller.createApplicationToken(payload, { user: { sub: "admin-1" } }),
     ).resolves.toEqual({
       id: "token-1",
-      token: "cp_secret",
+      token: "ch_secret",
     });
     expect(adminService.createApplicationToken).toHaveBeenCalledWith(
       payload,

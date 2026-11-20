@@ -8,7 +8,8 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import {
   catchError,
   of,
@@ -34,8 +35,15 @@ interface ReviewBookletOption {
 
 @Component({
   selector: 'app-task-sequence',
+  host: { '[class.review-workspace-view]': 'isBooklet' },
   standalone: true,
-  imports: [FormsModule, BreadcrumbComponent, ItemCommentThreadComponent, UnitViewComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    BreadcrumbComponent,
+    ItemCommentThreadComponent,
+    UnitViewComponent,
+  ],
   template: `
     @if (sequence) {
       <app-breadcrumb [items]="breadcrumbs" />
@@ -59,7 +67,7 @@ interface ReviewBookletOption {
 
       @if (showCommentBtn && !isBooklet) {
         <app-item-comment-thread
-          [acpId]="acpId"
+          [apId]="apId"
           [targetType]="'BOOKLET'"
           [bookletId]="sequenceId"
           [enabled]="showCommentBtn"
@@ -70,34 +78,21 @@ interface ReviewBookletOption {
         #reviewWorkspace
         class="review-workspace"
         [class.fullscreen-fallback]="isFallbackFullscreen"
+        [attr.aria-busy]="sequenceLoading"
       >
-        <!-- Navigation bar -->
-        <div class="nav-bar">
-          <div class="sequence-navigation">
-            <button class="btn btn-primary" [disabled]="!canGoPrev" (click)="prev()">
-              ← Zurück
-            </button>
-            @if (hasUnits && currentUnit) {
-              <span class="nav-info">
-                Aufgabe {{ currentIndex + 1 }} / {{ sequence.units.length }}:
-                <strong>{{
-                  isBooklet ? unitLabel(currentUnit) : currentUnit.name || currentUnit.id
-                }}</strong>
-                @if (currentUnit.blockPath?.length) {
-                  <small> · {{ currentUnit.blockPath?.join(' / ') }}</small>
-                }
-              </span>
-            } @else {
-              <span class="nav-info"><strong>Keine Aufgabe in dieser Aufgabenfolge</strong></span>
-            }
-            <button class="btn btn-primary" [disabled]="!canGoNext" (click)="next()">
-              Weiter →
-            </button>
-          </div>
-          <div class="workspace-actions">
-            @if (isBooklet && reviewBooklets.length > 1) {
+        @if (isBooklet) {
+          <div class="workspace-heading">
+            <div>
+              <span class="workspace-eyebrow">Testheft-Review</span>
+              <h2>{{ sequenceId }}</h2>
+              <p>
+                {{ bookletName }} <span aria-hidden="true">·</span>
+                {{ sequence.units.length }} Aufgaben
+              </p>
+            </div>
+            @if (reviewBooklets.length > 1) {
               <button
-                class="btn btn-outline btn-sm btn-state booklet-switcher"
+                class="btn btn-outline booklet-switcher"
                 (click)="toggleBookletList()"
                 [attr.aria-expanded]="bookletListOpen"
                 [attr.aria-label]="
@@ -109,15 +104,66 @@ interface ReviewBookletOption {
                   reviewBooklets.length
                 "
                 aria-controls="review-booklet-list"
-                title="Testheft wechseln"
               >
-                <span aria-hidden="true">📚</span>
-                <span class="selected-booklet-id">{{ bookletName }}</span>
-                <span class="selection-position"
-                  >· {{ currentBookletPosition || '–' }}/{{ reviewBooklets.length }}</span
-                >
-                <span aria-hidden="true">▾</span>
+                Testheft wechseln <span aria-hidden="true">⌄</span>
               </button>
+            }
+          </div>
+        }
+        <!-- Navigation bar -->
+        <div class="nav-bar">
+          <div class="sequence-navigation">
+            <button class="btn btn-primary" [disabled]="!canGoPrev" (click)="prev()">
+              ← Zurück
+            </button>
+            @if (hasUnits && currentUnit) {
+              <span class="nav-info">
+                @if (isBooklet) {
+                  <span>Aufgabe</span>
+                  <strong
+                    >{{ currentIndex + 1 }}
+                    <span class="position-total">von {{ sequence.units.length }}</span></strong
+                  >
+                } @else {
+                  Aufgabe {{ currentIndex + 1 }} / {{ sequence.units.length }}:
+                  <strong>{{ currentUnit.name || currentUnit.id }}</strong>
+                  @if (currentUnit.blockPath?.length) {
+                    <small> · {{ currentUnit.blockPath?.join(' / ') }}</small>
+                  }
+                }
+              </span>
+            } @else {
+              <span class="nav-info"><strong>Keine Aufgabe in dieser Aufgabenfolge</strong></span>
+            }
+            <button class="btn btn-primary" [disabled]="!canGoNext" (click)="next()">
+              Weiter →
+            </button>
+          </div>
+          <div class="workspace-actions">
+            @if (isBooklet && currentUnit && !sequenceLoading) {
+              <a
+                class="btn btn-outline btn-sm"
+                [href]="unitHref(currentIndex)"
+                (click)="copyUnitLink($event)"
+                title="Direktlink zur aktuellen Aufgabe kopieren"
+                aria-label="Direktlink zur Aufgabe kopieren"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m10 13 4-4M8 15l-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M14 9l2-2a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0"
+                    transform="translate(1 -1)"
+                  />
+                </svg>
+                Link kopieren
+              </a>
             }
             @if (showDownloadBtn && isBooklet) {
               <button
@@ -132,23 +178,71 @@ interface ReviewBookletOption {
               <button
                 class="btn btn-outline btn-sm btn-state"
                 (click)="toggleUnitList()"
+                [disabled]="sequenceLoading"
                 [attr.aria-expanded]="unitListOpen"
                 aria-controls="task-sequence-unit-list"
               >
-                📋 Aufgabenliste
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  aria-hidden="true"
+                >
+                  <path d="M9 6h12M9 12h12M9 18h12M3 6h1M3 12h1M3 18h1" />
+                </svg>
+                Aufgabenliste
               </button>
             }
             <button class="btn btn-outline btn-sm" (click)="toggleFullscreen()">
-              {{ isFullscreen ? 'Vollbild beenden' : '⛶ Vollbild' }}
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                aria-hidden="true"
+              >
+                <path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5" />
+              </svg>
+              {{ isFullscreen ? 'Vollbild beenden' : 'Vollbild' }}
             </button>
           </div>
         </div>
+
+        @if (unitLinkMessage) {
+          <p role="status" class="help-text">{{ unitLinkMessage }}</p>
+        }
+        @if (manualUnitLink) {
+          <label class="manual-unit-link">
+            Direktlink zum manuellen Kopieren
+            <input
+              #manualLinkInput
+              readonly
+              [value]="manualUnitLink"
+              (focus)="manualLinkInput.select()"
+            />
+          </label>
+        }
+
+        @if (invalidUnitLink) {
+          <p role="status" class="help-text">
+            Die verlinkte Aufgabe wurde in diesem Testheft nicht gefunden. Der Direktlink ist
+            ungültig oder veraltet.
+            @if (hasUnits) {
+              Die erste Aufgabe wird angezeigt.
+            }
+          </p>
+        }
 
         <!-- Current unit review -->
         @if (hasUnits && currentUnit) {
           <div class="unit-embed card">
             <app-unit-view
-              [acpId]="acpId"
+              [apId]="apId"
               [unitId]="currentUnit.id"
               [bookletId]="sequenceId"
               [bookletName]="bookletName"
@@ -176,23 +270,39 @@ interface ReviewBookletOption {
                 <button class="btn btn-outline btn-sm" (click)="unitListOpen = false">✕</button>
               </div>
               @for (unit of sequence.units; track unit.occurrenceId || $index; let i = $index) {
-                <button
-                  class="unit-list-item"
-                  [class.active]="i === currentIndex"
-                  [attr.aria-current]="i === currentIndex ? 'step' : null"
-                  (click)="jumpTo(i)"
-                >
-                  <span class="unit-num">{{ i + 1 }}</span>
-                  <span>
-                    @if (unit.blockPath?.length) {
-                      <small>{{ unit.blockPath?.join(' / ') }} · </small>
-                    }
-                    {{ isBooklet ? unitLabel(unit) : unit.name || unit.id }}
-                    @if (unit.alias) {
-                      <small> · Alias: {{ unit.alias }}</small>
-                    }
-                  </span>
-                </button>
+                <div class="unit-list-row">
+                  <button
+                    class="unit-list-item"
+                    [class.active]="i === currentIndex"
+                    [attr.aria-current]="i === currentIndex ? 'step' : null"
+                    (click)="jumpTo(i)"
+                  >
+                    <span class="unit-num">{{ i + 1 }}</span>
+                    <span>
+                      @if (unit.blockPath?.length) {
+                        <small>{{ unit.blockPath?.join(' / ') }} · </small>
+                      }
+                      {{ isBooklet ? unitLabel(unit) : unit.name || unit.id }}
+                      @if (unit.alias) {
+                        <small> · Alias: {{ unit.alias }}</small>
+                      }
+                    </span>
+                  </button>
+                  @if (isBooklet) {
+                    <a
+                      class="unit-direct-link"
+                      [routerLink]="['/view', apId, 'sequence', sequenceId]"
+                      [queryParams]="unitLinkParams(i)"
+                      queryParamsHandling="merge"
+                      [attr.aria-label]="
+                        'Direktlink zu Aufgabe ' + (i + 1) + ': ' + unitLabel(unit)
+                      "
+                      title="Direktlink zur Aufgabe"
+                      (click)="unitListOpen = false"
+                      >🔗</a
+                    >
+                  }
+                </div>
               }
             </div>
           </div>
@@ -280,6 +390,15 @@ interface ReviewBookletOption {
         display: flex;
         gap: 8px;
       }
+      .manual-unit-link {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .manual-unit-link input {
+        width: 100%;
+        min-width: 0;
+      }
 
       .nav-bar {
         display: flex;
@@ -320,18 +439,6 @@ interface ReviewBookletOption {
         border-color: var(--color-border);
         color: var(--color-text-secondary);
         box-shadow: none;
-      }
-      .selection-position {
-        color: var(--color-text-secondary);
-        font-variant-numeric: tabular-nums;
-      }
-      .selected-booklet-id {
-        min-width: 0;
-        overflow-wrap: anywhere;
-        color: inherit;
-        font-family: inherit;
-        font-size: inherit;
-        font-weight: 700;
       }
 
       .unit-embed {
@@ -420,6 +527,19 @@ interface ReviewBookletOption {
         border-radius: 6px;
         text-align: left;
         transition: background 0.15s;
+      }
+      .unit-list-row {
+        display: flex;
+        align-items: center;
+      }
+      .unit-list-row .unit-list-item {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .unit-direct-link {
+        padding: 12px;
+        flex-shrink: 0;
       }
       .unit-list-item:hover {
         background: var(--color-bg);
@@ -517,12 +637,16 @@ interface ReviewBookletOption {
 export class TaskSequenceComponent implements OnInit, OnDestroy {
   @ViewChild('reviewWorkspace') reviewWorkspace?: ElementRef<HTMLElement>;
 
-  acpId = '';
+  apId = '';
   sequenceId = '';
   sequenceKind?: 'booklet';
   canReview = false;
   sequence: TaskSequence | null = null;
+  sequenceLoading = false;
   currentIndex = 0;
+  invalidUnitLink = false;
+  unitLinkMessage = '';
+  manualUnitLink = '';
   breadcrumbs: BreadcrumbItem[] = [];
   reviewBooklets: ReviewBookletOption[] = [];
   readonly unitLabel = unitLabel;
@@ -542,6 +666,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   isFallbackFullscreen = false;
 
   private readonly destroy$ = new Subject<void>();
+  private unitLinkCopyRequest = 0;
 
   private readonly fullscreenChangeHandler = () => {
     this.isFullscreen =
@@ -556,6 +681,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   constructor(
     @Inject(ActivatedRoute) private route: ActivatedRoute,
     @Inject(Router) private router: Router,
+    @Inject(Location) private location: Location,
     @Inject(ApiService) private api: ApiService,
     @Inject(ChangeDetectorRef) private changeDetector: ChangeDetectorRef,
   ) {}
@@ -563,10 +689,10 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   ngOnInit() {
     document.addEventListener('fullscreenchange', this.fullscreenChangeHandler);
     document.addEventListener('keydown', this.fullscreenKeyHandler);
-    this.acpId = this.route.snapshot.paramMap.get('acpId') || '';
+    this.apId = this.route.snapshot.paramMap.get('apId') || '';
 
     this.api
-      .getCapabilities(this.acpId)
+      .getCapabilities(this.apId)
       .pipe(
         catchError(() => of({ canReview: false })),
         takeUntil(this.destroy$),
@@ -577,7 +703,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
       });
 
     this.api
-      .getAcpStartPage(this.acpId)
+      .getApStartPage(this.apId)
       .pipe(takeUntil(this.destroy$))
       .subscribe((data) => {
         const fc: FeatureConfig = data?.featureConfig || {};
@@ -607,14 +733,27 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
             previous.sequenceId === current.sequenceId &&
             previous.sequenceKind === current.sequenceKind,
         ),
-        switchMap(({ sequenceId, sequenceKind }) =>
-          this.api
-            .getViewSequence(this.acpId, sequenceId, sequenceKind)
-            .pipe(map((sequence) => ({ sequence, sequenceId, sequenceKind }))),
-        ),
+        switchMap(({ sequenceId, sequenceKind }) => {
+          this.clearUnitLinkFeedback();
+          this.sequenceLoading = true;
+          this.unitListOpen = false;
+          this.changeDetector.markForCheck();
+          return this.api
+            .getViewSequence(this.apId, sequenceId, sequenceKind)
+            .pipe(
+              switchMap((sequence) =>
+                (sequenceKind === 'booklet'
+                  ? this.route.queryParamMap
+                  : of(this.route.snapshot.queryParamMap)
+                ).pipe(map((queryParams) => ({ sequence, sequenceId, sequenceKind, queryParams }))),
+              ),
+            );
+        }),
         takeUntil(this.destroy$),
       )
-      .subscribe(({ sequence, sequenceId, sequenceKind }) => {
+      .subscribe(({ sequence, sequenceId, sequenceKind, queryParams }) => {
+        this.clearUnitLinkFeedback();
+        this.sequenceLoading = false;
         this.sequenceId = sequenceId;
         this.sequenceKind = sequenceKind;
         this.currentIndex = 0;
@@ -622,17 +761,20 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
         this.closeBookletList();
         if (this.featureConfig) this.applyFeatureConfig(this.featureConfig);
         this.sequence = this.normalizeSequence(sequence);
+        this.selectLinkedUnit(queryParams);
         this.breadcrumbs = [
-          { label: 'Assessment Content Pool', route: ['/'] },
-          { label: 'ACP', route: ['/view', this.acpId] },
+          { label: 'Content Hub', route: ['/'] },
+          { label: 'AP', route: ['/view', this.apId] },
           {
-            label: this.isBooklet ? this.bookletName : this.sequence.name || 'Aufgabenfolge',
+            label: this.isBooklet ? this.sequenceId : this.sequence.name || 'Aufgabenfolge',
           },
         ];
+        this.changeDetector.markForCheck();
       });
   }
 
   ngOnDestroy() {
+    this.clearUnitLinkFeedback();
     this.destroy$.next();
     this.destroy$.complete();
     document.removeEventListener('fullscreenchange', this.fullscreenChangeHandler);
@@ -653,11 +795,16 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   }
 
   get canGoPrev(): boolean {
-    return this.hasUnits && this.currentIndex > 0;
+    return !this.sequenceLoading && this.hasUnits && this.currentIndex > 0;
   }
 
   get canGoNext(): boolean {
-    return this.hasUnits && !!this.sequence && this.currentIndex < this.sequence.units.length - 1;
+    return (
+      !this.sequenceLoading &&
+      this.hasUnits &&
+      !!this.sequence &&
+      this.currentIndex < this.sequence.units.length - 1
+    );
   }
 
   get currentBookletPosition(): number {
@@ -677,24 +824,105 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
 
   prev() {
     if (!this.canGoPrev) return;
-    this.currentIndex -= 1;
+    this.jumpTo(this.currentIndex - 1);
   }
 
   next() {
     if (!this.canGoNext) return;
-    this.currentIndex += 1;
+    this.jumpTo(this.currentIndex + 1);
   }
 
   jumpTo(index: number) {
-    if (!this.sequence?.units?.length) return;
+    if (this.sequenceLoading || !this.sequence?.units?.length) return;
     const max = this.sequence.units.length - 1;
-    if (index < 0 || index > max) return;
-    this.currentIndex = index;
+    if (!Number.isInteger(index) || index < 0 || index > max) return;
+    if (this.isBooklet) {
+      void this.router.navigate(['/view', this.apId, 'sequence', this.sequenceId], {
+        queryParams: this.unitLinkParams(index),
+        queryParamsHandling: 'merge',
+      });
+    } else {
+      this.currentIndex = index;
+    }
     this.unitListOpen = false;
   }
 
+  unitLinkParams(index: number): {
+    kind: 'booklet';
+    occurrence: string | null;
+    position: number | null;
+  } {
+    const unit = this.sequence?.units[index];
+    const occurrence = unit?.linkId || unit?.occurrenceId || null;
+    return { kind: 'booklet', occurrence, position: occurrence ? null : index + 1 };
+  }
+
+  unitHref(index: number): string {
+    const tree = this.router.createUrlTree(['/view', this.apId, 'sequence', this.sequenceId], {
+      queryParams: this.unitLinkParams(index),
+      queryParamsHandling: 'merge',
+    });
+    return this.location.prepareExternalUrl(this.router.serializeUrl(tree));
+  }
+
+  async copyUnitLink(event: MouseEvent): Promise<void> {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    event.preventDefault();
+    if (this.sequenceLoading || !this.isBooklet || !this.currentUnit) return;
+    const href = (event.currentTarget as HTMLAnchorElement).href;
+    this.clearUnitLinkFeedback();
+    const request = this.unitLinkCopyRequest;
+    try {
+      await navigator.clipboard.writeText(href);
+      if (request !== this.unitLinkCopyRequest) return;
+      this.unitLinkMessage = 'Link kopiert.';
+    } catch {
+      if (request !== this.unitLinkCopyRequest) return;
+      this.unitLinkMessage = 'Der Link konnte nicht automatisch kopiert werden.';
+      this.manualUnitLink = href;
+    }
+    this.changeDetector.markForCheck();
+  }
+
+  private clearUnitLinkFeedback(): void {
+    this.unitLinkCopyRequest += 1;
+    this.unitLinkMessage = '';
+    this.manualUnitLink = '';
+  }
+
+  private selectLinkedUnit(params: ParamMap) {
+    this.invalidUnitLink = false;
+    if (!this.isBooklet) return;
+    const occurrence = params.get('occurrence');
+    const position = params.get('position');
+    if (occurrence === null && position === null) return;
+
+    let index = -1;
+    if (occurrence !== null && position === null && params.getAll('occurrence').length === 1) {
+      const matches = this.sequence!.units.map((unit, index) => ({ unit, index })).filter(
+        ({ unit }) => unit.linkId === occurrence || unit.occurrenceId === occurrence,
+      );
+      if (matches.length === 1) index = matches[0].index;
+    } else if (
+      occurrence === null &&
+      position !== null &&
+      params.getAll('position').length === 1 &&
+      /^[1-9]\d*$/.test(position)
+    ) {
+      const value = Number(position);
+      if (Number.isSafeInteger(value)) index = value - 1;
+    }
+    if (index >= 0 && index < this.sequence!.units.length) {
+      this.currentIndex = index;
+    } else {
+      this.invalidUnitLink = true;
+    }
+  }
+
   toggleUnitList() {
-    if (!this.hasUnits) return;
+    if (this.sequenceLoading || !this.hasUnits) return;
     this.closeBookletList();
     this.unitListOpen = !this.unitListOpen;
   }
@@ -714,7 +942,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
     if (!bookletId || !this.reviewBooklets.some((booklet) => booklet.id === bookletId)) return;
     this.closeBookletList();
     if (bookletId === this.sequenceId) return;
-    void this.router.navigate(['/view', this.acpId, 'sequence', bookletId], {
+    void this.router.navigate(['/view', this.apId, 'sequence', bookletId], {
       queryParams: { kind: 'booklet' },
     });
   }
@@ -753,7 +981,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
   downloadSequence() {
     if (!this.hasUnits) return;
     // Download all units in the sequence as ZIP
-    const url = `/api/acp/${this.acpId}/files?sequenceId=${encodeURIComponent(this.sequenceId)}&format=zip${this.sequenceKind === 'booklet' ? '&kind=booklet' : ''}`;
+    const url = `/api/ap/${this.apId}/files?sequenceId=${encodeURIComponent(this.sequenceId)}&format=zip${this.sequenceKind === 'booklet' ? '&kind=booklet' : ''}`;
     window.open(this.api.appendAuthToken(url), '_blank');
   }
 
@@ -776,6 +1004,7 @@ export class TaskSequenceComponent implements OnInit, OnDestroy {
       .map((unit: any) => ({
         id: unit.id.trim(),
         occurrenceId: unit.occurrenceId,
+        linkId: unit.linkId,
         alias: unit.alias,
         blockPath: unit.blockPath,
         name:

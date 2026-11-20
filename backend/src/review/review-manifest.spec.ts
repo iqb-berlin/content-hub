@@ -75,6 +75,123 @@ describe("Review manifest / #59", () => {
     expect(occurrences[0].occurrenceId).not.toBe(occurrences[1].occurrenceId);
   });
 
+  it("creates deterministic, URL-safe short links for every occurrence", () => {
+    const booklet = buildReviewManifest(
+      index(),
+      new Map([["review.xml", fixture]]),
+    ).booklets[0];
+    const links = booklet.units.map((unit) => unit.linkId);
+    // Existing links must survive later software releases with the same tree.
+    expect(links).toEqual([
+      "z2kTimGpP0cJRs8M",
+      "YOY8UB3sodpdOtuU",
+      "DDr4tYEn4080AYEl",
+      "_Bx-KHXZusPrg4sJ",
+    ]);
+    expect(new Set(links).size).toBe(booklet.units.length);
+    links.forEach((link) => expect(link).toMatch(/^[A-Za-z0-9_-]{16}$/));
+    expect(
+      buildReviewManifest(
+        index(),
+        new Map([["review.xml", fixture]]),
+      ).booklets[0].units.map((unit) => unit.linkId),
+    ).toEqual(links);
+  });
+
+  it.each([
+    [
+      "insert",
+      fixture.replace(
+        '<Unit id="intro" label="Einführung"/>',
+        '<Unit id="intro"/><Unit id="intro"/>',
+      ),
+    ],
+    ["remove", fixture.replace('<Unit id="intro" label="Einführung"/>', "")],
+    ["replace", fixture.replace('id="intro"', 'id="task-2"')],
+    [
+      "reorder",
+      fixture
+        .replace('id="intro"', 'id="task-2"')
+        .replace(
+          'id="task-2" label="Aufgabe 2"',
+          'id="intro" label="Aufgabe 2"',
+        ),
+    ],
+    [
+      "nest",
+      fixture.replace(
+        '<Unit id="intro" label="Einführung"/>',
+        '<Testlet id="intro-block"><Unit id="intro"/></Testlet>',
+      ),
+    ],
+    ["block ID", fixture.replace('id="geometry"', 'id="new-block"')],
+    ["alias", fixture.replace('alias="repeat"', 'alias="changed"')],
+  ])(
+    "invalidates all old short links after a structure change: %s",
+    (_change, xml) => {
+      const original = buildReviewManifest(
+        index(),
+        new Map([["review.xml", fixture]]),
+      ).booklets[0];
+      const changed = buildReviewManifest(
+        index(),
+        new Map([["review.xml", xml]]),
+      );
+      expect(changed.issues).toEqual([]);
+      const previousLinks = new Set(original.units.map((unit) => unit.linkId));
+      expect(changed.booklets[0].units.length).toBeGreaterThan(0);
+      changed.booklets[0].units.forEach((unit) =>
+        expect(previousLinks.has(unit.linkId)).toBe(false),
+      );
+    },
+  );
+
+  it("keeps links when labels, formatting or the definition filename change", () => {
+    const links = buildReviewManifest(
+      index(),
+      new Map([["review.xml", fixture]]),
+    ).booklets[0].units.map((unit) => unit.linkId);
+    const renamed = buildReviewManifest(
+      index([
+        { id: "review-1", name: "New title", definitionId: "renamed.xml" },
+      ]),
+      new Map([
+        [
+          "renamed.xml",
+          fixture
+            .replace(/label="[^"]*"/g, 'label="Renamed"')
+            .replace(/\n\s*/g, ""),
+        ],
+      ]),
+    );
+    expect(renamed.issues).toEqual([]);
+    expect(renamed.booklets[0].units.map((unit) => unit.linkId)).toEqual(links);
+  });
+
+  it("keeps one booklet's links when another booklet changes", () => {
+    const source = index([
+      { id: "review-1", definitionId: "review.xml" },
+      { id: "review-2", definitionId: "other.xml" },
+    ]);
+    const definitions = new Map([
+      ["review.xml", fixture],
+      ["other.xml", fixture.replace("<Id>review-1</Id>", "<Id>review-2</Id>")],
+    ]);
+    const original = buildReviewManifest(source, definitions);
+    definitions.set(
+      "other.xml",
+      definitions.get("other.xml")!.replace('id="intro"', 'id="task-2"'),
+    );
+    const changed = buildReviewManifest(source, definitions);
+    expect(changed.issues).toEqual([]);
+    expect(changed.booklets[0].units.map((unit) => unit.linkId)).toEqual(
+      original.booklets[0].units.map((unit) => unit.linkId),
+    );
+    expect(changed.booklets[1].units.map((unit) => unit.linkId)).not.toEqual(
+      original.booklets[1].units.map((unit) => unit.linkId),
+    );
+  });
+
   it("supports multiple booklets and rejects conflicting or duplicate canonical IDs", () => {
     const second = fixture.replace("<Id>review-1</Id>", "<Id>review-2</Id>");
     const definitions = new Map([

@@ -2,6 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_THEME, applyLanguage, applyTheme, normalizeTheme } from './app-settings.util';
 
 describe('app-settings util', () => {
+  it('retains saved theme colors, including the former default palette', () => {
+    const theme = {
+      '--color-primary': '#1a5276',
+      '--color-primary-light': '#2980b9',
+      '--color-accent': '#123456',
+    };
+
+    const result = normalizeTheme(theme);
+
+    expect(result).toMatchObject(theme);
+    expect(theme['--color-primary']).toBe('#1a5276');
+  });
+
   it('normalizeTheme should merge defaults with known custom values', () => {
     const result = normalizeTheme({
       '--color-primary': '#000000',
@@ -30,11 +43,16 @@ describe('app-settings util', () => {
   });
 
   it('applyTheme should set css variables on document root', () => {
+    const themeColor = document.createElement('meta');
+    themeColor.name = 'theme-color';
+    document.head.append(themeColor);
     applyTheme({ '--color-primary': '#123456' });
 
     const root = document.documentElement;
     expect(root.style.getPropertyValue('--color-primary')).toBe('#123456');
     expect(root.style.getPropertyValue('--color-bg')).toBe(DEFAULT_THEME['--color-bg']);
+    expect(themeColor.content).toBe('#123456');
+    themeColor.remove();
   });
 
   it('applyLanguage should update html lang attribute', () => {

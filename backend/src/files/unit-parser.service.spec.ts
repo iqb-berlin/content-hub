@@ -1,10 +1,11 @@
+import { ReviewItemCatalogService } from "./review-item-catalog.service";
 import { buildReviewManifest } from "../review/review-manifest";
 import { ConflictException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import * as fs from "fs/promises";
 import { UnitParserService } from "./unit-parser.service";
-import { Acp, AcpAccessConfig, AcpFile } from "../database/entities";
+import { Ap, ApAccessConfig, ApFile } from "../database/entities";
 import { ItemRowNumberingService } from "./item-row-numbering.service";
 import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.service";
 import { FileCatalogCache } from "./file-catalog.cache";
@@ -19,7 +20,7 @@ jest.mock("fs/promises", () => ({
 describe("UnitParserService", () => {
   let service: UnitParserService;
   let fileRepo: any;
-  let acpRepo: any;
+  let apRepo: any;
   let accessConfigRepo: any;
   let itemRowNumberingService: any;
   let itemExplorerStateService: any;
@@ -57,34 +58,34 @@ describe("UnitParserService", () => {
     ],
   });
 
-  const files: Partial<AcpFile>[] = [
+  const files: Partial<ApFile>[] = [
     {
       id: "f-xml",
-      acpId: "acp-1",
+      apId: "ap-1",
       originalName: "u1.xml",
       filePath: "/tmp/u1.xml",
     },
     {
       id: "f-voud",
-      acpId: "acp-1",
+      apId: "ap-1",
       originalName: "u1.voud",
       filePath: "/tmp/u1.voud",
     },
     {
       id: "f-vocs",
-      acpId: "acp-1",
+      apId: "ap-1",
       originalName: "u1.vocs",
       filePath: "/tmp/u1.vocs",
     },
     {
       id: "f-vomd",
-      acpId: "acp-1",
+      apId: "ap-1",
       originalName: "u1.vomd",
       filePath: "/tmp/u1.vomd",
     },
     {
       id: "f-player",
-      acpId: "acp-1",
+      apId: "ap-1",
       originalName: "iqb-player-aspect-2.11.6.html",
       filePath: "/tmp/player.html",
     },
@@ -103,10 +104,10 @@ describe("UnitParserService", () => {
       createQueryBuilder: jest.fn(() => lockedFileQueryBuilder),
     };
 
-    acpRepo = {
+    apRepo = {
       findOne: jest.fn().mockResolvedValue({
-        id: "acp-1",
-        acpIndex: {
+        id: "ap-1",
+        apIndex: {
           packageId: "pkg-1",
           version: "0.5.0",
           assessmentParts: [],
@@ -117,23 +118,23 @@ describe("UnitParserService", () => {
 
     accessConfigRepo = {
       findOne: jest.fn().mockResolvedValue({
-        acpId: "acp-1",
+        apId: "ap-1",
         featureConfig: {},
       }),
     };
     itemRowNumberingService = {
       getRevision: jest.fn().mockResolvedValue("0:empty"),
       assignNumbers: jest.fn(
-        async (_acpId: string, rows: any[]) =>
+        async (_apId: string, rows: any[]) =>
           new Map(rows.map((row, index) => [row.rowKey, index + 1])),
       ),
       assignProvisionalNumbers: jest.fn(
-        async (_acpId: string, rows: any[]) =>
+        async (_apId: string, rows: any[]) =>
           new Map(rows.map((row, index) => [row.rowKey, index + 1])),
       ),
       recalculateNumbers: jest.fn(
         async (
-          _acpId: string,
+          _apId: string,
           rows: any[],
           manager: any,
           validateBeforeReplace?: (lockedManager: any) => Promise<void>,
@@ -144,8 +145,8 @@ describe("UnitParserService", () => {
       ),
     };
     itemRowNumberingService.assignNumbersWithRevision = jest.fn(
-      async (acpId: string, rows: any[]) => ({
-        numbers: await itemRowNumberingService.assignNumbers(acpId, rows),
+      async (apId: string, rows: any[]) => ({
+        numbers: await itemRowNumberingService.assignNumbers(apId, rows),
       }),
     );
     itemExplorerStateService = {
@@ -158,7 +159,7 @@ describe("UnitParserService", () => {
         publishedState: { itemProperties: {} },
       }),
       runWithLockedCleanState: jest.fn(
-        async (_acpId: string, operation: (state: any, manager: any) => any) =>
+        async (_apId: string, operation: (state: any, manager: any) => any) =>
           operation(
             {
               status: "CLEAN",
@@ -183,10 +184,10 @@ describe("UnitParserService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UnitParserService,
-        { provide: getRepositoryToken(AcpFile), useValue: fileRepo },
-        { provide: getRepositoryToken(Acp), useValue: acpRepo },
+        { provide: getRepositoryToken(ApFile), useValue: fileRepo },
+        { provide: getRepositoryToken(Ap), useValue: apRepo },
         {
-          provide: getRepositoryToken(AcpAccessConfig),
+          provide: getRepositoryToken(ApAccessConfig),
           useValue: accessConfigRepo,
         },
         { provide: ItemRowNumberingService, useValue: itemRowNumberingService },
@@ -204,7 +205,7 @@ describe("UnitParserService", () => {
     service = module.get<UnitParserService>(UnitParserService);
   });
 
-  it("gates Studio comments at the API source and invalidates cached lists when toggled", async () => {
+  it("allows callers to skip Studio comments without changing the AP setting or cached Explorer data", async () => {
     fileRepo.find.mockResolvedValue([
       ...files,
       {
@@ -236,7 +237,7 @@ describe("UnitParserService", () => {
         ]);
       return "{}";
     });
-    const disabled = await service.getItemListFromFiles("acp-1");
+    const disabled = await service.getItemListFromFiles("ap-1");
     expect(disabled.items.every((item) => !("studioComments" in item))).toBe(
       true,
     );
@@ -245,7 +246,13 @@ describe("UnitParserService", () => {
     accessConfigRepo.findOne.mockResolvedValue({
       featureConfig: { showStudioItemComments: true },
     });
-    const enabled = await service.getItemListFromFiles("acp-1");
+    const withoutStudioComments = await service.getItemListFromFiles("ap-1", {
+      includeStudioItemComments: false,
+    });
+    expect(withoutStudioComments.items).toEqual(disabled.items);
+    expect(readFile).not.toHaveBeenCalledWith("/tmp/u1.vouc", "utf-8");
+
+    const enabled = await service.getItemListFromFiles("ap-1");
     expect(
       enabled.items[0].studioComments?.map((comment) => comment.body),
     ).toEqual(["Only item A", "Reply"]);
@@ -256,7 +263,7 @@ describe("UnitParserService", () => {
     accessConfigRepo.findOne.mockResolvedValue({
       featureConfig: { showStudioItemComments: false },
     });
-    const disabledAgain = await service.getItemListFromFiles("acp-1");
+    const disabledAgain = await service.getItemListFromFiles("ap-1");
     expect(
       disabledAgain.items.every((item) => !("studioComments" in item)),
     ).toBe(true);
@@ -285,20 +292,20 @@ describe("UnitParserService", () => {
       if (path === "/tmp/u1.vouc") return content;
       return "{}";
     });
-    const malformed = await service.getItemListFromFiles("acp-1");
+    const malformed = await service.getItemListFromFiles("ap-1");
     expect(malformed.items).toHaveLength(1);
     expect(malformed.items[0]).not.toHaveProperty("studioComments");
     content = JSON.stringify([
       { id: 1, body: "Recovered", itemUuids: ["u1_i1"] },
     ]);
-    const recovered = await service.getItemListFromFiles("acp-1");
+    const recovered = await service.getItemListFromFiles("ap-1");
     expect(recovered.items[0].studioComments?.[0].body).toBe("Recovered");
   });
 
   it("does not validate a Booklet with nested Unit references as a Unit file", async () => {
     const bookletFile = {
       id: "f-booklet",
-      acpId: "acp-1",
+      apId: "ap-1",
       originalName: "OBI-Deutsch-Aufgabenreview.xml",
       filePath: "/tmp/OBI-Deutsch-Aufgabenreview.xml",
     };
@@ -311,7 +318,7 @@ describe("UnitParserService", () => {
       return "";
     });
 
-    const results = await service.validateUnitFiles("acp-1");
+    const results = await service.validateUnitFiles("ap-1");
 
     expect(results).toHaveLength(1);
     expect(results[0]).toMatchObject({ unitId: "u1", valid: true });
@@ -323,33 +330,33 @@ describe("UnitParserService", () => {
       "<Booklet><Metadata><Id>b1</Id><Label>Testheft</Label></Metadata><Units/></Booklet>";
     fileRepo.find.mockResolvedValue([file]);
     (fs.readFile as jest.Mock).mockResolvedValue(xml);
-    await service.syncIndexFromFiles("acp-1");
-    const acp = acpRepo.save.mock.calls[0][0];
-    acpRepo.findOne.mockResolvedValue(acp);
-    acp.acpIndex.assessmentParts[0].instruments[0].testcenterBooklet[0].name =
+    await service.syncIndexFromFiles("ap-1");
+    const ap = apRepo.save.mock.calls[0][0];
+    apRepo.findOne.mockResolvedValue(ap);
+    ap.apIndex.assessmentParts[0].instruments[0].testcenterBooklet[0].name =
       "Manueller Name";
 
     fileRepo.find.mockResolvedValue([]);
-    const cleanup = await service.pruneMissingDependencies("acp-1");
+    const cleanup = await service.pruneMissingDependencies("ap-1");
     expect(cleanup.bookletDefinitionsRemoved).toBe(1);
     expect(
-      acp.acpIndex.assessmentParts[0].instruments[0].testcenterBooklet[0]
+      ap.apIndex.assessmentParts[0].instruments[0].testcenterBooklet[0]
         .definitionId,
     ).toBeUndefined();
 
     fileRepo.find.mockResolvedValue([file]);
-    acpRepo.save.mockClear();
-    const report = await service.syncIndexFromFiles("acp-1");
+    apRepo.save.mockClear();
+    const report = await service.syncIndexFromFiles("ap-1");
     expect(report.warnings).toEqual([]);
-    expect(acpRepo.save).toHaveBeenCalledTimes(1);
-    expect(acp.acpIndex.assessmentParts[0].instruments).toHaveLength(1);
+    expect(apRepo.save).toHaveBeenCalledTimes(1);
+    expect(ap.apIndex.assessmentParts[0].instruments).toHaveLength(1);
     expect(
-      acp.acpIndex.assessmentParts[0].instruments[0].testcenterBooklet,
+      ap.apIndex.assessmentParts[0].instruments[0].testcenterBooklet,
     ).toEqual([
       { id: "b1", name: "Manueller Name", definitionId: "review.xml" },
     ]);
     const manifest = buildReviewManifest(
-      acp.acpIndex,
+      ap.apIndex,
       new Map([["review.xml", xml]]),
     );
     expect(manifest.issues).toEqual([]);
@@ -372,15 +379,15 @@ describe("UnitParserService", () => {
       if (path === "/tmp/u1.vomd") return vomdContent;
       return "";
     });
-    await service.syncIndexFromFiles("acp-1");
-    const acp = acpRepo.save.mock.calls[0][0];
+    await service.syncIndexFromFiles("ap-1");
+    const ap = apRepo.save.mock.calls[0][0];
     expect(
-      acp.acpIndex.assessmentParts[0].instruments[0].testcenterBooklet,
+      ap.apIndex.assessmentParts[0].instruments[0].testcenterBooklet,
     ).toEqual([
       { id: "b1", name: "Review", definitionId: "booklet-review.xml" },
     ]);
     const manifest = buildReviewManifest(
-      acp.acpIndex,
+      ap.apIndex,
       new Map([["booklet-review.xml", bookletXml]]),
     );
     expect(manifest.issues).toEqual([]);
@@ -389,18 +396,18 @@ describe("UnitParserService", () => {
       "u1",
     ]);
     expect(
-      acp.acpIndex.assessmentParts[0].units.map((unit: any) => unit.id),
+      ap.apIndex.assessmentParts[0].units.map((unit: any) => unit.id),
     ).toEqual(["u1"]);
-    acpRepo.findOne.mockResolvedValue(acp);
-    acpRepo.save.mockClear();
-    await service.syncIndexFromFiles("acp-1");
-    expect(acpRepo.save).not.toHaveBeenCalled();
+    apRepo.findOne.mockResolvedValue(ap);
+    apRepo.save.mockClear();
+    await service.syncIndexFromFiles("ap-1");
+    expect(apRepo.save).not.toHaveBeenCalled();
   });
 
   it("persists completion of an existing booklet reference without overwriting manual fields", async () => {
-    const acp = {
-      id: "acp-1",
-      acpIndex: {
+    const ap = {
+      id: "ap-1",
+      apIndex: {
         assessmentParts: [
           {
             units: [],
@@ -421,19 +428,19 @@ describe("UnitParserService", () => {
         ],
       },
     };
-    const before = JSON.stringify(acp.acpIndex);
-    acpRepo.findOne.mockResolvedValue(acp);
+    const before = JSON.stringify(ap.apIndex);
+    apRepo.findOne.mockResolvedValue(ap);
     fileRepo.find.mockResolvedValue([
       { originalName: "review.xml", filePath: "/tmp/review.xml" },
     ]);
     (fs.readFile as jest.Mock).mockResolvedValue(
       "<Booklet><Metadata><Id>b1</Id><Label>XML name</Label></Metadata><Units/></Booklet>",
     );
-    await service.syncIndexFromFiles("acp-1");
-    expect(acpRepo.save).toHaveBeenCalled();
-    expect(JSON.stringify(acp.acpIndex)).not.toBe(before);
+    await service.syncIndexFromFiles("ap-1");
+    expect(apRepo.save).toHaveBeenCalled();
+    expect(JSON.stringify(ap.apIndex)).not.toBe(before);
     expect(
-      acp.acpIndex.assessmentParts[0].instruments[0].testcenterBooklet[0],
+      ap.apIndex.assessmentParts[0].instruments[0].testcenterBooklet[0],
     ).toMatchObject({ id: "b1", name: "Manual name", modules: ["m"] });
   });
 
@@ -449,23 +456,23 @@ describe("UnitParserService", () => {
         ? "<Booklet><Units></Booklet>"
         : "<Booklet><Metadata><Id>duplicate</Id></Metadata><Units/></Booklet>",
     );
-    const report = await service.syncIndexFromFiles("acp-1");
+    const report = await service.syncIndexFromFiles("ap-1");
     expect(report.warnings).toHaveLength(3);
     expect(
-      acpRepo.save.mock.calls[0][0].acpIndex.assessmentParts[0].instruments,
+      apRepo.save.mock.calls[0][0].apIndex.assessmentParts[0].instruments,
     ).toBeUndefined();
   });
 
   it("syncs units and items from uploaded files into ACP index", async () => {
-    const report = await service.syncIndexFromFiles("acp-1");
+    const report = await service.syncIndexFromFiles("ap-1");
 
     expect(report.unitsAdded).toBe(1);
     expect(report.itemsAdded).toBe(1);
     expect(report.warnings).toEqual([]);
-    expect(acpRepo.save).toHaveBeenCalledTimes(1);
+    expect(apRepo.save).toHaveBeenCalledTimes(1);
 
-    const saved = acpRepo.save.mock.calls[0][0];
-    const units = saved.acpIndex.assessmentParts[0].units;
+    const saved = apRepo.save.mock.calls[0][0];
+    const units = saved.apIndex.assessmentParts[0].units;
     expect(units).toHaveLength(1);
     expect(units[0].id).toBe("u1");
     expect(units[0].dependencies).toEqual(
@@ -507,22 +514,254 @@ describe("UnitParserService", () => {
       return "";
     });
 
-    const report = await service.syncIndexFromFiles("acp-1");
+    const report = await service.syncIndexFromFiles("ap-1");
 
     expect(report.itemsAdded).toBe(1);
     expect(report.warnings).toEqual([
       expect.stringContaining("enthält ein Item ohne ID"),
     ]);
-    const saved = acpRepo.save.mock.calls[0][0];
-    expect(saved.acpIndex.assessmentParts[0].units[0].items).toEqual([
+    const saved = apRepo.save.mock.calls[0][0];
+    expect(saved.apIndex.assessmentParts[0].units[0].items).toEqual([
       expect.objectContaining({ id: "i2", name: "Item 2" }),
     ]);
   });
 
+  it("keeps the established canonical comment target through a file index sync", async () => {
+    let ap = {
+      id: "ap-1",
+      updatedAt: new Date("2026-09-25T00:00:00Z"),
+      apIndex: {
+        packageId: "pkg-1",
+        version: "0.5.0",
+        assessmentParts: [
+          {
+            id: "part-1",
+            units: [
+              {
+                id: "u1",
+                items: [{ id: "u1_i1" }],
+                dependencies: [{ id: "u1.vomd", type: "METADATA" }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    apRepo.findOne.mockImplementation(async () => ap);
+    apRepo.save.mockImplementation(async (entity: typeof ap) => {
+      ap = { ...entity, updatedAt: new Date("2026-09-26T00:00:00Z") };
+      return ap;
+    });
+    const catalog = new ReviewItemCatalogService(
+      apRepo,
+      new FileCatalogCache(fileRepo),
+      service,
+      fileRepo,
+    );
+    const ids = async () =>
+      (await catalog.getCatalog("ap-1")).map(({ itemId, previousItemId }) => ({
+        itemId,
+        previousItemId,
+      }));
+    expect(await ids()).toEqual([{ itemId: "u1_i1", previousItemId: "i1" }]);
+
+    const report = await service.syncIndexFromFiles("ap-1");
+    expect(report.itemsAdded).toBe(0);
+    expect(ap.apIndex.assessmentParts[0].units[0].items).toEqual([
+      expect.objectContaining({ id: "u1_i1", variableId: "V1" }),
+    ]);
+    expect(await ids()).toEqual([{ itemId: "u1_i1", previousItemId: "i1" }]);
+  });
+
+  it.each([false, true])(
+    "keeps backward and generated aliases distinct in either file order (%s)",
+    async (reversed) => {
+      let ap = {
+        id: "ap-1",
+        updatedAt: new Date("2026-09-25T00:00:00Z"),
+        apIndex: { units: [{ id: "u1", items: [{ id: "u1_i1" }] }] },
+      };
+      apRepo.findOne.mockImplementation(async () => ap);
+      apRepo.save.mockImplementation(async (entity: typeof ap) => {
+        ap = { ...entity, updatedAt: new Date("2026-09-26T00:00:00Z") };
+        return ap;
+      });
+      const items = [
+        { id: "i1", variableId: "FIRST", useUnitAliasAsPrefix: true },
+        { id: "u1_u1_i1", variableId: "SECOND", useUnitAliasAsPrefix: false },
+      ];
+      const vomd = JSON.stringify({
+        items: reversed ? [...items].reverse() : items,
+      });
+      jest.mocked(fs.readFile).mockImplementation(async (path) => {
+        if (path === "/tmp/u1.xml") return xmlContent;
+        if (path === "/tmp/u1.vomd") return vomd;
+        return "{}";
+      });
+      const catalog = new ReviewItemCatalogService(
+        apRepo,
+        new FileCatalogCache(fileRepo),
+        service,
+        fileRepo,
+      );
+      const expected = [
+        expect.objectContaining({
+          itemId: "i1",
+          variableReferences: { variableId: "FIRST" },
+        }),
+        expect.objectContaining({
+          itemId: "u1_i1",
+          variableReferences: { variableId: "SECOND" },
+        }),
+      ];
+      const before = await catalog.getCatalog("ap-1");
+      expect(before).toHaveLength(2);
+      expect(before).toEqual(expect.arrayContaining(expected));
+      expect((await service.syncIndexFromFiles("ap-1")).itemsAdded).toBe(1);
+      const after = await catalog.getCatalog("ap-1");
+      expect(after).toHaveLength(2);
+      expect(after).toEqual(expect.arrayContaining(expected));
+      expect((await service.syncIndexFromFiles("ap-1")).itemsAdded).toBe(0);
+    },
+  );
+
+  it.each([false, true])(
+    "keeps alternate comment targets without changing navigation or index sync (%s)",
+    async (reversed) => {
+      const alternateXml = {
+        id: "f-renamed",
+        originalName: "renamed.xml",
+        filePath: "/tmp/renamed.xml",
+      };
+      const alternateVomd = {
+        id: "f-other",
+        originalName: "alternate.vomd",
+        filePath: "/tmp/alternate.vomd",
+      };
+      const duplicateFiles = reversed
+        ? [alternateXml, alternateVomd, ...files]
+        : [...files, alternateXml, alternateVomd];
+      fileRepo.find.mockImplementation(
+        async ({
+          where,
+        }: {
+          where: { originalName?: { value?: string[] } };
+        }) =>
+          typeof where.originalName === "object" &&
+          Array.isArray(where.originalName.value)
+            ? duplicateFiles.filter(({ originalName }) =>
+                where.originalName?.value?.includes(originalName || ""),
+              )
+            : duplicateFiles,
+      );
+      fileRepo.findOne = jest
+        .fn()
+        .mockImplementation(async ({ where }) =>
+          duplicateFiles.find(
+            ({ originalName }) => originalName === where.originalName,
+          ),
+        );
+
+      const unit = { id: "u1", items: [{ id: "i1" }] };
+      let ap = { id: "ap-1", apIndex: { units: [unit] } };
+      apRepo.findOne.mockImplementation(async () => ap);
+      apRepo.save.mockImplementation(async (entity: typeof ap) => {
+        ap = entity;
+        return entity;
+      });
+      jest.mocked(fs.readFile).mockImplementation(async (path) => {
+        if (path === "/tmp/u1.xml")
+          return xmlContent.replace(
+            "<CodingSchemeRef>u1.vocs</CodingSchemeRef>",
+            "",
+          );
+        if (path === "/tmp/renamed.xml")
+          return xmlContent.replace("u1.vomd", "alternate.vomd");
+        if (path === "/tmp/u1.vomd")
+          return JSON.stringify({
+            items: [{ id: "i1", variableId: "CHOSEN" }],
+          });
+        if (path === "/tmp/alternate.vomd")
+          return JSON.stringify({
+            items: [
+              { id: "i1", variableId: "OTHER" },
+              { id: "u1_i1", variableId: "LEGACY_ALIAS" },
+              { id: "i2", variableId: "OTHER_ONLY" },
+            ],
+          });
+        if (path === "/tmp/u1.vocs") return "{}";
+        return "";
+      });
+      const catalog = new ReviewItemCatalogService(
+        apRepo,
+        new FileCatalogCache(fileRepo),
+        service,
+        fileRepo,
+      );
+      const navigation = await catalog.getUnitNavigation("ap-1", unit, []);
+      expect(navigation.items).toEqual([{ id: "i1", variableId: "CHOSEN" }]);
+      expect(navigation.metadataFile?.originalName).toBe("u1.vomd");
+      expect(
+        await catalog.getActiveUnitCommentTargets("ap-1", "u1", true, false),
+      ).toMatchObject({ codingCommentsAvailable: false });
+      const entries = await catalog.getCatalog("ap-1");
+      expect(entries).toEqual([
+        expect.objectContaining({
+          itemId: "i1",
+          hasCodingScheme: true,
+          variableReferences: { variableId: "CHOSEN" },
+        }),
+        expect.objectContaining({
+          itemId: "i2",
+          hasCodingScheme: true,
+        }),
+      ]);
+      expect(entries[1]).not.toHaveProperty("variableReferences");
+      jest.mocked(fs.readFile).mockClear();
+      expect((await service.syncIndexFromFiles("ap-1")).itemsAdded).toBe(0);
+      expect(apRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          apIndex: expect.objectContaining({
+            units: [
+              expect.objectContaining({
+                items: [
+                  expect.objectContaining({ id: "i1", variableId: "CHOSEN" }),
+                ],
+              }),
+            ],
+          }),
+        }),
+      );
+      expect(fs.readFile).not.toHaveBeenCalledWith(
+        "/tmp/alternate.vomd",
+        "utf-8",
+      );
+    },
+  );
+
+  it("reloads cached VOMD item identities after upload invalidation with the same file signature", async () => {
+    const before = await service.getItemListFromFiles("ap-1");
+    expect(before.items.map(({ variableId }) => variableId)).toEqual(["V1"]);
+
+    jest.mocked(fs.readFile).mockImplementation(async (path) => {
+      if (path === "/tmp/u1.xml") return xmlContent;
+      if (path === "/tmp/u1.vomd") return vomdContent.replace("V1", "UPDATED");
+      return "{}";
+    });
+    const cached = await service.getItemListFromFiles("ap-1");
+    expect(cached.items.map(({ variableId }) => variableId)).toEqual(["V1"]);
+
+    service.invalidateFileCaches("ap-1");
+    const refreshed = await service.getItemListFromFiles("ap-1");
+    expect(refreshed.items.map(({ variableId }) => variableId)).toEqual([
+      "UPDATED",
+    ]);
+  });
+
   it("preserves existing manual unit fields when syncing", async () => {
-    acpRepo.findOne.mockResolvedValueOnce({
-      id: "acp-1",
-      acpIndex: {
+    apRepo.findOne.mockResolvedValueOnce({
+      id: "ap-1",
+      apIndex: {
         packageId: "pkg-1",
         version: "0.5.0",
         assessmentParts: [
@@ -541,9 +780,9 @@ describe("UnitParserService", () => {
       },
     });
 
-    await service.syncIndexFromFiles("acp-1");
-    const saved = acpRepo.save.mock.calls[0][0];
-    const unit = saved.acpIndex.assessmentParts[0].units[0];
+    await service.syncIndexFromFiles("ap-1");
+    const saved = apRepo.save.mock.calls[0][0];
+    const unit = saved.apIndex.assessmentParts[0].units[0];
     expect(unit.name).toBe("Manueller Name");
     expect(unit.items).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: "i1" })]),
@@ -554,21 +793,21 @@ describe("UnitParserService", () => {
     fileRepo.find.mockResolvedValueOnce([
       {
         id: "f-voud",
-        acpId: "acp-1",
+        apId: "ap-1",
         originalName: "u1.voud",
         filePath: "/tmp/u1.voud",
       },
       {
         id: "f-player",
-        acpId: "acp-1",
+        apId: "ap-1",
         originalName: "iqb-player-aspect-2.11.6.html",
         filePath: "/tmp/player.html",
       },
     ]);
 
-    acpRepo.findOne.mockResolvedValueOnce({
-      id: "acp-1",
-      acpIndex: {
+    apRepo.findOne.mockResolvedValueOnce({
+      id: "ap-1",
+      apIndex: {
         packageId: "pkg-1",
         version: "0.5.0",
         assessmentParts: [
@@ -591,15 +830,15 @@ describe("UnitParserService", () => {
       },
     });
 
-    const result = await service.pruneMissingDependencies("acp-1");
+    const result = await service.pruneMissingDependencies("ap-1");
 
     expect(result.dependenciesRemoved).toBe(2);
     expect(result.unitsUpdated).toBe(1);
     expect(result.indexUpdated).toBe(true);
-    expect(acpRepo.save).toHaveBeenCalledTimes(1);
+    expect(apRepo.save).toHaveBeenCalledTimes(1);
 
-    const saved = acpRepo.save.mock.calls[0][0];
-    expect(saved.acpIndex.assessmentParts[0].units[0].dependencies).toEqual([
+    const saved = apRepo.save.mock.calls[0][0];
+    expect(saved.apIndex.assessmentParts[0].units[0].dependencies).toEqual([
       { id: "u1.voud", type: "UNIT_DEFINITION" },
       { id: "iqb-player-aspect-2.11.6.html", type: "PLAYER" },
     ]);
@@ -609,15 +848,15 @@ describe("UnitParserService", () => {
     fileRepo.find.mockResolvedValueOnce([
       {
         id: "f-voud",
-        acpId: "acp-1",
+        apId: "ap-1",
         originalName: "u1.voud",
         filePath: "/tmp/u1.voud",
       },
     ]);
 
-    acpRepo.findOne.mockResolvedValueOnce({
-      id: "acp-1",
-      acpIndex: {
+    apRepo.findOne.mockResolvedValueOnce({
+      id: "ap-1",
+      apIndex: {
         packageId: "pkg-1",
         version: "0.5.0",
         assessmentParts: [
@@ -641,16 +880,16 @@ describe("UnitParserService", () => {
       },
     });
 
-    const result = await service.pruneMissingDependencies("acp-1");
+    const result = await service.pruneMissingDependencies("ap-1");
 
     expect(result.bookletsUpdated).toBe(1);
     expect(result.bookletDefinitionsRemoved).toBe(1);
     expect(result.indexUpdated).toBe(true);
-    expect(acpRepo.save).toHaveBeenCalledTimes(1);
+    expect(apRepo.save).toHaveBeenCalledTimes(1);
 
-    const saved = acpRepo.save.mock.calls[0][0];
+    const saved = apRepo.save.mock.calls[0][0];
     expect(
-      saved.acpIndex.assessmentParts[0].instruments[0].testcenterBooklet[0],
+      saved.apIndex.assessmentParts[0].instruments[0].testcenterBooklet[0],
     ).toEqual({
       id: "booklet-1",
       modules: ["module-1"],
@@ -661,15 +900,15 @@ describe("UnitParserService", () => {
     fileRepo.find.mockResolvedValueOnce([
       {
         id: "f-player",
-        acpId: "acp-1",
+        apId: "ap-1",
         originalName: "iqb-player-aspect-2.11.6.html",
         filePath: "/tmp/player.html",
       },
     ]);
 
-    acpRepo.findOne.mockResolvedValueOnce({
-      id: "acp-1",
-      acpIndex: {
+    apRepo.findOne.mockResolvedValueOnce({
+      id: "ap-1",
+      apIndex: {
         packageId: "pkg-1",
         version: "0.5.0",
         assessmentParts: [
@@ -691,12 +930,12 @@ describe("UnitParserService", () => {
       },
     });
 
-    const report = await service.syncIndexFromFiles("acp-1");
+    const report = await service.syncIndexFromFiles("ap-1");
 
     expect(report.unitsUpdated).toBe(0);
-    expect(acpRepo.save).toHaveBeenCalledTimes(1);
-    const saved = acpRepo.save.mock.calls[0][0];
-    expect(saved.acpIndex.assessmentParts[0].units[0].dependencies).toEqual([]);
+    expect(apRepo.save).toHaveBeenCalledTimes(1);
+    const saved = apRepo.save.mock.calls[0][0];
+    expect(saved.apIndex.assessmentParts[0].units[0].dependencies).toEqual([]);
   });
 
   it("keeps sourceVariable separate when variableId is missing in VOMD items", async () => {
@@ -719,7 +958,7 @@ describe("UnitParserService", () => {
       return "";
     });
 
-    const result = await service.getItemListFromFiles("acp-1");
+    const result = await service.getItemListFromFiles("ap-1");
     expect(result.items).toHaveLength(1);
     expect(result.items[0]).toEqual(
       expect.objectContaining({
@@ -752,7 +991,7 @@ describe("UnitParserService", () => {
       return "";
     });
 
-    const result = await service.getItemListFromFiles("acp-1");
+    const result = await service.getItemListFromFiles("ap-1");
 
     expect(result.items[0]).toEqual(
       expect.objectContaining({
@@ -796,7 +1035,7 @@ describe("UnitParserService", () => {
       return "";
     });
 
-    const result = await service.getItemListFromFiles("acp-1");
+    const result = await service.getItemListFromFiles("ap-1");
 
     expect(result.variableIdentityConsistency).toEqual({
       checkedItemCount: 1,
@@ -815,18 +1054,15 @@ describe("UnitParserService", () => {
   });
 
   it("numbers prefixed items by the source Item-ID shown in the Explorer", async () => {
-    const result = await service.getItemListFromFiles("acp-1");
+    const result = await service.getItemListFromFiles("ap-1");
 
-    expect(itemRowNumberingService.assignNumbers).toHaveBeenCalledWith(
-      "acp-1",
-      [
-        expect.objectContaining({
-          itemId: "i1",
-          rowKey: "u1_i1",
-          unitId: "u1",
-        }),
-      ],
-    );
+    expect(itemRowNumberingService.assignNumbers).toHaveBeenCalledWith("ap-1", [
+      expect.objectContaining({
+        itemId: "i1",
+        rowKey: "u1_i1",
+        unitId: "u1",
+      }),
+    ]);
     expect(result.items[0].itemId).toBe("i1");
   });
 
@@ -849,12 +1085,11 @@ describe("UnitParserService", () => {
       return "";
     });
 
-    const result = await service.getItemListFromFiles("acp-1");
+    const result = await service.getItemListFromFiles("ap-1");
 
-    expect(itemRowNumberingService.assignNumbers).toHaveBeenCalledWith(
-      "acp-1",
-      [expect.objectContaining({ itemId: "i1", rowKey: "u1_i1" })],
-    );
+    expect(itemRowNumberingService.assignNumbers).toHaveBeenCalledWith("ap-1", [
+      expect.objectContaining({ itemId: "i1", rowKey: "u1_i1" }),
+    ]);
     expect(result.items[0].useUnitAliasAsPrefix).toBe(false);
   });
 
@@ -879,7 +1114,7 @@ describe("UnitParserService", () => {
       return "";
     });
 
-    const result = await service.getItemListFromFiles("acp-1", {
+    const result = await service.getItemListFromFiles("ap-1", {
       itemPropertiesOverride: {
         i1: { tags: ["legacy"], empiricalDifficulty: 0.25 },
         u1_i1: { tags: ["resolved"] },
@@ -986,7 +1221,7 @@ describe("UnitParserService", () => {
       return "";
     });
 
-    const result = await service.getItemListFromFiles("acp-1", {
+    const result = await service.getItemListFromFiles("ap-1", {
       itemPropertiesOverride: {
         "uuid-1": { competenceLevel: "III" },
         "uuid-1::A": { itemUuid: "uuid-1", subId: "A" },
@@ -1042,7 +1277,7 @@ describe("UnitParserService", () => {
       return "";
     });
 
-    const result = await service.getItemListFromFiles("acp-1", {
+    const result = await service.getItemListFromFiles("ap-1", {
       itemPropertiesOverride: {
         "uuid-1": {
           itemTimeSeconds: 40,
@@ -1062,7 +1297,7 @@ describe("UnitParserService", () => {
 
   it("expands one VOMD item into labeled partial-credit rows", async () => {
     accessConfigRepo.findOne.mockResolvedValueOnce({
-      acpId: "acp-1",
+      apId: "ap-1",
       featureConfig: {
         itemSubIdLabel: "Kategorie",
         itemSubIdLabels: {
@@ -1072,7 +1307,7 @@ describe("UnitParserService", () => {
       },
     });
 
-    const result = await service.getItemListFromFiles("acp-1", {
+    const result = await service.getItemListFromFiles("ap-1", {
       itemPropertiesOverride: {
         "u1_i1::1": {
           itemUuid: "u1_i1",
@@ -1109,20 +1344,20 @@ describe("UnitParserService", () => {
   });
 
   it("parses published rows before taking the short recalculation lock", async () => {
-    const result = await service.recalculatePublishedItemRowNumbers("acp-1");
+    const result = await service.recalculatePublishedItemRowNumbers("ap-1");
 
     expect(
       itemExplorerStateService.getCleanPublishedState,
-    ).toHaveBeenCalledWith("acp-1");
+    ).toHaveBeenCalledWith("ap-1");
     expect(
       itemExplorerStateService.runWithLockedCleanState,
-    ).toHaveBeenCalledWith("acp-1", expect.any(Function), 7);
+    ).toHaveBeenCalledWith("ap-1", expect.any(Function), 7);
     expect((fs.readFile as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
       itemExplorerStateService.runWithLockedCleanState.mock
         .invocationCallOrder[0],
     );
     expect(itemRowNumberingService.recalculateNumbers).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       [expect.objectContaining({ itemId: "i1", rowKey: "u1_i1" })],
       expect.objectContaining({ id: "transaction-manager" }),
       expect.any(Function),
@@ -1136,12 +1371,12 @@ describe("UnitParserService", () => {
       .mockResolvedValue([{ count: "5", hash: "catalog-hash" }]);
 
     await expect(
-      service.recalculatePublishedItemRowNumbers("acp-1"),
+      service.recalculatePublishedItemRowNumbers("ap-1"),
     ).resolves.toEqual({ renumberedCount: 1 });
 
     expect(fileRepo.query).toHaveBeenCalledWith(
       expect.stringContaining("FROM acp_files"),
-      ["acp-1"],
+      ["ap-1"],
     );
   });
 
@@ -1150,7 +1385,7 @@ describe("UnitParserService", () => {
       ...files,
       {
         id: "f-new",
-        acpId: "acp-1",
+        apId: "ap-1",
         originalName: "u2.xml",
         filePath: "/tmp/u2.xml",
       },
@@ -1158,7 +1393,7 @@ describe("UnitParserService", () => {
     fileRepo.createQueryBuilder().getMany.mockResolvedValueOnce(changedFiles);
 
     await expect(
-      service.recalculatePublishedItemRowNumbers("acp-1"),
+      service.recalculatePublishedItemRowNumbers("ap-1"),
     ).rejects.toThrow(ConflictException);
   });
 
@@ -1171,7 +1406,7 @@ describe("UnitParserService", () => {
     });
 
     await expect(
-      service.recalculatePublishedItemRowNumbers("acp-1"),
+      service.recalculatePublishedItemRowNumbers("ap-1"),
     ).rejects.toThrow("Invalid unit XML file: u1.xml");
 
     expect(
@@ -1188,7 +1423,7 @@ describe("UnitParserService", () => {
     });
 
     await expect(
-      service.recalculatePublishedItemRowNumbers("acp-1"),
+      service.recalculatePublishedItemRowNumbers("ap-1"),
     ).rejects.toThrow("Invalid item metadata file: u1.vomd");
 
     expect(
@@ -1203,7 +1438,7 @@ describe("UnitParserService", () => {
     );
 
     await expect(
-      service.recalculatePublishedItemRowNumbers("acp-1"),
+      service.recalculatePublishedItemRowNumbers("ap-1"),
     ).rejects.toThrow("Referenced item metadata file is missing: u1.vomd");
 
     expect(
@@ -1234,7 +1469,7 @@ describe("UnitParserService", () => {
       });
 
       await expect(
-        service.recalculatePublishedItemRowNumbers("acp-1"),
+        service.recalculatePublishedItemRowNumbers("ap-1"),
       ).rejects.toThrow("Invalid item metadata file: u1.vomd");
 
       expect(
@@ -1247,7 +1482,7 @@ describe("UnitParserService", () => {
   it("keeps draft-only row numbers provisional", async () => {
     const publishedNumbers = new Map<string, number>();
     itemRowNumberingService.assignNumbers.mockImplementation(
-      async (_acpId: string, rows: any[]) => {
+      async (_apId: string, rows: any[]) => {
         for (const row of rows) {
           if (!publishedNumbers.has(row.rowKey)) {
             publishedNumbers.set(row.rowKey, publishedNumbers.size + 1);
@@ -1257,11 +1492,11 @@ describe("UnitParserService", () => {
       },
     );
     itemRowNumberingService.assignProvisionalNumbers.mockImplementation(
-      async (_acpId: string, rows: any[]) =>
+      async (_apId: string, rows: any[]) =>
         new Map(rows.map((row: any, index: number) => [row.rowKey, index + 2])),
     );
 
-    const result = await service.getItemListFromFiles("acp-1", {
+    const result = await service.getItemListFromFiles("ap-1", {
       itemPropertiesOverride: {
         "u1_i1::2": { itemUuid: "u1_i1", subId: "2" },
       },
@@ -1270,17 +1505,16 @@ describe("UnitParserService", () => {
       },
     });
 
-    expect(itemRowNumberingService.assignNumbers).toHaveBeenCalledWith(
-      "acp-1",
-      [expect.objectContaining({ rowKey: "u1_i1::1" })],
-    );
+    expect(itemRowNumberingService.assignNumbers).toHaveBeenCalledWith("ap-1", [
+      expect.objectContaining({ rowKey: "u1_i1::1" }),
+    ]);
     expect(
       itemRowNumberingService.assignProvisionalNumbers,
-    ).toHaveBeenCalledWith("acp-1", [
+    ).toHaveBeenCalledWith("ap-1", [
       expect.objectContaining({ rowKey: "u1_i1::2" }),
     ]);
     expect(itemRowNumberingService.assignNumbers).not.toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       [expect.objectContaining({ rowKey: "u1_i1::2" })],
     );
     expect(result.items[0]).toEqual(
@@ -1291,22 +1525,22 @@ describe("UnitParserService", () => {
   it("handles an empty item list without loading Explorer state", async () => {
     fileRepo.find.mockResolvedValueOnce([]);
 
-    const result = await service.getItemListFromFiles("acp-1");
+    const result = await service.getItemListFromFiles("ap-1");
 
     expect(result.items).toEqual([]);
     expect(itemExplorerStateService.getStateForViewer).not.toHaveBeenCalled();
     expect(itemRowNumberingService.assignNumbers).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       [],
     );
   });
 
   it("reuses parsed item lists without sharing mutable response objects", async () => {
-    const first = await service.getItemListFromFiles("acp-1");
+    const first = await service.getItemListFromFiles("ap-1");
     const readsAfterFirstLoad = (fs.readFile as jest.Mock).mock.calls.length;
     first.items[0].description = "mutated response";
 
-    const second = await service.getItemListFromFiles("acp-1");
+    const second = await service.getItemListFromFiles("ap-1");
 
     expect((fs.readFile as jest.Mock).mock.calls).toHaveLength(
       readsAfterFirstLoad,
@@ -1315,10 +1549,10 @@ describe("UnitParserService", () => {
   });
 
   it("reuses fully numbered item lists without repeating database numbering", async () => {
-    await service.getItemListFromFiles("acp-1", {
+    await service.getItemListFromFiles("ap-1", {
       activeStateSignature: "active:1",
     });
-    await service.getItemListFromFiles("acp-1", {
+    await service.getItemListFromFiles("ap-1", {
       activeStateSignature: "active:1",
     });
 
@@ -1328,7 +1562,7 @@ describe("UnitParserService", () => {
   it("coalesces numbering for ten concurrent identical item-list requests", async () => {
     let releaseNumbering!: () => void;
     itemRowNumberingService.assignNumbers.mockImplementationOnce(
-      async (_acpId: string, rows: any[]) => {
+      async (_apId: string, rows: any[]) => {
         await new Promise<void>((resolve) => {
           releaseNumbering = resolve;
         });
@@ -1337,7 +1571,7 @@ describe("UnitParserService", () => {
     );
 
     const requests = Array.from({ length: 10 }, () =>
-      service.getItemListFromFiles("acp-1", {
+      service.getItemListFromFiles("ap-1", {
         activeStateSignature: "active:1",
       }),
     );
@@ -1358,10 +1592,10 @@ describe("UnitParserService", () => {
       .mockResolvedValueOnce("revision-2")
       .mockResolvedValueOnce("revision-2");
 
-    await service.getItemListFromFiles("acp-1", {
+    await service.getItemListFromFiles("ap-1", {
       activeStateSignature: "active:1",
     });
-    await service.getItemListFromFiles("acp-1", {
+    await service.getItemListFromFiles("ap-1", {
       activeStateSignature: "active:1",
     });
 
@@ -1377,10 +1611,10 @@ describe("UnitParserService", () => {
       revision: "revision-2",
     });
 
-    const first = await service.getItemListFromFiles("acp-1", {
+    const first = await service.getItemListFromFiles("ap-1", {
       activeStateSignature: "active:1",
     });
-    const second = await service.getItemListFromFiles("acp-1", {
+    const second = await service.getItemListFromFiles("ap-1", {
       activeStateSignature: "active:1",
     });
 
@@ -1402,10 +1636,10 @@ describe("UnitParserService", () => {
       .mockResolvedValueOnce(new Map([["u1_i1", 7]]))
       .mockResolvedValueOnce(new Map([["u1_i1", 2]]));
 
-    const first = await service.getItemListFromFiles("acp-1", {
+    const first = await service.getItemListFromFiles("ap-1", {
       activeStateSignature: "active:1",
     });
-    const second = await service.getItemListFromFiles("acp-1", {
+    const second = await service.getItemListFromFiles("ap-1", {
       activeStateSignature: "active:1",
     });
 
@@ -1428,11 +1662,11 @@ describe("UnitParserService", () => {
       .mockResolvedValueOnce(new Map([["u1_i1", 4]]));
 
     await expect(
-      service.getItemListFromFiles("acp-1", {
+      service.getItemListFromFiles("ap-1", {
         activeStateSignature: "active:1",
       }),
     ).rejects.toThrow(ConflictException);
-    const stable = await service.getItemListFromFiles("acp-1", {
+    const stable = await service.getItemListFromFiles("ap-1", {
       activeStateSignature: "active:1",
     });
 
@@ -1453,8 +1687,8 @@ describe("UnitParserService", () => {
       return originalRead(path);
     });
 
-    const partial = await service.getItemListFromFiles("acp-1");
-    const recovered = await service.getItemListFromFiles("acp-1");
+    const partial = await service.getItemListFromFiles("ap-1");
+    const recovered = await service.getItemListFromFiles("ap-1");
 
     expect(partial.items).toEqual([]);
     expect(recovered.items).toHaveLength(1);
@@ -1488,7 +1722,7 @@ describe("UnitParserService", () => {
         return JSON.stringify({ variableCodings: [{ id: part }] });
       return "";
     });
-    const result = await service.getItemListFromFiles("acp-1");
+    const result = await service.getItemListFromFiles("ap-1");
     expect(result.unitMetadata["math/u1"]).toEqual([
       { id: "part", value: "math" },
     ]);
@@ -1503,15 +1737,15 @@ describe("UnitParserService", () => {
     ]);
   });
 
-  it("invalidates parsed data and row-key caches only for the affected ACP", async () => {
-    const first = await service.getItemRowKeysFromFiles("acp-1");
-    await service.getItemRowKeysFromFiles("acp-2");
+  it("invalidates parsed data and row-key caches only for the affected AP", async () => {
+    const first = await service.getItemRowKeysFromFiles("ap-1");
+    await service.getItemRowKeysFromFiles("ap-2");
     const readsBefore = (fs.readFile as jest.Mock).mock.calls.length;
-    service.invalidateFileCaches("acp-1");
-    expect(await service.getItemRowKeysFromFiles("acp-1")).toEqual(first);
+    service.invalidateFileCaches("ap-1");
+    expect(await service.getItemRowKeysFromFiles("ap-1")).toEqual(first);
     const readsAfter = (fs.readFile as jest.Mock).mock.calls.length;
     expect(readsAfter).toBeGreaterThan(readsBefore);
-    await service.getItemRowKeysFromFiles("acp-2");
+    await service.getItemRowKeysFromFiles("ap-2");
     expect((fs.readFile as jest.Mock).mock.calls.length).toBe(readsAfter);
   });
 
@@ -1520,12 +1754,12 @@ describe("UnitParserService", () => {
     const secondDiagnostics = jest.fn();
 
     const first = await service.getUnitViewFromFiles(
-      "acp-1",
+      "ap-1",
       "u1",
       firstDiagnostics,
     );
     const second = await service.getUnitViewFromFiles(
-      "acp-1",
+      "ap-1",
       "u1",
       secondDiagnostics,
     );
@@ -1551,7 +1785,7 @@ describe("UnitParserService", () => {
     });
 
     const request = service.getUnitViewFromFiles(
-      "acp-1",
+      "ap-1",
       "u1",
       undefined,
       stateSignature,
@@ -1572,9 +1806,9 @@ describe("UnitParserService", () => {
       .mockResolvedValueOnce([{ count: "5", hash: "revision-1" }])
       .mockResolvedValueOnce([{ count: "5", hash: "revision-2" }]);
 
-    await service.getUnitViewFromFiles("acp-1", "u1");
-    await service.getUnitViewFromFiles("acp-1", "u1");
-    await service.getUnitViewFromFiles("acp-1", "u1");
+    await service.getUnitViewFromFiles("ap-1", "u1");
+    await service.getUnitViewFromFiles("ap-1", "u1");
+    await service.getUnitViewFromFiles("ap-1", "u1");
 
     expect(fileRepo.query).toHaveBeenCalledTimes(3);
     expect(fileRepo.find).toHaveBeenCalledTimes(2);
@@ -1593,10 +1827,10 @@ describe("UnitParserService", () => {
       .mockRejectedValueOnce(new Error("catalog unavailable"))
       .mockResolvedValueOnce(files);
 
-    await expect(service.getUnitViewFromFiles("acp-1", "u1")).rejects.toThrow(
+    await expect(service.getUnitViewFromFiles("ap-1", "u1")).rejects.toThrow(
       "catalog unavailable",
     );
-    await expect(service.getUnitViewFromFiles("acp-1", "u1")).resolves.toEqual(
+    await expect(service.getUnitViewFromFiles("ap-1", "u1")).resolves.toEqual(
       expect.objectContaining({ id: "u1" }),
     );
 
@@ -1604,9 +1838,9 @@ describe("UnitParserService", () => {
   });
 
   it("invalidates unit-view resolution when the Explorer state changes", async () => {
-    await service.getUnitViewFromFiles("acp-1", "u1", undefined, "active:4");
-    await service.getUnitViewFromFiles("acp-1", "u1", undefined, "active:4");
-    await service.getUnitViewFromFiles("acp-1", "u1", undefined, "active:5");
+    await service.getUnitViewFromFiles("ap-1", "u1", undefined, "active:4");
+    await service.getUnitViewFromFiles("ap-1", "u1", undefined, "active:4");
+    await service.getUnitViewFromFiles("ap-1", "u1", undefined, "active:5");
 
     expect(
       (fs.readFile as jest.Mock).mock.calls.filter(
@@ -1623,8 +1857,8 @@ describe("UnitParserService", () => {
     });
 
     await Promise.all([
-      service.getItemListFromFiles("acp-1"),
-      service.getItemListFromFiles("acp-1"),
+      service.getItemListFromFiles("ap-1"),
+      service.getItemListFromFiles("ap-1"),
     ]);
     const xmlReads = (fs.readFile as jest.Mock).mock.calls.filter(
       ([path]) => path === "/tmp/u1.xml",
@@ -1636,7 +1870,7 @@ describe("UnitParserService", () => {
         index === 0 ? { ...file, checksum: "changed" } : file,
       ),
     );
-    await service.getItemListFromFiles("acp-1");
+    await service.getItemListFromFiles("ap-1");
     const invalidatedXmlReads = (fs.readFile as jest.Mock).mock.calls.filter(
       ([path]) => path === "/tmp/u1.xml",
     );
@@ -1645,7 +1879,7 @@ describe("UnitParserService", () => {
 
   it("bounds the parsed item-list cache to 100 entries", async () => {
     for (let index = 0; index < 101; index += 1) {
-      await service.getItemListFromFiles("acp-1", {
+      await service.getItemListFromFiles("ap-1", {
         itemPropertiesOverride: {
           [`u1_i1::${index}`]: {
             itemUuid: "u1_i1",
@@ -1660,7 +1894,7 @@ describe("UnitParserService", () => {
 
   it("bounds the numbered item-list cache to 100 entries", async () => {
     for (let index = 0; index < 101; index += 1) {
-      await service.getItemListFromFiles("acp-1", {
+      await service.getItemListFromFiles("ap-1", {
         activeStateSignature: `active:${index}`,
       });
     }
@@ -1691,9 +1925,9 @@ describe("UnitParserService", () => {
     };
 
     await expect(
-      service.getItemRowKeysFromFiles("acp-1", options),
+      service.getItemRowKeysFromFiles("ap-1", options),
     ).resolves.toEqual(new Set(["uuid-1::1"]));
-    await service.getItemRowKeysFromFiles("acp-1", options);
+    await service.getItemRowKeysFromFiles("ap-1", options);
     expect(getItemList).toHaveBeenCalledTimes(1);
 
     fileRepo.find.mockResolvedValue(
@@ -1701,7 +1935,7 @@ describe("UnitParserService", () => {
         index === 0 ? { ...file, checksum: "changed" } : file,
       ),
     );
-    await service.getItemRowKeysFromFiles("acp-1", options);
+    await service.getItemRowKeysFromFiles("ap-1", options);
     expect(getItemList).toHaveBeenCalledTimes(2);
   });
 });

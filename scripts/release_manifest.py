@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create, validate, and inspect ContentPool release manifests."""
+"""Create, validate, and inspect Content Hub release manifests."""
 
 from __future__ import annotations
 

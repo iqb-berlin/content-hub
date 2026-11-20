@@ -138,12 +138,28 @@ describe('ItemExplorer presentational components', () => {
     expect(collectionsTemplate).toContain('[error]="removeConfirmationError"');
   });
 
-  it('binds ACP coding flags to general and manual instructions', () => {
+  it('binds AP coding flags to general and manual instructions', () => {
     expect(codingTemplate).toContain('vm.shouldShowGeneralCodingInstruction(coding)');
     expect(codingTemplate).toContain('vm.shouldShowAutomaticCodingRules(code)');
     expect(codingTemplate).toContain('Allgemeiner Kodierungshinweis:');
     expect(codingTemplate).toContain('<strong>Manuelle Kodieranweisung:</strong>');
     expect(codingTemplate).not.toContain("? 'Manuelle Kodieranweisung:'");
+  });
+
+  it('distinguishes exact answers, codebook rules and unavailable coding information', () => {
+    expect(codingTemplate).toContain('data-testid="coding-information"');
+    expect(codingTemplate).toContain('{{ vm.codingInformation.title }}');
+    expect(codingTemplate).toContain("vm.codingInformation.status === 'exact'");
+    expect(codingTemplate).toContain('{{ answer.valueLabel }}');
+    expect(codingTemplate).toContain('<strong>Automatische Kodiervorschrift:</strong>');
+    expect(codingTemplate).toContain("? 'alle Regelgruppen (UND)'");
+    expect(codingTemplate).toContain(": 'eine Regelgruppe (ODER)'");
+  });
+
+  it('renders the selected variable and its relevant source rule groups', () => {
+    expect(codingTemplate).toContain('vm.codingInformation.ruleGroups');
+    expect(codingTemplate).toContain('<strong>Quelle:</strong>');
+    expect(codingTemplate).toContain('<strong>Verarbeitung:</strong>');
   });
 
   it('uses the coding variable id as the unambiguous card heading', () => {
@@ -171,7 +187,7 @@ describe('ItemExplorer presentational components', () => {
   });
 
   it('exposes read-only sharing and private-copy actions for collections', () => {
-    expect(collectionsTemplate).toContain('Für diesen ACP freigeben');
+    expect(collectionsTemplate).toContain('Für diesen AP freigeben');
     expect(collectionsTemplate.replace(/\s+/g, ' ')).toContain(
       "'Geteilt von ' + vm.activeItemCollection?.ownerLabel",
     );

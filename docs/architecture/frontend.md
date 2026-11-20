@@ -6,7 +6,7 @@ The frontend is an Angular 21 standalone application. It uses:
 
 - Angular router with lazy `loadComponent` routes,
 - Angular `HttpClient`,
-- an auth interceptor that injects the ContentPool JWT,
+- an auth interceptor that injects the Content Hub JWT,
 - small service-based state management instead of a global store,
 - route guards for access flow orchestration.
 
@@ -41,46 +41,46 @@ The route tree is organized by user journey:
   login choice and sign-in entry
 - `/auth/callback`
   OIDC callback handling
-- `/credential-login/:acpId`
-  ACP credential login page
+- `/credential-login/:apId`
+  AP credential login page
 
 ### Manager and admin routes
 
-- `/acps`
-  list of accessible ACPs for authenticated managers/admins
+- `/aps`
+  list of accessible APs for authenticated managers/admins
 - `/admin/users`
   user administration
 - `/admin/settings`
   global settings administration
-- `/admin/acp`
-  ACP administration view
-- `/manage/:acpId`
-  ACP manager dashboard
-- `/manage/:acpId/files`
+- `/admin/ap`
+  AP administration view
+- `/manage/:apId`
+  AP manager dashboard
+- `/manage/:apId/files`
   file manager
-- `/manage/:acpId/snapshots`
+- `/manage/:apId/snapshots`
   snapshot manager
-- `/manage/:acpId/access`
-  ACP access configuration
+- `/manage/:apId/access`
+  AP access configuration
 
 ### Read-only view routes
 
-- `/view/:acpId`
-  ACP start page
-- `/view/:acpId/units`
+- `/view/:apId`
+  AP start page
+- `/view/:apId/units`
   unit list
-- `/view/:acpId/unit/:unitId`
+- `/view/:apId/unit/:unitId`
   single unit view
-- `/view/:acpId/sequence/:sequenceId`
+- `/view/:apId/sequence/:sequenceId`
   task sequence view
-- `/view/:acpId/items`
+- `/view/:apId/items`
   item list
-- `/view/:acpId/item-explorer`
+- `/view/:apId/item-explorer`
   item explorer
-- `/view/:acpId/item/:itemId`
+- `/view/:apId/item/:itemId`
   item detail view
-- `/view/:acpId/index`
-  ACP index browser
+- `/view/:apId/index`
+  AP-Index browser
 
 ## Guards and Access UX
 
@@ -91,10 +91,10 @@ uses lightweight guards to guide the user into the correct flow:
   requires login for generic authenticated pages.
 - `adminGuard`
   requires login and app-admin status.
-- `acpManagerGuard`
-  checks that the user can access manager APIs for the ACP.
-- `acpViewGuard`
-  lets public ACPs through and redirects restricted ACPs to the access page.
+- `apManagerGuard`
+  checks that the user can access manager APIs for the AP.
+- `apViewGuard`
+  lets public APs through and redirects restricted APs to the access page.
 - `itemExplorerPendingChangesGuard`
   prevents accidental navigation away from unsaved explorer changes.
 
@@ -133,7 +133,7 @@ The service is a thin typed wrapper around backend endpoints.
 Major API groups in the client service:
 
 - users and admin settings,
-- ACP CRUD and access configuration,
+- AP CRUD and access configuration,
 - file upload and download helpers,
 - snapshots,
 - comments,
@@ -155,9 +155,9 @@ The frontend uses a pragmatic service-and-component state model.
 Patterns used in the codebase:
 
 - server state is fetched directly in pages and feature components,
-- route parameters decide the current ACP context,
+- route parameters decide the current AP context,
 - local component state handles filters, selected items, dialogs, and temporary UI state,
-- shared ACP explorer state is loaded from the backend and updated through versioned draft APIs.
+- shared AP explorer state is loaded from the backend and updated through versioned draft APIs.
 
 The Item Explorer uses a route-scoped feature facade because it combines several independent UI
 areas with draft state, personal working data, collections, and a player preview. The route
@@ -165,6 +165,23 @@ component only owns route and host integration. Child components consume typed, 
 model slices and send feature actions back through the facade; table and preview components retain
 their own DOM references. Small registered DOM ports keep fullscreen, focus and scrolling, iframe
 messaging, player-document focus, and resize observation inside the owning UI component.
+
+Shared Explorer row projection, identifier precedence and tag normalization live in pure functions
+in `item-explorer-shared-state.ts`. The facade applies their results to existing row objects so
+selection and pending player operations retain their identity. Explicit empty tag arrays remain
+deletion markers when shared state is applied or an optimistic tag change is rolled back.
+
+`ItemExplorerResponseStateService` owns response save/delete requests, confirmation dialogs and the
+saved-response list. It reads the current route/selection context through a narrow callback and
+uses the player session token to reject stale completions. Answer data stays in
+`ItemExplorerPlayerService`; the facade handles focus restoration and UI notifications. Like the
+other Explorer services, the response-state service is provided by the route component and cancels
+its work when that scope is destroyed.
+
+`ItemExplorerHistoryService` owns history entries, filters, loading/error state and CSV downloads.
+Its pure filtering and CSV functions live in `item-explorer-history.ts`; downloads use the shared
+`ItemExplorerBrowser`. Refreshing cancels the previous history request, and destroying the route
+scope cancels pending work. The facade retains dialog focus handling and delegates history actions.
 
 There is no central client-side store such as NgRx at the moment.
 
@@ -179,18 +196,18 @@ The admin UI covers:
 - linking OIDC identities,
 - editing theme, logo, language, and legal content.
 
-### ACP manager area
+### AP manager area
 
 The manager UI covers:
 
-- ACP overview and dashboard,
+- AP overview and dashboard,
 - file lifecycle operations,
 - snapshot creation and restore,
-- access model and credential management, including the default private state for new ACPs.
+- access model and credential management, including the default private state for new APs.
 
 ### Read-only area
 
-The read-only side adapts its UI based on ACP feature flags. Depending on ACP settings,
+The read-only side adapts its UI based on AP feature flags. Depending on AP settings,
 users may see or hide:
 
 - unit navigation,

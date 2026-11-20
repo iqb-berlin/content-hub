@@ -4,11 +4,11 @@ import { LandingComponent } from './landing.component';
 
 function createComponent(options?: {
   settings?: Record<string, unknown>;
-  acps?: Record<string, unknown>[];
+  aps?: Record<string, unknown>[];
   auth?: Partial<{
     isAdmin: boolean;
     isLoggedIn: boolean;
-    hasAcpRole: (acpId: string, role: string) => boolean;
+    hasApRole: (apId: string, role: string) => boolean;
   }>;
 }) {
   const api = {
@@ -21,13 +21,13 @@ function createComponent(options?: {
         ...(options?.settings || {}),
       }),
     ),
-    getPublicAcps: vi.fn().mockReturnValue(of((options?.acps || []) as any)),
-    getAcps: vi.fn().mockReturnValue(of([])),
+    getPublicAps: vi.fn().mockReturnValue(of((options?.aps || []) as any)),
+    getAps: vi.fn().mockReturnValue(of([])),
   };
   const authService = {
     isAdmin: false,
     isLoggedIn: false,
-    hasAcpRole: vi.fn(() => false),
+    hasApRole: vi.fn(() => false),
     ...(options?.auth || {}),
   };
   const router = {
@@ -64,13 +64,13 @@ describe('LandingComponent', () => {
     expect(component.activeLegalContent).toContain('<strong>Datenschutz</strong>');
   });
 
-  it('loads only public acps for logged-out visitors', () => {
-    const { component, api } = createComponent({ acps: [{ id: 'acp-1', name: 'ACP' }] });
+  it('loads only public aps for logged-out visitors', () => {
+    const { component, api } = createComponent({ aps: [{ id: 'ap-1', name: 'AP' }] });
 
     component.ngOnInit();
 
-    expect(api.getPublicAcps).toHaveBeenCalledTimes(1);
-    expect(api.getAcps).not.toHaveBeenCalled();
-    expect(component.acps).toEqual([{ id: 'acp-1', name: 'ACP' }]);
+    expect(api.getPublicAps).toHaveBeenCalledTimes(1);
+    expect(api.getAps).not.toHaveBeenCalled();
+    expect(component.aps).toEqual([{ id: 'ap-1', name: 'AP' }]);
   });
 });

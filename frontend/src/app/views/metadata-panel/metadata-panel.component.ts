@@ -272,7 +272,7 @@ export class MetadataPanelComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if ((changes['unit'] || changes['highlightItemId']) && this.unit) {
-      // Extract coding scheme from ACP-Index item metadata if available
+      // Extract coding scheme from AP-Index item metadata if available
       const highlighted = this.unit.items?.find((i: any) => i.id === this.highlightItemId);
       this.codingScheme = highlighted?.codingScheme || null;
       if (this.codingScheme) {

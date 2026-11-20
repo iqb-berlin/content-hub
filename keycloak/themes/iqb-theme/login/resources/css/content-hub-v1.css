@@ -1,0 +1,448 @@
+/* Content Hub login theme */
+
+html {
+    box-sizing: border-box;
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+body {
+    margin: 0;
+}
+
+/* General page styling */
+.login-pf-page {
+    background: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Header with Content Hub branding */
+#kc-header {
+    background: #5B21B6;
+    width: 100%;
+    max-width: 520px;
+    padding: 25px 35px;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 0;
+}
+
+#kc-header-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.kc-logo-img {
+    height: 56px;
+    width: auto;
+    max-width: 140px;
+    object-fit: contain;
+}
+
+.kc-logo-text {
+    font-size: 26px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.5px;
+}
+
+.kc-logo-text span {
+    color: white;
+}
+
+/* Main card */
+.card-pf {
+    background: white;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    max-width: 520px;
+    width: 100%;
+    padding: 35px 40px;
+    margin-top: 0;
+}
+
+/* Page title */
+#kc-page-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: #5B21B6;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Form styling */
+.form-group {
+    margin-bottom: 24px;
+}
+
+.pf-c-form__label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.pf-c-form-control {
+    width: 100%;
+    padding: 14px 18px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: white;
+    min-height: 48px;
+}
+
+.pf-c-form-control:focus {
+    outline: none;
+    border-color: #5B21B6;
+    box-shadow: 0 0 0 3px rgba(91,33,182,0.1);
+}
+
+/* Password visibility button */
+.pf-c-input-group {
+    display: flex;
+    position: relative;
+}
+
+.pf-c-input-group .pf-c-form-control {
+    border-radius: 6px 0 0 6px;
+    flex: 1;
+}
+
+.pf-m-control {
+    background: #f8f9fa;
+    border: 1px solid #ccc;
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    padding: 0 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    color: #666;
+    font-size: 18px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.pf-m-control:hover {
+    background: #e9ecef;
+    color: #5B21B6;
+}
+
+.pf-m-control i {
+    font-size: 18px;
+    color: inherit;
+}
+
+/* Submit button */
+.pf-c-button.pf-m-primary {
+    background: #5B21B6;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 16px 30px;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.2s;
+    min-height: 52px;
+}
+
+.pf-c-button.pf-m-primary:hover {
+    background: #6D28D9;
+}
+
+.pf-c-button.pf-m-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0,51,102,0.3);
+}
+
+/* Links */
+a {
+    color: #5B21B6;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+a:hover {
+    color: #6D28D9;
+    text-decoration: underline;
+}
+
+/* Form options and links */
+#kc-form-options {
+    font-size: 14px;
+}
+
+#kc-form-options a {
+    font-size: 14px;
+}
+
+.login-pf-settings {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Registration section */
+#kc-registration {
+    text-align: center;
+    padding-top: 25px;
+    border-top: 1px solid #eee;
+    margin-top: 25px;
+}
+
+#kc-registration span {
+    font-size: 15px;
+    color: #666;
+}
+
+#kc-registration a {
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+/* Info messages */
+#kc-info-message {
+    background: #e8f4f8;
+    border-left: 4px solid #5B21B6;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+/* Error messages */
+#kc-error-message {
+    background: #fdf2f2;
+    border-left: 4px solid #c9190b;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+#kc-error-message .instruction {
+    color: #c9190b;
+    margin: 0;
+}
+
+/* Locale selector */
+#kc-locale {
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+#kc-locale ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#kc-locale li {
+    display: inline-block;
+    margin-left: 12px;
+}
+
+#kc-locale a {
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    color: #666;
+}
+
+#kc-locale a:hover {
+    background: #f0f0f0;
+    text-decoration: none;
+    color: #5B21B6;
+}
+
+#kc-locale .current {
+    background: #5B21B6;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+/* Checkbox styling */
+.checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.checkbox label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.checkbox input[type="checkbox"] {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+    accent-color: #5B21B6;
+    cursor: pointer;
+}
+
+/* Social login providers */
+#kc-social-providers {
+    margin-top: 25px;
+    padding-top: 25px;
+    border-top: 1px solid #eee;
+}
+
+#kc-social-providers h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.kc-social-provider {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.kc-social-provider:hover {
+    background: #f8f8f8;
+    border-color: #5B21B6;
+    text-decoration: none;
+}
+
+/* Registration form specific styles */
+.iqb-register-form {
+    max-width: 100%;
+}
+
+.iqb-register-form .form-group {
+    margin-bottom: 22px;
+}
+
+.altcha-form-group {
+    margin-top: 6px;
+}
+
+.altcha-form-group altcha-widget {
+    --altcha-color-primary: #5B21B6;
+    --altcha-color-primary-content: #ffffff;
+    --altcha-color-base: #ffffff;
+    --altcha-color-border: #cccccc;
+    --altcha-color-border-focus: #5B21B6;
+    --altcha-color-text: #333333;
+    --altcha-color-border-verified: #2f855a;
+    display: block;
+    width: 100%;
+}
+
+.form-group-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.form-group-buttons .pf-m-link {
+    color: #666;
+    font-size: 15px;
+    padding: 12px 20px;
+    white-space: nowrap;
+}
+
+.form-group-buttons .pf-m-link:hover {
+    color: #5B21B6;
+    text-decoration: none;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    color: #666;
+}
+
+.back-link:hover {
+    color: #5B21B6;
+    text-decoration: none;
+}
+
+.back-link::before {
+    content: "←";
+    font-size: 18px;
+}
+
+.form-group-buttons .pf-m-primary {
+    width: auto;
+    min-width: 160px;
+}
+
+/* Required fields note */
+.required-fields-note {
+    font-size: 13px;
+    color: #666;
+    margin-top: 20px;
+    font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 540px) {
+    .login-pf-page {
+        padding: 15px;
+    }
+
+    #kc-header,
+    .card-pf {
+        border-radius: 0;
+    }
+
+    .card-pf {
+        padding: 25px;
+    }
+
+    .kc-logo-img {
+        height: 44px;
+    }
+
+    .kc-logo-text {
+        font-size: 20px;
+    }
+
+    #kc-page-title {
+        font-size: 22px;
+    }
+
+    .form-group-buttons {
+        flex-direction: column-reverse;
+    }
+
+    .form-group-buttons .pf-m-primary {
+        width: 100%;
+    }
+}

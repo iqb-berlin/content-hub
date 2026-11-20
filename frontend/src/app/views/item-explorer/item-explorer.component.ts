@@ -1,6 +1,8 @@
 import { ItemExplorerImportService } from './item-explorer-import.service';
 import { ItemExplorerTableService } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
+import { ItemExplorerHistoryService } from './item-explorer-history.service';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService } from './item-explorer-draft.service';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
@@ -38,6 +40,10 @@ import { ItemExplorerPreviewCoordinator } from './item-explorer-preview-coordina
 
 @Component({
   selector: 'app-item-explorer',
+  host: {
+    '[class.table-only]': '!showExplorerItemPanel',
+    '[class.without-player]': '!showPlayerPreview',
+  },
   standalone: true,
   imports: [
     BreadcrumbComponent,
@@ -58,6 +64,8 @@ import { ItemExplorerPreviewCoordinator } from './item-explorer-preview-coordina
     ItemExplorerDraftService,
     ItemExplorerCodingService,
     ItemExplorerPlayerService,
+    ItemExplorerResponseStateService,
+    ItemExplorerHistoryService,
     ItemExplorerTableService,
     ItemExplorerImportService,
     ItemExplorerCollectionsService,
@@ -89,6 +97,14 @@ export class ItemExplorerComponent implements OnInit, OnDestroy, ItemExplorerShe
     this.feature.registerShellDom(this);
   }
 
+  get showExplorerItemPanel(): boolean {
+    return this.feature.showExplorerItemPanel;
+  }
+
+  get showPlayerPreview(): boolean {
+    return this.feature.showPlayerPreview;
+  }
+
   get isFullscreenActive(): boolean {
     return this.feature.isFullscreen;
   }
@@ -101,16 +117,16 @@ export class ItemExplorerComponent implements OnInit, OnDestroy, ItemExplorerShe
     const query = this.route.snapshot.queryParamMap;
     const unitId = query?.get('unitId') || '';
     const itemId = query?.get('itemId') || '';
-    const acpId = this.route.snapshot.paramMap.get('acpId') || '';
+    const apId = this.route.snapshot.paramMap.get('apId') || '';
     if (unitId && itemId) {
-      this.feature.init(acpId, {
+      this.feature.init(apId, {
         unitId,
         itemId,
         open: query?.get('comments') === 'open',
         openCoding: query?.get('coding') === 'open',
       });
     } else {
-      this.feature.init(acpId);
+      this.feature.init(apId);
     }
   }
 

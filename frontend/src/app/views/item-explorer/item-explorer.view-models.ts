@@ -8,6 +8,10 @@ type ReadonlyViewModelSlice<T> = {
 export type ItemExplorerHeaderViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
+    | 'showTableToolbarArea'
+    | 'collectionDataExportError'
+    | 'showExplorerHeader'
+    | 'isHeaderActionVisible'
     | 'activeItemCollection'
     | 'enableItemCollections'
     | 'collectionBusy'
@@ -101,6 +105,9 @@ export type ItemExplorerHeaderViewModel = ReadonlyViewModelSlice<
 export type ItemExplorerTableViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
+    | 'showTableToolbarArea'
+    | 'collectionError'
+    | 'loadItemCollections'
     | 'totalItemsCount'
     | 'addCustomTag'
     | 'addItemTag'
@@ -229,9 +236,34 @@ export type ItemExplorerCollectionsViewModel = ReadonlyViewModelSlice<
 export type ItemExplorerPreviewViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
+    | 'itemExplorerConditionalVisibilityEnabled'
+    | 'syntheticPreviewState'
+    | 'previewMode'
+    | 'setPreviewMode'
+    | 'flowPageNumber'
+    | 'flowPageCount'
+    | 'showFlowPageNavigation'
+    | 'canNavigateFlowBackward'
+    | 'canNavigateFlowForward'
+    | 'navigateFlowPage'
+    | 'presentationMessage'
+    | 'preparingPresentation'
+    | 'hasPreviewContext'
+    | 'hasCurrentResponseState'
+    | 'capturePreviewContext'
+    | 'clearPreviewContext'
+    | 'canOpenFullUnit'
+    | 'previewStateVariables'
+    | 'previewStartPage'
+    | 'previewStartPages'
+    | 'showPreviewStartPageSelector'
+    | 'setPreviewStartPage'
+    | 'setPreviewStateValue'
+    | 'showItemInfo'
+    | 'showPlayerPreview'
     | 'showStudioItemComments'
     | 'applyCustomPreviewTarget'
-    | 'acpId'
+    | 'apId'
     | 'canEditExplorer'
     | 'canPreviewSelectedItem'
     | 'canSaveCurrentResponseState'
@@ -294,10 +326,11 @@ export type ItemExplorerPreviewViewModel = ReadonlyViewModelSlice<
 export type ItemExplorerCodingDialogViewModel = ReadonlyViewModelSlice<
   Pick<
     ItemExplorerFacade,
-    | 'acpId'
+    | 'apId'
     | 'closeCodingOverlay'
     | 'codingSearchText'
     | 'codingCommentsEnabled'
+    | 'codingInformation'
     | 'codingSortField'
     | 'codingVariableFocus'
     | 'codingVariableFocusMessage'

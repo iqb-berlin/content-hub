@@ -15,7 +15,7 @@ export class ItemExplorerDraftService implements OnDestroy {
   private readonly destroy$ = new ReplaySubject<void>(1);
   private readonly flushRequested = new Subject<void>();
   readonly flushRequested$ = this.flushRequested.asObservable();
-  private acpId = '';
+  private apId = '';
   private canEdit = false;
   private canPublish = false;
   private flushInFlight: Promise<ItemExplorerDraftResult> | null = null;
@@ -30,8 +30,8 @@ export class ItemExplorerDraftService implements OnDestroy {
 
   constructor(@Inject(ApiService) private readonly api: ApiService) {}
 
-  configure(context: { acpId: string; canEdit: boolean; canPublish: boolean }): void {
-    this.acpId = context.acpId;
+  configure(context: { apId: string; canEdit: boolean; canPublish: boolean }): void {
+    this.apId = context.apId;
     this.canEdit = context.canEdit;
     this.canPublish = context.canPublish;
   }
@@ -156,7 +156,7 @@ export class ItemExplorerDraftService implements OnDestroy {
     try {
       const envelope = await firstValueFrom(
         this.api
-          .patchItemExplorerDraft(this.acpId, {
+          .patchItemExplorerDraft(this.apId, {
             changeType,
             patch: patch as ItemExplorerSharedState,
             baseVersion: this.explorerVersion,
@@ -214,7 +214,7 @@ export class ItemExplorerDraftService implements OnDestroy {
     try {
       const envelope = await firstValueFrom(
         this.api
-          .saveItemExplorerDraft(this.acpId, this.explorerVersion)
+          .saveItemExplorerDraft(this.apId, this.explorerVersion)
           .pipe(takeUntil(this.destroy$)),
       );
       if (this.destroyed) return { kind: 'cancelled' };
@@ -258,7 +258,7 @@ export class ItemExplorerDraftService implements OnDestroy {
     try {
       const envelope = await firstValueFrom(
         this.api
-          .discardItemExplorerDraft(this.acpId, this.explorerVersion)
+          .discardItemExplorerDraft(this.apId, this.explorerVersion)
           .pipe(takeUntil(this.destroy$)),
       );
       if (this.destroyed) return { kind: 'cancelled' };

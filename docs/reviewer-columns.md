@@ -2,7 +2,7 @@
 
 Mit „Spalten verwalten → Ausgeblendete Spalten für Reviewer sperren“ wird die
 veröffentlichte Spaltenauswahl zur Informationsgrenze. Die Option ist bei
-bestehenden ACPs ausgeschaltet. Das Aktivieren, Ändern und Deaktivieren folgt
+bestehenden APs ausgeschaltet. Das Aktivieren, Ändern und Deaktivieren folgt
 dem vorhandenen Draft-/Veröffentlichungsmodell. Speichern im Spaltendialog
 ändert zunächst den Draft; erst „Änderungen prüfen → Veröffentlichen“ ändert
 die Freigabe für Leser. Verwerfen lässt die bisherige Freigabe bestehen.
@@ -14,7 +14,7 @@ die Freigabe für Leser. Verwerfen lässt die bisherige Freigabe bestehen.
 - Explorer-Leser, Credentials und öffentliche Zugriffe unterliegen der Freigabe.
   `review:participate` und `review:manage` gewähren keine Ausnahme und ersetzen
   auch nicht `item-explorer:view`.
-- ACP-Verwaltungszugriffe und Explorer-Bearbeitungszugriffe behalten ihre
+- AP-Verwaltungszugriffe und Explorer-Bearbeitungszugriffe behalten ihre
   administrativen Datenrechte. Die explizite Read-only-Vorschau verwendet die
   veröffentlichte eingeschränkte Ansicht.
 - Der Spaltendialog ist auch für Leser erreichbar. Gesperrte Spalten werden
@@ -22,7 +22,7 @@ die Freigabe für Leser. Verwerfen lässt die bisherige Freigabe bestehen.
 - Erlaubte Spalten lassen sich zusätzlich ausblenden, anordnen und verbreitern.
   Die Item-ID bleibt verfügbar. Eigene persönliche Notizen, Tags und Bewertungen
   sind unabhängig von der gemeinsamen Freigabe verfügbar, sofern die Funktion
-  für den ACP eingeschaltet ist.
+  für den AP eingeschaltet ist.
 - Die normale Tabelle und „Nur Auswahlliste“ verwenden dieselbe Spaltenauswahl.
 
 ## Datenmodell und Durchsetzung
@@ -46,7 +46,7 @@ Bearbeitungsberechtigung. Gefilterte Ergebnisse verändern keine Parser-Caches.
 
 Erfasst sind die Datei-Item-Liste, alternative Item-Listen und Einzelitems,
 Item-/Unit-Metadaten, gemeinsame Tags und Kommentarzähler, Explorer-State,
-ACP-Listen sowie Unit-Ansichten. Persönliche XLSX- und Auswahllisten-CSV-Exporte
+AP-Listen sowie Unit-Ansichten. Persönliche XLSX- und Auswahllisten-CSV-Exporte
 enthalten nur freigegebene gemeinsame Felder; eigene persönliche Angaben bleiben
 erhalten. Review-Kommentarexporte geben gesperrte Unit-Bezeichnungen sowie gesperrte
 Booklet-IDs und -Bezeichnungen nicht als zusätzliche Spalten aus. Kommentartexte und das bestehende Review-Zugriffsmodell
@@ -67,7 +67,7 @@ Layout; frühere persönliche Sichtbarkeit wird nicht wiederhergestellt.
 ## Rohdaten und Grenzen
 
 Rohdaten können die Spaltenprojektion umgehen. Deshalb sind für eingeschränkte
-Zugriffe rohe ACP-Indizes, Dateilisten/-details, VOMD-/XML-/JSON-Rohdateien und
+Zugriffe rohe AP-Indizes, Dateilisten/-details, VOMD-/XML-/JSON-Rohdateien und
 Archivdownloads gesperrt. Es wird kein scheinbar vollständiges, teilweise
 entferntes Originalarchiv erzeugt. Die Oberfläche benennt diese Auswirkung beim
 Aktivieren der Option.
@@ -75,7 +75,7 @@ Aktivieren der Option.
 Deklarierte Player-, Unit-Definition- und Coding-Scheme-Abhängigkeiten in den
 Formaten `.html`, `.voud` und `.vocs` bleiben für die bestehende Vorschaufunktion
 zugänglich. Die Zuordnung berücksichtigt auch die hochgeladene Unit-XML, wenn
-die Abhängigkeitsliste im ACP-Index noch nicht aktuell ist. Andere Rohformate
+die Abhängigkeitsliste im AP-Index noch nicht aktuell ist. Andere Rohformate
 werden nicht allein wegen eines erlaubten Dateidownloads freigegeben.
 
 Interne Identifikatoren (z. B. Zeilenschlüssel, Unit-/Item-/Variablen-ID und Sub-ID)
@@ -84,7 +84,7 @@ werden keine weiteren fachlichen Spaltenwerte freigegeben. In Exporten werden
 interne Schlüssel nicht automatisch als zusätzliche Spalten ausgegeben; eine
 Sub-ID-Spalte benötigt ihre eigene Freigabe. Inhalte, die bereits
 vor einer Sperre heruntergeladen wurden, lassen sich nicht nachträglich entziehen.
-Die Sperre gilt ACP-weit; gruppenspezifische Freigaben sind nicht Teil von #166.
+Die Sperre gilt AP-weit; gruppenspezifische Freigaben sind nicht Teil von #166.
 
 ## Validierung
 

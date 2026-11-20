@@ -109,17 +109,17 @@ const THEME_FIELDS: ThemeField[] = [
       </div>
 
       <div class="card">
-        <h3>Standard-Einstellungen für ACP-Index</h3>
+        <h3>Standard-Einstellungen für AP-Index</h3>
         <div class="form-group">
-          <label>Default ACP-Index (JSON-Objekt)</label>
+          <label>Default AP-Index (JSON-Objekt)</label>
           <textarea
-            [(ngModel)]="defaultAcpIndexJson"
-            name="defaultAcpIndexJson"
+            [(ngModel)]="defaultApIndexJson"
+            name="defaultApIndexJson"
             rows="12"
             class="json-editor"
           ></textarea>
           <small class="help-text"
-            >Wird beim Anlegen/Import neuer ACPs als Standard verwendet.</small
+            >Wird beim Anlegen/Import neuer APs als Standard verwendet.</small
           >
         </div>
       </div>
@@ -127,7 +127,7 @@ const THEME_FIELDS: ThemeField[] = [
       <div class="card">
         <h3>GeoGebra</h3>
         <p class="help-text">
-          Einmal hochgeladen steht das GeoGebra-Bundle global für alle ACP-Player bereit.
+          Einmal hochgeladen steht das GeoGebra-Bundle global für alle AP-Player bereit.
         </p>
 
         @if (settings.geoGebraBundle) {
@@ -255,7 +255,7 @@ export class SettingsComponent implements OnInit {
   settings: AppSettings | null = null;
   saved = false;
   error = '';
-  defaultAcpIndexJson = '{}';
+  defaultApIndexJson = '{}';
   theme: Record<string, string> = { ...DEFAULT_THEME };
   readonly themeFields = THEME_FIELDS;
   geoGebraBusy = false;
@@ -286,15 +286,15 @@ export class SettingsComponent implements OnInit {
 
     this.error = '';
 
-    let parsedDefaultAcpIndex: Record<string, unknown>;
+    let parsedDefaultApIndex: Record<string, unknown>;
     try {
-      const parsed = JSON.parse(this.defaultAcpIndexJson || '{}');
+      const parsed = JSON.parse(this.defaultApIndexJson || '{}');
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        throw new Error('Default ACP index must be a JSON object');
+        throw new Error('Default AP index must be a JSON object');
       }
-      parsedDefaultAcpIndex = parsed as Record<string, unknown>;
+      parsedDefaultApIndex = parsed as Record<string, unknown>;
     } catch {
-      this.error = 'Standard-ACP-Index muss ein gültiges JSON-Objekt sein.';
+      this.error = 'Standard-AP-Index muss ein gültiges JSON-Objekt sein.';
       return;
     }
 
@@ -306,7 +306,7 @@ export class SettingsComponent implements OnInit {
       privacyHtml: this.settings.privacyHtml,
       accessibilityHtml: this.settings.accessibilityHtml,
       theme: { ...this.theme },
-      defaultAcpIndex: parsedDefaultAcpIndex,
+      defaultApIndex: parsedDefaultApIndex,
     };
 
     this.api.updateSettings(payload).subscribe({
@@ -316,7 +316,7 @@ export class SettingsComponent implements OnInit {
         applyTheme(this.theme);
         applyLanguage(settings.language);
         window.dispatchEvent(
-          new CustomEvent('cp-settings-updated', {
+          new CustomEvent('ch-settings-updated', {
             detail: {
               logoUrl: settings.logoUrl,
               theme: this.theme,
@@ -392,7 +392,7 @@ export class SettingsComponent implements OnInit {
   private applySettings(settings: AppSettings) {
     this.settings = settings;
     this.theme = normalizeTheme(settings.theme);
-    this.defaultAcpIndexJson = JSON.stringify(settings.defaultAcpIndex || {}, null, 2);
+    this.defaultApIndexJson = JSON.stringify(settings.defaultApIndex || {}, null, 2);
   }
 
   private clearGeoGebraSelection() {

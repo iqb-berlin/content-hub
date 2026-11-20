@@ -6,6 +6,7 @@ import { DeduplicateAcpCredentials1783903000000 } from "./migrations/17839030000
 import { CompleteCommentLifecycle1789300000000 } from "./migrations/1789300000000-CompleteCommentLifecycle";
 import { ReviewVisibilityGroups1789400000000 } from "./migrations/1789400000000-ReviewVisibilityGroups";
 import { CommentVotes1789500000000 } from "./migrations/1789500000000-CommentVotes";
+import { ContentHubTheme1793318400000 } from "./migrations/1793318400000-ContentHubTheme";
 
 /** Run each grant backfill only when adding its column, never on later restarts. */
 async function prepareReviewSchema(q: QueryRunner): Promise<void> {
@@ -124,6 +125,7 @@ export async function createApplicationDataSource(
           queryRunner,
         );
         await new CommentVotes1789500000000().installTriggers(queryRunner);
+        await new ContentHubTheme1793318400000().up(queryRunner);
         await queryRunner.commitTransaction();
       } catch (error) {
         if (queryRunner.isTransactionActive)

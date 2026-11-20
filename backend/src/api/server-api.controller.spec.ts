@@ -5,27 +5,25 @@ import { createServerApiRequest, TEST_UUIDS } from "../testing/test-fixtures";
 describe("ServerApiController", () => {
   let controller: ServerApiController;
   let serverApiService: {
-    listAcps: jest.Mock;
-    getAcpTransferData: jest.Mock;
-    getAcpIndex: jest.Mock;
-    updateAcpIndex: jest.Mock;
+    listAps: jest.Mock;
+    getApTransferData: jest.Mock;
+    getApIndex: jest.Mock;
+    updateApIndex: jest.Mock;
     listFiles: jest.Mock;
     getFile: jest.Mock;
     downloadFile: jest.Mock;
     uploadFiles: jest.Mock;
     replaceCodingSchemeFiles: jest.Mock;
-    receiveAcp: jest.Mock;
+    receiveAp: jest.Mock;
   };
   let serverApiAuditService: { list: jest.Mock };
 
   beforeEach(() => {
     serverApiService = {
-      listAcps: jest.fn().mockResolvedValue([{ id: "acp-1" }]),
-      getAcpTransferData: jest
-        .fn()
-        .mockResolvedValue({ id: "acp-1", files: [] }),
-      getAcpIndex: jest.fn().mockResolvedValue({ version: "0.5.0" }),
-      updateAcpIndex: jest.fn().mockResolvedValue({ operation: "updated" }),
+      listAps: jest.fn().mockResolvedValue([{ id: "ap-1" }]),
+      getApTransferData: jest.fn().mockResolvedValue({ id: "ap-1", files: [] }),
+      getApIndex: jest.fn().mockResolvedValue({ version: "0.5.0" }),
+      updateApIndex: jest.fn().mockResolvedValue({ operation: "updated" }),
       listFiles: jest.fn().mockResolvedValue([{ id: "file-1" }]),
       getFile: jest.fn().mockResolvedValue({ id: "file-1" }),
       downloadFile: jest.fn().mockResolvedValue({
@@ -36,7 +34,7 @@ describe("ServerApiController", () => {
       replaceCodingSchemeFiles: jest
         .fn()
         .mockResolvedValue({ replacedFiles: [] }),
-      receiveAcp: jest.fn().mockResolvedValue({ operation: "created" }),
+      receiveAp: jest.fn().mockResolvedValue({ operation: "created" }),
     };
 
     serverApiAuditService = {
@@ -49,38 +47,35 @@ describe("ServerApiController", () => {
     );
   });
 
-  it("delegates ACP list/read/export/index operations to the service", async () => {
-    await expect(controller.listAcps()).resolves.toEqual([{ id: "acp-1" }]);
-    await expect(controller.getAcp("acp-1")).resolves.toEqual({
-      id: "acp-1",
+  it("delegates AP list/read/export/index operations to the service", async () => {
+    await expect(controller.listAps()).resolves.toEqual([{ id: "ap-1" }]);
+    await expect(controller.getAp("ap-1")).resolves.toEqual({
+      id: "ap-1",
       files: [],
     });
-    await expect(controller.exportAcp("acp-1")).resolves.toEqual({
-      id: "acp-1",
+    await expect(controller.exportAp("ap-1")).resolves.toEqual({
+      id: "ap-1",
       files: [],
     });
-    await expect(controller.getAcpIndex("acp-1")).resolves.toEqual({
+    await expect(controller.getApIndex("ap-1")).resolves.toEqual({
       version: "0.5.0",
     });
 
-    expect(serverApiService.listAcps).toHaveBeenCalled();
-    expect(serverApiService.getAcpTransferData).toHaveBeenNthCalledWith(
+    expect(serverApiService.listAps).toHaveBeenCalled();
+    expect(serverApiService.getApTransferData).toHaveBeenNthCalledWith(
       1,
-      "acp-1",
+      "ap-1",
       undefined,
     );
-    expect(serverApiService.getAcpTransferData).toHaveBeenNthCalledWith(
+    expect(serverApiService.getApTransferData).toHaveBeenNthCalledWith(
       2,
-      "acp-1",
+      "ap-1",
       undefined,
     );
-    expect(serverApiService.getAcpIndex).toHaveBeenCalledWith(
-      "acp-1",
-      undefined,
-    );
+    expect(serverApiService.getApIndex).toHaveBeenCalledWith("ap-1", undefined);
   });
 
-  it("reports authenticated token scopes without requiring an ACP", () => {
+  it("reports authenticated token scopes without requiring an AP", () => {
     expect(
       Reflect.getMetadata(SERVER_API_SCOPES_KEY, controller.getCapabilities),
     ).toEqual([]);
@@ -88,15 +83,15 @@ describe("ServerApiController", () => {
       controller.getCapabilities(
         createServerApiRequest({
           id: "coding-box",
-          scopes: ["acp.read", "files.read"],
-          allowedAcpIds: [TEST_UUIDS.acp],
+          scopes: ["ap.read", "files.read"],
+          allowedApIds: [TEST_UUIDS.ap],
         }),
       ),
     ).toEqual({
       clientId: "coding-box",
-      scopes: ["acp.read", "files.read"],
+      scopes: ["ap.read", "files.read"],
       capabilities: {
-        "acp.read": true,
+        "ap.read": true,
         "transfer.read": false,
         "transfer.write": false,
         "index.read": false,
@@ -105,23 +100,23 @@ describe("ServerApiController", () => {
         "files.write": false,
         "audit.read": false,
       },
-      allowedAcpIds: [TEST_UUIDS.acp],
+      allowedApIds: [TEST_UUIDS.ap],
     });
   });
 
-  it("updates ACP index using strategy and optimistic timestamp", async () => {
-    const result = await controller.updateAcpIndex(
-      "acp-1",
+  it("updates AP index using strategy and optimistic timestamp", async () => {
+    const result = await controller.updateApIndex(
+      "ap-1",
       {
-        acpIndex: { a: 1 },
+        apIndex: { a: 1 },
         expectedUpdatedAt: "2026-01-01T00:00:00.000Z",
       } as any,
       "merge",
     );
 
     expect(result).toEqual({ operation: "updated" });
-    expect(serverApiService.updateAcpIndex).toHaveBeenCalledWith(
-      "acp-1",
+    expect(serverApiService.updateApIndex).toHaveBeenCalledWith(
+      "ap-1",
       { a: 1 },
       "merge",
       "2026-01-01T00:00:00.000Z",
@@ -130,11 +125,11 @@ describe("ServerApiController", () => {
   });
 
   it("delegates file listing/reading/uploading", async () => {
-    const files = await controller.listFiles("acp-1");
-    const oneFile = await controller.getFile("acp-1", "file-1");
+    const files = await controller.listFiles("ap-1");
+    const oneFile = await controller.getFile("ap-1", "file-1");
 
     const uploadResult = await controller.uploadFiles(
-      "acp-1",
+      "ap-1",
       [{ originalname: "a.xml" } as Express.Multer.File],
       "overwrite",
     );
@@ -143,14 +138,14 @@ describe("ServerApiController", () => {
     expect(oneFile).toEqual({ id: "file-1" });
     expect(uploadResult).toEqual({ uploaded: 1 });
 
-    expect(serverApiService.listFiles).toHaveBeenCalledWith("acp-1", undefined);
+    expect(serverApiService.listFiles).toHaveBeenCalledWith("ap-1", undefined);
     expect(serverApiService.getFile).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "file-1",
       undefined,
     );
     expect(serverApiService.uploadFiles).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       [{ originalname: "a.xml" }],
       "overwrite",
       undefined,
@@ -163,10 +158,10 @@ describe("ServerApiController", () => {
       send: jest.fn(),
     };
 
-    await controller.downloadFile("acp-1", "file-1", res as any);
+    await controller.downloadFile("ap-1", "file-1", res as any);
 
     expect(serverApiService.downloadFile).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "file-1",
       undefined,
     );
@@ -185,7 +180,7 @@ describe("ServerApiController", () => {
 
   it("replaces coding scheme files with source client id from request", async () => {
     const result = await controller.replaceCodingSchemes(
-      "acp-1",
+      "ap-1",
       [{ originalname: "test.vocs" } as Express.Multer.File],
       {
         changelog: "new scheme",
@@ -196,7 +191,7 @@ describe("ServerApiController", () => {
 
     expect(result).toEqual({ replacedFiles: [] });
     expect(serverApiService.replaceCodingSchemeFiles).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       [{ originalname: "test.vocs" }],
       {
         changelog: "new scheme",
@@ -210,22 +205,22 @@ describe("ServerApiController", () => {
   it("delegates import endpoints and passes conflict strategy through", async () => {
     const payload = {
       packageId: "pkg-1",
-      name: "ACP",
-      acpIndex: { version: "0.5.0" },
+      name: "AP",
+      apIndex: { version: "0.5.0" },
     } as any;
 
-    const importResult = await controller.importAcp(payload, "merge");
-    const legacyResult = await controller.receiveAcp(payload, "overwrite");
+    const importResult = await controller.importAp(payload, "merge");
+    const legacyResult = await controller.receiveAp(payload, "overwrite");
 
     expect(importResult).toEqual({ operation: "created" });
     expect(legacyResult).toEqual({ operation: "created" });
-    expect(serverApiService.receiveAcp).toHaveBeenNthCalledWith(
+    expect(serverApiService.receiveAp).toHaveBeenNthCalledWith(
       1,
       payload,
       "merge",
       undefined,
     );
-    expect(serverApiService.receiveAcp).toHaveBeenNthCalledWith(
+    expect(serverApiService.receiveAp).toHaveBeenNthCalledWith(
       2,
       payload,
       "overwrite",
@@ -237,9 +232,9 @@ describe("ServerApiController", () => {
     await expect(
       controller.getAuditLogs(
         "50",
-        "acp.read",
+        "ap.read",
         "client-1",
-        createServerApiRequest({ allowedAcpIds: [TEST_UUIDS.acp] }),
+        createServerApiRequest({ allowedApIds: [TEST_UUIDS.ap] }),
       ),
     ).resolves.toEqual([{ id: "log-1" }]);
     await expect(
@@ -249,9 +244,9 @@ describe("ServerApiController", () => {
     expect(serverApiAuditService.list).toHaveBeenNthCalledWith(
       1,
       50,
-      "acp.read",
+      "ap.read",
       "client-1",
-      [TEST_UUIDS.acp],
+      [TEST_UUIDS.ap],
     );
     expect(serverApiAuditService.list).toHaveBeenNthCalledWith(
       2,

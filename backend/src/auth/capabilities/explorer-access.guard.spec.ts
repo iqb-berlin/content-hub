@@ -1,13 +1,13 @@
 import { ExecutionContext, ForbiddenException } from "@nestjs/common";
-import { AcpAccessGuard } from "../guards/acp-access.guard";
-import { AcpCapabilitiesService } from "./acp-capabilities.service";
+import { ApAccessGuard } from "../guards/ap-access.guard";
+import { ApCapabilitiesService } from "./ap-capabilities.service";
 import { ExplorerReadGuard, ExplorerEditGuard } from "./explorer-access.guard";
 
 describe.each([
   ["read", ExplorerReadGuard, "item-explorer:view", true],
   ["edit", ExplorerEditGuard, "item-explorer:edit", undefined],
 ] as const)("Explorer %s access", (_name, Guard, capability, allowPublic) => {
-  const request = { params: { acpId: "acp-1" } };
+  const request = { params: { apId: "ap-1" } };
   const context = {
     switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
@@ -16,13 +16,13 @@ describe.each([
     const access = { canActivate: jest.fn().mockResolvedValue(true) };
     const capabilities = { assert: jest.fn().mockResolvedValue(undefined) };
     const guard = new Guard(
-      access as unknown as AcpAccessGuard,
-      capabilities as unknown as AcpCapabilitiesService,
+      access as unknown as ApAccessGuard,
+      capabilities as unknown as ApCapabilitiesService,
     );
     return { guard, access, capabilities };
   }
 
-  it("checks the required capability after resolving ACP access", async () => {
+  it("checks the required capability after resolving AP access", async () => {
     const { guard, access, capabilities } = setup();
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(access.canActivate).toHaveBeenCalledWith(context);
@@ -35,9 +35,9 @@ describe.each([
     );
   });
 
-  it("propagates a denied ACP access without checking capabilities", async () => {
+  it("propagates a denied AP access without checking capabilities", async () => {
     const { guard, access, capabilities } = setup();
-    const denied = new ForbiddenException("ACP access denied");
+    const denied = new ForbiddenException("AP access denied");
     access.canActivate.mockRejectedValueOnce(denied);
     await expect(guard.canActivate(context)).rejects.toBe(denied);
     expect(capabilities.assert).not.toHaveBeenCalled();

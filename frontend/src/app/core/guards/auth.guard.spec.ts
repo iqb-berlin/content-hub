@@ -1,7 +1,7 @@
 import { Injector, runInInjectionContext } from '@angular/core';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BehaviorSubject, firstValueFrom, isObservable, of, throwError } from 'rxjs';
-import { authGuard, adminGuard, acpManagerGuard } from './auth.guard';
+import { authGuard, adminGuard, apManagerGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
 import { ApiService } from '../services/api.service';
 import { AccessService } from '../services/access.service';
@@ -19,7 +19,7 @@ function createUser(overrides: Partial<UserProfile> = {}): UserProfile {
     id: 'user-1',
     username: 'admin',
     isAppAdmin: true,
-    acpRoles: [],
+    apRoles: [],
     ...overrides,
   };
 }
@@ -34,7 +34,7 @@ describe('Auth Guards', () => {
     loadProfile: ReturnType<typeof vi.fn>;
   };
   let apiMock: {
-    getAcp: ReturnType<typeof vi.fn>;
+    getAp: ReturnType<typeof vi.fn>;
   };
   let accessMock: {
     createAccessUrlTree: ReturnType<typeof vi.fn>;
@@ -52,7 +52,7 @@ describe('Auth Guards', () => {
     };
 
     apiMock = {
-      getAcp: vi.fn().mockReturnValue(of({ id: 'acp-1' })),
+      getAp: vi.fn().mockReturnValue(of({ id: 'ap-1' })),
     };
 
     accessMock = {
@@ -72,7 +72,7 @@ describe('Auth Guards', () => {
     authMock.isLoggedIn = true;
 
     const result = await resolveGuardResult(
-      runInInjectionContext(injector, () => authGuard({} as any, { url: '/acps' } as any)),
+      runInInjectionContext(injector, () => authGuard({} as any, { url: '/aps' } as any)),
     );
 
     expect(result).toBe(true);
@@ -81,15 +81,15 @@ describe('Auth Guards', () => {
 
   it('authGuard redirects anonymous users to access page', async () => {
     const result = await resolveGuardResult(
-      runInInjectionContext(injector, () => authGuard({} as any, { url: '/acps' } as any)),
+      runInInjectionContext(injector, () => authGuard({} as any, { url: '/aps' } as any)),
     );
 
     expect(accessMock.createAccessUrlTree).toHaveBeenCalledWith('login_required', {
-      nextUrl: '/acps',
+      nextUrl: '/aps',
     });
     expect(result).toEqual({
       reason: 'login_required',
-      options: { nextUrl: '/acps' },
+      options: { nextUrl: '/aps' },
     });
   });
 
@@ -162,63 +162,54 @@ describe('Auth Guards', () => {
     });
   });
 
-  it('acpManagerGuard allows admins without ACP check', async () => {
+  it('apManagerGuard allows admins without AP check', async () => {
     authMock.isLoggedIn = true;
     authMock.isAdmin = true;
 
     const result = await resolveGuardResult(
       runInInjectionContext(injector, () =>
-        acpManagerGuard(
-          { paramMap: { get: () => 'acp-1' } } as any,
-          { url: '/manage/acp-1' } as any,
-        ),
+        apManagerGuard({ paramMap: { get: () => 'ap-1' } } as any, { url: '/manage/ap-1' } as any),
       ),
     );
 
     expect(result).toBe(true);
-    expect(apiMock.getAcp).not.toHaveBeenCalled();
+    expect(apiMock.getAp).not.toHaveBeenCalled();
   });
 
-  it('acpManagerGuard validates ACP access for non-admin users', async () => {
+  it('apManagerGuard validates AP access for non-admin users', async () => {
     authMock.isLoggedIn = true;
     authMock.isAdmin = false;
-    apiMock.getAcp.mockReturnValue(of({ id: 'acp-1' }));
+    apiMock.getAp.mockReturnValue(of({ id: 'ap-1' }));
 
     const result = await resolveGuardResult(
       runInInjectionContext(injector, () =>
-        acpManagerGuard(
-          { paramMap: { get: () => 'acp-1' } } as any,
-          { url: '/manage/acp-1' } as any,
-        ),
+        apManagerGuard({ paramMap: { get: () => 'ap-1' } } as any, { url: '/manage/ap-1' } as any),
       ),
     );
 
-    expect(apiMock.getAcp).toHaveBeenCalledWith('acp-1');
+    expect(apiMock.getAp).toHaveBeenCalledWith('ap-1');
     expect(result).toBe(true);
   });
 
-  it('acpManagerGuard redirects forbidden manager access', async () => {
+  it('apManagerGuard redirects forbidden manager access', async () => {
     authMock.isLoggedIn = true;
     authMock.isAdmin = false;
-    apiMock.getAcp.mockReturnValue(throwError(() => ({ status: 403 })));
+    apiMock.getAp.mockReturnValue(throwError(() => ({ status: 403 })));
 
     const result = await resolveGuardResult(
       runInInjectionContext(injector, () =>
-        acpManagerGuard(
-          { paramMap: { get: () => 'acp-1' } } as any,
-          { url: '/manage/acp-1' } as any,
-        ),
+        apManagerGuard({ paramMap: { get: () => 'ap-1' } } as any, { url: '/manage/ap-1' } as any),
       ),
     );
 
     expect(accessMock.createAccessUrlTree).toHaveBeenCalledWith('insufficient_rights', {
       context: 'manage',
-      acpId: 'acp-1',
-      nextUrl: '/manage/acp-1',
+      apId: 'ap-1',
+      nextUrl: '/manage/ap-1',
     });
     expect(result).toEqual({
       reason: 'insufficient_rights',
-      options: { context: 'manage', acpId: 'acp-1', nextUrl: '/manage/acp-1' },
+      options: { context: 'manage', apId: 'ap-1', nextUrl: '/manage/ap-1' },
     });
   });
 });

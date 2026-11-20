@@ -11,7 +11,7 @@ export class ItemExplorerCommentsService implements OnDestroy {
   private readonly countsChanged = new Subject<void>();
   readonly countsChanged$ = this.countsChanged.asObservable();
   private stopVisibilityWatch: (() => void) | null = null;
-  private acpId = '';
+  private apId = '';
   private identity: string | null = null;
   private loggedIn = false;
   private canExport = false;
@@ -21,12 +21,12 @@ export class ItemExplorerCommentsService implements OnDestroy {
   ) {}
 
   configure(context: {
-    acpId: string;
+    apId: string;
     identity: string | null;
     loggedIn: boolean;
     canExport: boolean;
   }): void {
-    this.acpId = context.acpId;
+    this.apId = context.apId;
     this.identity = context.identity;
     this.loggedIn = context.loggedIn;
     this.canExport = context.canExport;
@@ -53,6 +53,7 @@ export class ItemExplorerCommentsService implements OnDestroy {
   itemCommentSessionToken = 0;
   commentExportInProgress = false;
   commentExportError = '';
+  private readonly itemCommentAliases = new Map<string, string>();
   private itemCommentCountsRequestToken = 0;
   private commentRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -91,7 +92,8 @@ export class ItemExplorerCommentsService implements OnDestroy {
     if (event.refreshToken !== undefined && event.refreshToken !== this.itemCommentRefreshToken) {
       return;
     }
-    const key = this.itemCommentTargetKey(event.unitId, event.itemId);
+    const receivedKey = this.itemCommentTargetKey(event.unitId, event.itemId);
+    const key = this.itemCommentAliases.get(receivedKey) ?? receivedKey;
     const count = Math.max(0, Number(event.count) || 0);
     // Even an unchanged count is a newer observation than an in-flight batch.
     this.itemCommentCountStateVersion += 1;
@@ -112,7 +114,7 @@ export class ItemExplorerCommentsService implements OnDestroy {
   }
 
   refreshItemComments(refreshSelectedThread = true): void {
-    if (this.destroyed || (!this.itemCommentsEnabled && !this.codingCommentsEnabled) || !this.acpId)
+    if (this.destroyed || (!this.itemCommentsEnabled && !this.codingCommentsEnabled) || !this.apId)
       return;
     const token = ++this.itemCommentCountsRequestToken;
     const stateVersion = this.itemCommentCountStateVersion;
@@ -120,23 +122,23 @@ export class ItemExplorerCommentsService implements OnDestroy {
     this.itemCommentCountsLoading = true;
     this.itemCommentCountsError = '';
     this.api
-      .getItemCommentCounts(this.acpId)
+      .getItemCommentCounts(this.apId)
       .pipe(timeout(10_000), takeUntil(this.destroy$))
       .subscribe({
         next: (snapshot) => {
           if (token !== this.itemCommentCountsRequestToken) return;
-          const nextCounts = Object.fromEntries(
-            (snapshot.counts || []).map((entry) => [
-              this.itemCommentTargetKey(entry.unitId, entry.itemId),
-              entry.count,
-            ]),
-          );
-          const nextCodingCounts = Object.fromEntries(
-            (snapshot.counts || []).map((entry) => [
-              this.itemCommentTargetKey(entry.unitId, entry.itemId),
-              entry.codingCount || 0,
-            ]),
-          );
+          const nextCounts: Record<string, number> = {};
+          const nextCodingCounts: Record<string, number> = {};
+          this.itemCommentAliases.clear();
+          for (const entry of snapshot.counts || []) {
+            const key = this.itemCommentTargetKey(entry.unitId, entry.itemId);
+            nextCounts[key] = entry.count;
+            nextCodingCounts[key] = entry.codingCount || 0;
+            if (entry.itemIdAlias) {
+              const alias = this.itemCommentTargetKey(entry.unitId, entry.itemIdAlias);
+              this.itemCommentAliases.set(alias, key);
+            }
+          }
           for (const [key, changeVersion] of this.itemCommentCountChangeVersions) {
             if (changeVersion > stateVersion) {
               nextCounts[key] = this.itemCommentCounts[key] || 0;
@@ -168,23 +170,23 @@ export class ItemExplorerCommentsService implements OnDestroy {
 
   exportMyCommentsCsv(): void {
     this.downloadCommentExport(
-      this.api.exportMyReviewCommentsCsv(this.acpId),
-      `comments-${this.acpId}-mine.csv`,
+      this.api.exportMyReviewCommentsCsv(this.apId),
+      `comments-${this.apId}-mine.csv`,
     );
   }
 
   exportMyCommentsXlsx(): void {
     this.downloadCommentExport(
-      this.api.exportMyReviewCommentsXlsx(this.acpId),
-      `comments-${this.acpId}-mine.xlsx`,
+      this.api.exportMyReviewCommentsXlsx(this.apId),
+      `comments-${this.apId}-mine.xlsx`,
     );
   }
 
   exportAllCommentsXlsx(): void {
     if (!this.canExportAllComments) return;
     this.downloadCommentExport(
-      this.api.exportAllReviewCommentsXlsx(this.acpId),
-      `comments-${this.acpId}-all.xlsx`,
+      this.api.exportAllReviewCommentsXlsx(this.apId),
+      `comments-${this.apId}-all.xlsx`,
     );
   }
 
@@ -194,6 +196,8 @@ export class ItemExplorerCommentsService implements OnDestroy {
     counts: Record<string, number>,
   ): string {
     const exactKey = this.itemCommentTargetKey(unitId, itemId);
+    const alias = this.itemCommentAliases.get(exactKey);
+    if (alias) return alias;
     if (Object.prototype.hasOwnProperty.call(counts, exactKey)) return exactKey;
     const prefix = `${unitId}_`;
     // Match the backend: exact canonical ID first, then a unit-prefixed request alias.
@@ -214,6 +218,7 @@ export class ItemExplorerCommentsService implements OnDestroy {
 
     this.stopCommentAutoRefresh();
     this.itemCommentCountSessionIdentity = nextIdentity;
+    this.itemCommentAliases.clear();
     this.itemCommentSessionToken += 1;
     this.commentExportInProgress = false;
     this.commentExportError = '';

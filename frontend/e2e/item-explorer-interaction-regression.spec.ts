@@ -1,11 +1,11 @@
 import { expect, Page, test } from '@playwright/test';
 import { createOidcAppToken, installOidcSession } from './oidc-test-session';
 
-const ACP_ID = '10000000-0000-4000-8000-000000000201';
+const AP_ID = '10000000-0000-4000-8000-000000000201';
 const MANAGER_ID = '10000000-0000-4000-8000-000000000002';
 
 const headers = { Authorization: `Bearer ${createOidcAppToken(MANAGER_ID, 'e2e-manager')}` };
-const stateUrl = `/api/view/acp/${ACP_ID}/item-explorer/state`;
+const stateUrl = `/api/view/ap/${AP_ID}/item-explorer/state`;
 let originalItemOrder: string[] = [];
 
 test.beforeEach(async ({ request }) => {
@@ -20,7 +20,7 @@ test.afterEach(async ({ page, request }) => {
   const response = await request.get(stateUrl, { headers });
   expect(response.ok()).toBeTruthy();
   const state = await response.json();
-  const restored = await request.patch(`/api/acp/${ACP_ID}/item-explorer/draft`, {
+  const restored = await request.patch(`/api/ap/${AP_ID}/item-explorer/draft`, {
     headers,
     data: {
       baseVersion: state.version,
@@ -35,7 +35,7 @@ test.afterEach(async ({ page, request }) => {
 });
 
 async function openExplorer(page: Page) {
-  const accessUrl = `/api/acp/${ACP_ID}/access`;
+  const accessUrl = `/api/ap/${AP_ID}/access`;
   const accessResponse = await page.request.get(accessUrl, { headers });
   expect(accessResponse.ok()).toBeTruthy();
   const access = await accessResponse.json();
@@ -49,7 +49,7 @@ async function openExplorer(page: Page) {
   });
   expect(update.ok()).toBeTruthy();
   await installOidcSession(page, MANAGER_ID, 'e2e-manager');
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await expect(page.locator('.collection-management summary')).toBeVisible();
   await page.locator('input[placeholder="🔍 Items filtern..."]').clear();
   await expect(page.locator('.explorer-table tbody tr').first()).toBeVisible();
@@ -60,7 +60,7 @@ test('accepts another draft edit after a conflict reload fails', async ({ page }
 
   let draftPatches = 0;
   let stateReloads = 0;
-  await page.route(`**/api/view/acp/${ACP_ID}/item-explorer/state*`, async (route) => {
+  await page.route(`**/api/view/ap/${AP_ID}/item-explorer/state*`, async (route) => {
     if (route.request().method() !== 'GET') return route.continue();
     stateReloads += 1;
     if (stateReloads === 1) {
@@ -68,7 +68,7 @@ test('accepts another draft edit after a conflict reload fails', async ({ page }
     }
     return route.continue();
   });
-  await page.route(`**/api/acp/${ACP_ID}/item-explorer/draft`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/item-explorer/draft`, async (route) => {
     if (route.request().method() !== 'PATCH') return route.continue();
     draftPatches += 1;
     return route.fulfill({ status: 409, json: { message: 'Simulated version conflict' } });
@@ -193,7 +193,7 @@ test('keeps global save shortcuts out of a pending native dialog even when focus
   const state = await stateResponse.json();
   const pendingItemOrder = Object.keys(state.activeState.itemProperties || {}).reverse();
   expect(pendingItemOrder.length).toBeGreaterThan(1);
-  const pendingDraft = await page.request.patch(`/api/acp/${ACP_ID}/item-explorer/draft`, {
+  const pendingDraft = await page.request.patch(`/api/ap/${AP_ID}/item-explorer/draft`, {
     headers,
     data: {
       baseVersion: state.version,

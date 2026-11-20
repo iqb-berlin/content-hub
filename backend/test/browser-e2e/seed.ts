@@ -1,25 +1,32 @@
 import { NestFactory } from "@nestjs/core";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, readFile, writeFile } from "fs/promises";
 import { join } from "path";
 import { DataSource } from "typeorm";
 import * as bcrypt from "bcryptjs";
+import { responseStatePlayerHtml } from "./response-state-player";
+import {
+  journeyFiles,
+  journeyUnitId,
+  journeyUnitName,
+  journeyBookletId,
+} from "../../../test-fixtures/browser-journey-package";
 import { AppModule } from "../../src/app.module";
 import {
   AccessModel,
-  Acp,
-  AcpAccessConfig,
-  AcpCredential,
-  AcpFile,
-  AcpItemExplorerState,
-  AcpRole,
-  AcpUserRole,
+  Ap,
+  ApAccessConfig,
+  ApCredential,
+  ApFile,
+  ApItemExplorerState,
+  ApRole,
+  ApUserRole,
   ItemResponseState,
   User,
 } from "../../src/database/entities";
 
-const ACP_ID = "10000000-0000-4000-8000-000000000001";
-const REGRESSION_ACP_ID = "10000000-0000-4000-8000-000000000101";
-const BISTATEST_ACP_ID = "10000000-0000-4000-8000-000000000201";
+const AP_ID = "10000000-0000-4000-8000-000000000001";
+const REGRESSION_AP_ID = "10000000-0000-4000-8000-000000000101";
+const BISTATEST_AP_ID = "10000000-0000-4000-8000-000000000201";
 const MANAGER_ID = "10000000-0000-4000-8000-000000000002";
 const MANAGER_USERNAME = "e2e-manager";
 const VIEWER_ID = "10000000-0000-4000-8000-000000000003";
@@ -51,13 +58,13 @@ async function seed(): Promise<void> {
       "item-uuid-1": { empiricalDifficulty: -0.5 },
       "item-uuid-2": { empiricalDifficulty: 0.5 },
     };
-    const acp = await dataSource.getRepository(Acp).save(
-      dataSource.getRepository(Acp).create({
-        id: ACP_ID,
+    const ap = await dataSource.getRepository(Ap).save(
+      dataSource.getRepository(Ap).create({
+        id: AP_ID,
         packageId: "browser-e2e-package",
-        name: "Browser E2E ACP",
+        name: "Browser E2E AP",
         description: "Isolated Playwright fixture",
-        acpIndex: {
+        apIndex: {
           version: "0.5.0",
           packageId: "browser-e2e-package",
           assessmentParts: [
@@ -106,11 +113,11 @@ async function seed(): Promise<void> {
         isAppAdmin: false,
       }),
     );
-    await dataSource.getRepository(AcpUserRole).save(
-      dataSource.getRepository(AcpUserRole).create({
+    await dataSource.getRepository(ApUserRole).save(
+      dataSource.getRepository(ApUserRole).create({
         userId: manager.id,
-        acpId: acp.id,
-        role: AcpRole.ACP_MANAGER,
+        apId: ap.id,
+        role: ApRole.AP_MANAGER,
         capabilities: [
           "review:participate",
           "review:manage",
@@ -120,9 +127,9 @@ async function seed(): Promise<void> {
       }),
     );
 
-    const accessConfig = await dataSource.getRepository(AcpAccessConfig).save(
-      dataSource.getRepository(AcpAccessConfig).create({
-        acpId: acp.id,
+    const accessConfig = await dataSource.getRepository(ApAccessConfig).save(
+      dataSource.getRepository(ApAccessConfig).create({
+        apId: ap.id,
         accessModel: AccessModel.CREDENTIALS_LIST,
         allowRegistered: false,
         featureConfig: {
@@ -135,8 +142,8 @@ async function seed(): Promise<void> {
         },
       }),
     );
-    await dataSource.getRepository(AcpCredential).save(
-      dataSource.getRepository(AcpCredential).create({
+    await dataSource.getRepository(ApCredential).save(
+      dataSource.getRepository(ApCredential).create({
         accessConfigId: accessConfig.id,
         username: CREDENTIAL_USERNAME,
         passwordHash: await bcrypt.hash(CREDENTIAL_PASSWORD, 4),
@@ -151,9 +158,9 @@ async function seed(): Promise<void> {
       itemOrder: [],
       itemProperties,
     };
-    await dataSource.getRepository(AcpItemExplorerState).save(
-      dataSource.getRepository(AcpItemExplorerState).create({
-        acpId: acp.id,
+    await dataSource.getRepository(ApItemExplorerState).save(
+      dataSource.getRepository(ApItemExplorerState).create({
+        apId: ap.id,
         publishedState: sharedState,
         draftState: sharedState,
         status: "CLEAN",
@@ -163,7 +170,7 @@ async function seed(): Promise<void> {
     );
 
     const fixtureDirectory =
-      process.env.BROWSER_E2E_FIXTURE_DIR || "/tmp/content-pool-browser-e2e";
+      process.env.BROWSER_E2E_FIXTURE_DIR || "/tmp/content-hub-browser-e2e";
     await mkdir(fixtureDirectory, { recursive: true });
     const unitXml = `<?xml version="1.0" encoding="UTF-8"?>
 <Unit>
@@ -212,9 +219,9 @@ async function seed(): Promise<void> {
     for (const file of files) {
       const filePath = join(fixtureDirectory, file.name);
       await writeFile(filePath, file.content, "utf8");
-      await dataSource.getRepository(AcpFile).save(
-        dataSource.getRepository(AcpFile).create({
-          acpId: acp.id,
+      await dataSource.getRepository(ApFile).save(
+        dataSource.getRepository(ApFile).create({
+          apId: ap.id,
           filePath,
           originalName: file.name,
           relativePath: file.name,
@@ -240,13 +247,13 @@ async function seed(): Promise<void> {
       "regression-item-uuid-4": { empiricalDifficulty: 0.7 },
       "regression-item-uuid-5": { empiricalDifficulty: 0.9 },
     };
-    const regressionAcp = await dataSource.getRepository(Acp).save(
-      dataSource.getRepository(Acp).create({
-        id: REGRESSION_ACP_ID,
+    const regressionAp = await dataSource.getRepository(Ap).save(
+      dataSource.getRepository(Ap).create({
+        id: REGRESSION_AP_ID,
         packageId: "browser-e2e-regression-package",
-        name: "Browser E2E Regression ACP",
+        name: "Browser E2E Regression AP",
         description: "Extended Item Explorer Playwright fixture",
-        acpIndex: {
+        apIndex: {
           version: "0.5.0",
           packageId: "browser-e2e-regression-package",
           assessmentParts: [
@@ -257,6 +264,11 @@ async function seed(): Promise<void> {
                 {
                   id: "u1",
                   name: "Regression Aufgabe 1",
+                  dependencies: [
+                    { id: "u1.voud", type: "UNIT_DEFINITION" },
+                    { id: "u1.vomd", type: "METADATA" },
+                    { id: "iqb-player-aspect-2.11.6.html", type: "PLAYER" },
+                  ],
                   items: [
                     {
                       id: "i1",
@@ -275,6 +287,11 @@ async function seed(): Promise<void> {
                 {
                   id: "u2",
                   name: "Regression Aufgabe 2",
+                  dependencies: [
+                    { id: "u2.voud", type: "UNIT_DEFINITION" },
+                    { id: "u2.vomd", type: "METADATA" },
+                    { id: "iqb-player-aspect-2.11.6.html", type: "PLAYER" },
+                  ],
                   items: [
                     { id: "i5", name: "Unit-Wechsel", sourceVariable: "V5" },
                   ],
@@ -287,11 +304,11 @@ async function seed(): Promise<void> {
         settings: {},
       }),
     );
-    await dataSource.getRepository(AcpUserRole).save(
-      dataSource.getRepository(AcpUserRole).create({
+    await dataSource.getRepository(ApUserRole).save(
+      dataSource.getRepository(ApUserRole).create({
         userId: manager.id,
-        acpId: regressionAcp.id,
-        role: AcpRole.ACP_MANAGER,
+        apId: regressionAp.id,
+        role: ApRole.AP_MANAGER,
         capabilities: [
           "review:participate",
           "review:manage",
@@ -300,9 +317,9 @@ async function seed(): Promise<void> {
         ],
       }),
     );
-    await dataSource.getRepository(AcpAccessConfig).save(
-      dataSource.getRepository(AcpAccessConfig).create({
-        acpId: regressionAcp.id,
+    await dataSource.getRepository(ApAccessConfig).save(
+      dataSource.getRepository(ApAccessConfig).create({
+        apId: regressionAp.id,
         accessModel: AccessModel.REGISTERED,
         allowRegistered: true,
         featureConfig: {
@@ -327,9 +344,9 @@ async function seed(): Promise<void> {
       itemOrder: [],
       itemProperties: regressionItemProperties,
     };
-    await dataSource.getRepository(AcpItemExplorerState).save(
-      dataSource.getRepository(AcpItemExplorerState).create({
-        acpId: regressionAcp.id,
+    await dataSource.getRepository(ApItemExplorerState).save(
+      dataSource.getRepository(ApItemExplorerState).create({
+        apId: regressionAp.id,
         publishedState: regressionSharedState,
         draftState: regressionSharedState,
         status: "CLEAN",
@@ -340,21 +357,21 @@ async function seed(): Promise<void> {
 
     await dataSource.getRepository(ItemResponseState).save([
       dataSource.getRepository(ItemResponseState).create({
-        acpId: regressionAcp.id,
+        apId: regressionAp.id,
         itemId: "i1",
         unitId: "u1",
         rowKey: "regression-item-uuid-1",
         responseData: { marker: "direct-i1" },
       }),
       dataSource.getRepository(ItemResponseState).create({
-        acpId: regressionAcp.id,
+        apId: regressionAp.id,
         itemId: "i3",
         unitId: "u1",
         rowKey: "regression-item-uuid-3::A",
         responseData: { marker: "partial-i3-A" },
       }),
       dataSource.getRepository(ItemResponseState).create({
-        acpId: regressionAcp.id,
+        apId: regressionAp.id,
         itemId: "i4",
         unitId: "u1",
         rowKey: "u1::i4",
@@ -517,16 +534,15 @@ async function seed(): Promise<void> {
       {
         name: "iqb-player-aspect-2.11.6.html",
         type: "PLAYER",
-        content:
-          "<!doctype html><html><body>Regression E2E Player</body></html>",
+        content: responseStatePlayerHtml,
       },
     ];
     for (const file of regressionFiles) {
       const filePath = join(regressionDirectory, file.name);
       await writeFile(filePath, file.content, "utf8");
-      await dataSource.getRepository(AcpFile).save(
-        dataSource.getRepository(AcpFile).create({
-          acpId: regressionAcp.id,
+      await dataSource.getRepository(ApFile).save(
+        dataSource.getRepository(ApFile).create({
+          apId: regressionAp.id,
           filePath,
           originalName: file.name,
           relativePath: file.name,
@@ -555,13 +571,13 @@ async function seed(): Promise<void> {
         stimulusTimeSeconds: 20,
       },
     };
-    const bistaAcp = await dataSource.getRepository(Acp).save(
-      dataSource.getRepository(Acp).create({
-        id: BISTATEST_ACP_ID,
+    const bistaAp = await dataSource.getRepository(Ap).save(
+      dataSource.getRepository(Ap).create({
+        id: BISTATEST_AP_ID,
         packageId: "browser-e2e-bistatest-package",
-        name: "BiStaTest Item Explorer ACP",
+        name: "BiStaTest Item Explorer AP",
         description: "BiStaTest ticket acceptance fixture",
-        acpIndex: {
+        apIndex: {
           version: "0.5.0",
           packageId: "browser-e2e-bistatest-package",
           assessmentParts: [
@@ -589,11 +605,11 @@ async function seed(): Promise<void> {
         settings: {},
       }),
     );
-    await dataSource.getRepository(AcpUserRole).save(
-      dataSource.getRepository(AcpUserRole).create({
+    await dataSource.getRepository(ApUserRole).save(
+      dataSource.getRepository(ApUserRole).create({
         userId: manager.id,
-        acpId: bistaAcp.id,
-        role: AcpRole.ACP_MANAGER,
+        apId: bistaAp.id,
+        role: ApRole.AP_MANAGER,
         capabilities: [
           "review:participate",
           "review:manage",
@@ -602,25 +618,25 @@ async function seed(): Promise<void> {
         ],
       }),
     );
-    await dataSource.getRepository(AcpUserRole).save(
-      dataSource.getRepository(AcpUserRole).create({
+    await dataSource.getRepository(ApUserRole).save(
+      dataSource.getRepository(ApUserRole).create({
         userId: VIEWER_ID,
-        acpId: bistaAcp.id,
-        role: AcpRole.READ_ONLY,
+        apId: bistaAp.id,
+        role: ApRole.READ_ONLY,
         capabilities: ["review:participate", "item-explorer:view"],
       }),
     );
-    await dataSource.getRepository(AcpUserRole).save(
-      dataSource.getRepository(AcpUserRole).create({
+    await dataSource.getRepository(ApUserRole).save(
+      dataSource.getRepository(ApUserRole).create({
         userId: REVIEW_MANAGER_ID,
-        acpId: bistaAcp.id,
-        role: AcpRole.READ_ONLY,
+        apId: bistaAp.id,
+        role: ApRole.READ_ONLY,
         capabilities: ["review:manage"],
       }),
     );
-    await dataSource.getRepository(AcpAccessConfig).save(
-      dataSource.getRepository(AcpAccessConfig).create({
-        acpId: bistaAcp.id,
+    await dataSource.getRepository(ApAccessConfig).save(
+      dataSource.getRepository(ApAccessConfig).create({
+        apId: bistaAp.id,
         accessModel: AccessModel.REGISTERED,
         allowRegistered: true,
         featureConfig: {
@@ -654,9 +670,9 @@ async function seed(): Promise<void> {
       itemOrder: [],
       itemProperties: bistaItemProperties,
     };
-    await dataSource.getRepository(AcpItemExplorerState).save(
-      dataSource.getRepository(AcpItemExplorerState).create({
-        acpId: bistaAcp.id,
+    await dataSource.getRepository(ApItemExplorerState).save(
+      dataSource.getRepository(ApItemExplorerState).create({
+        apId: bistaAp.id,
         publishedState: bistaSharedState,
         draftState: bistaSharedState,
         status: "CLEAN",
@@ -715,7 +731,18 @@ async function seed(): Promise<void> {
             {
               elements: [
                 { id: "_intro01" },
-                { id: "01", alias: "_01" },
+                {
+                  id: "01",
+                  alias: "_01",
+                  type: "checkbox",
+                  label: "Bilderbücher ausgewählt",
+                },
+                {
+                  id: "01_ggb_bilderbuecherAngeklickt",
+                  alias: "_01_ggb_bilderbuecherAngeklickt",
+                  type: "checkbox",
+                  label: "Bilderbuchsegment markiert",
+                },
                 { id: "_button01" },
                 { id: "_outro01" },
                 { id: "_source01" },
@@ -741,6 +768,7 @@ async function seed(): Promise<void> {
               codes: [
                 {
                   id: 1,
+                  type: "FULL_CREDIT",
                   score: 1,
                   label: "richtig",
                   ruleSets: [
@@ -751,6 +779,38 @@ async function seed(): Promise<void> {
                   ],
                   manualInstruction: "",
                 },
+                {
+                  id: 0,
+                  type: "RESIDUAL",
+                  score: 0,
+                  label: "falsch",
+                  ruleSets: [],
+                },
+              ],
+            },
+            {
+              id: "01_ggb_bilderbuecherAngeklickt",
+              alias: "_01_ggb_bilderbuecherAngeklickt",
+              label: "Bilderbuchsegment markiert",
+              sourceType: "BASE",
+              deriveSources: [],
+              manualInstruction: "",
+              codeModel: "RULES_ONLY",
+              codes: [
+                {
+                  id: 1,
+                  type: "FULL_CREDIT",
+                  score: 1,
+                  label: "richtig",
+                  ruleSets: [{ rules: [{ method: "IS_FALSE" }] }],
+                },
+                {
+                  id: 0,
+                  type: "RESIDUAL",
+                  score: 0,
+                  label: "falsch",
+                  ruleSets: [],
+                },
               ],
             },
             {
@@ -760,7 +820,25 @@ async function seed(): Promise<void> {
               sourceType: "SUM_SCORE",
               deriveSources: ["01", "01_ggb_bilderbuecherAngeklickt"],
               manualInstruction: "",
-              codes: [],
+              codeModel: "RULES_ONLY",
+              codes: [
+                {
+                  id: 1,
+                  type: "FULL_CREDIT",
+                  score: 1,
+                  label: "vollständig richtig",
+                  ruleSets: [
+                    { rules: [{ method: "NUMERIC_MATCH", parameters: ["2"] }] },
+                  ],
+                },
+                {
+                  id: 0,
+                  type: "RESIDUAL",
+                  score: 0,
+                  label: "nicht vollständig richtig",
+                  ruleSets: [],
+                },
+              ],
             },
             {
               id: "GEN",
@@ -794,9 +872,9 @@ async function seed(): Promise<void> {
     for (const file of bistaFiles) {
       const filePath = join(bistaDirectory, file.name);
       await writeFile(filePath, file.content, "utf8");
-      await dataSource.getRepository(AcpFile).save(
-        dataSource.getRepository(AcpFile).create({
-          acpId: bistaAcp.id,
+      await dataSource.getRepository(ApFile).save(
+        dataSource.getRepository(ApFile).create({
+          apId: bistaAp.id,
           filePath,
           originalName: file.name,
           relativePath: file.name,
@@ -806,11 +884,194 @@ async function seed(): Promise<void> {
       );
     }
 
+    // Stateful journeys use separate APs. The three publishing fixtures are
+    // also split by browser so a failed run cannot leak draft state into the
+    // next Playwright project.
+    const isolatedProjects = [
+      { id: "10000000-0000-4000-8000-000000000301", name: "files" },
+      { id: "10000000-0000-4000-8000-000000000302", name: "snapshots" },
+      { id: "10000000-0000-4000-8000-000000000303", name: "review" },
+      { id: "10000000-0000-4000-8000-000000000304", name: "explorer-chromium" },
+      { id: "10000000-0000-4000-8000-000000000305", name: "explorer-firefox" },
+      { id: "10000000-0000-4000-8000-000000000306", name: "explorer-webkit" },
+      { id: "10000000-0000-4000-8000-000000000307", name: "review-links" },
+    ];
+    for (const project of isolatedProjects) {
+      const realTask =
+        project.name.startsWith("review") ||
+        project.name.startsWith("explorer-");
+      const apIndex = structuredClone(regressionAp.apIndex);
+      apIndex.packageId = `browser-e2e-${project.name}`;
+      if (project.name === "files" || realTask) {
+        apIndex.assessmentParts = [];
+      }
+      if (realTask) {
+        apIndex.assessmentParts = [
+          {
+            id: "journey-part",
+            name: "Browseraufgabe",
+            ...(project.name === "review-links"
+              ? {
+                  instruments: [
+                    {
+                      id: "link-test",
+                      testcenterBooklet: [
+                        {
+                          id: journeyBookletId,
+                          definitionId: "journey-review.xml",
+                        },
+                        {
+                          id: "review-other",
+                          definitionId: "review-other.xml",
+                        },
+                      ],
+                    },
+                  ],
+                }
+              : {}),
+            units: [
+              {
+                id: journeyUnitId,
+                name: journeyUnitName,
+                items: [],
+                dependencies: [
+                  { id: "iqb-player-aspect-3.0.1.html", type: "PLAYER" },
+                  { id: `${journeyUnitId}.voud`, type: "UNIT_DEFINITION" },
+                  { id: `${journeyUnitId}.vomd`, type: "METADATA" },
+                ],
+              },
+            ],
+          },
+        ];
+      }
+      const projectState =
+        project.name === "files" || realTask
+          ? { ...regressionSharedState, itemProperties: {} }
+          : regressionSharedState;
+      const isolatedAp = await dataSource.getRepository(Ap).save(
+        dataSource.getRepository(Ap).create({
+          id: project.id,
+          packageId: `browser-e2e-${project.name}`,
+          name: `Browser E2E ${project.name}`,
+          apIndex,
+          itemProperties: structuredClone(projectState.itemProperties),
+          settings: {},
+        }),
+      );
+      await dataSource.getRepository(ApUserRole).save(
+        dataSource.getRepository(ApUserRole).create({
+          userId: manager.id,
+          apId: isolatedAp.id,
+          role: ApRole.AP_MANAGER,
+          capabilities: [
+            "review:participate",
+            "review:manage",
+            "item-explorer:view",
+            "item-explorer:edit",
+          ],
+        }),
+      );
+      if (project.name === "files" || project.name.startsWith("explorer-")) {
+        await dataSource.getRepository(ApUserRole).save(
+          dataSource.getRepository(ApUserRole).create({
+            userId: VIEWER_ID,
+            apId: isolatedAp.id,
+            role: ApRole.READ_ONLY,
+            capabilities: ["review:participate", "item-explorer:view"],
+          }),
+        );
+      }
+      await dataSource.getRepository(ApAccessConfig).save(
+        dataSource.getRepository(ApAccessConfig).create({
+          apId: isolatedAp.id,
+          accessModel: AccessModel.REGISTERED,
+          allowRegistered: true,
+          featureConfig: {
+            enableItemList: true,
+            enableItemClick: true,
+            enableUnitView: true,
+            enableCommenting: true,
+            commentTargets: ["BOOKLET"],
+          },
+        }),
+      );
+      await dataSource.getRepository(ApItemExplorerState).save(
+        dataSource.getRepository(ApItemExplorerState).create({
+          apId: isolatedAp.id,
+          publishedState: structuredClone(projectState),
+          draftState: structuredClone(projectState),
+          status: "CLEAN",
+          version: 1,
+          publishedVersion: 1,
+        }),
+      );
+      const projectDirectory = join(fixtureDirectory, project.name);
+      await mkdir(projectDirectory, { recursive: true });
+      const sourceFiles = await dataSource.getRepository(ApFile).find({
+        where: { apId: regressionAp.id },
+      });
+      const regressionFilesToCopy =
+        project.name === "files" || realTask ? [] : sourceFiles;
+      for (const sourceFile of regressionFilesToCopy) {
+        const content = await readFile(sourceFile.filePath);
+        const filePath = join(projectDirectory, sourceFile.originalName);
+        await writeFile(filePath, content);
+        await dataSource.getRepository(ApFile).save(
+          dataSource.getRepository(ApFile).create({
+            apId: isolatedAp.id,
+            filePath,
+            originalName: sourceFile.originalName,
+            relativePath: sourceFile.relativePath,
+            fileType: sourceFile.fileType,
+            fileSize: content.length,
+          }),
+        );
+      }
+      if (realTask) {
+        const projectFiles = [...journeyFiles];
+        if (project.name === "review-links") {
+          const booklet = (id: string, units: string) =>
+            Buffer.from(
+              `<Booklet><Metadata><Id>${id}</Id><Label>${id}</Label></Metadata><Units>${units}</Units></Booklet>`,
+            );
+          const bookletIndex = projectFiles.findIndex(
+            (file) => file.type === "BOOKLET_XML",
+          );
+          projectFiles[bookletIndex] = {
+            ...projectFiles[bookletIndex],
+            buffer: booklet(
+              journeyBookletId,
+              `<Unit id="${journeyUnitId}" alias="first"/><Testlet id="repeat"><Unit id="${journeyUnitId}" alias="second"/><Unit id="${journeyUnitId}" alias="third"/></Testlet>`,
+            ),
+          };
+          projectFiles.push({
+            name: "review-other.xml",
+            type: "BOOKLET_XML",
+            buffer: booklet("review-other", `<Unit id="${journeyUnitId}"/>`),
+          });
+        }
+        for (const file of projectFiles) {
+          const filePath = join(projectDirectory, file.name);
+          await writeFile(filePath, file.buffer);
+          await dataSource.getRepository(ApFile).save(
+            dataSource.getRepository(ApFile).create({
+              apId: isolatedAp.id,
+              filePath,
+              originalName: file.name,
+              relativePath: file.name,
+              fileType: file.type,
+              fileSize: file.buffer.length,
+            }),
+          );
+        }
+      }
+    }
+
     process.stdout.write(
       JSON.stringify({
-        acpId: ACP_ID,
-        regressionAcpId: REGRESSION_ACP_ID,
-        bistaTestAcpId: BISTATEST_ACP_ID,
+        apId: AP_ID,
+        regressionApId: REGRESSION_AP_ID,
+        bistaTestApId: BISTATEST_AP_ID,
         managerUsername: MANAGER_USERNAME,
         viewerUsername: VIEWER_USERNAME,
         credentialUsername: CREDENTIAL_USERNAME,

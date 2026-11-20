@@ -27,21 +27,21 @@ describe("ItemResponseStateService", () => {
 
   it("rejects saving state for non-managers", async () => {
     await expect(
-      service.saveResponseState("acp-1", "item-1", "unit-1", { a: 1 }, false),
+      service.saveResponseState("ap-1", "item-1", "unit-1", { a: 1 }, false),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it("updates existing state records", async () => {
     stateRepository.findOne.mockResolvedValue({
       id: "state-1",
-      acpId: "acp-1",
+      apId: "ap-1",
       itemId: "item-1",
       unitId: "unit-1",
       responseData: { old: true },
     });
 
     const result = await service.saveResponseState(
-      "acp-1",
+      "ap-1",
       "item-1",
       "unit-1",
       { answer: 1 },
@@ -58,7 +58,7 @@ describe("ItemResponseStateService", () => {
     expect(result).toEqual(expect.objectContaining({ id: "state-1" }));
     expect(stateRepository.findOne).toHaveBeenCalledWith({
       where: {
-        acpId: "acp-1",
+        apId: "ap-1",
         itemId: "item-1",
         unitId: "unit-1",
         rowKey: "unit-1::item-1",
@@ -70,7 +70,7 @@ describe("ItemResponseStateService", () => {
     stateRepository.findOne.mockResolvedValue(null);
 
     await service.saveResponseState(
-      "acp-1",
+      "ap-1",
       "item-2",
       "unit-2",
       { answer: 2 },
@@ -78,7 +78,7 @@ describe("ItemResponseStateService", () => {
     );
 
     expect(stateRepository.create).toHaveBeenCalledWith({
-      acpId: "acp-1",
+      apId: "ap-1",
       itemId: "item-2",
       unitId: "unit-2",
       rowKey: "unit-2::item-2",
@@ -90,7 +90,7 @@ describe("ItemResponseStateService", () => {
   it("finds UUID-backed standard states for callers without a row key", async () => {
     const canonicalState = {
       id: "state-canonical",
-      acpId: "acp-1",
+      apId: "ap-1",
       itemId: "item-1",
       unitId: "unit-1",
       rowKey: "uuid-1",
@@ -102,14 +102,14 @@ describe("ItemResponseStateService", () => {
       .mockResolvedValueOnce(canonicalState);
 
     await expect(
-      service.getResponseState("acp-1", "item-1", "unit-1"),
+      service.getResponseState("ap-1", "item-1", "unit-1"),
     ).resolves.toEqual(canonicalState);
 
     expect(stateRepository.findOne).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         where: expect.objectContaining({
-          acpId: "acp-1",
+          apId: "ap-1",
           itemId: "item-1",
           unitId: "unit-1",
           rowKey: expect.anything(),
@@ -127,7 +127,7 @@ describe("ItemResponseStateService", () => {
   it("does not rename a canonical standard state back to its legacy key", async () => {
     const canonicalState = {
       id: "state-canonical",
-      acpId: "acp-1",
+      apId: "ap-1",
       itemId: "item-1",
       unitId: "unit-1",
       rowKey: "uuid-1",
@@ -138,7 +138,7 @@ describe("ItemResponseStateService", () => {
       .mockResolvedValueOnce(canonicalState);
 
     await service.saveResponseState(
-      "acp-1",
+      "ap-1",
       "item-1",
       "unit-1",
       { answer: 2 },
@@ -157,7 +157,7 @@ describe("ItemResponseStateService", () => {
   it("keeps legacy fallback reads side-effect free", async () => {
     const legacyState = {
       id: "state-legacy",
-      acpId: "acp-1",
+      apId: "ap-1",
       itemId: "item-1",
       unitId: "unit-1",
       rowKey: "unit-1::item-1",
@@ -168,7 +168,7 @@ describe("ItemResponseStateService", () => {
       .mockResolvedValueOnce(legacyState);
 
     await expect(
-      service.getResponseState("acp-1", "item-1", "unit-1", "uuid-1"),
+      service.getResponseState("ap-1", "item-1", "unit-1", "uuid-1"),
     ).resolves.toEqual(legacyState);
 
     expect(stateRepository.save).not.toHaveBeenCalled();
@@ -177,7 +177,7 @@ describe("ItemResponseStateService", () => {
   it("migrates a legacy row key only during a manager save", async () => {
     const legacyState = {
       id: "state-legacy",
-      acpId: "acp-1",
+      apId: "ap-1",
       itemId: "item-1",
       unitId: "unit-1",
       rowKey: "unit-1::item-1",
@@ -188,7 +188,7 @@ describe("ItemResponseStateService", () => {
       .mockResolvedValueOnce(legacyState);
 
     await service.saveResponseState(
-      "acp-1",
+      "ap-1",
       "item-1",
       "unit-1",
       { answer: 2 },
@@ -209,7 +209,7 @@ describe("ItemResponseStateService", () => {
     stateRepository.find.mockResolvedValueOnce([
       {
         id: "state-direct",
-        acpId: "acp-1",
+        apId: "ap-1",
         itemId: "item-2",
         unitId: "unit-1",
         rowKey: "unit-1::item-2",
@@ -217,7 +217,7 @@ describe("ItemResponseStateService", () => {
     ]);
 
     const result = await service.getResponseStateWithFallback(
-      "acp-1",
+      "ap-1",
       "item-2",
       "unit-1",
       [
@@ -238,7 +238,7 @@ describe("ItemResponseStateService", () => {
     stateRepository.find.mockResolvedValueOnce([
       {
         id: "state-prev",
-        acpId: "acp-1",
+        apId: "ap-1",
         itemId: "item-1",
         unitId: "unit-1",
         rowKey: "unit-1::item-1",
@@ -246,7 +246,7 @@ describe("ItemResponseStateService", () => {
     ]);
 
     const result = await service.getResponseStateWithFallback(
-      "acp-1",
+      "ap-1",
       "item-2",
       "unit-1",
       [
@@ -270,14 +270,14 @@ describe("ItemResponseStateService", () => {
     stateRepository.find.mockResolvedValue([]);
 
     await expect(
-      service.getResponseStateWithFallback("acp-1", "item-1", "unit-1", [
+      service.getResponseStateWithFallback("ap-1", "item-1", "unit-1", [
         { itemId: "item-1", unitId: "unit-1" },
         { itemId: "item-2", unitId: "unit-1" },
       ]),
     ).resolves.toEqual({ state: null, isFallback: false });
 
     await expect(
-      service.getResponseStateWithFallback("acp-1", "item-2", "unit-1", [
+      service.getResponseStateWithFallback("ap-1", "item-2", "unit-1", [
         { itemId: "item-1", unitId: "unit-2" },
         { itemId: "item-2", unitId: "unit-1" },
       ]),
@@ -287,33 +287,33 @@ describe("ItemResponseStateService", () => {
   it("gets, deletes and lists states with manager checks", async () => {
     stateRepository.findOne.mockResolvedValue({ id: "state-1" });
     await expect(
-      service.getResponseState("acp-1", "item-1", "unit-1"),
+      service.getResponseState("ap-1", "item-1", "unit-1"),
     ).resolves.toEqual({ id: "state-1" });
 
     await expect(
-      service.deleteResponseState("acp-1", "item-1", "unit-1", false),
+      service.deleteResponseState("ap-1", "item-1", "unit-1", false),
     ).rejects.toThrow(ForbiddenException);
 
     stateRepository.delete.mockResolvedValue({ affected: 1 });
     await expect(
-      service.deleteResponseState("acp-1", "item-1", "unit-1", true),
+      service.deleteResponseState("ap-1", "item-1", "unit-1", true),
     ).resolves.toEqual({ success: true });
 
     stateRepository.delete.mockResolvedValue({ affected: 0 });
     await expect(
-      service.deleteResponseState("acp-1", "item-2", "unit-2", true),
+      service.deleteResponseState("ap-1", "item-2", "unit-2", true),
     ).resolves.toEqual({ success: false });
 
-    await expect(service.getAllStatesForAcp("acp-1", false)).rejects.toThrow(
+    await expect(service.getAllStatesForAp("ap-1", false)).rejects.toThrow(
       ForbiddenException,
     );
 
     stateRepository.find.mockResolvedValue([{ id: "state-1" }]);
-    await expect(service.getAllStatesForAcp("acp-1", true)).resolves.toEqual([
+    await expect(service.getAllStatesForAp("ap-1", true)).resolves.toEqual([
       { id: "state-1" },
     ]);
     expect(stateRepository.find).toHaveBeenCalledWith({
-      where: { acpId: "acp-1" },
+      where: { apId: "ap-1" },
       order: { unitId: "ASC", itemId: "ASC", rowKey: "ASC" },
     });
   });
@@ -322,7 +322,7 @@ describe("ItemResponseStateService", () => {
     stateRepository.findOne.mockResolvedValue(null);
 
     await service.saveResponseState(
-      "acp-1",
+      "ap-1",
       "item-1",
       "unit-1",
       { answer: 1 },
@@ -330,7 +330,7 @@ describe("ItemResponseStateService", () => {
       "uuid-1::1",
     );
     await service.saveResponseState(
-      "acp-1",
+      "ap-1",
       "item-1",
       "unit-1",
       { answer: 2 },
@@ -357,11 +357,11 @@ describe("ItemResponseStateService", () => {
   it("does not resolve a row key through a different item route", async () => {
     stateRepository.findOne.mockResolvedValue(null);
 
-    await service.getResponseState("acp-1", "item-b", "unit-b", "uuid-a::1");
+    await service.getResponseState("ap-1", "item-b", "unit-b", "uuid-a::1");
 
     expect(stateRepository.findOne).toHaveBeenCalledWith({
       where: {
-        acpId: "acp-1",
+        apId: "ap-1",
         itemId: "item-b",
         unitId: "unit-b",
         rowKey: "uuid-a::1",
@@ -370,8 +370,6 @@ describe("ItemResponseStateService", () => {
   });
 
   it("returns false for manager check placeholder", async () => {
-    await expect(service.checkIsManager("acp-1", "user-1")).resolves.toBe(
-      false,
-    );
+    await expect(service.checkIsManager("ap-1", "user-1")).resolves.toBe(false);
   });
 });

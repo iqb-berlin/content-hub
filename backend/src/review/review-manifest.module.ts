@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { Acp, AcpFile } from "../database/entities";
+import { Ap, ApFile } from "../database/entities";
 import { ReviewManifestService } from "./review-manifest.service";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Acp, AcpFile])],
+  imports: [TypeOrmModule.forFeature([Ap, ApFile])],
   providers: [ReviewManifestService],
   exports: [ReviewManifestService],
 })

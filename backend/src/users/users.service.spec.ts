@@ -2,7 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { ConflictException, NotFoundException } from "@nestjs/common";
 import { UsersService } from "./users.service";
-import { User, AcpUserRole } from "../database/entities";
+import { User, ApUserRole } from "../database/entities";
 
 describe("UsersService", () => {
   let service: UsersService;
@@ -40,7 +40,7 @@ describe("UsersService", () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: repo },
-        { provide: getRepositoryToken(AcpUserRole), useValue: roleRepo },
+        { provide: getRepositoryToken(ApUserRole), useValue: roleRepo },
       ],
     }).compile();
 

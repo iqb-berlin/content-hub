@@ -1,6 +1,10 @@
-# IQB ContentPool
+# Content Hub
 
-Web application for managing **Assessment Content Packages (ACPs)** — bundles of data required to conduct and evaluate educational assessments.
+Web application for managing **Assessment Packages (APs)** — bundles of data required to conduct and evaluate educational assessments.
+
+The UI and current documentation use **AP** and **AP-Index**. Code and new API
+contracts use `apIndex`, `AP_MANAGER` and `/api/ap`. Legacy ACP contracts remain available through compatibility adapters; see
+[terminology and technical identifiers](docs/README.md#terminology-and-technical-identifiers).
 
 ## Documentation
 
@@ -78,7 +82,7 @@ npx ng serve
 ```bash
 # 1. Clone repository
 git clone <your-repo-url>
-cd content-pool-next
+cd content-hub
 
 # 2. Setup environment
 cp .env.example .env
@@ -95,8 +99,8 @@ Create `.env` file with your production values:
 
 ```bash
 # Database (REQUIRED - change passwords!)
-POSTGRES_DB=content_pool
-POSTGRES_USER=content_pool
+POSTGRES_DB=content_hub
+POSTGRES_USER=content_hub
 POSTGRES_PASSWORD=your-secure-password-here
 
 # JWT (REQUIRED - generate random string)
@@ -113,7 +117,7 @@ CORS_ORIGIN=https://app.example.com
 KEYCLOAK_HOSTNAME=auth.example.com
 OIDC_ISSUER_URL=http://keycloak:8080/realms/iqb
 OIDC_PUBLIC_ISSUER_URL=https://auth.example.com/realms/iqb
-OIDC_CLIENT_ID=contentpool
+OIDC_CLIENT_ID=contenthub
 OIDC_REDIRECT_URI=https://app.example.com/auth/callback
 OIDC_SCOPE="openid profile email"
 
@@ -158,10 +162,10 @@ git pull
 docker compose -f docker-compose.prod.yml up -d --build
 
 # Run migrations manually inside running API container (optional)
-docker compose -f docker-compose.prod.yml exec content-pool-api npm run migration:run:dist
+docker compose -f docker-compose.prod.yml exec content-hub-api npm run migration:run:dist
 
 # Backup database
-docker exec content-pool-db pg_dump -U content_pool content_pool > backup.sql
+docker exec content-hub-db pg_dump -U content_hub content_hub > backup.sql
 
 # Stop services
 docker compose -f docker-compose.prod.yml down
@@ -177,18 +181,18 @@ docker compose -f docker-compose.prod.yml down -v
 docker compose -f docker-compose.prod.yml ps
 
 # Check specific service logs
-docker compose -f docker-compose.prod.yml logs content-pool-api
-docker compose -f docker-compose.prod.yml logs content-pool-db
+docker compose -f docker-compose.prod.yml logs content-hub-api
+docker compose -f docker-compose.prod.yml logs content-hub-db
 
 # Backend health (liveness/readiness)
 curl -fsS http://localhost/api/health/live
 curl -fsS http://localhost/api/health/ready
 
 # Access database directly
-docker exec -it content-pool-db psql -U content_pool -d content_pool
+docker exec -it content-hub-db psql -U content_hub -d content_hub
 
 # Test nginx configuration
-docker exec content-pool-nginx nginx -t
+docker exec content-hub-nginx nginx -t
 ```
 
 ### Release Readiness
@@ -204,7 +208,7 @@ docker exec content-pool-nginx nginx -t
 │   ├── src/
 │   │   ├── auth/           # JWT auth, 3 guards, credential login
 │   │   ├── users/          # User CRUD, admin seeding
-│   │   ├── acp/            # ACP lifecycle, Index import/export, roles
+│   │   ├── acp/            # AP lifecycle, Index import/export, roles
 │   │   ├── files/          # Upload/download, checksums
 │   │   ├── snapshots/      # Versioning, restore, diff
 │   │   ├── views/          # Public read-only endpoints
@@ -220,7 +224,7 @@ docker exec content-pool-nginx nginx -t
 │   └── src/app/
 │       ├── core/           # AuthService, ApiService, guards
 │       ├── auth/           # Login pages
-│       ├── admin/          # Users, settings, ACP list
+│       ├── admin/          # Users, settings, AP list
 │       ├── acp-manager/    # Dashboard, files, snapshots, access
 │       └── views/          # Landing, units, sequences, items, index
 ├── docs/                    # Project documentation
@@ -246,10 +250,10 @@ cd frontend && npm test
 ## Key Features
 
 - **3 Access Models**: Public, Registered Users, Credentials List
-- **ACP-Index Management**: JSON import/export, interactive browser
+- **AP-Index Management**: JSON import/export, interactive browser
 - **File Management**: Multi-file upload, SHA-256 checksums, validation
 - **Versioning**: Snapshots with copy-on-write, restore, diff
-- **Configurable Feature Flags**: Per-ACP control over read-only features
+- **Configurable Feature Flags**: Per-AP control over read-only features
 - **Verona Player Integration**: Unit display via iframe
 - **Server-to-Server API**: For Studio, Testcenter, Kodierbox integration
 
@@ -261,36 +265,36 @@ Application admins can create, inspect and revoke integration tokens in the UI u
 
 ### Core Endpoints
 
-- `GET /api/server/capabilities`: Inspect the authenticated token's scopes and ACP restriction without addressing an ACP
-- `GET /api/server/acp`: List transferable ACPs
-- `GET /api/server/acp/:acpId`: Full transfer payload (index + files metadata)
-- `GET /api/server/acp/:acpId/export`: Alias for full transfer payload
-- `POST /api/server/acp/import`: Create/update ACP by `packageId`
-- `POST /api/server/acp`: Legacy alias for import
-- `GET /api/server/acp/:acpId/index`: Transfer only ACP index
-- `PUT /api/server/acp/:acpId/index`: Update ACP index only
-- `GET /api/server/acp/:acpId/files`: List ACP files for transfer
-- `GET /api/server/acp/:acpId/files/:fileId`: File metadata
-- `GET /api/server/acp/:acpId/files/:fileId/download`: Download one file
-- `POST /api/server/acp/:acpId/files/upload`: Upload one or more files (multipart)
-- `POST /api/server/acp/:acpId/coding-schemes/replace`: Replace existing `.vocs` files and automatically create a new snapshot version with changelog
+- `GET /api/server/capabilities`: Inspect the authenticated token's scopes and AP restriction without addressing an AP
+- `GET /api/server/ap`: List transferable APs
+- `GET /api/server/ap/:apId`: Full transfer payload (index + files metadata)
+- `GET /api/server/ap/:apId/export`: Alias for full transfer payload
+- `POST /api/server/ap/import`: Create/update AP by `packageId`
+- `POST /api/server/ap`: Legacy alias for import
+- `GET /api/server/ap/:apId/index`: Transfer only AP-Index
+- `PUT /api/server/ap/:apId/index`: Update AP-Index only
+- `GET /api/server/ap/:apId/files`: List AP files for transfer
+- `GET /api/server/ap/:apId/files/:fileId`: File metadata
+- `GET /api/server/ap/:apId/files/:fileId/download`: Download one file
+- `POST /api/server/ap/:apId/files/upload`: Upload one or more files (multipart)
+- `POST /api/server/ap/:apId/coding-schemes/replace`: Replace existing `.vocs` files and automatically create a new snapshot version with changelog
 - `GET /api/server/audit`: Read integration audit log entries (scope required)
 
 ### Conflict Strategy
 
-- ACP import (`POST /api/server/acp/import`, `POST /api/server/acp`):
+- AP import (`POST /api/server/ap/import`, `POST /api/server/ap`):
   - `conflictStrategy=reject` (default): fail when `packageId` already exists
-  - `conflictStrategy=overwrite`: replace existing ACP index
+  - `conflictStrategy=overwrite`: replace existing AP-Index
   - `conflictStrategy=merge`: deep-merge incoming index into existing index
-- Index update (`PUT /api/server/acp/:acpId/index`):
+- Index update (`PUT /api/server/ap/:apId/index`):
   - `strategy=overwrite` (default) or `strategy=merge`
-- File upload (`POST /api/server/acp/:acpId/files/upload`):
+- File upload (`POST /api/server/ap/:apId/files/upload`):
   - `conflictStrategy=keep-both` (default), `overwrite`, or `reject`
-- Coding scheme replacement (`POST /api/server/acp/:acpId/coding-schemes/replace`):
+- Coding scheme replacement (`POST /api/server/ap/:apId/coding-schemes/replace`):
   - replaces existing `.vocs` by filename (case-insensitive)
   - rejects unknown/non-existing `.vocs` (strict replace semantics)
   - creates a new snapshot version and stores the provided `changelog` (or auto-generated text)
-- Optimistic concurrency is supported via `expectedUpdatedAt` (ISO timestamp) for ACP/index updates and coding-scheme replacement.
+- Optimistic concurrency is supported via `expectedUpdatedAt` (ISO timestamp) for AP/index updates and coding-scheme replacement.
 
 ### Integration Scopes
 
@@ -307,13 +311,13 @@ Tokens can be scoped per integration client. Supported scopes:
 
 `GET /api/server/capabilities` requires a valid integration token but no
 particular scope. It returns the token's granted `scopes`, a capability map for
-all supported scopes, and its `allowedAcpIds` restriction. Integrations should
+all supported scopes, and its `allowedApIds` restriction (request `X-Content-Hub-Terminology: ap` for this shared endpoint). Integrations should
 use this endpoint for connection and permission checks instead of probing an
-ACP route with a synthetic ID.
+AP route with a synthetic ID.
 
 ## OIDC / Keycloak Integration
 
-All application users sign in through Keycloak OIDC. ACP-specific credential-list access remains available independently for restricted viewer access.
+All application users sign in through Keycloak OIDC. AP-specific credential-list access remains available independently for restricted viewer access.
 
 Highlights:
 

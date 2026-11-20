@@ -8,7 +8,7 @@ import {
 } from './item-explorer.models';
 
 export interface ItemExplorerImportContext {
-  acpId: string;
+  apId: string;
   baseVersion: number;
 }
 export type ItemExplorerImportResult =
@@ -200,7 +200,7 @@ export class ItemExplorerImportService implements OnDestroy {
     try {
       const result = await firstValueFrom(
         this.api
-          .uploadItemParameters(context.acpId, file, {
+          .uploadItemParameters(context.apId, file, {
             draft: true,
             baseVersion: context.baseVersion,
             ...(confirmed ? { confirmWarnings: true } : {}),

@@ -39,7 +39,7 @@ describe('ItemExplorerPreviewCoordinator', () => {
     coordinator.results$.subscribe((result) => results.push(result));
 
     coordinator.select({
-      acpId: 'acp-1',
+      apId: 'ap-1',
       perspective: 'editor',
       item,
       itemList: [{ itemId: item.itemId, unitId: item.unitId, rowKey: item.rowKey }],
@@ -65,7 +65,7 @@ describe('ItemExplorerPreviewCoordinator', () => {
     const assetRequests = new Map<string, Subject<any>>();
     const responseRequests = new Map<string, Subject<any>>();
     const loader = {
-      load: vi.fn((_acpId: string, _perspective: string, unitId: string) => {
+      load: vi.fn((_apId: string, _perspective: string, unitId: string) => {
         const request = new Subject<any>();
         assetRequests.set(unitId, request);
         return request;
@@ -73,7 +73,7 @@ describe('ItemExplorerPreviewCoordinator', () => {
       clear: vi.fn(),
     };
     const api = {
-      getResponseStateWithFallback: vi.fn((_acpId: string, itemId: string) => {
+      getResponseStateWithFallback: vi.fn((_apId: string, itemId: string) => {
         const request = new Subject<any>();
         responseRequests.set(itemId, request);
         return request;
@@ -91,7 +91,7 @@ describe('ItemExplorerPreviewCoordinator', () => {
 
     for (const item of [first, second]) {
       coordinator.select({
-        acpId: 'acp-1',
+        apId: 'ap-1',
         perspective: 'editor',
         item,
         itemList: [],
@@ -137,13 +137,13 @@ describe('ItemExplorerPreviewCoordinator', () => {
     );
     const item = { ...createItem('ITEM_1', 'UNIT_1'), partId: 'math' };
     coordinator.select({
-      acpId: 'acp-1',
+      apId: 'ap-1',
       perspective: 'editor',
       item,
       itemList: [],
       reuseUnit: false,
     });
-    expect(loader.load).toHaveBeenCalledWith('acp-1', 'editor', 'UNIT_1', 'math');
+    expect(loader.load).toHaveBeenCalledWith('ap-1', 'editor', 'UNIT_1', 'math');
     coordinator.ngOnDestroy();
   });
 
@@ -158,7 +158,7 @@ describe('ItemExplorerPreviewCoordinator', () => {
     const item = createItem('ITEM_2', 'UNIT_1');
 
     coordinator.select({
-      acpId: 'acp-1',
+      apId: 'ap-1',
       perspective: 'read-only',
       item,
       itemList: [],
@@ -194,7 +194,7 @@ describe('ItemExplorerPreviewCoordinator', () => {
       createDiagnostics() as any,
     );
     const request = {
-      acpId: 'acp-1',
+      apId: 'ap-1',
       perspective: 'editor' as const,
       item,
       itemList: [],

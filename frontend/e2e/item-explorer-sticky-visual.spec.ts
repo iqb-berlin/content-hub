@@ -1,13 +1,13 @@
 import { expect, Page, test } from '@playwright/test';
 import { installOidcSession } from './oidc-test-session';
 
-const ACP_ID = '10000000-0000-4000-8000-000000000201';
+const AP_ID = '10000000-0000-4000-8000-000000000201';
 const MANAGER_ID = '10000000-0000-4000-8000-000000000002';
 const MANAGER_USERNAME = 'e2e-manager';
 
 async function openExplorer(page: Page): Promise<void> {
   await installOidcSession(page, MANAGER_ID, MANAGER_USERNAME);
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await expect(page.getByRole('heading', { name: 'Item-Explorer' })).toBeVisible();
   await expect(page.locator('tbody tr')).toHaveCount(2);
 }

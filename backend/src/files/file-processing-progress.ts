@@ -46,7 +46,7 @@ export interface FileProcessingResponseStateCleanup {
 
 export interface FileProcessingJobSnapshot {
   id: string;
-  acpId: string;
+  apId: string;
   jobType: FileProcessingJobType;
   status: FileProcessingJobStatus;
   phase: FileProcessingJobPhase;

@@ -3,8 +3,8 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ServerApiService } from "./server-api.service";
 import { ServerApiController } from "./server-api.controller";
 import {
-  Acp,
-  AcpFile,
+  Ap,
+  ApFile,
   ApplicationToken,
   ServerApiAuditLog,
 } from "../database/entities";
@@ -14,19 +14,14 @@ import { ServerApiAuthGuard } from "./server-api-auth.guard";
 import { ServerApiAuditService } from "./server-api-audit.service";
 import { ServerApiAuditInterceptor } from "./server-api-audit.interceptor";
 import { SnapshotsModule } from "../snapshots/snapshots.module";
-import { AcpModule } from "../acp/acp.module";
+import { ApModule } from "../ap/ap.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Acp,
-      AcpFile,
-      ApplicationToken,
-      ServerApiAuditLog,
-    ]),
+    TypeOrmModule.forFeature([Ap, ApFile, ApplicationToken, ServerApiAuditLog]),
     FilesModule,
     SnapshotsModule,
-    AcpModule,
+    ApModule,
   ],
   controllers: [ServerApiController],
   providers: [

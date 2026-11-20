@@ -1,9 +1,38 @@
-# IQB ContentPool Documentation
+# Content Hub Documentation
 
-This folder contains the main project documentation for the ContentPool application.
+This folder contains the main project documentation for the Content Hub application.
 The repository is a split Angular frontend and NestJS backend that manages Assessment
-Content Packages (ACPs), their files, access rules, review workflows, and external
-transfer APIs.
+Packages (APs), their files, access rules, review workflows, and external transfer APIs.
+
+## Terminology and Technical Identifiers
+
+The current product terms are **Assessment Package (AP)** and **AP-Index**. They follow
+the [IQB specifications overview](https://iqb-specifications.github.io/) and the
+[StarS Assessment Package documentation](https://iqb-berlin.github.io/rising-stars/content-package/).
+The [StarS application documentation](https://iqb-berlin.github.io/rising-stars/content-hub/index.html)
+uses the name ContentHub.
+
+Earlier documentation used Assessment Content Package (ACP) and ACP-Index. These names
+refer to the same package and index. The terminology change does not migrate data or
+change the supported index format.
+
+Code and new API contracts use AP identifiers. Existing integrations can continue
+using their ACP contracts during the transition:
+
+| Product term | Canonical identifier | Legacy integration alias |
+| --- | --- | --- |
+| AP | `Ap`, `apId`, `/aps`, `/api/ap`, `/api/server/ap` | `acpId`, `/acps`, `/api/acp`, `/api/server/acp` |
+| AP-Index | `apIndex`, `defaultApIndex` | `acpIndex`, `defaultAcpIndex` |
+| AP-Manager | `AP_MANAGER` | `ACP_MANAGER` |
+| AP read permission | `ap.read` | `acp.read` |
+
+See [AP API compatibility](features/ap-api-compatibility.md) for request/response
+selection, shared endpoints and migration examples. Physical database identifiers,
+stored role/scope values, migration history and external AP-Index schema URLs are
+preserved. Existing rows, snapshots, tokens and files need no data migration.
+The [external schema URL](https://iqb-specifications.github.io/acp-index/) and
+historical documentation filenames remain valid. Historical release notes and
+test evidence retain the names used when they were written.
 
 ## Concepts
 
@@ -23,12 +52,12 @@ If you are new to the project, read the documentation in this order:
 1. [Architecture Overview](architecture/overview.md)
 2. [Getting Started](development/getting-started.md)
 3. [Access Control](features/access-control.md)
-4. [ACP Workflows](features/acp-workflows.md)
+4. [AP Workflows](features/acp-workflows.md)
 5. [Deployment](operations/deployment.md)
 
-For ACP managers who need a task-oriented user guide, see:
+For AP managers who need a task-oriented user guide, see:
 
-- [ACP-Manager Handbuch](manuals/acp-manager-manual.md)
+- [AP-Manager-Handbuch](manuals/acp-manager-manual.md)
 
 ## Documentation Map
 
@@ -49,7 +78,7 @@ For ACP managers who need a task-oriented user guide, see:
   Local setup, Docker and manual startup, ports, and common development commands.
 - [Configuration](development/configuration.md)
   Environment variables, safe defaults, OIDC setup, migration toggles, and configuration boundaries.
-- [ACP index 0.6](development/acp-index-06.md)
+- [AP index 0.6](development/acp-index-06.md)
   Development schema sources, scale validation and safe migration limits.
 - [Testing and Quality](development/testing-and-quality.md)
   Automated test commands, manual verification flows, and release-quality checks.
@@ -58,8 +87,8 @@ For ACP managers who need a task-oriented user guide, see:
 
 - [Access Control](features/access-control.md)
   Authentication methods, access models, roles, feature flags, and route/guard behavior.
-- [ACP Workflows](features/acp-workflows.md)
-  How ACPs are created, populated, configured, versioned, and reviewed.
+- [AP Workflows](features/acp-workflows.md)
+  How APs are created, populated, configured, versioned, and reviewed.
 - [Item Explorer](features/item-explorer.md)
   Shared draft state, publish/discard flow, metadata columns, tags, and empirical difficulty workflows.
 - [Musterlösung und Kodierinformation im Booklet-Review](review-solutions.md)
@@ -69,8 +98,8 @@ For ACP managers who need a task-oriented user guide, see:
 
 ### Manuals
 
-- [ACP-Manager Handbuch](manuals/acp-manager-manual.md)
-  Task-oriented guide for day-to-day ACP management in the current UI.
+- [AP-Manager-Handbuch](manuals/acp-manager-manual.md)
+  Task-oriented guide for day-to-day AP management in the current UI.
 
 ### Operations
 
@@ -82,6 +111,8 @@ For ACP managers who need a task-oriented user guide, see:
   Health checks, backups, upgrades, observability, and routine operator tasks.
 - [Keycloak Email Delivery](operations/keycloak-email.md)
   Local Postfix relay and HU authenticated SMTP setup for transactional Keycloak mail.
+- [Content Hub Branding](operations/content-hub-branding.md)
+  Approved assets, technical-name transition, palette migration and rollback.
 
 ## Existing Root-Level Runbooks
 

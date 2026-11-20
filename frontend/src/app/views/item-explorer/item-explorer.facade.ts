@@ -1,3 +1,4 @@
+import type { PreviewStart } from '../../core/services/preview-visibility';
 import {
   ItemExplorerImportService,
   ItemExplorerImportResult,
@@ -8,8 +9,18 @@ import {
   ItemExplorerTableFilterContext,
 } from './item-explorer-table.service';
 import { ItemExplorerPlayerService } from './item-explorer-player.service';
+import { ItemExplorerResponseStateService } from './item-explorer-response-state.service';
+import { ItemExplorerHistoryService } from './item-explorer-history.service';
+import type { ItemExplorerHistoryFilters } from './item-explorer-history';
 import { ItemExplorerCodingService } from './item-explorer-coding.service';
 import { ItemExplorerDraftService, ItemExplorerDraftResult } from './item-explorer-draft.service';
+import {
+  getExistingItemStateKey,
+  getItemStateKeys,
+  normalizeTags,
+  projectExplorerItem,
+  resolveItemTags,
+} from './item-explorer-shared-state';
 import { ItemExplorerCollectionsService } from './item-explorer-collections.service';
 import { ItemExplorerPersonalDataService } from './item-explorer-personal-data.service';
 import { ItemExplorerCommentsService } from './item-explorer-comments.service';
@@ -19,6 +30,7 @@ import { ApiService } from '../../core/services/api.service';
 import { rewriteGeoGebraAssetUrls } from '../../core/utils/geogebra-player-html.util';
 import { AuthService } from '../../core/services/auth.service';
 import { PendingPersonalSessionStorageService } from '../../core/services/pending-personal-session-storage.service';
+import { usesLegacyAspectDropListIds } from '../../core/services/voud-drop-lists';
 import { BreadcrumbItem } from '../../shared/components/breadcrumb.component';
 import { CodingAsText } from '@iqb/responses';
 import { finalize, firstValueFrom, ReplaySubject, Subscription, takeUntil } from 'rxjs';
@@ -68,6 +80,11 @@ import {
   ItemExplorerTimingToken,
 } from './item-explorer-load-diagnostics.service';
 
+import {
+  ExplorerOptionalHeaderAction,
+  normalizeReducedView,
+} from '../../core/models/item-explorer-reduced-view';
+
 type ItemListLoadOutcome = 'loaded' | 'version-mismatch' | 'superseded' | 'error';
 @Injectable()
 export class ItemExplorerFacade implements OnDestroy {
@@ -79,8 +96,41 @@ export class ItemExplorerFacade implements OnDestroy {
   private shellDom?: ItemExplorerShellDomPort;
   private tableDom?: ItemExplorerTableDomPort;
 
-  acpId = '';
-  showStudioItemComments = false;
+  apId = '';
+  canOpenFullUnit = false;
+  private unitViewAccessRequest?: Subscription;
+  private studioItemCommentsConfigured = false;
+  private reducedView = normalizeReducedView(undefined);
+
+  get reducedViewActive(): boolean {
+    return this.reducedView.enabled && (this.isReadOnlyPreview || !this.hasExplorerEditPermission);
+  }
+  get showStudioItemComments(): boolean {
+    return this.studioItemCommentsConfigured && !this.reducedViewActive;
+  }
+  get showExplorerHeader(): boolean {
+    return !this.reducedViewActive || this.reducedView.showHeader;
+  }
+  isHeaderActionVisible(action: ExplorerOptionalHeaderAction): boolean {
+    // Returning to editing must always remain possible for managers.
+    if (action === 'readonlyPreview' && this.isReadOnlyPreview && this.canToggleReadOnlyPreview)
+      return true;
+    return (
+      !this.reducedViewActive || (this.showExplorerHeader && this.reducedView.headerActions[action])
+    );
+  }
+  get showTableToolbarArea(): boolean {
+    return !this.reducedViewActive || this.reducedView.showTableToolbarArea;
+  }
+  get showExplorerItemPanel(): boolean {
+    return !this.reducedViewActive || this.reducedView.showExplorerItemPanel;
+  }
+  get showItemInfo(): boolean {
+    return !this.reducedViewActive || this.reducedView.showItemInfo;
+  }
+  get showPlayerPreview(): boolean {
+    return !this.reducedViewActive || this.reducedView.showPlayerPreview;
+  }
   get columns() {
     return this.table.columns;
   }
@@ -142,6 +192,24 @@ export class ItemExplorerFacade implements OnDestroy {
   get pagingMode() {
     return this.player.pagingMode;
   }
+  get flowPageNumber() {
+    return this.player.flowPageNumber;
+  }
+  get flowPageCount() {
+    return this.player.flowPageCount;
+  }
+  get showFlowPageNavigation() {
+    return this.player.showFlowPageNavigation;
+  }
+  get canNavigateFlowBackward() {
+    return this.player.canNavigateFlowBackward;
+  }
+  get canNavigateFlowForward() {
+    return this.player.canNavigateFlowForward;
+  }
+  navigateFlowPage(delta: -1 | 1): void {
+    this.player.navigateFlowPage(delta);
+  }
   get playerHeight() {
     return this.player.playerHeight;
   }
@@ -177,6 +245,117 @@ export class ItemExplorerFacade implements OnDestroy {
   get playerFocusHighlightEnabled() {
     return this.player.playerFocusHighlightEnabled;
   }
+  get syntheticPreviewState(): boolean {
+    return this.player.syntheticPreviewState;
+  }
+
+  get previewMode() {
+    return this.player.previewMode;
+  }
+  get presentationMessage() {
+    return this.previewUserFacingMessage || this.player.presentationMessage;
+  }
+  get preparingPresentation() {
+    return this.player.preparingPresentation;
+  }
+  get hasPreviewContext() {
+    return !!this.selectedItem?.previewStart?.context;
+  }
+  get hasCurrentResponseState() {
+    return this.player.hasCurrentResponseState;
+  }
+
+  setPreviewMode(value: string): void {
+    if (!['reference', 'answers', 'flow'].includes(value)) return;
+    this.previewUserFacingMessage = '';
+    this.player.changePreviewMode(value as 'reference' | 'answers' | 'flow');
+    this.correctSolutionRequested = false;
+    if (
+      this.selectedItem &&
+      this.hasReusablePreviewUnit(this.selectedItem) &&
+      this.previewCoordinator.status.kind === 'unavailable'
+    )
+      this.previewCoordinator.markReady(this.selectedItem);
+    this.startPlayerIfReady();
+  }
+
+  capturePreviewContext(): void {
+    if (!this.canEditExplorer || !this.selectedItem || this.isCorrectSolutionActive) return;
+    const context = this.player.capturePreviewContext({
+      item: this.selectedItem,
+      target: this.selectedPreviewTarget,
+    });
+    if (!context) {
+      this.previewUserFacingMessage =
+        'Bitte das ausgewählte Item im Player sichtbar öffnen und die Aktualisierung der Ansicht abwarten. Erst dann kann diese Ansicht übernommen werden.';
+      return;
+    }
+    this.player.changePreviewMode('reference');
+    this.persistPreviewStart({ values: {}, context });
+  }
+
+  clearPreviewContext(): void {
+    if (!this.canEditExplorer || !this.selectedItem) return;
+    const start = this.selectedItem.previewStart;
+    this.persistPreviewStart({
+      values: start?.values || {},
+      ...(start?.page === undefined ? {} : { page: start.page }),
+    });
+  }
+
+  get previewStateVariables() {
+    return (this.player.previewDefinition?.stateVariables || []).map((v) => ({
+      id: v.id!,
+      label: v.alias || v.id!,
+      value: this.selectedItem?.previewStart?.values?.[v.id!] ?? '',
+    }));
+  }
+
+  get previewStartPage() {
+    return this.selectedItem?.previewStart?.page ?? '';
+  }
+
+  get previewStartPages() {
+    return (this.player.previewDefinition?.pages || [])
+      .filter(
+        (p) => p.alwaysVisible !== true && p.alwaysVisible !== 'true' && p.alwaysVisible !== 1,
+      )
+      .map((_, i) => i);
+  }
+
+  get showPreviewStartPageSelector(): boolean {
+    if (!this.definitionContent || !this.selectedItem) return false;
+    const target = this.getEffectivePlayerTarget(this.selectedItem);
+    if (!target) return false;
+    return this.player.resolveTargetLocation(target)?.isAlwaysVisiblePage === true;
+  }
+
+  setPreviewStartPage(value: string) {
+    this.persistPreviewStart({
+      values: this.selectedItem?.previewStart?.values || {},
+      ...(value === '' ? {} : { page: Number(value) }),
+    });
+  }
+
+  setPreviewStateValue(id: string, value: string) {
+    const values = { ...this.selectedItem?.previewStart?.values };
+    if (value === '') delete values[id];
+    else values[id] = value;
+    this.persistPreviewStart({ page: this.selectedItem?.previewStart?.page, values });
+  }
+
+  private persistPreviewStart(start: PreviewStart) {
+    if (!this.canEditExplorer || !this.selectedItem) return;
+    this.selectedItem.previewStart = start;
+    this.queueItemPropertyPatch(
+      this.selectedItem,
+      'PREVIEW_START_CHANGED',
+      { previewStart: start },
+      true,
+    );
+    this.updatePreviewTargetSelection(this.getStoredPreviewTargetId(this.selectedItem));
+  }
+
   itemExplorerPlayerTargetInfoEnabled = false;
   get itemCommentsEnabled() {
     return this.comments.itemCommentsEnabled;
@@ -280,7 +459,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private authSessionSubscription: Subscription | null = null;
   private readonly authStorageListener = (event: StorageEvent) => {
-    if (!event.key || event.key === 'cp_token') {
+    if (!event.key || event.key === 'ch_token') {
       this.syncItemCommentCountSession();
       this.syncPersonalItemDataSession();
       this.syncItemCollectionSession();
@@ -325,6 +504,7 @@ export class ItemExplorerFacade implements OnDestroy {
   private itemListLoadToken = 0;
   private itemListSlowTimer: ReturnType<typeof setTimeout> | null = null;
   private previewSlowTimer: ReturnType<typeof setTimeout> | null = null;
+  private useLegacyDropListIds = false;
   private playerReadyTiming: ItemExplorerTimingToken | null = null;
   itemListSlow = false;
   previewSlow = false;
@@ -361,7 +541,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   // Metadata column management
-  isAcpManager = false;
+  isApManager = false;
   private explorerEditingAllowed = false;
   get canEditExplorer(): boolean {
     return this.explorerEditingAllowed && !this.draft.discarding;
@@ -407,14 +587,30 @@ export class ItemExplorerFacade implements OnDestroy {
   itemListLoading = false;
 
   // History
-  showHistoryOverlay = false;
-  historyLoading = false;
-  historyError = '';
-  historyEntries: ItemExplorerChangeLogEntry[] = [];
-  historyFilterUser = '';
-  historyFilterType = '';
-  historyFilterFrom = '';
-  historyFilterTo = '';
+  get showHistoryOverlay() {
+    return this.history.showHistoryOverlay;
+  }
+  get historyLoading() {
+    return this.history.historyLoading;
+  }
+  get historyError() {
+    return this.history.historyError;
+  }
+  get historyEntries() {
+    return this.history.historyEntries;
+  }
+  get historyFilterUser() {
+    return this.history.historyFilterUser;
+  }
+  get historyFilterType() {
+    return this.history.historyFilterType;
+  }
+  get historyFilterFrom() {
+    return this.history.historyFilterFrom;
+  }
+  get historyFilterTo() {
+    return this.history.historyFilterTo;
+  }
 
   // Save preview
   get showSavePreviewDialog() {
@@ -474,11 +670,19 @@ export class ItemExplorerFacade implements OnDestroy {
     return this.player.isFallbackState;
   }
   correctSolutionRequested = false;
+  get codingInformation() {
+    return this.coding.codingInformation;
+  }
+
   get correctSolutionPrefill() {
     return this.coding.correctSolutionPrefill;
   }
-  showRawDataOverlay = false;
-  allResponseStates: any[] = [];
+  get showRawDataOverlay() {
+    return this.responseStates.showRawDataOverlay;
+  }
+  get allResponseStates() {
+    return this.responseStates.allResponseStates;
+  }
   previewUserFacingMessage = '';
   get selectedPreviewTargetId() {
     return this.coding.selectedPreviewTargetId;
@@ -491,10 +695,18 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   // Response State Confirmation Dialogs
-  showSaveConfirmDialog = false;
-  showDeleteConfirmDialog = false;
-  confirmDialogState: 'idle' | 'saving' | 'deleting' = 'idle';
-  confirmDialogError = '';
+  get showSaveConfirmDialog() {
+    return this.responseStates.showSaveConfirmDialog;
+  }
+  get showDeleteConfirmDialog() {
+    return this.responseStates.showDeleteConfirmDialog;
+  }
+  get confirmDialogState() {
+    return this.responseStates.confirmDialogState;
+  }
+  get confirmDialogError() {
+    return this.responseStates.confirmDialogError;
+  }
 
   get filteredCodingSchemeAsText(): CodingAsText[] {
     return this.coding.filteredCodingSchemeAsText(this.selectedItem, this.definitionContent);
@@ -699,7 +911,9 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   get canSaveCurrentResponseState(): boolean {
-    return !this.previewUpdateInProgress && !this.isCorrectSolutionActive;
+    return (
+      !this.previewUpdateInProgress && !this.isCorrectSolutionActive && this.player.isAnswerSession
+    );
   }
 
   get loadingUnit(): boolean {
@@ -795,20 +1009,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   get filteredHistoryEntries(): ItemExplorerChangeLogEntry[] {
-    const userNeedle = this.historyFilterUser.trim().toLowerCase();
-    const typeNeedle = this.historyFilterType.trim().toLowerCase();
-    const fromDate = this.historyFilterFrom ? new Date(`${this.historyFilterFrom}T00:00:00`) : null;
-    const toDate = this.historyFilterTo ? new Date(`${this.historyFilterTo}T23:59:59.999`) : null;
-    return this.historyEntries.filter((entry) => {
-      const user = (entry.actorUsername || '').toLowerCase();
-      const type = (entry.changeType || '').toLowerCase();
-      const matchesUser = !userNeedle || user.includes(userNeedle);
-      const matchesType = !typeNeedle || type.includes(typeNeedle);
-      const entryDate = new Date(entry.createdAt);
-      const matchesFrom = !fromDate || entryDate >= fromDate;
-      const matchesTo = !toDate || entryDate <= toDate;
-      return matchesUser && matchesType && matchesFrom && matchesTo;
-    });
+    return this.history.filteredHistoryEntries;
   }
 
   constructor(
@@ -825,6 +1026,8 @@ export class ItemExplorerFacade implements OnDestroy {
     readonly player: ItemExplorerPlayerService,
     readonly table: ItemExplorerTableService,
     readonly imports: ItemExplorerImportService,
+    readonly responseStates: ItemExplorerResponseStateService,
+    readonly history: ItemExplorerHistoryService,
     @Optional() private readonly diagnostics?: ItemExplorerLoadDiagnostics,
   ) {
     this.draft.flushRequested$.pipe(takeUntil(this.destroy$)).subscribe(() => {
@@ -840,6 +1043,18 @@ export class ItemExplorerFacade implements OnDestroy {
       this.ensureTableColumnDefaults();
       this.applyFilter(false);
     });
+    this.responseStates.connect(() => ({
+      apId: this.apId,
+      selectedItem: this.selectedItem,
+      isCorrectSolutionActive: this.isCorrectSolutionActive,
+      previewReady: this.previewCoordinator.status.kind === 'ready',
+    }));
+    this.responseStates.dialogClosed$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.restoreFocusAfterOverlayClose());
+    this.responseStates.loadFailed$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => alert('Fehler beim Laden der gespeicherten Zustände.'));
     this.previewCoordinator.results$
       .pipe(takeUntil(this.destroy$))
       .subscribe((result) => this.applyPreviewResult(result));
@@ -908,8 +1123,11 @@ export class ItemExplorerFacade implements OnDestroy {
       itemTags: this.itemTags,
       personalColumnFilters: this.personalColumnFilters,
       personalItemData: this.personalItemData,
+      globalFilterText: this.showTableToolbarArea ? this.filterText : '',
       activeCollectionRowKeys:
-        this.collectionViewMode === 'active' && this.activeItemCollection
+        this.showTableToolbarArea &&
+        this.collectionViewMode === 'active' &&
+        this.activeItemCollection
           ? new Set(this.activeItemCollection.rowKeys)
           : null,
     };
@@ -917,7 +1135,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private configureDraft(): void {
     this.draft.configure({
-      acpId: this.acpId,
+      apId: this.apId,
       canEdit: this.explorerEditingAllowed,
       canPublish: this.canPublishExplorer,
     });
@@ -925,7 +1143,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private configureCollections(): void {
     this.collections.configure({
-      acpId: this.acpId,
+      apId: this.apId,
       identity: this.pendingPersonalSessionStorage.resolveIdentityFromToken(
         this.authService.getToken(),
       ),
@@ -937,7 +1155,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private configurePersonalData(): void {
     this.personalData.configure({
-      acpId: this.acpId,
+      apId: this.apId,
       identity: this.pendingPersonalSessionStorage.resolveIdentityFromToken(
         this.authService.getToken(),
       ),
@@ -949,7 +1167,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private configureComments(): void {
     this.comments.configure({
-      acpId: this.acpId,
+      apId: this.apId,
       identity: this.pendingPersonalSessionStorage.resolveIdentityFromToken(
         this.authService.getToken(),
       ),
@@ -1048,11 +1266,8 @@ export class ItemExplorerFacade implements OnDestroy {
     this.coding.codingSearchText = value;
   }
 
-  setHistoryFilter(
-    key: 'historyFilterUser' | 'historyFilterType' | 'historyFilterFrom' | 'historyFilterTo',
-    value: string,
-  ): void {
-    this[key] = value;
+  setHistoryFilter(key: keyof ItemExplorerHistoryFilters, value: string): void {
+    this.history.setHistoryFilter(key, value);
   }
 
   setSelectedPreviewTargetId(value: string): void {
@@ -1101,12 +1316,12 @@ export class ItemExplorerFacade implements OnDestroy {
   async confirmItemParameterUploadWarnings(): Promise<void> {
     if (this.destroyed) return;
     await this.applyImportResult(
-      await this.imports.confirmWarnings({ acpId: this.acpId, baseVersion: this.explorerVersion }),
+      await this.imports.confirmWarnings({ apId: this.apId, baseVersion: this.explorerVersion }),
     );
   }
 
   init(
-    acpId: string,
+    apId: string,
     initialCommentTarget?: {
       unitId: string;
       itemId: string;
@@ -1116,7 +1331,7 @@ export class ItemExplorerFacade implements OnDestroy {
   ) {
     if (this.initialized || this.destroyed) return;
     this.initialized = true;
-    this.acpId = acpId;
+    this.apId = apId;
     if (initialCommentTarget?.unitId && initialCommentTarget.itemId) {
       this.initialCommentTarget = {
         unitId: initialCommentTarget.unitId,
@@ -1126,8 +1341,8 @@ export class ItemExplorerFacade implements OnDestroy {
       this.commentThreadInitiallyOpen = initialCommentTarget.open === true;
     }
     this.breadcrumbs = [
-      { label: 'Assessment Content Pool', route: ['/'] },
-      { label: 'ACP', route: ['/view', this.acpId] },
+      { label: 'Content Hub', route: ['/'] },
+      { label: 'AP', route: ['/view', this.apId] },
       { label: 'Item-Explorer' },
     ];
 
@@ -1141,17 +1356,18 @@ export class ItemExplorerFacade implements OnDestroy {
         this.syncItemCollectionSession();
       });
 
-    // Check if user is ACP Manager
+    // Check if user is AP Manager
     this.checkUserRole();
 
     // Load feature config and metadata settings
     this.api
-      .getAcpStartPage(this.acpId)
+      .getApStartPage(this.apId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
           const fc = data?.featureConfig || {};
-          this.showStudioItemComments = fc.showStudioItemComments === true;
+          this.studioItemCommentsConfigured = fc.showStudioItemComments === true;
+          this.reducedView = normalizeReducedView(fc.itemExplorerReducedView);
           const commentTargets = Array.isArray(fc.commentTargets) ? fc.commentTargets : [];
           this.comments.itemCommentsConfigured = Boolean(
             fc.enableCommenting && (commentTargets.length === 0 || commentTargets.includes('ITEM')),
@@ -1177,7 +1393,7 @@ export class ItemExplorerFacade implements OnDestroy {
           this.table.itemSubIdLabel = String(fc.itemSubIdLabel || 'Sub-ID').trim() || 'Sub-ID';
           this.personalData.configureFeatures(fc);
           this.collections.enableItemCollections = fc.enableItemCollections === true;
-          // Explorer uses ACP-shared draft/published state instead of per-user preferences.
+          // Explorer uses AP-shared draft/published state instead of per-user preferences.
           this.persistUserPreferences = false;
           this.useServerPreferences = false;
 
@@ -1224,7 +1440,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
     // Load item list from .vomd files
     this.api
-      .getFileItemList(this.acpId, {
+      .getFileItemList(this.apId, {
         perspective: this.getPerspectiveForViewerRequests(expectedExplorerState),
       })
       .pipe(takeUntil(this.destroy$), finalize(settle))
@@ -1624,7 +1840,7 @@ export class ItemExplorerFacade implements OnDestroy {
     if (!file || this.destroyed) return;
     input.value = '';
     await this.applyImportResult(
-      await this.imports.upload(file, { acpId: this.acpId, baseVersion: this.explorerVersion }),
+      await this.imports.upload(file, { apId: this.apId, baseVersion: this.explorerVersion }),
     );
   }
 
@@ -1677,7 +1893,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.draft.lastDraftOperationError = '';
 
     this.api
-      .clearEmpiricalDifficulties(this.acpId, {
+      .clearEmpiricalDifficulties(this.apId, {
         draft: true,
         baseVersion: this.explorerVersion,
       })
@@ -1734,7 +1950,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.renumberError = '';
 
     this.api
-      .recalculateItemRowNumbers(this.acpId)
+      .recalculateItemRowNumbers(this.apId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
@@ -1802,13 +2018,13 @@ export class ItemExplorerFacade implements OnDestroy {
   resetPlayer() {
     this.previewCoordinator.cancel();
     this.player.reset();
+    this.useLegacyDropListIds = false;
     this.previewUserFacingMessage = '';
     this.coding.correctSolutionPrefill = {
       status: 'unavailable',
       responses: [],
       message: 'Die Player-Daten für die Musterlösung werden geladen.',
     };
-    this.player.restoreResponseDataAfterSolution = false;
   }
 
   private startItemListSlowTimer(): void {
@@ -1861,13 +2077,21 @@ export class ItemExplorerFacade implements OnDestroy {
     if (
       this.selectedItem &&
       this.selectedItem.partId === item.partId &&
-      this.getStableRowKey(this.selectedItem) === this.getStableRowKey(item)
+      this.getStableRowKey(this.selectedItem) === this.getStableRowKey(item) &&
+      (!this.showExplorerItemPanel || this.previewCoordinator.status.kind !== 'idle')
     ) {
       this.selectedIndex = index;
       return;
     }
 
     this.cancelPlayerReadyTiming();
+    if (!this.showExplorerItemPanel) {
+      this.selectedItem = item;
+      this.selectedIndex = index;
+      this.resetPlayer();
+      this.clearPreviewSlowTimer();
+      return;
+    }
     const reuseLoadedUnit = this.hasReusablePreviewUnit(item);
     this.selectedItem = item;
     this.selectedIndex = index;
@@ -1891,8 +2115,9 @@ export class ItemExplorerFacade implements OnDestroy {
     this.currentUnitMetadata = this.unitMetadataCache[unitCacheKey] || [];
     this.coding.setScheme(this.codingSchemeCache[unitCacheKey] || null);
     this.syncPreviewTargetResolution(item);
+    this.refreshCorrectSolutionPrefill();
 
-    if (!this.canPreviewItem(item)) {
+    if (!this.canPreviewItem(item) && !this.itemExplorerConditionalVisibilityEnabled) {
       this.previewCoordinator.markUnavailable(this.getMissingPreviewTargetMessage());
       this.clearPreviewSlowTimer();
       return;
@@ -1903,7 +2128,7 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private loadPreviewSelection(item: ExplorerItem, reuseUnit: boolean): void {
     this.previewCoordinator.select({
-      acpId: this.acpId,
+      apId: this.apId,
       perspective: this.getPerspectiveForViewerRequests(),
       item,
       itemList: this.filteredItems.map((candidate) => ({
@@ -1918,6 +2143,7 @@ export class ItemExplorerFacade implements OnDestroy {
   private applyPreviewResult(result: ItemExplorerPreviewResult): void {
     if (
       this.destroyed ||
+      !this.showExplorerItemPanel ||
       !this.selectedItem ||
       this.getStableRowKey(result.item) !== this.getStableRowKey(this.selectedItem)
     ) {
@@ -1971,116 +2197,28 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   // --- Response State ---
-  saveCurrentResponseState() {
+  saveCurrentResponseState(): void {
     this.rememberFocusBeforeOverlay();
-    if (this.isCorrectSolutionActive) {
-      this.confirmDialogError =
-        'Die Musterlösung ist nur eine Vorschau und kann nicht als Player-Eingabe gespeichert werden. Blenden Sie sie zuerst aus.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    if (this.previewCoordinator.status.kind !== 'ready') {
-      this.confirmDialogError =
-        'Der Zustand des ausgewählten Items wird noch geladen. Bitte versuchen Sie es gleich erneut.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    if (!this.selectedItem || !this.currentResponseData) {
-      this.confirmDialogError =
-        'Kein Zustand zum Speichern vorhanden. Bitte füllen Sie zuerst das Formular aus.';
-      this.showSaveConfirmDialog = true;
-      return;
-    }
-    this.confirmDialogError = '';
-    this.showSaveConfirmDialog = true;
+    this.responseStates.saveCurrentResponseState();
   }
 
-  confirmSaveResponseState() {
-    if (
-      !this.selectedItem ||
-      !this.currentResponseData ||
-      this.isCorrectSolutionActive ||
-      this.previewCoordinator.status.kind !== 'ready'
-    ) {
-      this.confirmDialogError =
-        'Der Zustand des ausgewählten Items ist noch nicht vollständig geladen.';
-      return;
-    }
-
-    this.confirmDialogState = 'saving';
-
-    this.api
-      .saveResponseState(
-        this.acpId,
-        this.selectedItem.itemId,
-        this.selectedItem.unitId,
-        this.currentResponseData,
-        this.selectedItem.rowKey,
-      )
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.player.applyResponseState(this.currentResponseData);
-          this.confirmDialogState = 'idle';
-          this.closeSaveConfirmDialog();
-        },
-        error: (err) => {
-          console.error('Error saving response state:', err);
-          this.confirmDialogState = 'idle';
-          this.confirmDialogError = 'Fehler beim Speichern des Zustands.';
-        },
-      });
+  confirmSaveResponseState(): void {
+    this.responseStates.confirmSaveResponseState();
   }
 
-  resetResponseState() {
+  resetResponseState(): void {
     if (!this.selectedItem) return;
     this.rememberFocusBeforeOverlay();
-    this.confirmDialogError = '';
-    this.showDeleteConfirmDialog = true;
+    this.responseStates.resetResponseState();
   }
 
-  confirmDeleteResponseState() {
-    if (!this.selectedItem) return;
-
-    this.confirmDialogState = 'deleting';
-
-    this.api
-      .deleteResponseState(
-        this.acpId,
-        this.selectedItem.itemId,
-        this.selectedItem.unitId,
-        this.selectedItem.rowKey,
-      )
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.player.applyResponseState(null);
-          this.confirmDialogState = 'idle';
-          this.closeDeleteConfirmDialog();
-        },
-        error: (err) => {
-          console.error('Error deleting response state:', err);
-          this.confirmDialogState = 'idle';
-          this.confirmDialogError = 'Fehler beim Löschen des Zustands.';
-        },
-      });
+  confirmDeleteResponseState(): void {
+    this.responseStates.confirmDeleteResponseState();
   }
 
-  loadAllResponseStates() {
+  loadAllResponseStates(): void {
     this.rememberFocusBeforeOverlay();
-    this.api
-      .getAllResponseStates(this.acpId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (states) => {
-          this.allResponseStates = states;
-          this.showRawDataOverlay = true;
-        },
-        error: (err) => {
-          console.error('Error loading response states:', err);
-          alert('Fehler beim Laden der gespeicherten Zustände.');
-        },
-      });
+    this.responseStates.loadAllResponseStates();
   }
 
   navigateItem(delta: number) {
@@ -2093,7 +2231,7 @@ export class ItemExplorerFacade implements OnDestroy {
     const wasActive = this.isCorrectSolutionActive;
     this.correctSolutionRequested = !this.correctSolutionRequested;
     const isActive = this.isCorrectSolutionActive;
-    this.player.restoreResponseDataAfterSolution = wasActive && !isActive;
+    if (!wasActive && isActive) this.player.captureAnswersForSolution();
 
     if (wasActive === isActive || this.previewCoordinator.status.kind !== 'ready') return;
     this.startPlayerIfReady();
@@ -2180,6 +2318,28 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   handlePlayerMessage(msg: unknown): void {
+    if (msg && typeof msg === 'object' && 'type' in msg && msg.type === 'vopReadyNotification') {
+      const useLegacyDropListIds = usesLegacyAspectDropListIds(
+        'metadata' in msg ? msg.metadata : undefined,
+      );
+      if (this.useLegacyDropListIds !== useLegacyDropListIds) {
+        const previous = this.correctSolutionPrefill;
+        this.useLegacyDropListIds = useLegacyDropListIds;
+        this.refreshCorrectSolutionPrefill();
+        const current = this.correctSolutionPrefill;
+        if (
+          this.correctSolutionRequested &&
+          this.player.activePlayerSessionId &&
+          ((previous.status === 'available' && previous.dropLists?.length) ||
+            (current.status === 'available' && current.dropLists?.length))
+        ) {
+          // The iframe load event may already have started the preview with the old prefill.
+          if (current.status === 'available') this.player.captureAnswersForSolution();
+          this.startPlayerIfReady();
+        }
+      }
+      return;
+    }
     this.player.handlePlayerMessage(msg, {
       ready: this.previewCoordinator.status.kind === 'ready',
       solutionActive: this.isCorrectSolutionActive,
@@ -2198,10 +2358,14 @@ export class ItemExplorerFacade implements OnDestroy {
     });
     if (result.kind === 'waiting') return;
     if (result.kind === 'unavailable') {
+      this.previewUserFacingMessage =
+        result.reason === 'unresolved-visibility' ? result.message : '';
       this.previewCoordinator.markUnavailable(
-        result.reason === 'missing-target'
-          ? this.getMissingPreviewTargetMessage()
-          : `Das Player-Ziel "${target}" kommt in der Aufgabendefinition nicht vor.`,
+        result.reason === 'unresolved-visibility'
+          ? result.message
+          : result.reason === 'missing-target'
+            ? this.getMissingPreviewTargetMessage()
+            : `Das Player-Ziel "${target}" kommt in der Aufgabendefinition nicht vor.`,
       );
     }
     this.diagnostics?.finish(this.playerReadyTiming, {
@@ -2239,7 +2403,14 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   canPreviewItem(item?: ReadonlyExplorerItem | null): boolean {
-    return this.getEffectivePlayerTarget(item).length > 0;
+    return (
+      this.getEffectivePlayerTarget(item).length > 0 ||
+      !!(
+        item &&
+        this.itemExplorerConditionalVisibilityEnabled &&
+        this.player.previewMode === 'flow'
+      )
+    );
   }
 
   private syncPreviewTargetResolution(item?: ReadonlyExplorerItem | null) {
@@ -2254,7 +2425,11 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private refreshCorrectSolutionPrefill(): void {
-    return this.coding.refreshCorrectSolutionPrefill(this.selectedItem, this.definitionContent);
+    return this.coding.refreshCorrectSolutionPrefill(
+      this.selectedItem,
+      this.definitionContent,
+      this.useLegacyDropListIds,
+    );
   }
 
   private buildPrintLabelOverrides(): Record<string, string> {
@@ -2333,35 +2508,15 @@ export class ItemExplorerFacade implements OnDestroy {
   private getPrimaryItemStateKey(item?: ExplorerItem | null): string {
     if (!item) return '';
 
-    const resolvedItemId = item.itemId?.startsWith(`${item.unitId}_`)
-      ? item.itemId
-      : `${item.unitId}_${item.itemId}`;
-
-    for (const candidate of [item.rowKey, item.uuid, resolvedItemId, item.itemId]) {
-      const key = String(candidate || '').trim();
-      if (key) {
-        return key;
-      }
-    }
-
-    return '';
+    return getItemStateKeys(item)[0] || '';
   }
 
   private getExistingItemStateKey(item?: ExplorerItem | null): string {
     if (!item) return '';
-
-    const activeState = this.getExplorerStateForCurrentPerspective();
-    const itemProperties = this.isRecord(activeState?.itemProperties)
-      ? (activeState.itemProperties as Record<string, Record<string, unknown>>)
-      : {};
-
-    for (const key of this.getItemStateKeys(item)) {
-      if (this.isRecord(itemProperties[key])) {
-        return key;
-      }
-    }
-
-    return '';
+    return getExistingItemStateKey(
+      item,
+      this.getExplorerStateForCurrentPerspective()?.itemProperties,
+    );
   }
 
   private getMissingPreviewTargetMessage(): string {
@@ -2487,7 +2642,7 @@ export class ItemExplorerFacade implements OnDestroy {
     return this.personalData.hasPendingPersonalItemDataChanges();
   }
 
-  // --- Shared ACP tags ---
+  // --- Shared AP tags ---
   addItemTag(uuid: string, event: Event) {
     if (!this.canEditExplorer) return;
     const tag = (event.target as HTMLSelectElement).value;
@@ -2528,7 +2683,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private saveTags() {
-    const normalizedTags = this.normalizeTags(this.itemTags);
+    const normalizedTags = normalizeTags(this.itemTags);
     this.itemTags = normalizedTags;
     if (!this.canEditExplorer) {
       return;
@@ -2537,7 +2692,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private loadPersistedTags() {
-    // Explorer uses shared ACP state; tags are loaded with the versioned item-list snapshot.
+    // Explorer uses shared AP state; tags are loaded with the versioned item-list snapshot.
     this.applyFilter(false);
   }
 
@@ -2611,13 +2766,26 @@ export class ItemExplorerFacade implements OnDestroy {
     const partQuery = this.selectedItem?.partId
       ? `&partId=${encodeURIComponent(this.selectedItem.partId)}`
       : '';
-    const url = `/api/acp/${this.acpId}/files?unitId=${encodeURIComponent(this.selectedItem?.unitId || '')}${partQuery}&format=zip`;
+    const url = `/api/ap/${this.apId}/files?unitId=${encodeURIComponent(this.selectedItem?.unitId || '')}${partQuery}&format=zip`;
     window.open(this.api.appendAuthToken(url), '_blank');
   }
 
   // --- Metadata Column Management ---
   checkUserRole() {
-    this.isAcpManager = this.authService.hasAcpRole(this.acpId, 'ACP_MANAGER');
+    this.canOpenFullUnit = false;
+    this.unitViewAccessRequest?.unsubscribe();
+    this.unitViewAccessRequest = this.api
+      .getCapabilities(this.apId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (access) => {
+          this.canOpenFullUnit = access.canViewUnit === true;
+        },
+        error: () => {
+          this.canOpenFullUnit = false;
+        },
+      });
+    this.isApManager = this.authService.hasApRole(this.apId, 'AP_MANAGER');
     this.hasExplorerEditPermission = this.latestExplorerState?.canEdit ?? false;
     this.hasExplorerPublishPermission = this.hasExplorerEditPermission;
     this.comments.itemCommentsEnabled =
@@ -2677,6 +2845,11 @@ export class ItemExplorerFacade implements OnDestroy {
     this.canPublishExplorer = this.hasExplorerPublishPermission && inEditorPerspective;
     this.configureDraft();
     this.configurePersonalData();
+    if (!this.showExplorerItemPanel) {
+      this.resetPlayer();
+      this.clearPreviewSlowTimer();
+      this.cancelPlayerReadyTiming();
+    }
   }
 
   private getExplorerStateForCurrentPerspective(
@@ -2922,7 +3095,7 @@ export class ItemExplorerFacade implements OnDestroy {
     if (this.destroyed) return null;
     try {
       const envelope = await firstValueFrom(
-        this.api.getItemExplorerState(this.acpId, this.isReadOnlyPreview ? 'read-only' : 'editor'),
+        this.api.getItemExplorerState(this.apId, this.isReadOnlyPreview ? 'read-only' : 'editor'),
       );
       return this.destroyed ? null : envelope;
     } catch (error) {
@@ -2979,6 +3152,23 @@ export class ItemExplorerFacade implements OnDestroy {
     return Number.isInteger(responseVersion) && responseVersion === expectedVersion;
   }
 
+  private getPreviewStartFingerprint(item: ReadonlyExplorerItem | null): string {
+    return JSON.stringify([
+      item?.previewStart?.page ?? null,
+      Object.entries(item?.previewStart?.values || {}).sort(([a], [b]) => a.localeCompare(b)),
+      item?.previewStart?.context
+        ? [
+            item.previewStart.context.definitionKey,
+            item.previewStart.context.target,
+            item.previewStart.context.page,
+            Object.entries(item.previewStart.context.dataParts).sort(([a], [b]) =>
+              a.localeCompare(b),
+            ),
+          ]
+        : null,
+    ]);
+  }
+
   private applySharedExplorerEnvelope(envelope: ItemExplorerStateEnvelope, markSaved = false) {
     this.draft.acceptEnvelope(envelope, markSaved);
     this.hasExplorerEditPermission = envelope.canEdit;
@@ -2992,7 +3182,7 @@ export class ItemExplorerFacade implements OnDestroy {
     this.draft.setPatchSuppressed(true);
     try {
       this.applyUiPreferences((activeState as ItemExplorerSharedState).ui);
-      this.itemTags = this.normalizeTags((activeState as ItemExplorerSharedState).tags);
+      this.itemTags = normalizeTags((activeState as ItemExplorerSharedState).tags);
       this.table.metadataSettings = this.resolveMetadataSettings({
         metadataColumns: (activeState as ItemExplorerSharedState).metadataColumns,
       });
@@ -3009,6 +3199,7 @@ export class ItemExplorerFacade implements OnDestroy {
       this.draft.setPatchSuppressed(false);
     }
 
+    const previousPreviewStart = this.getPreviewStartFingerprint(this.selectedItem);
     const previousPreviewTarget = this.selectedItem
       ? this.getEffectivePlayerTarget(this.selectedItem)
       : '';
@@ -3017,14 +3208,14 @@ export class ItemExplorerFacade implements OnDestroy {
       this.syncPreviewTargetResolution(this.selectedItem);
       const nextPreviewTarget = this.getEffectivePlayerTarget(this.selectedItem);
       if (
-        previousPreviewTarget !== nextPreviewTarget &&
-        this.playerFrameReady &&
+        (previousPreviewTarget !== nextPreviewTarget ||
+          previousPreviewStart !== this.getPreviewStartFingerprint(this.selectedItem)) &&
         this.definitionContent &&
         this.unit
       ) {
         const previewStatus = this.previewCoordinator.status.kind;
         if (previewStatus === 'ready') {
-          this.startPlayerIfReady();
+          if (this.playerFrameReady) this.startPlayerIfReady();
         } else if (previewStatus !== 'loading-unit' && previewStatus !== 'loading-response') {
           this.reloadPreviewAfterTargetChange(this.selectedItem);
         }
@@ -3038,48 +3229,14 @@ export class ItemExplorerFacade implements OnDestroy {
       return;
     }
 
-    const itemProperties = this.isRecord(activeState.itemProperties)
-      ? (activeState.itemProperties as Record<string, Record<string, unknown>>)
-      : {};
-    const stateTags = this.normalizeTags(activeState.tags);
-
+    const stateTags = normalizeTags(activeState.tags);
     for (const item of this.items) {
-      const keys = this.getItemStateKeys(item);
-      const itemProps = this.getItemPropsForKeys(itemProperties, keys);
-
-      const empiricalDifficultyRaw = itemProps?.['empiricalDifficulty'];
-      if (empiricalDifficultyRaw === undefined || empiricalDifficultyRaw === null) {
-        delete item.empiricalDifficulty;
-      } else {
-        const parsed = Number(empiricalDifficultyRaw);
-        if (Number.isFinite(parsed)) {
-          item.empiricalDifficulty = parsed;
-        } else {
-          delete item.empiricalDifficulty;
-        }
-      }
-
-      const previewTargetId = String(itemProps?.[this.previewTargetItemPropertyKey] || '').trim();
-      if (previewTargetId) {
-        item.previewTargetId = previewTargetId;
-      } else {
-        delete item.previewTargetId;
-      }
-
-      if (itemProps?.[this.excludedItemPropertyKey] === true) {
-        item.excluded = true;
-      } else {
-        delete item.excluded;
-      }
-
-      const tagsFromState = this.getTagsForKeys(stateTags, keys);
-      if (tagsFromState !== null) {
-        item.tags = tagsFromState;
-      } else if (Array.isArray(itemProps?.['tags'])) {
-        item.tags = this.normalizeTagValues(itemProps['tags']);
-      } else if (!Array.isArray(item.tags)) {
-        item.tags = [];
-      }
+      const projected = projectExplorerItem(item, activeState.itemProperties, stateTags);
+      // Keep row identity: selection and pending player operations refer to this object.
+      delete item.empiricalDifficulty;
+      delete item.previewTargetId;
+      delete item.excluded;
+      Object.assign(item, projected);
     }
 
     this.hydrateItemTagsFromItems();
@@ -3098,54 +3255,6 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private reconcileMeanTaskDifficultyState(): void {
     if (this.table.reconcileMeanTaskDifficultyState(this.items)) this.saveUiPreferences();
-  }
-
-  private getItemStateKeys(item: ExplorerItem): string[] {
-    const keys = new Set<string>();
-    const resolvedItemId = item.itemId?.startsWith(`${item.unitId}_`)
-      ? item.itemId
-      : `${item.unitId}_${item.itemId}`;
-
-    for (const candidate of [item.rowKey, item.uuid, resolvedItemId, item.itemId]) {
-      const key = String(candidate || '').trim();
-      if (key) {
-        keys.add(key);
-      }
-    }
-    return Array.from(keys);
-  }
-
-  private getItemPropsForKeys(
-    itemProperties: Record<string, Record<string, unknown>>,
-    keys: string[],
-  ): Record<string, unknown> | null {
-    const merged: Record<string, unknown> = {};
-    let found = false;
-    for (const key of [...keys].reverse()) {
-      if (this.isRecord(itemProperties[key])) {
-        Object.assign(merged, itemProperties[key]);
-        found = true;
-      }
-    }
-    return found ? merged : null;
-  }
-
-  private getTagsForKeys(tagsMap: Record<string, string[]>, keys: string[]): string[] | null {
-    for (const key of keys) {
-      const tags = tagsMap[key];
-      if (Array.isArray(tags)) {
-        return this.normalizeTagValues(tags);
-      }
-    }
-    return null;
-  }
-
-  private normalizeTagValues(values: unknown[]): string[] {
-    return Array.from(
-      new Set(
-        values.map((value) => String(value || '').trim()).filter((value) => value.length > 0),
-      ),
-    );
   }
 
   hasPendingDraftChanges(): boolean {
@@ -3240,28 +3349,13 @@ export class ItemExplorerFacade implements OnDestroy {
     }
   }
 
-  showHistory() {
+  showHistory(): void {
     this.rememberFocusBeforeOverlay();
-    this.showHistoryOverlay = true;
-    this.historyLoading = true;
-    this.historyError = '';
-    this.api
-      .getItemExplorerChanges(this.acpId, 300)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (entries) => {
-          this.historyEntries = entries || [];
-          this.historyLoading = false;
-        },
-        error: (error) => {
-          console.error('Failed to load history', error);
-          this.historyLoading = false;
-          this.historyError = 'Änderungsverlauf konnte nicht geladen werden.';
-        },
-      });
+    this.history.showHistory(this.apId);
   }
 
   openCodingOverlay() {
+    if (!this.showExplorerItemPanel) return;
     this.rememberFocusBeforeOverlay();
     this.coding.codingSearchText = '';
     this.showOverlay = 'coding';
@@ -3276,7 +3370,7 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   openColumnManager() {
-    if (this.showColumnManager) return;
+    if (!this.isHeaderActionVisible('columnManager') || this.showColumnManager) return;
     this.rememberFocusBeforeOverlay();
     this.table.openColumnManager();
   }
@@ -3287,38 +3381,20 @@ export class ItemExplorerFacade implements OnDestroy {
     this.restoreFocusAfterOverlayClose();
   }
 
-  closeSaveConfirmDialog() {
-    if (this.confirmDialogState !== 'idle') {
-      return;
-    }
-    this.showSaveConfirmDialog = false;
-    this.confirmDialogError = '';
-    this.restoreFocusAfterOverlayClose();
+  closeSaveConfirmDialog(): void {
+    this.responseStates.closeSaveConfirmDialog();
   }
 
-  closeDeleteConfirmDialog() {
-    if (this.confirmDialogState !== 'idle') {
-      return;
-    }
-    this.showDeleteConfirmDialog = false;
-    this.confirmDialogError = '';
-    this.restoreFocusAfterOverlayClose();
+  closeDeleteConfirmDialog(): void {
+    this.responseStates.closeDeleteConfirmDialog();
   }
 
-  closeRawDataOverlay() {
-    if (!this.showRawDataOverlay) {
-      return;
-    }
-    this.showRawDataOverlay = false;
-    this.restoreFocusAfterOverlayClose();
+  closeRawDataOverlay(): void {
+    this.responseStates.closeRawDataOverlay();
   }
 
-  closeHistoryOverlay() {
-    if (!this.showHistoryOverlay) {
-      return;
-    }
-    this.showHistoryOverlay = false;
-    this.restoreFocusAfterOverlayClose();
+  closeHistoryOverlay(): void {
+    if (this.history.closeHistoryOverlay()) this.restoreFocusAfterOverlayClose();
   }
 
   getItemRowId(item: ReadonlyExplorerItem): string {
@@ -3326,35 +3402,8 @@ export class ItemExplorerFacade implements OnDestroy {
     return `item-explorer-row-${String(rawId).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
   }
 
-  exportHistoryCsv() {
-    if (!this.filteredHistoryEntries.length) {
-      return;
-    }
-
-    const escapeCsv = (value: unknown): string => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    const rows = [
-      ['Zeit', 'Nutzer', 'Rolle', 'Aktion', 'Draft-Version', 'Published-Version', 'Diff'],
-      ...this.filteredHistoryEntries.map((entry) => [
-        new Date(entry.createdAt).toISOString(),
-        entry.actorUsername || '',
-        entry.actorRole || '',
-        entry.changeType || '',
-        entry.draftVersion ?? '',
-        entry.publishedVersion ?? '',
-        JSON.stringify(entry.diff || {}),
-      ]),
-    ];
-
-    const content = rows.map((row) => row.map((cell) => escapeCsv(cell)).join(';')).join('\n');
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `item-explorer-history-${this.acpId}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
+  exportHistoryCsv(): void {
+    this.history.exportHistoryCsv();
   }
 
   private selectFilteredItemAt(index: number, shouldScroll = false) {
@@ -3443,7 +3492,6 @@ export class ItemExplorerFacade implements OnDestroy {
       responses: [],
       message: 'Für dieses Item wurde noch keine Musterlösung ermittelt.',
     };
-    this.player.restoreResponseDataAfterSolution = false;
     this.coding.selectedPreviewTargetId = '';
     this.coding.customPreviewTargetDraft = '';
     this.syncPreviewTargetResolution(null);
@@ -3573,21 +3621,9 @@ export class ItemExplorerFacade implements OnDestroy {
 
   private rollbackItemTagsToLatestExplorerState(): void {
     const activeState = this.getExplorerStateForCurrentPerspective();
-    const stateTags = this.normalizeTags(activeState.tags);
-    const itemProperties = this.isRecord(activeState.itemProperties)
-      ? (activeState.itemProperties as Record<string, Record<string, unknown>>)
-      : {};
-
+    const stateTags = normalizeTags(activeState.tags);
     for (const item of this.items) {
-      const keys = this.getItemStateKeys(item);
-      const tagsFromState = this.getTagsForKeys(stateTags, keys);
-      const itemProps = this.getItemPropsForKeys(itemProperties, keys);
-      item.tags =
-        tagsFromState !== null
-          ? [...tagsFromState]
-          : Array.isArray(itemProps?.['tags'])
-            ? this.normalizeTagValues(itemProps['tags'])
-            : [];
+      item.tags = resolveItemTags(item, activeState.itemProperties, stateTags);
     }
     this.itemTags = {};
     this.hydrateItemTagsFromItems();
@@ -3595,31 +3631,6 @@ export class ItemExplorerFacade implements OnDestroy {
       this.itemTags = { ...this.itemTags, ...stateTags };
     }
     this.applyFilter(false);
-  }
-
-  private normalizeTags(rawTags: unknown): Record<string, string[]> {
-    if (!this.isRecord(rawTags)) {
-      return {};
-    }
-
-    const tags: Record<string, string[]> = {};
-    for (const [itemId, values] of Object.entries(rawTags)) {
-      const normalizedItemId = String(itemId || '').trim();
-      if (!normalizedItemId || !Array.isArray(values)) continue;
-
-      const normalizedValues = Array.from(
-        new Set(
-          values.map((value) => String(value || '').trim()).filter((value) => value.length > 0),
-        ),
-      );
-
-      // An explicit empty array is a deletion tombstone. Dropping it would
-      // allow stale tags from the imported item payload to reappear when the
-      // server returns the updated draft state.
-      tags[normalizedItemId] = normalizedValues;
-    }
-
-    return tags;
   }
 
   private syncItemCommentCountSession(): void {

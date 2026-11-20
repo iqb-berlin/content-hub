@@ -4,14 +4,15 @@ import { JwtService } from "@nestjs/jwt";
 import { DataSource } from "typeorm";
 import * as request from "supertest";
 import {
-  Acp,
-  AcpAccessConfig,
-  AcpCredential,
-  AcpFile,
-  AcpUserRole,
+  Ap,
+  ApAccessConfig,
+  ApCredential,
+  ApFile,
+  ApUserRole,
   User,
 } from "../src/database/entities";
 import { UnitParserService } from "../src/files/unit-parser.service";
+import { parseVomd } from "../src/files/unit-file-parsing";
 import { ReviewManifestService } from "../src/review/review-manifest.service";
 import { mkdtemp, writeFile, rm } from "fs/promises";
 import { tmpdir } from "os";
@@ -22,7 +23,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
   let app: INestApplication,
     db: DataSource,
     server: any,
-    acpId: string,
+    apId: string,
     configId: string,
     temp: string;
   const tokens: Record<string, string> = {};
@@ -51,7 +52,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
     visible = ["system:itemId", "metadata:skill"],
   ) {
     const response = await request(server)
-      .patch(`/api/acp/${acpId}/item-explorer/draft`)
+      .patch(`/api/ap/${apId}/item-explorer/draft`)
       .set(headers("editor"))
       .send({
         baseVersion: version,
@@ -72,7 +73,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
   }
   async function publish() {
     const response = await request(server)
-      .post(`/api/acp/${acpId}/item-explorer/draft/save`)
+      .post(`/api/ap/${apId}/item-explorer/draft/save`)
       .set(headers("editor"))
       .send({ baseVersion: version })
       .expect(201);
@@ -88,6 +89,8 @@ describe("Published reviewer column boundary (HTTP)", () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(UnitParserService)
       .useValue({
+        parseVomd: (value: string) =>
+          parseVomd(value, false, { error: jest.fn() }),
         getItemRowKeysFromFiles: async () => new Set(["U_I"]),
         getItemListFromFiles: async () => ({
           items: [structuredClone(item)],
@@ -127,10 +130,10 @@ describe("Published reviewer column boundary (HTTP)", () => {
     await app.init();
     server = app.getHttpServer();
     db = app.get(DataSource);
-    const acp = await db.getRepository(Acp).save({
+    const ap = await db.getRepository(Ap).save({
       packageId: `columns-${Date.now()}`,
       name: "Column policy",
-      acpIndex: {
+      apIndex: {
         units: [
           {
             id: "U",
@@ -144,9 +147,9 @@ describe("Published reviewer column boundary (HTTP)", () => {
         ],
       },
     });
-    acpId = acp.id;
-    const config = await db.getRepository(AcpAccessConfig).save({
-      acpId,
+    apId = ap.id;
+    const config = await db.getRepository(ApAccessConfig).save({
+      apId,
       accessModel: "CREDENTIALS_LIST" as any,
       featureConfig: {
         enableItemList: true,
@@ -169,8 +172,8 @@ describe("Published reviewer column boundary (HTTP)", () => {
         username: `columns-${name}-${Date.now()}`,
         isAppAdmin: name === "admin",
       });
-      await db.getRepository(AcpUserRole).save({
-        acpId,
+      await db.getRepository(ApUserRole).save({
+        apId,
         userId: user.id,
         role: "READ_ONLY" as any,
         capabilities: grants,
@@ -183,7 +186,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
         isAppAdmin: user.isAppAdmin,
       });
     }
-    const credential = await db.getRepository(AcpCredential).save({
+    const credential = await db.getRepository(ApCredential).save({
       accessConfigId: configId,
       username: "columns-credential",
       passwordHash: "unused",
@@ -193,17 +196,75 @@ describe("Published reviewer column boundary (HTTP)", () => {
       sub: credential.id,
       username: credential.username,
       type: "credential",
-      acpId,
+      apId,
     });
     temp = await mkdtemp(join(tmpdir(), "reviewer-columns-"));
     for (const name of ["U.vomd", "U.xml", "P.html", "raw.json"]) {
       const filePath = join(temp, name);
       await writeFile(
         filePath,
-        name === "P.html" ? "<html>Player</html>" : "SECRET_RAW",
+        name === "P.html"
+          ? "<html>Player</html>"
+          : name === "U.vomd"
+            ? JSON.stringify({
+                profiles: [
+                  {
+                    entries: [
+                      ...Array.from({ length: 13 }, (_, i) => ({
+                        id: `hidden-${i}`,
+                        label: "Hidden",
+                        value: "SECRET_METADATA",
+                      })),
+                      {
+                        id: "custom",
+                        label: "Transkript",
+                        value: "SECRET_CUSTOM",
+                      },
+                      {
+                        id: "k6",
+                        label: "Nebengeräusche",
+                        value: "SECRET_NOISE",
+                      },
+                      {
+                        id: "iqb_transcript",
+                        label: "Transkript",
+                        value: "Zeile 1\nZeile 2",
+                      },
+                      {
+                        id: "iqb_copyright_original",
+                        label: "Transkript Original / Text Original",
+                        value: "Originaltext der Leseaufgabe",
+                      },
+                      {
+                        id: "k6",
+                        label: "Transkript zur Aufgabe",
+                        value: "Legacy-Hörtext",
+                      },
+                      {
+                        id: "iqb_final_transcript",
+                        label: "Transkript zur Aufgabe",
+                        value: "  ",
+                      },
+                    ],
+                  },
+                ],
+                items: [
+                  {
+                    id: "I",
+                    profiles: [
+                      {
+                        entries: [
+                          { id: "iqb_transcript", value: "SECRET_ITEM" },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              })
+            : "SECRET_RAW",
       );
-      const file = await db.getRepository(AcpFile).save({
-        acpId,
+      const file = await db.getRepository(ApFile).save({
+        apId,
         originalName: name,
         relativePath: name,
         filePath,
@@ -214,19 +275,19 @@ describe("Published reviewer column boundary (HTTP)", () => {
       fileIds[name] = file.id;
     }
     const state = await request(server)
-      .get(`/api/view/acp/${acpId}/item-explorer/state`)
+      .get(`/api/view/ap/${apId}/item-explorer/state`)
       .set(headers("editor"))
       .expect(200);
     version = state.body.version;
   });
   afterAll(async () => {
-    if (db && acpId) await db.getRepository(Acp).delete(acpId);
+    if (db && apId) await db.getRepository(Ap).delete(apId);
     if (app) await app.close();
     if (temp) await rm(temp, { recursive: true, force: true });
   });
 
   it("keeps defaults and drafts readable until publish, then enforces users, credentials and admin previews", async () => {
-    const path = `/api/acp/${acpId}/files/item-list`;
+    const path = `/api/ap/${apId}/files/item-list`;
     const before = await request(server)
       .get(path)
       .set(headers("reader"))
@@ -240,7 +301,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
     expect(draft.body.items[0].empiricalDifficulty).toBe(123456);
     await publish();
     const reviewerState = await request(server)
-      .get(`/api/view/acp/${acpId}/item-explorer/state`)
+      .get(`/api/view/ap/${apId}/item-explorer/state`)
       .set(headers("reader"))
       .expect(200);
     expect(
@@ -274,7 +335,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
     }
     await request(server).get(path).set(headers("reviewer")).expect(403);
     await request(server)
-      .patch(`/api/acp/${acpId}/item-explorer/draft`)
+      .patch(`/api/ap/${apId}/item-explorer/draft`)
       .set(headers("reader"))
       .send({
         changeType: "BYPASS",
@@ -287,13 +348,13 @@ describe("Published reviewer column boundary (HTTP)", () => {
 
   it("covers alternate lists, states, metadata, raw files, archives and filter side channels", async () => {
     for (const path of [
-      `/api/view/acp/${acpId}/items`,
-      `/api/view/acp/${acpId}/units/U`,
-      `/api/acp/${acpId}/items`,
-      `/api/acp/${acpId}/items/U_I`,
-      `/api/view/acp/${acpId}/item-explorer/state`,
-      `/api/acp/${acpId}/files/unit-view/U`,
-      "/api/acp",
+      `/api/view/ap/${apId}/items`,
+      `/api/view/ap/${apId}/units/U`,
+      `/api/ap/${apId}/items`,
+      `/api/ap/${apId}/items/U_I`,
+      `/api/view/ap/${apId}/item-explorer/state`,
+      `/api/ap/${apId}/files/unit-view/U`,
+      "/api/ap",
     ]) {
       const response = await request(server)
         .get(path)
@@ -306,28 +367,123 @@ describe("Published reviewer column boundary (HTTP)", () => {
     for (const name of ["U.vomd", "U.xml", "raw.json"])
       for (const action of ["download", "preview"]) {
         await request(server)
-          .get(`/api/acp/${acpId}/files/${fileIds[name]}/${action}`)
+          .get(`/api/ap/${apId}/files/${fileIds[name]}/${action}`)
           .set(headers("reader"))
           .expect(403);
       }
     await request(server)
-      .get(`/api/acp/${acpId}/files/${fileIds["P.html"]}/download`)
+      .get(`/api/ap/${apId}/files/${fileIds["P.html"]}/download`)
       .set(headers("reader"))
       .expect(200);
     for (const path of [
-      `/api/view/acp/${acpId}/index`,
-      `/api/view/acp/${acpId}/index/export`,
-      `/api/acp/${acpId}/files?format=zip&unitId=U`,
-      `/api/acp/${acpId}/items?sortBy=empiricalDifficulty`,
-      `/api/acp/${acpId}/items?filter=Secret`,
+      `/api/view/ap/${apId}/index`,
+      `/api/view/ap/${apId}/index/export`,
+      `/api/ap/${apId}/files?format=zip&unitId=U`,
+      `/api/ap/${apId}/items?sortBy=empiricalDifficulty`,
+      `/api/ap/${apId}/items?filter=Secret`,
     ]) {
       await request(server).get(path).set(headers("reader")).expect(403);
     }
   });
 
+  it("releases only booklet transcripts to review participants when metadata and reviewer columns are hidden", async () => {
+    await patch(true);
+    await publish();
+    const configRepo = db.getRepository(ApAccessConfig);
+    const config = await configRepo.findOneByOrFail({
+      id: configId,
+    });
+    const manifests = app.get(ReviewManifestService);
+    const manifest = jest.spyOn(manifests, "getManifest").mockResolvedValue({
+      booklets: [
+        {
+          id: "B",
+          name: "Booklet",
+          children: [],
+          units: [
+            {
+              id: "U",
+              name: "",
+              occurrenceId: "one",
+              linkId: "one",
+              blockPath: [],
+            },
+          ],
+        },
+      ],
+      units: [],
+      issues: [],
+    });
+    const reviewPath = `/api/view/ap/${apId}/review/booklets/B/units`;
+    const transcriptPath = `${reviewPath}/U/transcripts`;
+    try {
+      await request(server)
+        .get(transcriptPath)
+        .set(headers("reviewer"))
+        .expect(403);
+      await configRepo.update(configId, {
+        featureConfig: {
+          ...config.featureConfig,
+          enableReview: true,
+          hideReviewMetadata: true,
+        },
+      });
+      const response = await request(server)
+        .get(transcriptPath)
+        .set(headers("reviewer"))
+        .expect(200);
+      expect(response.headers["cache-control"]).toContain("no-store");
+      expect(response.body).toEqual([
+        {
+          id: "iqb_transcript",
+          label: "Transkript",
+          value: "Zeile 1\nZeile 2",
+        },
+        {
+          id: "iqb_copyright_original",
+          label: "Transkript Original / Text Original",
+          value: "Originaltext der Leseaufgabe",
+        },
+        { id: "k6", label: "Transkript zur Aufgabe", value: "Legacy-Hörtext" },
+      ]);
+      await request(server)
+        .get(transcriptPath)
+        .set(headers("reader"))
+        .expect(403);
+      await request(server)
+        .get(transcriptPath)
+        .set(headers("credential"))
+        .expect(403);
+      await request(server)
+        .get(`${reviewPath}/unknown/transcripts`)
+        .set(headers("reviewer"))
+        .expect(404);
+      await request(server)
+        .get(transcriptPath.replace("/booklets/B/", "/booklets/unknown/"))
+        .set(headers("reviewer"))
+        .expect(404);
+      const ordinary = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(headers("reviewer"))
+        .expect(200);
+      expect(
+        ordinary.body.dependencies.map((entry: { type: string }) => entry.type),
+      ).toEqual(["PLAYER"]);
+      for (const action of ["preview", "download"]) {
+        await request(server)
+          .get(`/api/ap/${apId}/files/${fileIds["U.vomd"]}/${action}`)
+          .set(headers("reviewer"))
+          .expect(403);
+      }
+    } finally {
+      manifest.mockRestore();
+      await configRepo.save(config);
+    }
+  });
+
   it("keeps own data and filters XLSX and collection CSV columns before serialization", async () => {
     await request(server)
-      .patch(`/api/view/acp/${acpId}/items/preferences/row-data`)
+      .patch(`/api/view/ap/${apId}/items/preferences/row-data`)
       .set(headers("reader"))
       .send({
         rowKey: "U_I",
@@ -336,7 +492,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
       })
       .expect(200);
     const xlsx = await request(server)
-      .post(`/api/view/acp/${acpId}/items/preferences/export.xlsx`)
+      .post(`/api/view/ap/${apId}/items/preferences/export.xlsx`)
       .set(headers("reader"))
       .send({ rowKeys: ["U_I"], perspective: "editor" })
       .buffer(true)
@@ -355,7 +511,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
       /123456|123457|Secret task|Itemschwierigkeit|BiSta/,
     );
     const created = await request(server)
-      .post(`/api/view/acp/${acpId}/items/collections`)
+      .post(`/api/view/ap/${apId}/items/collections`)
       .set(headers("reader"))
       .send({ name: "My collection" })
       .expect(201);
@@ -363,7 +519,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
       (c: any) => c.name === "My collection",
     ).id;
     await request(server)
-      .patch(`/api/view/acp/${acpId}/items/collections/${id}`)
+      .patch(`/api/view/ap/${apId}/items/collections/${id}`)
       .set(headers("reader"))
       .send({
         baseVersion: created.body.collections.find((c: any) => c.id === id)
@@ -373,7 +529,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
       })
       .expect(200);
     await request(server)
-      .post(`/api/view/acp/${acpId}/items/collections/${id}/export.csv`)
+      .post(`/api/view/ap/${apId}/items/collections/${id}/export.csv`)
       .set(headers("reader"))
       .expect(201)
       .expect((response) => {
@@ -387,7 +543,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
   it("keeps the published restriction when discarding and restores released defaults on publish", async () => {
     await patch(false);
     const state = await request(server)
-      .get(`/api/view/acp/${acpId}/item-explorer/state`)
+      .get(`/api/view/ap/${apId}/item-explorer/state`)
       .set(headers("reader"))
       .expect(200);
     expect(state.body.draftState).toEqual(state.body.publishedState);
@@ -396,7 +552,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
         .restrictReviewerColumnsToManagerSelection,
     ).toBe(true);
     const discarded = await request(server)
-      .post(`/api/acp/${acpId}/item-explorer/draft/discard`)
+      .post(`/api/ap/${apId}/item-explorer/draft/discard`)
       .set(headers("editor"))
       .send({ baseVersion: version })
       .expect(201);
@@ -404,33 +560,33 @@ describe("Published reviewer column boundary (HTTP)", () => {
     await patch(true, ["system:itemId", "system:empiricalDifficulty"]);
     await publish();
     const released = await request(server)
-      .get(`/api/acp/${acpId}/files/item-list`)
+      .get(`/api/ap/${apId}/files/item-list`)
       .set(headers("reader"))
       .expect(200);
     expect(released.body.items[0].empiricalDifficulty).toBe(123456);
     expect(released.body.items[0]).not.toHaveProperty("bista");
     await db
-      .getRepository(AcpAccessConfig)
+      .getRepository(ApAccessConfig)
       .update(configId, { accessModel: "PUBLIC" as any });
     const publicView = await request(server)
-      .get(`/api/acp/${acpId}/files/item-list`)
+      .get(`/api/ap/${apId}/files/item-list`)
       .expect(200);
     expect(publicView.body.items[0]).not.toHaveProperty("bista");
     await patch(false);
     await publish();
     const unrestricted = await request(server)
-      .get(`/api/acp/${acpId}/files/item-list`)
+      .get(`/api/ap/${apId}/files/item-list`)
       .expect(200);
     expect(unrestricted.body.items[0].bista).toBe(123457);
   });
   it("applies booklet label visibility to start-page, sequence-list and detail endpoints", async () => {
     await db
-      .getRepository(AcpAccessConfig)
+      .getRepository(ApAccessConfig)
       .update(configId, { accessModel: "CREDENTIALS_LIST" as any });
-    const acp = await db.getRepository(Acp).findOneByOrFail({ id: acpId });
-    await db.getRepository(Acp).update(acpId, {
-      acpIndex: {
-        ...acp.acpIndex,
+    const ap = await db.getRepository(Ap).findOneByOrFail({ id: apId });
+    await db.getRepository(Ap).update(apId, {
+      apIndex: {
+        ...ap.apIndex,
         assessmentParts: [
           {
             id: "part",
@@ -471,7 +627,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
             "/sequences/M",
           ]) {
             const response = await request(server)
-              .get(`/api/view/acp/${acpId}${suffix}`)
+              .get(`/api/view/ap/${apId}${suffix}`)
               .set(headers(actor))
               .expect(200);
             expect(

@@ -73,6 +73,18 @@ export default defineConfig({
           functions: 100,
           lines: 100,
         },
+        'src/app/views/item-explorer/item-explorer-history.ts': {
+          statements: 100,
+          branches: 95,
+          functions: 100,
+          lines: 100,
+        },
+        'src/app/views/item-explorer/item-explorer-history.service.ts': {
+          statements: 100,
+          branches: 95,
+          functions: 100,
+          lines: 100,
+        },
         'src/app/views/item-explorer/item-explorer-personal-data.service.ts': {
           statements: 79.75,
           branches: 69.43,
@@ -84,6 +96,18 @@ export default defineConfig({
           branches: 69.56,
           functions: 97.14,
           lines: 90.54,
+        },
+        'src/app/views/item-explorer/item-explorer-response-state.service.ts': {
+          statements: 100,
+          branches: 95,
+          functions: 100,
+          lines: 100,
+        },
+        'src/app/views/item-explorer/item-explorer-shared-state.ts': {
+          statements: 100,
+          branches: 95,
+          functions: 100,
+          lines: 100,
         },
         'src/app/views/item-explorer/item-explorer-table.service.ts': {
           statements: 86.78,

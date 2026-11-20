@@ -5,7 +5,7 @@ import { PendingPersonalSessionStorageService } from '../../core/services/pendin
 import { ItemExplorerBrowser } from './item-explorer-browser.service';
 
 const context = {
-  acpId: 'a',
+  apId: 'a',
   identity: 'user-a',
   perspective: 'editor' as const,
   canExportAll: true,

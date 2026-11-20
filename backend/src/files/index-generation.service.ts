@@ -11,9 +11,9 @@ import * as path from "path";
 import { isDeepStrictEqual } from "node:util";
 import { XMLParser } from "fast-xml-parser";
 import { Repository } from "typeorm";
-import { Acp, AcpFile } from "../database/entities";
-import { AcpIndexService } from "../acp/acp-index.service";
-import { AcpIndexValidationReport } from "../acp/acp-index.types";
+import { Ap, ApFile } from "../database/entities";
+import { ApIndexService } from "../ap/ap-index.service";
+import { ApIndexValidationReport } from "../ap/ap-index.types";
 import { SnapshotsService } from "../snapshots/snapshots.service";
 import { normalizePartId } from "./relative-path";
 
@@ -24,7 +24,7 @@ export interface IndexGenerationOptions {
 
 export interface IndexGenerationPreview {
   candidateIndex: Record<string, unknown>;
-  validation: AcpIndexValidationReport;
+  validation: ApIndexValidationReport;
   sourceRevision: string;
   sourceUpdatedAt: string;
   assignments: Record<string, string>;
@@ -53,20 +53,20 @@ export class IndexGenerationService {
   });
 
   constructor(
-    @InjectRepository(Acp) private readonly acpRepository: Repository<Acp>,
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
-    private readonly acpIndexService: AcpIndexService,
+    @InjectRepository(Ap) private readonly apRepository: Repository<Ap>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
+    private readonly apIndexService: ApIndexService,
     private readonly snapshotsService: SnapshotsService,
   ) {}
 
   async preview(
-    acpId: string,
+    apId: string,
     options: IndexGenerationOptions = {},
   ): Promise<IndexGenerationPreview> {
-    const acp = await this.getAcp(acpId);
+    const ap = await this.getAp(apId);
     const files = await this.fileRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { relativePath: "ASC" },
     });
     const sourceRevision = await this.sourceRevision(files);
@@ -80,7 +80,7 @@ export class IndexGenerationService {
       (file.relativePath || file.originalName).toLowerCase().endsWith(".xml"),
     );
     const parsedBooklets: Array<{
-      file: AcpFile;
+      file: ApFile;
       id: string;
       label: string;
       unitIds: string[];
@@ -218,8 +218,8 @@ export class IndexGenerationService {
         bookletModules,
         instruments,
       };
-      const existingPart = Array.isArray(acp.acpIndex?.assessmentParts)
-        ? acp.acpIndex.assessmentParts.find((part: any) => part?.id === partId)
+      const existingPart = Array.isArray(ap.apIndex?.assessmentParts)
+        ? ap.apIndex.assessmentParts.find((part: any) => part?.id === partId)
         : undefined;
       assessmentParts.push(
         existingPart
@@ -231,8 +231,8 @@ export class IndexGenerationService {
     const generatedPartIds = new Set(
       assessmentParts.map((part) => String(part.id)),
     );
-    for (const existingPart of Array.isArray(acp.acpIndex?.assessmentParts)
-      ? acp.acpIndex.assessmentParts
+    for (const existingPart of Array.isArray(ap.apIndex?.assessmentParts)
+      ? ap.apIndex.assessmentParts
       : []) {
       if (!generatedPartIds.has(String(existingPart?.id))) {
         assessmentParts.push(existingPart);
@@ -240,8 +240,8 @@ export class IndexGenerationService {
     }
 
     const candidateIndex: Record<string, unknown> = {
-      ...acp.acpIndex,
-      packageId: acp.packageId,
+      ...ap.apIndex,
+      packageId: ap.packageId,
       status: "IN_DEVELOPMENT",
       ...(assessmentParts.length ? { assessmentParts } : {}),
     };
@@ -250,7 +250,7 @@ export class IndexGenerationService {
       const root = candidateIndex[field];
       if (!Array.isArray(root)) continue;
       const byId = new Map<string, any[]>();
-      for (const part of this.asArray<any>(acp.acpIndex.assessmentParts)) {
+      for (const part of this.asArray<any>(ap.apIndex.assessmentParts)) {
         for (const entry of this.asArray(part?.[field])) {
           const matches = byId.get(entry?.id) || [];
           matches.push(entry);
@@ -265,8 +265,8 @@ export class IndexGenerationService {
         delete candidateIndex[field];
     }
     if (!assessmentParts.length) delete candidateIndex.assessmentParts;
-    const validation = await this.acpIndexService.validateCandidate(
-      acpId,
+    const validation = await this.apIndexService.validateCandidate(
+      apId,
       candidateIndex,
     );
     const uniqueUnassigned = Array.from(new Set(unassignedUnitPaths))
@@ -276,12 +276,12 @@ export class IndexGenerationService {
       candidateIndex,
       validation,
       sourceRevision,
-      sourceUpdatedAt: acp.updatedAt.toISOString(),
+      sourceUpdatedAt: ap.updatedAt.toISOString(),
       assignments,
       unassignedUnitPaths: uniqueUnassigned,
       ambiguousBooklets,
       warnings,
-      diff: this.diff(acp.acpIndex, candidateIndex),
+      diff: this.diff(ap.apIndex, candidateIndex),
       canApply:
         validation.valid &&
         uniqueUnassigned.length === 0 &&
@@ -290,16 +290,16 @@ export class IndexGenerationService {
   }
 
   async apply(
-    acpId: string,
+    apId: string,
     input: IndexGenerationOptions & {
       sourceRevision: string;
       expectedUpdatedAt: string;
     },
   ): Promise<{
     index: Record<string, unknown>;
-    validation: AcpIndexValidationReport;
+    validation: ApIndexValidationReport;
   }> {
-    const files = await this.fileRepository.find({ where: { acpId } });
+    const files = await this.fileRepository.find({ where: { apId } });
     const actualRevision = await this.sourceRevision(files);
     if (actualRevision !== input.sourceRevision)
       throw new ConflictException({
@@ -307,7 +307,7 @@ export class IndexGenerationService {
         expectedSourceRevision: input.sourceRevision,
         actualSourceRevision: actualRevision,
       });
-    const preview = await this.preview(acpId, input);
+    const preview = await this.preview(apId, input);
     if (preview.sourceRevision !== input.sourceRevision) {
       throw new ConflictException({
         message: "Files changed while index generation was being prepared",
@@ -321,19 +321,19 @@ export class IndexGenerationService {
           "Index generation preview has unresolved assignments or schema errors",
         preview,
       });
-    await this.snapshotsService.create(acpId, "Generated ACP index from files");
-    const saved = await this.acpIndexService.saveCandidate(
-      acpId,
+    await this.snapshotsService.create(apId, "Generated AP index from files");
+    const saved = await this.apIndexService.saveCandidate(
+      apId,
       preview.candidateIndex,
       input.expectedUpdatedAt,
     );
-    return { index: saved.acpIndex, validation: preview.validation };
+    return { index: saved.apIndex, validation: preview.validation };
   }
 
   private buildUnit(
     parsed: any,
-    file: AcpFile,
-    files: AcpFile[],
+    file: ApFile,
+    files: ApFile[],
     warnings: string[],
   ): any | null {
     const metadata = parsed.Metadata || {};
@@ -410,10 +410,10 @@ export class IndexGenerationService {
 
   private addDependency(
     target: any[],
-    source: AcpFile,
+    source: ApFile,
     reference: string,
     type: string,
-    files: AcpFile[],
+    files: ApFile[],
     warnings: string[],
   ): void {
     const sourceDir = path.posix.dirname(
@@ -467,7 +467,7 @@ export class IndexGenerationService {
   }
 
   private async parseXmlFile(
-    file: AcpFile,
+    file: ApFile,
     warnings: string[],
   ): Promise<any | null> {
     try {
@@ -480,7 +480,7 @@ export class IndexGenerationService {
     }
   }
 
-  private async sourceRevision(files: AcpFile[]): Promise<string> {
+  private async sourceRevision(files: ApFile[]): Promise<string> {
     const entries = await Promise.all(
       files.map(async (file) => {
         const checksum =
@@ -608,9 +608,9 @@ export class IndexGenerationService {
       .join(" ");
   }
 
-  private async getAcp(acpId: string): Promise<Acp> {
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) throw new NotFoundException(`ACP with ID ${acpId} not found`);
-    return acp;
+  private async getAp(apId: string): Promise<Ap> {
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) throw new NotFoundException(`AP with ID ${apId} not found`);
+    return ap;
   }
 }

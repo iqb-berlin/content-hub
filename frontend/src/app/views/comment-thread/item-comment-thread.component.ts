@@ -29,7 +29,7 @@ interface CommentThreadGroup {
   styleUrl: './item-comment-thread.component.css',
 })
 export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
-  @Input() acpId = '';
+  @Input() apId = '';
   @Input() targetType: ReviewCommentTarget['targetType'] = 'ITEM';
   @Input() bookletId = '';
   @Input() bookletName = '';
@@ -133,6 +133,10 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     return (this.snapshot?.categories || []).filter((category) => !category.archived);
   }
 
+  get availableGroups() {
+    return (this.snapshot?.groups || []).filter((group) => !group.archived);
+  }
+
   unavailableCategoryName(id: string): string {
     if (!id || this.availableCategories.some((category) => category.id === id)) return '';
     const category = this.snapshot?.categories?.find((entry) => entry.id === id);
@@ -156,7 +160,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges): void {
     const targetChanged =
-      changes['acpId'] ||
+      changes['apId'] ||
       changes['targetType'] ||
       changes['bookletId'] ||
       changes['unitId'] ||
@@ -195,7 +199,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   }
 
   get hasTarget(): boolean {
-    if (!this.enabled || !this.acpId) return false;
+    if (!this.enabled || !this.apId) return false;
     if (this.targetType === 'BOOKLET') return Boolean(this.bookletId);
     if (this.targetType === 'UNIT') return Boolean(this.unitId);
     return Boolean(this.unitId && this.itemId);
@@ -321,20 +325,22 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     this.loading = true;
     const request =
       this.targetType === 'ITEM'
-        ? this.api.getItemCommentThread(this.acpId, this.unitId, this.itemId, this.snapshot)
-        : this.api.getReviewCommentThread(this.acpId, this.target, this.snapshot);
+        ? this.api.getItemCommentThread(this.apId, this.unitId, this.itemId, this.snapshot)
+        : this.api.getReviewCommentThread(this.apId, this.target, this.snapshot);
     this.threadRequest = request.pipe(timeout(10_000), takeUntil(this.destroy$)).subscribe({
       next: (snapshot) => {
         if (token !== this.requestToken) return;
+        const previousGroupId = this.drafts.selectedGroups.get(this.targetKey);
         this.snapshot = snapshot;
         this.accessDenied = false;
         if (snapshot.visibilityMode !== 'GROUP') this.selectedGroupId = '';
         if (
           this.selectedGroupId &&
-          !snapshot.groups?.some((group) => group.id === this.selectedGroupId && !group.archived)
+          !this.availableGroups.some((group) => group.id === this.selectedGroupId)
         )
           this.selectedGroupId = '';
-        if (!this.selectedGroupId && !this.newCommentText)
+        // An absent entry means this is the first snapshot for the draft's target.
+        if (!this.selectedGroupId && (!this.newCommentText || previousGroupId === undefined))
           this.selectedGroupId = snapshot.defaultGroupId || '';
 
         this.countChanged.emit({
@@ -376,7 +382,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
       return;
     }
     const targetKey = this.targetKey;
-    const acpId = this.acpId;
+    const apId = this.apId;
     const replyDraftKey = parentCommentId ? this.replyDraftKey(parentCommentId, targetKey) : '';
     const text = parentCommentId ? this.replyDrafts.get(replyDraftKey) || '' : this.newCommentText;
     if (!text.trim() || this.busy) return;
@@ -391,12 +397,12 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     };
     const request =
       this.targetType === 'ITEM'
-        ? this.api.createItemComment(acpId, {
+        ? this.api.createItemComment(apId, {
             unitId: this.unitId,
             itemId: this.itemId,
             ...input,
           })
-        : this.api.createReviewComment(acpId, { ...this.target, ...input });
+        : this.api.createReviewComment(apId, { ...this.target, ...input });
     request.pipe(takeUntil(this.destroy$), takeUntil(this.sessionChanged$)).subscribe({
       next: () => {
         if (parentCommentId) {
@@ -452,7 +458,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     const targetKey = this.targetKey;
     this.busy = true;
     this.api
-      .updateItemComment(this.acpId, comment.id, {
+      .updateItemComment(this.apId, comment.id, {
         commentText: this.editText.trim(),
         ...(this.editCategoryId !== (this.editingComment?.categoryId || '')
           ? { categoryId: this.editCategoryId || null }
@@ -482,7 +488,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     const targetKey = this.targetKey;
     this.busy = true;
     this.api
-      .deleteItemComment(this.acpId, comment.id, comment.version)
+      .deleteItemComment(this.apId, comment.id, comment.version)
       .pipe(takeUntil(this.destroy$), takeUntil(this.sessionChanged$))
       .subscribe({
         next: () => {
@@ -504,7 +510,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
     const targetKey = this.targetKey;
     this.busy = true;
     this.api
-      .setCommentVote(this.acpId, comment.id, comment.myVote === value ? null : value)
+      .setCommentVote(this.apId, comment.id, comment.myVote === value ? null : value)
       .pipe(timeout(10_000), takeUntil(this.destroy$), takeUntil(this.sessionChanged$))
       .subscribe({
         next: () => {
@@ -548,7 +554,7 @@ export class ItemCommentThreadComponent implements OnChanges, OnDestroy {
   }
 
   private get targetKey(): string {
-    return `${this.acpId}\u0000${this.targetType}\u0000${this.bookletId}\u0000${this.unitId}\u0000${this.itemId}`;
+    return `${this.apId}\u0000${this.targetType}\u0000${this.bookletId}\u0000${this.unitId}\u0000${this.itemId}`;
   }
 
   private get target(): ReviewCommentTarget {

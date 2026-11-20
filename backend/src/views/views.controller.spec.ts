@@ -12,8 +12,8 @@ describe("ViewsController", () => {
       getPublicSettings: jest
         .fn()
         .mockResolvedValue({ theme: { primary: "#000" } }),
-      getPublicAcps: jest.fn().mockResolvedValue([{ id: "acp-1" }]),
-      getAcpStartPage: jest.fn().mockResolvedValue({
+      getPublicAps: jest.fn().mockResolvedValue([{ id: "ap-1" }]),
+      getApStartPage: jest.fn().mockResolvedValue({
         units: [{ id: "unit-1" }],
         sequences: [{ id: "seq-1" }],
         featureConfig: {
@@ -26,7 +26,7 @@ describe("ViewsController", () => {
           enableItemCollections: true,
         },
       }),
-      getAcpIndex: jest.fn().mockResolvedValue({ packageId: "pkg-1" }),
+      getApIndex: jest.fn().mockResolvedValue({ packageId: "pkg-1" }),
       getUnitViewData: jest.fn().mockResolvedValue({ unitId: "unit-1" }),
       getItemList: jest.fn().mockResolvedValue([{ itemId: "item-1" }]),
       getItemPreferences: jest
@@ -100,30 +100,28 @@ describe("ViewsController", () => {
     );
   });
 
-  it("returns public settings and ACP list", async () => {
+  it("returns public settings and AP list", async () => {
     await expect(controller.getPublicSettings()).resolves.toEqual({
       theme: { primary: "#000" },
     });
-    await expect(controller.getPublicAcps()).resolves.toEqual([
-      { id: "acp-1" },
-    ]);
+    await expect(controller.getPublicAps()).resolves.toEqual([{ id: "ap-1" }]);
   });
 
-  it("returns ACP start page and ACP index", async () => {
+  it("returns AP start page and AP index", async () => {
     await expect(
-      controller.getAcpStartPage("acp-1", { params: { acpId: "acp-1" } }),
+      controller.getApStartPage("ap-1", { params: { apId: "ap-1" } }),
     ).resolves.toEqual(expect.objectContaining({ units: [{ id: "unit-1" }] }));
-    await expect(controller.getAcpIndex("acp-1")).resolves.toEqual({
+    await expect(controller.getApIndex("ap-1")).resolves.toEqual({
       packageId: "pkg-1",
     });
   });
 
-  it("exports ACP index for managers and sets response headers", async () => {
+  it("exports AP index for managers and sets response headers", async () => {
     const res = { setHeader: jest.fn(), json: jest.fn() } as any;
 
-    await controller.exportAcpIndex(
-      "acp-1",
-      { acpCapabilities: ["item-explorer:edit"], acpAccessLevel: "MANAGER" },
+    await controller.exportApIndex(
+      "ap-1",
+      { apCapabilities: ["item-explorer:edit"], apAccessLevel: "MANAGER" },
       res,
     );
 
@@ -133,121 +131,117 @@ describe("ViewsController", () => {
     );
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="acp-index-acp-1.json"',
+      'attachment; filename="ap-index-ap-1.json"',
     );
     expect(res.json).toHaveBeenCalledWith({ packageId: "pkg-1" });
   });
 
-  it("blocks ACP index export when feature is disabled for non-managers", async () => {
-    viewsService.getAcpStartPage.mockResolvedValueOnce({
+  it("blocks AP index export when feature is disabled for non-managers", async () => {
+    viewsService.getApStartPage.mockResolvedValueOnce({
       featureConfig: { allowIndexDownload: false },
     });
 
     await expect(
-      controller.exportAcpIndex(
-        "acp-1",
-        { acpAccessLevel: "PUBLIC" },
-        {} as any,
-      ),
+      controller.exportApIndex("ap-1", { apAccessLevel: "PUBLIC" }, {} as any),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it("returns units and supports empty fallback", async () => {
-    await expect(controller.getUnits("acp-1")).resolves.toEqual([
+    await expect(controller.getUnits("ap-1")).resolves.toEqual([
       { id: "unit-1" },
     ]);
 
-    viewsService.getAcpStartPage.mockResolvedValueOnce({});
-    await expect(controller.getUnits("acp-1")).resolves.toEqual([]);
+    viewsService.getApStartPage.mockResolvedValueOnce({});
+    await expect(controller.getUnits("ap-1")).resolves.toEqual([]);
   });
 
   it("blocks unit view when feature is disabled for non-managers", async () => {
-    viewsService.getAcpStartPage.mockResolvedValueOnce({
+    viewsService.getApStartPage.mockResolvedValueOnce({
       featureConfig: { enableUnitView: false },
     });
 
     await expect(
-      controller.getUnit("acp-1", "unit-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getUnit("ap-1", "unit-1", { apAccessLevel: "PUBLIC" }),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it("uses default allow=true for unit view when flag is unset", async () => {
-    viewsService.getAcpStartPage.mockResolvedValueOnce({
+    viewsService.getApStartPage.mockResolvedValueOnce({
       featureConfig: {},
     });
 
     await expect(
-      controller.getUnit("acp-1", "unit-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getUnit("ap-1", "unit-1", { apAccessLevel: "PUBLIC" }),
     ).resolves.toEqual({ unitId: "unit-1" });
   });
 
   it("returns unit view for managers regardless of feature config", async () => {
-    viewsService.getAcpStartPage.mockResolvedValueOnce({
+    viewsService.getApStartPage.mockResolvedValueOnce({
       featureConfig: { enableUnitView: false },
     });
 
     await expect(
-      controller.getUnit("acp-1", "unit-1", {
-        acpCapabilities: ["item-explorer:edit"],
-        acpAccessLevel: "MANAGER",
+      controller.getUnit("ap-1", "unit-1", {
+        apCapabilities: ["item-explorer:edit"],
+        apAccessLevel: "MANAGER",
       }),
     ).resolves.toEqual({ unitId: "unit-1" });
   });
 
   it("uses default allow=true for item list when flag is unset", async () => {
-    viewsService.getAcpStartPage.mockResolvedValueOnce({ featureConfig: {} });
+    viewsService.getApStartPage.mockResolvedValueOnce({ featureConfig: {} });
 
     await expect(
-      controller.getItems("acp-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getItems("ap-1", { apAccessLevel: "PUBLIC" }),
     ).resolves.toEqual([{ itemId: "item-1" }]);
-    expect(viewsService.getItemList).toHaveBeenCalledWith("acp-1", false);
+    expect(viewsService.getItemList).toHaveBeenCalledWith("ap-1", false);
   });
 
   it("uses the active Item Explorer state for manager item lists", async () => {
-    await controller.getItems("acp-1", {
-      acpCapabilities: ["item-explorer:edit"],
-      acpAccessLevel: "MANAGER",
+    await controller.getItems("ap-1", {
+      apCapabilities: ["item-explorer:edit"],
+      apAccessLevel: "MANAGER",
     });
 
-    expect(viewsService.getItemList).toHaveBeenCalledWith("acp-1", true);
+    expect(viewsService.getItemList).toHaveBeenCalledWith("ap-1", true);
   });
 
   it("blocks item list when explicitly disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValueOnce({
+    viewsService.getApStartPage.mockResolvedValueOnce({
       featureConfig: { enableItemList: false },
     });
 
     await expect(
-      controller.getItems("acp-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getItems("ap-1", { apAccessLevel: "PUBLIC" }),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it("returns item explorer state with edit flag derived from access level", async () => {
-    await controller.getItemExplorerState("acp-1", {
-      acpCapabilities: ["item-explorer:edit"],
-      acpAccessLevel: "MANAGER",
+    await controller.getItemExplorerState("ap-1", {
+      apCapabilities: ["item-explorer:edit"],
+      apAccessLevel: "MANAGER",
     });
     expect(itemExplorerStateService.getStateForViewer).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       true,
     );
 
-    await controller.getItemExplorerState("acp-1", {
-      acpAccessLevel: "PUBLIC",
+    await controller.getItemExplorerState("ap-1", {
+      apAccessLevel: "PUBLIC",
     });
     expect(itemExplorerStateService.getStateForViewer).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       false,
     );
   });
 
   it("returns empty preferences when persistence is disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValueOnce({
+    viewsService.getApStartPage.mockResolvedValueOnce({
       featureConfig: { persistUserPreferences: false },
     });
 
     const result = await controller.getItemPreferences(
-      "acp-1",
+      "ap-1",
       { user: { sub: "u-1" } },
       "item-list",
     );
@@ -259,7 +253,7 @@ describe("ViewsController", () => {
   it("loads and saves preferences when persistence is enabled", async () => {
     await expect(
       controller.getItemPreferences(
-        "acp-1",
+        "ap-1",
         { user: { sub: "u-1" } },
         "item-list",
       ),
@@ -267,7 +261,7 @@ describe("ViewsController", () => {
 
     await expect(
       controller.saveItemPreferences(
-        "acp-1",
+        "ap-1",
         { viewId: "item-list", ui: { filter: "x" }, tags: { item2: ["B"] } },
         { user: { sub: "u-1" } },
       ),
@@ -275,7 +269,7 @@ describe("ViewsController", () => {
   });
 
   it("rejects full-map personal Explorer saves", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: {
         persistUserPreferences: false,
         enablePersonalItemData: true,
@@ -284,7 +278,7 @@ describe("ViewsController", () => {
 
     await expect(
       controller.saveItemPreferences(
-        "acp-1",
+        "ap-1",
         { viewId: "item-explorer", rowData: { "uuid::1": { note: "mine" } } },
         { user: { sub: "u-1" } },
       ),
@@ -295,7 +289,7 @@ describe("ViewsController", () => {
   it.each(["item-explorer", " item-explorer "])(
     "rejects generic %s saves even when row data is omitted",
     async (viewId) => {
-      viewsService.getAcpStartPage.mockResolvedValue({
+      viewsService.getApStartPage.mockResolvedValue({
         featureConfig: {
           persistUserPreferences: true,
           enablePersonalItemData: true,
@@ -304,7 +298,7 @@ describe("ViewsController", () => {
 
       await expect(
         controller.saveItemPreferences(
-          "acp-1",
+          "ap-1",
           { viewId, ui: { filter: "mine" } },
           { user: { sub: "u-1" } },
         ),
@@ -314,7 +308,7 @@ describe("ViewsController", () => {
   );
 
   it("patches one personal Explorer row when the feature is enabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: {
         persistUserPreferences: false,
         enablePersonalItemData: true,
@@ -322,7 +316,7 @@ describe("ViewsController", () => {
     });
 
     await controller.patchPersonalItemRow(
-      "acp-1",
+      "ap-1",
       {
         rowKey: "uuid::1",
         rowData: { note: "mine" },
@@ -332,7 +326,7 @@ describe("ViewsController", () => {
     );
 
     expect(viewsService.patchPersonalItemPreferenceRow).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "u-1" },
       "uuid::1",
       { note: "mine" },
@@ -342,12 +336,12 @@ describe("ViewsController", () => {
   });
 
   it("uses the manager draft when validating personal item rows", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: { enablePersonalItemData: true },
     });
 
     await controller.patchPersonalItemRow(
-      "acp-1",
+      "ap-1",
       {
         rowKey: "uuid::draft",
         rowData: { note: "mine" },
@@ -355,13 +349,13 @@ describe("ViewsController", () => {
       },
       {
         user: { sub: "u-1" },
-        acpCapabilities: ["item-explorer:edit"],
-        acpAccessLevel: "MANAGER",
+        apCapabilities: ["item-explorer:edit"],
+        apAccessLevel: "MANAGER",
       },
     );
 
     expect(viewsService.patchPersonalItemPreferenceRow).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "u-1" },
       "uuid::draft",
       { note: "mine" },
@@ -371,12 +365,12 @@ describe("ViewsController", () => {
   });
 
   it("uses published state for a manager read-only preview", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: { enablePersonalItemData: true },
     });
 
     await controller.patchPersonalItemRow(
-      "acp-1",
+      "ap-1",
       {
         rowKey: "uuid::published",
         rowData: { note: "mine" },
@@ -384,13 +378,13 @@ describe("ViewsController", () => {
       },
       {
         user: { sub: "u-1" },
-        acpCapabilities: ["item-explorer:edit"],
-        acpAccessLevel: "MANAGER",
+        apCapabilities: ["item-explorer:edit"],
+        apAccessLevel: "MANAGER",
       },
     );
 
     expect(viewsService.patchPersonalItemPreferenceRow).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "u-1" },
       "uuid::published",
       { note: "mine" },
@@ -400,12 +394,12 @@ describe("ViewsController", () => {
   });
 
   it("does not allow credentials to select the editor state", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: { enablePersonalItemData: true },
     });
 
     await controller.patchPersonalItemRow(
-      "acp-1",
+      "ap-1",
       {
         rowKey: "uuid::published",
         rowData: { note: "mine" },
@@ -417,12 +411,12 @@ describe("ViewsController", () => {
           sub: "credential-1",
           username: "reader-a",
         },
-        acpAccessLevel: "CREDENTIAL",
+        apAccessLevel: "CREDENTIAL",
       },
     );
 
     expect(viewsService.patchPersonalItemPreferenceRow).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       {
         kind: "credential",
         credentialId: "credential-1",
@@ -439,21 +433,21 @@ describe("ViewsController", () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.exportPersonalItemDataXlsx(
-      "acp-1",
+      "ap-1",
       {
         rowKeys: ["uuid-2::1", "uuid-1::1"],
         perspective: "editor",
       },
       {
         user: { sub: "u-1" },
-        acpCapabilities: ["item-explorer:edit"],
-        acpAccessLevel: "MANAGER",
+        apCapabilities: ["item-explorer:edit"],
+        apAccessLevel: "MANAGER",
       },
       res,
     );
 
     expect(viewsService.exportPersonalItemDataXlsx).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "u-1" },
       ["uuid-2::1", "uuid-1::1"],
       true,
@@ -465,13 +459,13 @@ describe("ViewsController", () => {
     );
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="personal-item-data-acp-1.xlsx"',
+      'attachment; filename="personal-item-data-ap-1.xlsx"',
     );
     expect(res.send).toHaveBeenCalledWith(Buffer.from("personal-xlsx"));
   });
 
   it("blocks personal data exports when the feature is disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: {
         enableItemList: true,
         enablePersonalItemData: false,
@@ -480,7 +474,7 @@ describe("ViewsController", () => {
 
     await expect(
       controller.exportPersonalItemDataXlsx(
-        "acp-1",
+        "ap-1",
         { rowKeys: [] },
         { user: { sub: "u-1" } },
         {} as any,
@@ -490,7 +484,7 @@ describe("ViewsController", () => {
   });
 
   it("blocks personal data exports when the item list is disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: {
         enableItemList: false,
         enablePersonalItemData: true,
@@ -499,9 +493,9 @@ describe("ViewsController", () => {
 
     await expect(
       controller.exportPersonalItemDataXlsx(
-        "acp-1",
+        "ap-1",
         { rowKeys: ["uuid::1"] },
-        { user: { sub: "u-1" }, acpAccessLevel: "READ_ONLY" },
+        { user: { sub: "u-1" }, apAccessLevel: "READ_ONLY" },
         {} as any,
       ),
     ).rejects.toThrow(ForbiddenException);
@@ -509,7 +503,7 @@ describe("ViewsController", () => {
   });
 
   it("allows managers to export when the public item list is disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: {
         enableItemList: false,
         enablePersonalItemData: true,
@@ -518,18 +512,18 @@ describe("ViewsController", () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.exportPersonalItemDataXlsx(
-      "acp-1",
+      "ap-1",
       { rowKeys: ["uuid::1"] },
       {
         user: { sub: "manager-1" },
-        acpCapabilities: ["item-explorer:edit"],
-        acpAccessLevel: "MANAGER",
+        apCapabilities: ["item-explorer:edit"],
+        apAccessLevel: "MANAGER",
       },
       res,
     );
 
     expect(viewsService.exportPersonalItemDataXlsx).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "manager-1" },
       ["uuid::1"],
       false,
@@ -537,18 +531,18 @@ describe("ViewsController", () => {
     );
   });
 
-  it("exports all participants' data as CSV for ACP managers", async () => {
+  it("exports all participants' data as CSV for AP managers", async () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
     await controller.exportAllPersonalItemDataCsv(
-      "acp-1",
+      "ap-1",
       { perspective: "editor" },
-      { acpCapabilities: ["item-explorer:edit"], acpAccessLevel: "MANAGER" },
+      { apCapabilities: ["item-explorer:edit"], apAccessLevel: "MANAGER" },
       res,
     );
 
     expect(viewsService.exportAllPersonalItemDataCsv).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       true,
       undefined,
     );
@@ -558,7 +552,7 @@ describe("ViewsController", () => {
     );
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="all-participant-item-data-acp-1.csv"',
+      'attachment; filename="all-participant-item-data-ap-1.csv"',
     );
     expect(res.send).toHaveBeenCalledWith(Buffer.from("all-personal-csv"));
   });
@@ -566,30 +560,30 @@ describe("ViewsController", () => {
   it("resolves a collection using the caller identity before exporting all participants", async () => {
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
     await controller.exportAllPersonalItemDataCsv(
-      "acp-1",
+      "ap-1",
       { collectionId: "collection-1" },
       {
         user: { sub: "manager-1" },
-        acpCapabilities: ["item-explorer:edit"],
-        acpAccessLevel: "MANAGER",
+        apCapabilities: ["item-explorer:edit"],
+        apAccessLevel: "MANAGER",
       },
       res,
     );
     expect(
       itemCollectionsService.getAccessibleCollectionRowKeys,
     ).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "manager-1" },
       "collection-1",
     );
     expect(viewsService.exportAllPersonalItemDataCsv).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       false,
       ["uuid::1"],
     );
     expect(res.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="all-participant-item-data-acp-1-collection-collection-1.csv"',
+      'attachment; filename="all-participant-item-data-ap-1-collection-collection-1.csv"',
     );
   });
 
@@ -599,12 +593,12 @@ describe("ViewsController", () => {
     );
     await expect(
       controller.exportAllPersonalItemDataCsv(
-        "acp-1",
+        "ap-1",
         { collectionId: "removed" },
         {
           user: { sub: "manager-1" },
-          acpCapabilities: ["item-explorer:edit"],
-          acpAccessLevel: "MANAGER",
+          apCapabilities: ["item-explorer:edit"],
+          apAccessLevel: "MANAGER",
         },
         {} as any,
       ),
@@ -617,9 +611,9 @@ describe("ViewsController", () => {
     async (role) => {
       await expect(
         controller.exportAllPersonalItemDataCsv(
-          "acp-1",
+          "ap-1",
           { collectionId: "collection-1" },
-          { user: { sub: "user-1" }, acpAccessLevel: role },
+          { user: { sub: "user-1" }, apAccessLevel: role },
           {} as any,
         ),
       ).rejects.toThrow(ForbiddenException);
@@ -631,17 +625,17 @@ describe("ViewsController", () => {
   );
 
   it("rejects scoped exports when collections are disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: { enablePersonalItemData: true },
     });
     await expect(
       controller.exportAllPersonalItemDataCsv(
-        "acp-1",
+        "ap-1",
         { collectionId: "collection-1" },
         {
           user: { sub: "manager-1" },
-          acpCapabilities: ["item-explorer:edit"],
-          acpAccessLevel: "MANAGER",
+          apCapabilities: ["item-explorer:edit"],
+          apAccessLevel: "MANAGER",
         },
         {} as any,
       ),
@@ -652,12 +646,12 @@ describe("ViewsController", () => {
   it("routes personal collection reads, updates and exports to the caller identity", async () => {
     const request = {
       user: { sub: "user-1" },
-      acpCapabilities: ["item-explorer:edit"],
-      acpAccessLevel: "MANAGER",
+      apCapabilities: ["item-explorer:edit"],
+      apAccessLevel: "MANAGER",
     };
-    await controller.getItemCollections("acp-1", "editor", request);
+    await controller.getItemCollections("ap-1", "editor", request);
     await controller.updateItemCollection(
-      "acp-1",
+      "ap-1",
       "collection-1",
       {
         baseVersion: 2,
@@ -668,20 +662,20 @@ describe("ViewsController", () => {
       request,
     );
     await controller.copyItemCollection(
-      "acp-1",
+      "ap-1",
       "shared-collection",
       { perspective: "editor" },
       request,
     );
     await controller.mutateItemCollectionRows(
-      "acp-1",
+      "ap-1",
       "collection-1",
       { baseVersion: 2, removeRowKeys: ["uuid::1"], perspective: "editor" },
       request,
     );
     const res = { setHeader: jest.fn(), send: jest.fn() } as any;
     await controller.exportItemCollectionCsv(
-      "acp-1",
+      "ap-1",
       "collection-1",
       "editor",
       request,
@@ -689,12 +683,12 @@ describe("ViewsController", () => {
     );
 
     expect(itemCollectionsService.getItemCollections).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       true,
     );
     expect(itemCollectionsService.updateItemCollection).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       "collection-1",
       expect.objectContaining({
@@ -705,7 +699,7 @@ describe("ViewsController", () => {
       true,
     );
     expect(itemCollectionsService.copyItemCollection).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       "shared-collection",
       true,
@@ -713,14 +707,14 @@ describe("ViewsController", () => {
     expect(
       itemCollectionsService.mutateItemCollectionRows,
     ).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       "collection-1",
       expect.objectContaining({ baseVersion: 2, removeRowKeys: ["uuid::1"] }),
       true,
     );
     expect(itemCollectionsService.exportItemCollectionCsv).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       "collection-1",
       true,
@@ -730,12 +724,12 @@ describe("ViewsController", () => {
   });
 
   it("blocks collection endpoints when the feature is disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: { enableItemCollections: false },
     });
 
     await expect(
-      controller.getItemCollections("acp-1", "read-only", {
+      controller.getItemCollections("ap-1", "read-only", {
         user: { sub: "user-1" },
       }),
     ).rejects.toThrow(ForbiddenException);
@@ -743,7 +737,7 @@ describe("ViewsController", () => {
   });
 
   it("blocks collection endpoints when the public item list is disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: {
         enableItemList: false,
         enableItemCollections: true,
@@ -751,16 +745,16 @@ describe("ViewsController", () => {
     });
 
     await expect(
-      controller.getItemCollections("acp-1", "read-only", {
+      controller.getItemCollections("ap-1", "read-only", {
         user: { sub: "user-1" },
-        acpAccessLevel: "READ_ONLY",
+        apAccessLevel: "READ_ONLY",
       }),
     ).rejects.toThrow(ForbiddenException);
     expect(itemCollectionsService.getItemCollections).not.toHaveBeenCalled();
   });
 
   it("allows managers to use collections when the public item list is disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: {
         enableItemList: false,
         enableItemCollections: true,
@@ -768,14 +762,14 @@ describe("ViewsController", () => {
     });
     const request = {
       user: { sub: "manager-1" },
-      acpCapabilities: ["item-explorer:edit"],
-      acpAccessLevel: "MANAGER",
+      apCapabilities: ["item-explorer:edit"],
+      apAccessLevel: "MANAGER",
     };
 
-    await controller.getItemCollections("acp-1", "editor", request);
+    await controller.getItemCollections("ap-1", "editor", request);
 
     expect(itemCollectionsService.getItemCollections).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "manager-1" },
       true,
     );
@@ -783,12 +777,12 @@ describe("ViewsController", () => {
 
   it.each(["READ_ONLY", "CREDENTIAL", "PUBLIC", undefined])(
     "blocks all-participant exports for access level %s",
-    async (acpAccessLevel) => {
+    async (apAccessLevel) => {
       await expect(
         controller.exportAllPersonalItemDataCsv(
-          "acp-1",
+          "ap-1",
           {},
-          { acpAccessLevel },
+          { apAccessLevel },
           {} as any,
         ),
       ).rejects.toThrow(ForbiddenException);
@@ -797,15 +791,15 @@ describe("ViewsController", () => {
   );
 
   it("blocks all-participant exports when personal data is disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValueOnce({
+    viewsService.getApStartPage.mockResolvedValueOnce({
       featureConfig: { enablePersonalItemData: false },
     });
 
     await expect(
       controller.exportAllPersonalItemDataCsv(
-        "acp-1",
+        "ap-1",
         {},
-        { acpCapabilities: ["item-explorer:edit"], acpAccessLevel: "ADMIN" },
+        { apCapabilities: ["item-explorer:edit"], apAccessLevel: "ADMIN" },
         {} as any,
       ),
     ).rejects.toThrow(ForbiddenException);
@@ -815,7 +809,7 @@ describe("ViewsController", () => {
   it.each([true, false])(
     "rejects personal row patches when only general persistence is %s",
     async (persistUserPreferences) => {
-      viewsService.getAcpStartPage.mockResolvedValue({
+      viewsService.getApStartPage.mockResolvedValue({
         featureConfig: {
           persistUserPreferences,
           enablePersonalItemData: false,
@@ -824,7 +818,7 @@ describe("ViewsController", () => {
 
       await expect(
         controller.patchPersonalItemRow(
-          "acp-1",
+          "ap-1",
           { rowKey: "uuid::1", rowData: { note: "mine" } },
           { user: { sub: "u-1" } },
         ),
@@ -836,12 +830,12 @@ describe("ViewsController", () => {
   );
 
   it("returns empty preferences on save when persistence is disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValueOnce({
+    viewsService.getApStartPage.mockResolvedValueOnce({
       featureConfig: { persistUserPreferences: false },
     });
 
     const result = await controller.saveItemPreferences(
-      "acp-1",
+      "ap-1",
       { viewId: "item-list", ui: { filter: "x" }, tags: { item2: ["B"] } },
       { user: { sub: "u-1" } },
     );
@@ -852,15 +846,15 @@ describe("ViewsController", () => {
 
   it("returns sequences and sequence details when navigation is enabled", async () => {
     await expect(
-      controller.getSequences("acp-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getSequences("ap-1", { apAccessLevel: "PUBLIC" }),
     ).resolves.toEqual([{ id: "seq-1" }]);
     await expect(
-      controller.getSequence("acp-1", "seq-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getSequence("ap-1", "seq-1", { apAccessLevel: "PUBLIC" }),
     ).resolves.toEqual({ id: "seq-1", units: [{ id: "unit-1" }] });
   });
 
   it("uses default allow=true for sequence navigation when flag is unset", async () => {
-    viewsService.getAcpStartPage
+    viewsService.getApStartPage
       .mockResolvedValueOnce({
         sequences: [{ id: "seq-2" }],
         featureConfig: {},
@@ -871,33 +865,33 @@ describe("ViewsController", () => {
       });
 
     await expect(
-      controller.getSequences("acp-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getSequences("ap-1", { apAccessLevel: "PUBLIC" }),
     ).resolves.toEqual([{ id: "seq-2" }]);
   });
 
   it("forwards explicit booklet navigation separately from module navigation", async () => {
-    await controller.getSequence("acp-1", "same", {
-      acpCapabilities: ["item-explorer:edit"],
-      acpAccessLevel: "MANAGER",
+    await controller.getSequence("ap-1", "same", {
+      apCapabilities: ["item-explorer:edit"],
+      apAccessLevel: "MANAGER",
       query: { kind: "booklet" },
     });
     expect(viewsService.getTaskSequence).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "same",
       "booklet",
     );
   });
 
   it("blocks sequence navigation when disabled", async () => {
-    viewsService.getAcpStartPage.mockResolvedValue({
+    viewsService.getApStartPage.mockResolvedValue({
       featureConfig: { enableSequenceNavigation: false },
     });
 
     await expect(
-      controller.getSequences("acp-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getSequences("ap-1", { apAccessLevel: "PUBLIC" }),
     ).rejects.toThrow(ForbiddenException);
     await expect(
-      controller.getSequence("acp-1", "seq-1", { acpAccessLevel: "PUBLIC" }),
+      controller.getSequence("ap-1", "seq-1", { apAccessLevel: "PUBLIC" }),
     ).rejects.toThrow(ForbiddenException);
   });
 });

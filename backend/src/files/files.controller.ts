@@ -1,3 +1,4 @@
+import { ApResponseEnvelopes } from "../common/ap-contract.metadata";
 import {
   BadRequestException,
   Body,
@@ -34,13 +35,13 @@ import {
 } from "./unit-parser.service";
 import { ValidationService } from "../validation/validation.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { AcpAccessGuard } from "../auth/guards/acp-access.guard";
+import { ApAccessGuard } from "../auth/guards/ap-access.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { FileProcessingJobsService } from "./file-processing-jobs.service";
 import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.service";
-import { AcpCapabilitiesService } from "../auth/capabilities/acp-capabilities.service";
-import { hasCapability } from "../auth/capabilities/acp-capabilities";
+import { ApCapabilitiesService } from "../auth/capabilities/ap-capabilities.service";
+import { hasCapability } from "../auth/capabilities/ap-capabilities";
 import {
   ExplorerReadGuard,
   ExplorerEditGuard,
@@ -48,8 +49,8 @@ import {
 import { UuidParam } from "../common/uuid-param";
 import { IndexGenerationService } from "./index-generation.service";
 
-@ApiTags("ACP Files")
-@Controller("acp/:acpId/files")
+@ApiTags("AP Files")
+@Controller("ap/:apId/files")
 export class FilesController {
   private readonly logger = new Logger(FilesController.name);
 
@@ -59,16 +60,16 @@ export class FilesController {
     private readonly validationService: ValidationService,
     private readonly fileProcessingJobsService: FileProcessingJobsService,
     private readonly itemExplorerStateService: ItemExplorerStateService,
-    private readonly capabilities: AcpCapabilitiesService,
+    private readonly capabilities: ApCapabilitiesService,
     @Optional()
     private readonly indexGenerationService?: IndexGenerationService,
   ) {}
 
   @Get()
-  @UseGuards(AcpAccessGuard)
-  @ApiOperation({ summary: "List all files for an ACP" })
+  @UseGuards(ApAccessGuard)
+  @ApiOperation({ summary: "List all files for an AP" })
   async findAll(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Query("format") format?: string,
     @Query("unitId") unitId?: string,
     @Query("sequenceId") sequenceId?: string,
@@ -77,8 +78,8 @@ export class FilesController {
     @Query("partId") partId?: string,
   ) {
     const isManager =
-      req?.acpAccessLevel === "MANAGER" || req?.acpAccessLevel === "ADMIN";
-    const featureConfig = await this.filesService.getFeatureConfig(acpId);
+      req?.apAccessLevel === "MANAGER" || req?.apAccessLevel === "ADMIN";
+    const featureConfig = await this.filesService.getFeatureConfig(apId);
 
     if (format === "zip") {
       if (unitId && sequenceId) {
@@ -94,21 +95,21 @@ export class FilesController {
       }
       if (!isManager && !featureConfig.allowUnitDownload) {
         throw new ForbiddenException(
-          "Unit download is not enabled for this ACP",
+          "Unit download is not enabled for this AP",
         );
       }
 
       const archive = unitId
         ? partId
-          ? await this.filesService.createUnitZip(acpId, unitId, partId)
-          : await this.filesService.createUnitZip(acpId, unitId)
+          ? await this.filesService.createUnitZip(apId, unitId, partId)
+          : await this.filesService.createUnitZip(apId, unitId)
         : req?.query?.kind === "booklet"
           ? await this.filesService.createSequenceZip(
-              acpId,
+              apId,
               sequenceId!,
               "booklet",
             )
-          : await this.filesService.createSequenceZip(acpId, sequenceId!);
+          : await this.filesService.createSequenceZip(apId, sequenceId!);
 
       res?.setHeader("Content-Type", "application/zip");
       res?.setHeader(
@@ -120,21 +121,21 @@ export class FilesController {
     }
 
     if (!isManager && !featureConfig.allowFileDownload) {
-      throw new ForbiddenException("File listing is not enabled for this ACP");
+      throw new ForbiddenException("File listing is not enabled for this AP");
     }
 
-    return this.filesService.findByAcp(acpId);
+    return this.filesService.findByAp(apId);
   }
 
   @Delete("all")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Delete all files for an ACP" })
-  async deleteAll(@UuidParam("acpId") acpId: string) {
-    await this.filesService.deleteAll(acpId);
+  @ApiOperation({ summary: "Delete all files for an AP" })
+  async deleteAll(@UuidParam("apId") apId: string) {
+    await this.filesService.deleteAll(apId);
     const cleanupResult =
-      await this.filesService.cleanupReferencesAfterFileMutation(acpId);
+      await this.filesService.cleanupReferencesAfterFileMutation(apId);
     return {
       message: "All files deleted successfully",
       cleanupReport: cleanupResult.cleanupReport,
@@ -143,16 +144,25 @@ export class FilesController {
     };
   }
 
+  @Get("consistency")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("AP_MANAGER")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Check AP-wide consistency without updating files" })
+  async getConsistency(@UuidParam("apId") apId: string) {
+    return this.validationService.validateApConsistency(apId);
+  }
+
   @Get("validate-units")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Validate completeness of all unit files" })
-  async validateUnits(@UuidParam("acpId") acpId: string) {
-    const files = await this.filesService.findByAcp(acpId);
+  async validateUnits(@UuidParam("apId") apId: string) {
+    const files = await this.filesService.findByAp(apId);
     const [unitResults, validationRun] = await Promise.all([
-      this.unitParserService.validateUnitFiles(acpId),
-      this.validationService.autoValidateUploadedFiles(acpId, files),
+      this.unitParserService.validateUnitFiles(apId),
+      this.validationService.autoValidateUploadedFiles(apId, files),
     ]);
 
     return {
@@ -165,28 +175,28 @@ export class FilesController {
   @UseGuards(ExplorerReadGuard)
   @ApiOperation({ summary: "Extract item list with metadata from .vomd files" })
   async getItemList(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Request() req: any,
     @Query("perspective") perspective?: string,
     @Res({ passthrough: true }) res?: Response,
   ) {
     const startedAt = performance.now();
     const isManager = this.isManagerViewContext(req, perspective);
-    if (!hasCapability(req.acpCapabilities || [], "item-explorer:view")) {
-      const featureConfig = await this.filesService.getFeatureConfig(acpId);
+    if (!hasCapability(req.apCapabilities || [], "item-explorer:view")) {
+      const featureConfig = await this.filesService.getFeatureConfig(apId);
       if (featureConfig.enableItemList === false) {
-        throw new ForbiddenException("Item list is not enabled for this ACP");
+        throw new ForbiddenException("Item list is not enabled for this AP");
       }
     }
     const explorerStateStartedAt = performance.now();
     const explorerState =
       await this.itemExplorerStateService.getItemListStateProjection(
-        acpId,
+        apId,
         isManager,
       );
     const explorerStateMs = performance.now() - explorerStateStartedAt;
     let diagnostics: ItemExplorerLoadDiagnostics | undefined;
-    const itemList = await this.unitParserService.getItemListFromFiles(acpId, {
+    const itemList = await this.unitParserService.getItemListFromFiles(apId, {
       itemPropertiesOverride: explorerState.activeItemProperties,
       publishedItemPropertiesOverride: explorerState.publishedItemProperties,
       activeStateSignature: isManager
@@ -202,7 +212,7 @@ export class FilesController {
       "item-list",
       diagnostics,
       performance.now() - startedAt,
-      acpId,
+      apId,
     );
     return {
       ...itemList,
@@ -216,49 +226,51 @@ export class FilesController {
   @ApiOperation({
     summary: "Recalculate stable Item Explorer row numbers",
   })
-  async recalculateItemRowNumbers(@UuidParam("acpId") acpId: string) {
-    return this.unitParserService.recalculatePublishedItemRowNumbers(acpId);
+  async recalculateItemRowNumbers(@UuidParam("apId") apId: string) {
+    return this.unitParserService.recalculatePublishedItemRowNumbers(apId);
   }
 
-  @Get("unit-view/:unitId")
-  @UseGuards(AcpAccessGuard)
+  @Get(["unit-view/:unitId", "unit-view/:partId/:unitId"])
+  @UseGuards(ApAccessGuard)
   @ApiOperation({
     summary: "Get unit view data from uploaded files (player, definition)",
   })
   async getUnitView(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Param("unitId") unitId: string,
     @Request() req: any,
     @Query("perspective") perspective?: string,
     @Res({ passthrough: true }) res?: Response,
+    @Param("partId") partId?: string,
   ) {
     await this.capabilities.resolve(req);
     const startedAt = performance.now();
     const isManager = this.isManagerViewContext(req, perspective);
     if (!isManager) {
-      const featureConfig = await this.filesService.getFeatureConfig(acpId);
+      const featureConfig = await this.filesService.getFeatureConfig(apId);
       if (
         featureConfig.enableUnitView === false &&
         !this.canUseReview(req, featureConfig)
       ) {
-        throw new ForbiddenException("Unit view is not enabled for this ACP");
+        throw new ForbiddenException("Unit view is not enabled for this AP");
       }
     }
     const explorerStateStartedAt = performance.now();
     const explorerStateResolution = this.itemExplorerStateService
-      .getStateVersionForViewer(acpId, isManager)
+      .getStateVersionForViewer(apId, isManager)
       .then((version) => ({
         signature: isManager ? `active:${version}` : `published:${version}`,
         durationMs: performance.now() - explorerStateStartedAt,
       }));
     let diagnostics: ItemExplorerLoadDiagnostics | undefined;
     const unitView = await this.unitParserService.getUnitViewFromFiles(
-      acpId,
+      apId,
       unitId,
       (value) => {
         diagnostics = value;
       },
       explorerStateResolution.then(({ signature }) => signature),
+      ...(partId ? [partId] : []),
     );
     const { durationMs: explorerStateMs } = await explorerStateResolution;
     diagnostics = diagnostics
@@ -269,77 +281,51 @@ export class FilesController {
       "unit-view",
       diagnostics,
       performance.now() - startedAt,
-      acpId,
+      apId,
     );
     return unitView;
   }
 
-  @Get("unit-view/:partId/:unitId")
-  @UseGuards(AcpAccessGuard)
-  @ApiOperation({
-    summary: "Get uploaded unit view scoped to an assessment part",
-  })
-  async getPartUnitView(
-    @UuidParam("acpId") acpId: string,
-    @Param("partId") partId: string,
-    @Param("unitId") unitId: string,
-    @Request() req: any,
-    @Query("perspective") perspective?: string,
-  ) {
-    const isManager = this.isManagerViewContext(req, perspective);
-    if (!isManager) {
-      const featureConfig = await this.filesService.getFeatureConfig(acpId);
-      if (featureConfig.enableUnitView === false)
-        throw new ForbiddenException("Unit view is not enabled for this ACP");
-    }
-    return this.unitParserService.getUnitViewFromFiles(
-      acpId,
-      unitId,
-      undefined,
-      "",
-      partId,
-    );
-  }
-
   @Get("jobs/:jobId")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get file processing job status" })
   async getProcessingJob(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("jobId") jobId: string,
   ) {
-    return this.fileProcessingJobsService.getJobSnapshot(acpId, jobId);
+    return this.fileProcessingJobsService.getJobSnapshot(apId, jobId);
   }
 
   @Sse("jobs/:jobId/events")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Stream file processing job progress" })
+  @ApResponseEnvelopes("data")
   async streamProcessingJob(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("jobId") jobId: string,
   ) {
-    await this.fileProcessingJobsService.ensureJobExists(acpId, jobId);
+    await this.fileProcessingJobsService.ensureJobExists(apId, jobId);
     return this.fileProcessingJobsService.streamJob(jobId);
   }
 
   @Get("jobs/:jobId/archive")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Download generated ZIP archive for a completed file job",
   })
   async downloadJobArchive(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("jobId") jobId: string,
     @Res({ passthrough: true }) res?: Response,
   ) {
     const archive = await this.fileProcessingJobsService.downloadArchive(
-      acpId,
+      apId,
       jobId,
     );
     res?.setHeader("Content-Type", "application/zip");
@@ -352,42 +338,42 @@ export class FilesController {
   }
 
   @Get(":fileId")
-  @UseGuards(AcpAccessGuard)
+  @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "Get file metadata" })
   async findOne(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("fileId") fileId: string,
     @Request() req: any,
   ) {
     const isManager =
-      req?.acpAccessLevel === "MANAGER" || req?.acpAccessLevel === "ADMIN";
+      req?.apAccessLevel === "MANAGER" || req?.apAccessLevel === "ADMIN";
     if (!isManager) {
-      const featureConfig = await this.filesService.getFeatureConfig(acpId);
+      const featureConfig = await this.filesService.getFeatureConfig(apId);
       if (!featureConfig.allowFileDownload) {
         throw new ForbiddenException(
-          "File metadata access is not enabled for this ACP",
+          "File metadata access is not enabled for this AP",
         );
       }
     }
-    return this.filesService.findByIdForAcp(acpId, fileId);
+    return this.filesService.findByIdForAp(apId, fileId);
   }
 
   @Get(":fileId/preview")
-  @UseGuards(AcpAccessGuard)
+  @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "Get preview data for a file" })
   async getPreview(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("fileId") fileId: string,
     @Request() req: any,
   ) {
-    const file = await this.filesService.findByIdForAcp(acpId, fileId);
-    await this.ensureFileContentAccess(acpId, file.originalName, req);
-    return this.filesService.getPreviewForAcp(acpId, fileId);
+    const file = await this.filesService.findByIdForAp(apId, fileId);
+    await this.ensureFileContentAccess(apId, file.originalName, req);
+    return this.filesService.getPreviewForAp(apId, fileId);
   }
 
   @Post("upload")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @UseInterceptors(FilesInterceptor("files", 100))
   @ApiConsumes("multipart/form-data")
@@ -396,17 +382,23 @@ export class FilesController {
     required: false,
     description: "reject | overwrite | keep-both",
   })
-  @ApiOperation({ summary: "Upload files to ACP" })
+  @ApiOperation({
+    summary: "Upload files to AP",
+    description:
+      "Optional multipart field conflictDecisions: JSON array of { fileName, decision: replace | skip }. Decisions apply to individual filenames after ZIP extraction; unresolved conflicts return HTTP 409 without storing the batch. For repeated names within a batch, replace uses the last occurrence and skip omits all occurrences.",
+  })
   async upload(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UploadedFiles() files: Express.Multer.File[],
     @Query("conflictStrategy") conflictStrategy?: string,
+    @Body("conflictDecisions") conflictDecisions?: string,
     @Body("relativePaths") relativePathsInput?: string | string[],
   ) {
     const relativePaths = this.parseRelativePaths(relativePathsInput);
     return {
-      files: await this.filesService.uploadMultiple(acpId, files, {
+      files: await this.filesService.uploadMultiple(apId, files, {
         conflictStrategy,
+        conflictDecisions,
         relativePaths,
       }),
     };
@@ -425,17 +417,17 @@ export class FilesController {
 
   @Post("bulk-download")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Download all or selected ACP files as ZIP archive",
+    summary: "Download all or selected AP files as ZIP archive",
   })
   async bulkDownload(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() body: { fileIds?: string[] } = {},
     @Res({ passthrough: true }) res?: Response,
   ) {
-    const archive = await this.filesService.createFilesZip(acpId, body.fileIds);
+    const archive = await this.filesService.createFilesZip(apId, body.fileIds);
     res?.setHeader("Content-Type", "application/zip");
     res?.setHeader("Content-Length", String(archive.buffer.length));
     res?.setHeader(
@@ -447,18 +439,18 @@ export class FilesController {
 
   @Post("bulk-download/jobs")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Start ZIP creation job for all or selected ACP files",
+    summary: "Start ZIP creation job for all or selected AP files",
   })
   async startBulkDownloadJob(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() body: { fileIds?: string[] } = {},
     @Request() req?: any,
   ) {
     return this.fileProcessingJobsService.createAndStartDownloadJob(
-      acpId,
+      apId,
       body.fileIds || [],
       { createdByUserId: req?.user?.sub || null },
     );
@@ -466,16 +458,16 @@ export class FilesController {
 
   @Post("process-upload")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Start processing for freshly uploaded ACP files" })
+  @ApiOperation({ summary: "Start processing for freshly uploaded AP files" })
   async processUpload(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() body: { fileIds?: string[]; runCleanup?: boolean },
     @Request() req: any,
   ) {
     return this.fileProcessingJobsService.createAndStartJob(
-      acpId,
+      apId,
       body.fileIds || [],
       {
         createdByUserId: req?.user?.sub || null,
@@ -486,19 +478,19 @@ export class FilesController {
 
   @Post("bulk-delete")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Delete multiple files for an ACP" })
+  @ApiOperation({ summary: "Delete multiple files for an AP" })
   async bulkDelete(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() body: { fileIds?: string[] },
   ) {
-    const deletedFileIds = await this.filesService.deleteManyForAcp(
-      acpId,
+    const deletedFileIds = await this.filesService.deleteManyForAp(
+      apId,
       body.fileIds || [],
     );
     const cleanupResult =
-      await this.filesService.cleanupReferencesAfterFileMutation(acpId);
+      await this.filesService.cleanupReferencesAfterFileMutation(apId);
 
     return {
       message: "Files deleted successfully",
@@ -512,20 +504,20 @@ export class FilesController {
 
   @Post("sync-index")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({
     summary:
-      "Synchronize ACP-Index from uploaded unit files (non-destructive merge)",
+      "Synchronize AP-Index from uploaded unit files (non-destructive merge)",
   })
-  async syncIndex(@UuidParam("acpId") acpId: string) {
+  async syncIndex(@UuidParam("apId") apId: string) {
     return this.indexGenerationService
-      ? this.indexGenerationService.preview(acpId)
-      : this.unitParserService.syncIndexFromFiles(acpId);
+      ? this.indexGenerationService.preview(apId)
+      : this.unitParserService.syncIndexFromFiles(apId);
   }
 
   @Get(":fileId/download")
-  @UseGuards(AcpAccessGuard)
+  @UseGuards(ApAccessGuard)
   @ApiQuery({
     name: "disposition",
     required: false,
@@ -533,15 +525,15 @@ export class FilesController {
   })
   @ApiOperation({ summary: "Download a file" })
   async download(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("fileId") fileId: string,
     @Query("disposition") disposition: string | undefined,
     @Request() req: any,
     @Res() res: Response,
   ) {
     const startedAt = performance.now();
-    const file = await this.filesService.findByIdForAcp(acpId, fileId);
-    await this.ensureFileContentAccess(acpId, file.originalName, req);
+    const file = await this.filesService.findByIdForAp(apId, fileId);
+    await this.ensureFileContentAccess(apId, file.originalName, req);
 
     const etagValue = String(
       file.checksum ||
@@ -560,7 +552,7 @@ export class FilesController {
     }
 
     const fileReadStartedAt = performance.now();
-    const { buffer } = await this.filesService.downloadForAcp(acpId, fileId);
+    const { buffer } = await this.filesService.downloadForAp(apId, fileId);
     const fileReadMs = performance.now() - fileReadStartedAt;
     const resolvedDisposition = this.resolveDisposition(disposition);
     res.setHeader(
@@ -578,7 +570,7 @@ export class FilesController {
         JSON.stringify({
           event: "item-explorer-slow-load",
           phase: "file-download",
-          acpId,
+          apId,
           durationMs: Math.round(totalMs),
         }),
       );
@@ -588,16 +580,16 @@ export class FilesController {
 
   @Delete(":fileId")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Delete a file" })
   async delete(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("fileId") fileId: string,
   ) {
-    await this.filesService.deleteForAcp(acpId, fileId);
+    await this.filesService.deleteForAp(apId, fileId);
     const cleanupResult =
-      await this.filesService.cleanupReferencesAfterFileMutation(acpId);
+      await this.filesService.cleanupReferencesAfterFileMutation(apId);
     return {
       message: "File deleted successfully",
       cleanupReport: cleanupResult.cleanupReport,
@@ -608,31 +600,31 @@ export class FilesController {
 
   @Get(":fileId/validation")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ACP_MANAGER")
+  @Roles("AP_MANAGER")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get validation result for a file" })
   async getValidation(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @UuidParam("fileId") fileId: string,
   ) {
-    return this.filesService.getValidationResultForAcp(acpId, fileId);
+    return this.filesService.getValidationResultForAp(apId, fileId);
   }
 
   private async ensureFileContentAccess(
-    acpId: string,
+    apId: string,
     originalName: string,
     req: any,
   ): Promise<void> {
     const isManager =
-      req?.acpAccessLevel === "MANAGER" || req?.acpAccessLevel === "ADMIN";
+      req?.apAccessLevel === "MANAGER" || req?.apAccessLevel === "ADMIN";
     if (isManager) {
       return;
     }
 
-    const featureConfig = await this.filesService.getFeatureConfig(acpId);
+    const featureConfig = await this.filesService.getFeatureConfig(apId);
     const isDependency = req.reviewerColumnPolicy?.restricted
-      ? await this.filesService.isRuntimeDependencyFile(acpId, originalName)
-      : await this.filesService.isUnitDependencyFile(acpId, originalName);
+      ? await this.filesService.isRuntimeDependencyFile(apId, originalName)
+      : await this.filesService.isUnitDependencyFile(apId, originalName);
     await this.capabilities.resolve(req);
     const canDownloadForView =
       isDependency &&
@@ -640,12 +632,12 @@ export class FilesController {
         this.canUseReview(req, featureConfig));
 
     if (!featureConfig.allowFileDownload && !canDownloadForView) {
-      throw new ForbiddenException("File download is not enabled for this ACP");
+      throw new ForbiddenException("File download is not enabled for this AP");
     }
   }
 
   private canUseReview(req: any, config: Record<string, any>): boolean {
-    const grants = req?.acpCapabilities || [];
+    const grants = req?.apCapabilities || [];
     return (
       config.enableReview === true &&
       (hasCapability(grants, "review:participate") ||
@@ -654,7 +646,7 @@ export class FilesController {
   }
 
   private isManagerViewContext(req: any, perspective?: string): boolean {
-    if (!hasCapability(req?.acpCapabilities || [], "item-explorer:edit")) {
+    if (!hasCapability(req?.apCapabilities || [], "item-explorer:edit")) {
       return false;
     }
 
@@ -670,7 +662,7 @@ export class FilesController {
     phase: "item-list" | "unit-view",
     diagnostics: ItemExplorerLoadDiagnostics | undefined,
     totalMs: number,
-    acpId: string,
+    apId: string,
   ): void {
     const cacheStatus = diagnostics?.cacheStatus || "miss";
     res?.setHeader(
@@ -693,7 +685,7 @@ export class FilesController {
       JSON.stringify({
         event: "item-explorer-slow-load",
         phase,
-        acpId,
+        apId,
         durationMs: Math.round(totalMs),
         cacheStatus,
       }),

@@ -1,7 +1,7 @@
 import { expect, Page, test } from '@playwright/test';
 import { installOidcSession } from './oidc-test-session';
 
-const ACP_ID = '10000000-0000-4000-8000-000000000201';
+const AP_ID = '10000000-0000-4000-8000-000000000201';
 const MANAGER_ID = '10000000-0000-4000-8000-000000000002';
 const MANAGER_USERNAME = 'e2e-manager';
 const VIEWER_ID = '10000000-0000-4000-8000-000000000003';
@@ -14,7 +14,7 @@ async function login(page: Page, userId: string, username: string): Promise<void
 }
 
 async function openExplorer(page: Page): Promise<void> {
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await expect(page.getByRole('heading', { name: 'Item-Explorer' })).toBeVisible();
   await expect(page.locator('tbody tr')).toHaveCount(2);
 }
@@ -35,7 +35,7 @@ async function publishExplorerDraft(page: Page): Promise<void> {
     page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' &&
-        response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft/save`) &&
+        response.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft/save`) &&
         response.ok(),
     ),
     page.getByRole('button', { name: 'Veröffentlichen' }).click(),
@@ -47,12 +47,12 @@ test('shares item comments and replies directly in the selected Item Explorer pr
   browser,
 }) => {
   await login(page, MANAGER_ID, MANAGER_USERNAME);
-  await page.goto(`/view/${ACP_ID}`);
+  await page.goto(`/view/${AP_ID}`);
   await expect(page.getByRole('button', { name: 'Kommentar hinzufügen' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Kommentare', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Item-Liste', exact: true })).toHaveCount(0);
   await Promise.all([
-    page.waitForURL(`**/view/${ACP_ID}/item-explorer`),
+    page.waitForURL(`**/view/${AP_ID}/item-explorer`),
     page
       .getByRole('link', {
         name: 'Item-Explorer Items prüfen, kommentieren und bearbeiten',
@@ -86,7 +86,7 @@ test('shares item comments and replies directly in the selected Item Explorer pr
     page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' &&
-        response.url().endsWith(`/api/acp/${ACP_ID}/review/comments`) &&
+        response.url().endsWith(`/api/ap/${AP_ID}/review/comments`) &&
         response.ok(),
     ),
     panel.getByRole('button', { name: 'Kommentieren' }).click(),
@@ -103,7 +103,7 @@ test('shares item comments and replies directly in the selected Item Explorer pr
     page.waitForResponse(
       (response) =>
         response.request().method() === 'PATCH' &&
-        response.url().includes(`/api/acp/${ACP_ID}/review/comments/`) &&
+        response.url().includes(`/api/ap/${AP_ID}/review/comments/`) &&
         response.ok(),
     ),
     panel.locator('.edit-form').getByRole('button', { name: 'Speichern' }).click(),
@@ -159,7 +159,7 @@ test('shares item comments and replies directly in the selected Item Explorer pr
     releaseDelayedThread = resolve;
   });
   let itemOneDelayed = false;
-  await page.route(`**/api/acp/${ACP_ID}/review/comments?*`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/review/comments?*`, async (route) => {
     const itemId = new URL(route.request().url()).searchParams.get('itemId') || '';
     if (!itemOneDelayed && itemId === firstItemId) {
       itemOneDelayed = true;
@@ -170,7 +170,7 @@ test('shares item comments and replies directly in the selected Item Explorer pr
   const delayedRequest = page.waitForRequest((request) => {
     const url = new URL(request.url());
     return (
-      url.pathname.endsWith(`/api/acp/${ACP_ID}/review/comments`) &&
+      url.pathname.endsWith(`/api/ap/${AP_ID}/review/comments`) &&
       url.searchParams.get('itemId') === firstItemId
     );
   });
@@ -194,7 +194,7 @@ test('shares item comments and replies directly in the selected Item Explorer pr
     page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' &&
-        response.url().endsWith(`/api/acp/${ACP_ID}/review/comments`) &&
+        response.url().endsWith(`/api/ap/${AP_ID}/review/comments`) &&
         response.ok(),
     ),
     viewerPanel
@@ -243,7 +243,7 @@ test('keeps item searches local for two users and out of the shared draft', asyn
   page.on('request', (request) => {
     if (
       request.method() === 'PATCH' &&
-      request.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft`)
+      request.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft`)
     ) {
       draftPatchUrls.push(request.url());
     }
@@ -279,7 +279,7 @@ test('serializes delayed draft updates while typing into a shared column filter'
   const requests: Array<{ baseVersion: number; itemIdFilter: string; status: number }> = [];
   let activeRequests = 0;
   let maximumActiveRequests = 0;
-  const draftPatchUrl = `**/api/acp/${ACP_ID}/item-explorer/draft`;
+  const draftPatchUrl = `**/api/ap/${AP_ID}/item-explorer/draft`;
   await page.route(draftPatchUrl, async (route) => {
     activeRequests += 1;
     maximumActiveRequests = Math.max(maximumActiveRequests, activeRequests);
@@ -326,7 +326,7 @@ test('offers configured columns and persists widths plus an explicitly empty sel
 }) => {
   await login(page, MANAGER_ID, MANAGER_USERNAME);
 
-  await page.goto(`/manage/${ACP_ID}/access`);
+  await page.goto(`/manage/${AP_ID}/access`);
   await page.getByText('Inhalte und Darstellung', { exact: true }).click();
   await page
     .getByText('Erweiterte Einstellungen: Datenzuordnung und Player-Diagnose', { exact: true })
@@ -358,7 +358,7 @@ test('offers configured columns and persists widths plus an explicitly empty sel
     page.waitForResponse(
       (response) =>
         response.request().method() === 'PATCH' &&
-        response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft`) &&
+        response.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft`) &&
         response.ok(),
     ),
     dialog.getByRole('button', { name: /Speichern/ }).click(),
@@ -405,7 +405,7 @@ test('offers configured columns and persists widths plus an explicitly empty sel
     page.waitForResponse(
       (response) =>
         response.request().method() === 'PATCH' &&
-        response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft`) &&
+        response.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft`) &&
         response.ok(),
     ),
     orderDialog.getByRole('button', { name: /Speichern/ }).click(),
@@ -499,7 +499,7 @@ test('offers configured columns and persists widths plus an explicitly empty sel
     page.waitForResponse(
       (response) =>
         response.request().method() === 'PATCH' &&
-        response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft`) &&
+        response.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft`) &&
         response.ok(),
     ),
     emptySelectionDialog.getByRole('button', { name: /Speichern/ }).click(),
@@ -538,7 +538,7 @@ test('offers configured columns and persists widths plus an explicitly empty sel
     page.waitForResponse(
       (response) =>
         response.request().method() === 'PATCH' &&
-        response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft`) &&
+        response.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft`) &&
         response.ok(),
     ),
     resetDialog.getByRole('button', { name: /Speichern/ }).click(),
@@ -552,7 +552,7 @@ test('offers configured columns and persists widths plus an explicitly empty sel
   const tagPatch = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
-      response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft`) &&
+      response.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft`) &&
       response.ok(),
   );
   await oldTag.click();
@@ -570,7 +570,7 @@ test('offers configured columns and persists widths plus an explicitly empty sel
     page.locator('tbody tr').first().locator('.tag-badge', { hasText: 'Alt' }),
   ).toHaveCount(0);
 
-  await page.goto(`/manage/${ACP_ID}/access`);
+  await page.goto(`/manage/${AP_ID}/access`);
   await page.getByText('Inhalte und Darstellung', { exact: true }).click();
   await page
     .getByText('Erweiterte Einstellungen: Datenzuordnung und Player-Diagnose', { exact: true })
@@ -592,10 +592,19 @@ test('applies coding configuration defaults and the alternative combinations in 
     .getByRole('heading', { name: /Kodierung – Lieblingsbücher_2/ })
     .locator('xpath=ancestor::div[contains(@class, "overlay-dialog")]');
   await expect(codingDialog.getByTestId('coding-variable-focus')).toContainText('01');
+  await expect(codingDialog.getByTestId('coding-information')).toContainText('Richtige Antwort');
+  await expect(codingDialog.getByTestId('coding-information')).toContainText(
+    'Bilderbücher ausgewählt',
+  );
+  await expect(codingDialog.getByTestId('coding-information')).toContainText('ausgewählt');
+  await expect(codingDialog.getByTestId('coding-information')).toContainText(
+    'Bilderbuchsegment markiert',
+  );
+  await expect(codingDialog.getByTestId('coding-information')).toContainText('nicht ausgewählt');
   await expect(codingDialog).not.toContainText('Abgeleitete/aggregierte Kodierung');
-  await expect(codingDialog.locator('.coding-item')).toHaveCount(1);
+  await expect(codingDialog.locator('.coding-item')).toHaveCount(3);
   await expect(codingDialog).not.toContainText('Nur Segment Bilderbücher markieren.');
-  await expect(codingDialog.locator('.rule-list li')).toHaveCount(1);
+  await expect(codingDialog.locator('.rule-list li')).toHaveCount(3);
   for (const technicalId of ['_button01', '_intro01', '_outro01', '_source01']) {
     await expect(codingDialog).not.toContainText(technicalId);
   }
@@ -603,10 +612,13 @@ test('applies coding configuration defaults and the alternative combinations in 
 
   await page.locator('tbody tr').nth(1).click();
   await page.getByRole('button', { name: 'Kodierung', exact: true }).click();
+  await expect(page.getByTestId('coding-information')).toContainText(
+    'Keine eindeutige Kodiervariable',
+  );
   await expect(page.getByText('Allgemeiner Testhinweis zur Kodierung.')).toHaveCount(0);
   await page.getByRole('button', { name: /Schließen/ }).click();
 
-  await page.goto(`/manage/${ACP_ID}/access`);
+  await page.goto(`/manage/${AP_ID}/access`);
   await page.getByText('Inhalte und Darstellung', { exact: true }).click();
   await page
     .getByText('Erweiterte Einstellungen: Datenzuordnung und Player-Diagnose', { exact: true })
@@ -628,7 +640,7 @@ test('applies coding configuration defaults and the alternative combinations in 
     .getByRole('heading', { name: /Kodierung – Lieblingsbücher_2/ })
     .locator('xpath=ancestor::div[contains(@class, "overlay-dialog")]');
   await expect(alternativeDialog).toContainText('Nur Segment Bilderbücher markieren.');
-  await expect(alternativeDialog.locator('.rule-list li')).toHaveCount(1);
+  await expect(alternativeDialog.locator('.rule-list li')).toHaveCount(3);
   await alternativeDialog.getByRole('button', { name: /Schließen/ }).click();
 
   await page.locator('tbody tr').nth(1).click();
@@ -640,13 +652,20 @@ test('applies coding configuration defaults and the alternative combinations in 
   await login(await viewerContext.newPage(), VIEWER_ID, VIEWER_USERNAME);
   const viewerPage = viewerContext.pages()[0];
   await openExplorer(viewerPage);
+  await viewerPage.locator('tbody tr').first().click();
+  await viewerPage.getByRole('button', { name: 'Kodierung', exact: true }).click();
+  await expect(viewerPage.getByTestId('coding-information')).toContainText('Richtige Antwort');
+  await viewerPage.getByRole('button', { name: /Schließen/ }).click();
   await viewerPage.locator('tbody tr').nth(1).click();
   await viewerPage.getByRole('button', { name: 'Kodierung', exact: true }).click();
+  await expect(viewerPage.getByTestId('coding-information')).toContainText(
+    'Keine eindeutige Kodiervariable',
+  );
   await expect(viewerPage.getByText('Allgemeiner Testhinweis zur Kodierung.')).toBeVisible();
   await viewerContext.close();
 });
 
-test('shares personal lists ACP-wide as read-only and creates independent private copies', async ({
+test('shares personal lists AP-wide as read-only and creates independent private copies', async ({
   browser,
   page,
 }) => {
@@ -661,7 +680,7 @@ test('shares personal lists ACP-wide as read-only and creates independent privat
     page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' &&
-        response.url().endsWith(`/api/view/acp/${ACP_ID}/items/collections`) &&
+        response.url().endsWith(`/api/view/ap/${AP_ID}/items/collections`) &&
         response.ok(),
     ),
     nameDialog.getByRole('button', { name: 'Anlegen', exact: true }).click(),
@@ -679,7 +698,7 @@ test('shares personal lists ACP-wide as read-only and creates independent privat
   ]);
   await page.getByText('Liste verwalten ▾', { exact: true }).click();
   await page.getByRole('button', { name: 'Freigeben …', exact: true }).click();
-  const shareToggle = page.getByLabel('Für diesen ACP freigeben');
+  const shareToggle = page.getByLabel('Für diesen AP freigeben');
   await shareToggle.check();
   await Promise.all([
     page.waitForResponse(
@@ -825,13 +844,13 @@ test('sorts VERA items by the complete visible Item-ID in both directions', asyn
       metadata: {},
     },
   ];
-  await page.route(`**/api/acp/${ACP_ID}/files/item-list*`, async (route) => {
+  await page.route(`**/api/ap/${AP_ID}/files/item-list*`, async (route) => {
     const response = await route.fetch();
     const payload = await response.json();
     await route.fulfill({ response, json: { ...payload, items: veraItems } });
   });
   await login(page, MANAGER_ID, MANAGER_USERNAME);
-  await page.goto(`/view/${ACP_ID}/item-explorer`);
+  await page.goto(`/view/${AP_ID}/item-explorer`);
   await expect(page.getByRole('heading', { name: 'Item-Explorer' })).toBeVisible();
   await expect(page.locator('tbody tr')).toHaveCount(veraItems.length);
 
@@ -839,7 +858,7 @@ test('sorts VERA items by the complete visible Item-ID in both directions', asyn
   const ascendingPatch = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
-      response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft`) &&
+      response.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft`) &&
       response.ok(),
   );
   await itemIdHeader.click();
@@ -862,7 +881,7 @@ test('sorts VERA items by the complete visible Item-ID in both directions', asyn
   const descendingPatch = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
-      response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft`) &&
+      response.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft`) &&
       response.ok(),
   );
   await itemIdHeader.click();
@@ -886,13 +905,13 @@ test('sorts VERA items by the complete visible Item-ID in both directions', asyn
     page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' &&
-        response.url().endsWith(`/api/acp/${ACP_ID}/item-explorer/draft/discard`) &&
+        response.url().endsWith(`/api/ap/${AP_ID}/item-explorer/draft/discard`) &&
         response.ok(),
     ),
     page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' &&
-        response.url().includes(`/api/acp/${ACP_ID}/files/item-list`) &&
+        response.url().includes(`/api/ap/${AP_ID}/files/item-list`) &&
         response.ok(),
     ),
     page.getByRole('button', { name: 'Änderungen verwerfen', exact: true }).click(),

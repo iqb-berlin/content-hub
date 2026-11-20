@@ -1,4 +1,4 @@
-import { AcpCapabilitiesService } from "./capabilities/acp-capabilities.service";
+import { ApCapabilitiesService } from "./capabilities/ap-capabilities.service";
 import {
   ExplorerReadGuard,
   ExplorerEditGuard,
@@ -13,14 +13,14 @@ import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { RolesGuard } from "./guards/roles.guard";
-import { AcpAccessGuard } from "./guards/acp-access.guard";
+import { ApAccessGuard } from "./guards/ap-access.guard";
 import { OidcAuthGuard } from "./guards/oidc-auth.guard";
 import { OidcValidationService } from "./services/oidc-validation.service";
 import {
   User,
-  AcpCredential,
-  AcpAccessConfig,
-  AcpUserRole,
+  ApCredential,
+  ApAccessConfig,
+  ApUserRole,
 } from "../database/entities";
 
 @Module({
@@ -36,34 +36,29 @@ import {
         },
       }),
     }),
-    TypeOrmModule.forFeature([
-      User,
-      AcpCredential,
-      AcpAccessConfig,
-      AcpUserRole,
-    ]),
+    TypeOrmModule.forFeature([User, ApCredential, ApAccessConfig, ApUserRole]),
   ],
   controllers: [AuthController],
   providers: [
-    AcpCapabilitiesService,
+    ApCapabilitiesService,
     ExplorerReadGuard,
     ExplorerEditGuard,
     AuthService,
     JwtStrategy,
     JwtAuthGuard,
     RolesGuard,
-    AcpAccessGuard,
+    ApAccessGuard,
     OidcValidationService,
     OidcAuthGuard,
   ],
   exports: [
-    AcpCapabilitiesService,
+    ApCapabilitiesService,
     ExplorerReadGuard,
     ExplorerEditGuard,
     AuthService,
     JwtAuthGuard,
     RolesGuard,
-    AcpAccessGuard,
+    ApAccessGuard,
     OidcAuthGuard,
     OidcValidationService,
     JwtModule,

@@ -3,7 +3,7 @@ import * as fs from "fs/promises";
 import { createHash } from "crypto";
 import { performance } from "perf_hooks";
 import * as path from "path";
-import { AcpFile } from "../database/entities";
+import { ApFile } from "../database/entities";
 import { AsyncCacheStatus, AsyncLruCache } from "./async-lru-cache";
 import { FileCatalogCache, FileCatalogResult } from "./file-catalog.cache";
 import { normalizePartId } from "./relative-path";
@@ -33,23 +33,23 @@ export class UnitViewResolver {
   }
 
   async resolve(
-    acpId: string,
+    apId: string,
     unitId: string,
     explorerStateSignature: string | Promise<string> = "",
     partId?: string,
   ): Promise<UnitViewResolution> {
     const [catalog, resolvedExplorerStateSignature] = await Promise.all([
-      this.fileCatalogCache.get(acpId),
+      this.fileCatalogCache.get(apId),
       Promise.resolve(explorerStateSignature),
     ]);
-    const cacheKey = `${acpId}:${partId || "legacy"}:${unitId}:${this.hashCanonicalValue(
+    const cacheKey = `${apId}:${partId || "legacy"}:${unitId}:${this.hashCanonicalValue(
       {
         files: catalog.signature,
         explorerState: resolvedExplorerStateSignature,
       },
     )}`;
     const { value, status } = await this.cache.getOrLoad(cacheKey, () =>
-      this.build(acpId, unitId, catalog.files, partId),
+      this.build(apId, unitId, catalog.files, partId),
     );
     return {
       value: structuredClone(value.value),
@@ -59,14 +59,14 @@ export class UnitViewResolver {
     };
   }
 
-  invalidate(acpId: string): void {
-    this.cache.deleteWhere((key) => key.startsWith(`${acpId}:`));
+  invalidate(apId: string): void {
+    this.cache.deleteWhere((key) => key.startsWith(`${apId}:`));
   }
 
   private async build(
-    acpId: string,
+    apId: string,
     unitId: string,
-    allFiles: AcpFile[],
+    allFiles: ApFile[],
     partId?: string,
   ): Promise<UnitViewCacheValue> {
     const parseStartedAt = performance.now();
@@ -121,7 +121,7 @@ export class UnitViewResolver {
         dependencies.push({
           type: "PLAYER",
           originalName: playerFile.originalName,
-          downloadUrl: `/api/acp/${acpId}/files/${playerFile.id}/download`,
+          downloadUrl: `/api/ap/${apId}/files/${playerFile.id}/download`,
           fileId: playerFile.id,
         });
       }
@@ -132,7 +132,7 @@ export class UnitViewResolver {
       allFiles,
       parsed.definitionRef,
       "UNIT_DEFINITION",
-      acpId,
+      apId,
       unitDirectory,
     );
     this.addDependency(
@@ -140,7 +140,7 @@ export class UnitViewResolver {
       allFiles,
       parsed.codingSchemeRef,
       "CODING_SCHEME",
-      acpId,
+      apId,
       unitDirectory,
     );
 
@@ -156,7 +156,7 @@ export class UnitViewResolver {
         dependencies.push({
           type: "METADATA",
           originalName: metadataFile.originalName,
-          downloadUrl: `/api/acp/${acpId}/files/${metadataFile.id}/download`,
+          downloadUrl: `/api/ap/${apId}/files/${metadataFile.id}/download`,
           fileId: metadataFile.id,
         });
       }
@@ -176,10 +176,10 @@ export class UnitViewResolver {
 
   private addDependency(
     dependencies: any[],
-    allFiles: AcpFile[],
+    allFiles: ApFile[],
     originalName: string | undefined,
     type: string,
-    acpId: string,
+    apId: string,
     unitDirectory: string,
   ): void {
     if (!originalName) return;
@@ -188,16 +188,16 @@ export class UnitViewResolver {
     dependencies.push({
       type,
       originalName: file.originalName,
-      downloadUrl: `/api/acp/${acpId}/files/${file.id}/download`,
+      downloadUrl: `/api/ap/${apId}/files/${file.id}/download`,
       fileId: file.id,
     });
   }
 
   private findDependencyFile(
-    allFiles: AcpFile[],
+    allFiles: ApFile[],
     originalName: string,
     unitDirectory: string,
-  ): AcpFile | undefined {
+  ): ApFile | undefined {
     const relativePath = path.posix.normalize(
       path.posix.join(unitDirectory === "." ? "" : unitDirectory, originalName),
     );

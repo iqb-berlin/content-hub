@@ -110,12 +110,12 @@ describe("AuthController", () => {
     const req = { headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8" } };
 
     await controller.credentialLogin(
-      { acpId: "acp-1", username: "cred", password: "pw" } as any,
+      { apId: "ap-1", username: "cred", password: "pw" } as any,
       req,
     );
 
     expect(authService.credentialLogin).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "cred",
       "pw",
       "1.2.3.4",
@@ -126,12 +126,12 @@ describe("AuthController", () => {
     const req = { headers: { "x-forwarded-for": ["9.9.9.9, 8.8.8.8"] } };
 
     await controller.credentialLogin(
-      { acpId: "acp-1", username: "cred", password: "pw" } as any,
+      { apId: "ap-1", username: "cred", password: "pw" } as any,
       req,
     );
 
     expect(authService.credentialLogin).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "cred",
       "pw",
       "9.9.9.9",
@@ -142,12 +142,12 @@ describe("AuthController", () => {
     const req = { headers: {}, ip: "", socket: { remoteAddress: "" } };
 
     await controller.credentialLogin(
-      { acpId: "acp-1", username: "cred", password: "pw" } as any,
+      { apId: "ap-1", username: "cred", password: "pw" } as any,
       req,
     );
 
     expect(authService.credentialLogin).toHaveBeenCalledWith(
-      "acp-1",
+      "ap-1",
       "cred",
       "pw",
       "unknown",

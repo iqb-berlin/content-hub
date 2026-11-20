@@ -9,12 +9,7 @@ import { ConfigService } from "@nestjs/config";
 import { randomUUID } from "node:crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
-import {
-  Acp,
-  AcpSnapshot,
-  AcpSnapshotFile,
-  AcpFile,
-} from "../database/entities";
+import { Ap, ApSnapshot, ApSnapshotFile, ApFile } from "../database/entities";
 import { assertUuidParam } from "../common/uuid-param";
 
 @Injectable()
@@ -22,12 +17,12 @@ export class SnapshotsService {
   private readonly storagePath: string;
 
   constructor(
-    @InjectRepository(AcpSnapshot)
-    private readonly snapshotRepository: Repository<AcpSnapshot>,
-    @InjectRepository(Acp)
-    private readonly acpRepository: Repository<Acp>,
-    @InjectRepository(AcpFile)
-    private readonly fileRepository: Repository<AcpFile>,
+    @InjectRepository(ApSnapshot)
+    private readonly snapshotRepository: Repository<ApSnapshot>,
+    @InjectRepository(Ap)
+    private readonly apRepository: Repository<Ap>,
+    @InjectRepository(ApFile)
+    private readonly fileRepository: Repository<ApFile>,
     private readonly configService: ConfigService,
   ) {
     this.storagePath = this.configService.get<string>(
@@ -36,15 +31,15 @@ export class SnapshotsService {
     );
   }
 
-  async findByAcp(acpId: string): Promise<AcpSnapshot[]> {
-    await this.getAcpOrFail(acpId);
+  async findByAp(apId: string): Promise<ApSnapshot[]> {
+    await this.getApOrFail(apId);
     return this.snapshotRepository.find({
-      where: { acpId },
+      where: { apId },
       order: { versionNumber: "DESC" },
     });
   }
 
-  async findById(id: string): Promise<AcpSnapshot> {
+  async findById(id: string): Promise<ApSnapshot> {
     const snapshot = await this.snapshotRepository.findOne({
       where: { id },
       relations: ["snapshotFiles"],
@@ -56,11 +51,11 @@ export class SnapshotsService {
     return snapshot;
   }
 
-  async findByIdInAcp(acpId: string, snapshotId: string): Promise<AcpSnapshot> {
+  async findByIdInAp(apId: string, snapshotId: string): Promise<ApSnapshot> {
     const snapshot = await this.findById(snapshotId);
-    if (snapshot.acpId !== acpId) {
+    if (snapshot.apId !== apId) {
       throw new NotFoundException(
-        `Snapshot with ID ${snapshotId} not found for ACP ${acpId}`,
+        `Snapshot with ID ${snapshotId} not found for AP ${apId}`,
       );
     }
     return snapshot;
@@ -68,10 +63,10 @@ export class SnapshotsService {
 
   async delete(snapshotId: string): Promise<void> {
     const snapshot = await this.findById(snapshotId);
-    const snapshotAcpId = snapshot.acpId;
+    const snapshotApId = snapshot.apId;
     const snapshotEntityId = snapshot.id;
 
-    if (!snapshotAcpId || !snapshotEntityId) {
+    if (!snapshotApId || !snapshotEntityId) {
       throw new NotFoundException(
         `Snapshot with ID ${snapshotId} is missing required metadata`,
       );
@@ -81,13 +76,13 @@ export class SnapshotsService {
 
     const snapshotDir = path.join(
       this.storagePath,
-      snapshotAcpId,
+      snapshotApId,
       "snapshots",
       snapshotEntityId,
     );
     const restoreDir = path.join(
       this.storagePath,
-      snapshotAcpId,
+      snapshotApId,
       "snapshot-restore",
       snapshotEntityId,
     );
@@ -99,53 +94,53 @@ export class SnapshotsService {
   }
 
   async create(
-    acpId: string,
+    apId: string,
     changelog?: string,
     expectedUpdatedAt?: string,
-  ): Promise<AcpSnapshot> {
-    assertUuidParam(acpId, "acpId");
+  ): Promise<ApSnapshot> {
+    assertUuidParam(apId, "apId");
     let snapshotDir: string | undefined;
     try {
-      return await this.acpRepository.manager.transaction(async (manager) => {
-        const acp = await manager.getRepository(Acp).findOne({
-          where: { id: acpId },
+      return await this.apRepository.manager.transaction(async (manager) => {
+        const ap = await manager.getRepository(Ap).findOne({
+          where: { id: apId },
           lock: { mode: "pessimistic_write" },
         });
-        if (!acp) throw new NotFoundException("ACP not found");
+        if (!ap) throw new NotFoundException("AP not found");
         if (
           expectedUpdatedAt &&
-          acp.updatedAt.toISOString() !== expectedUpdatedAt
+          ap.updatedAt.toISOString() !== expectedUpdatedAt
         )
-          throw new ConflictException("ACP has changed since preview");
-        const snapshots = manager.getRepository(AcpSnapshot);
+          throw new ConflictException("AP has changed since preview");
+        const snapshots = manager.getRepository(ApSnapshot);
         const latest = await snapshots.findOne({
-          where: { acpId },
+          where: { apId },
           order: { versionNumber: "DESC" },
         });
         const snapshot = await snapshots.save(
           snapshots.create({
-            acpId,
+            apId,
             versionNumber: (latest?.versionNumber ?? 0) + 1,
-            acpIndexSnapshot: acp.acpIndex,
+            apIndexSnapshot: ap.apIndex,
             packageMetadataSnapshot: {
-              name: acp.name,
-              description: acp.description,
-              itemProperties: acp.itemProperties,
+              name: ap.name,
+              description: ap.description,
+              itemProperties: ap.itemProperties,
             },
             changelog,
           }),
         );
         const files = await manager
-          .getRepository(AcpFile)
-          .find({ where: { acpId } });
+          .getRepository(ApFile)
+          .find({ where: { apId } });
         snapshotDir = path.join(
           this.storagePath,
-          acpId,
+          apId,
           "snapshots",
           snapshot.id,
         );
         if (files.length) await fs.mkdir(snapshotDir, { recursive: true });
-        const snapshotFiles = manager.getRepository(AcpSnapshotFile);
+        const snapshotFiles = manager.getRepository(ApSnapshotFile);
         snapshot.snapshotFiles = [];
         for (const [index, file] of files.entries()) {
           const filePath = path.join(
@@ -177,26 +172,26 @@ export class SnapshotsService {
     }
   }
 
-  async restore(snapshotId: string): Promise<Acp> {
+  async restore(snapshotId: string): Promise<Ap> {
     const snapshot = await this.findById(snapshotId);
     const copied: string[] = [];
     try {
-      return await this.acpRepository.manager.transaction(async (manager) => {
-        const packages = manager.getRepository(Acp);
-        const acp = await packages.findOne({
-          where: { id: snapshot.acpId },
+      return await this.apRepository.manager.transaction(async (manager) => {
+        const packages = manager.getRepository(Ap);
+        const ap = await packages.findOne({
+          where: { id: snapshot.apId },
           lock: { mode: "pessimistic_write" },
         });
-        if (!acp) throw new NotFoundException("ACP not found");
+        if (!ap) throw new NotFoundException("AP not found");
         const released = (status: unknown) =>
           status === "RELEASED_PUBLIC" || status === "RELEASED_CONFIDENTIAL";
-        if (released(acp.acpIndex.status))
+        if (released(ap.apIndex.status))
           throw new ConflictException(
-            "Published ACP must be reopened before it can be changed",
+            "Published AP must be reopened before it can be changed",
           );
-        const files = manager.getRepository(AcpFile);
-        const restoredFiles: AcpFile[] = [];
-        const activeDir = path.join(this.storagePath, acp.id);
+        const files = manager.getRepository(ApFile);
+        const restoredFiles: ApFile[] = [];
+        const activeDir = path.join(this.storagePath, ap.id);
         if (snapshot.snapshotFiles?.length)
           await fs.mkdir(activeDir, { recursive: true });
         for (const sf of snapshot.snapshotFiles || []) {
@@ -216,7 +211,7 @@ export class SnapshotsService {
           }
           restoredFiles.push(
             files.create({
-              acpId: acp.id,
+              apId: ap.id,
               filePath,
               originalName: sf.originalName,
               relativePath: sf.relativePath || sf.originalName,
@@ -227,27 +222,24 @@ export class SnapshotsService {
             }),
           );
         }
-        acp.acpIndex = { ...snapshot.acpIndexSnapshot };
+        ap.apIndex = { ...snapshot.apIndexSnapshot };
         // Publication is a separate operation even when restoring an old release.
-        if (released(acp.acpIndex.status))
-          acp.acpIndex.status = "IN_DEVELOPMENT";
+        if (released(ap.apIndex.status)) ap.apIndex.status = "IN_DEVELOPMENT";
         if (snapshot.packageMetadataSnapshot) {
           const metadata = snapshot.packageMetadataSnapshot;
-          acp.name = metadata.name;
-          acp.description = metadata.description;
-          acp.itemProperties = metadata.itemProperties;
-        } else if (Array.isArray(acp.acpIndex.name)) {
-          const german = acp.acpIndex.name.find(
-            (entry) => entry?.lang === "de",
-          );
-          if (typeof german?.value === "string") acp.name = german.value;
+          ap.name = metadata.name;
+          ap.description = metadata.description;
+          ap.itemProperties = metadata.itemProperties;
+        } else if (Array.isArray(ap.apIndex.name)) {
+          const german = ap.apIndex.name.find((entry) => entry?.lang === "de");
+          if (typeof german?.value === "string") ap.name = german.value;
         }
-        acp.acpIndexValidationReport = null;
-        acp.acpIndexValidationStatus = "UNKNOWN";
-        await files.delete({ acpId: acp.id });
+        ap.apIndexValidationReport = null;
+        ap.apIndexValidationStatus = "UNKNOWN";
+        await files.delete({ apId: ap.id });
         if (restoredFiles.length)
           await files.save(restoredFiles, { chunk: 500 });
-        return packages.save(acp);
+        return packages.save(ap);
       });
     } catch (error) {
       await Promise.allSettled(
@@ -263,7 +255,7 @@ export class SnapshotsService {
     // Find direct previous snapshot (highest version lower than current).
     const previousSnapshot = await this.snapshotRepository.findOne({
       where: {
-        acpId: snapshot.acpId,
+        apId: snapshot.apId,
         versionNumber: LessThan(snapshot.versionNumber),
       },
       order: { versionNumber: "DESC" },
@@ -312,16 +304,16 @@ export class SnapshotsService {
 
   async diffWithCurrent(snapshotId: string): Promise<Record<string, unknown>> {
     const snapshot = await this.findById(snapshotId);
-    const acp = await this.acpRepository.findOne({
-      where: { id: snapshot.acpId },
+    const ap = await this.apRepository.findOne({
+      where: { id: snapshot.apId },
     });
-    if (!acp) {
-      throw new NotFoundException(`ACP with ID ${snapshot.acpId} not found`);
+    if (!ap) {
+      throw new NotFoundException(`AP with ID ${snapshot.apId} not found`);
     }
 
     const snapshotFiles = snapshot.snapshotFiles || [];
     const currentFiles = await this.fileRepository.find({
-      where: { acpId: snapshot.acpId },
+      where: { apId: snapshot.apId },
     });
 
     const snapshotChecksums = new Map(
@@ -354,8 +346,8 @@ export class SnapshotsService {
       snapshotId,
       comparedWith: "current",
       indexChanged:
-        JSON.stringify(snapshot.acpIndexSnapshot || {}) !==
-        JSON.stringify(acp.acpIndex || {}),
+        JSON.stringify(snapshot.apIndexSnapshot || {}) !==
+        JSON.stringify(ap.apIndex || {}),
       added,
       removed,
       modified,
@@ -363,12 +355,12 @@ export class SnapshotsService {
     };
   }
 
-  private async getAcpOrFail(acpId: string): Promise<Acp> {
-    assertUuidParam(acpId, "ACP ID");
-    const acp = await this.acpRepository.findOne({ where: { id: acpId } });
-    if (!acp) {
-      throw new NotFoundException(`ACP with ID ${acpId} not found`);
+  private async getApOrFail(apId: string): Promise<Ap> {
+    assertUuidParam(apId, "AP ID");
+    const ap = await this.apRepository.findOne({ where: { id: apId } });
+    if (!ap) {
+      throw new NotFoundException(`AP with ID ${apId} not found`);
     }
-    return acp;
+    return ap;
   }
 }

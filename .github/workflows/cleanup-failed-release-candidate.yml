@@ -51,7 +51,7 @@ jobs:
           owner="${GITHUB_REPOSITORY_OWNER}"
           sha_tag="sha-${SOURCE_COMMIT}"
           deleted=0
-          for package in content-pool-backend content-pool-frontend; do
+          for package in content-hub-backend content-hub-frontend; do
             versions="$(gh api --paginate --slurp \
               "orgs/${owner}/packages/container/${package}/versions?per_page=100")"
             matches="$(jq --arg candidate "$CANDIDATE" --arg sha "$sha_tag" '[

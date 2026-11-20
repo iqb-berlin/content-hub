@@ -1,6 +1,6 @@
 import { Component, inject, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AcpNavigationService } from '../../core/services/acp-navigation.service';
+import { ApNavigationService } from '../../core/services/ap-navigation.service';
 
 export interface BreadcrumbItem {
   label: string;
@@ -51,12 +51,12 @@ export interface BreadcrumbItem {
   ],
 })
 export class BreadcrumbComponent {
-  private readonly navigation = inject(AcpNavigationService);
+  private readonly navigation = inject(ApNavigationService);
 
   get resolvedItems(): BreadcrumbItem[] {
     return this.items.map((item) =>
       item.route?.length === 2 && item.route[0] === '/view'
-        ? { ...item, label: 'ACP-Übersicht', route: this.navigation.overviewRoute(item.route[1]) }
+        ? { ...item, label: 'AP-Übersicht', route: this.navigation.overviewRoute(item.route[1]) }
         : item,
     );
   }

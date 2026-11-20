@@ -5,6 +5,9 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Header,
+  NotFoundException,
+  Param,
   Post,
   Put,
   Request,
@@ -21,6 +24,7 @@ import {
   IsArray,
   ArrayMaxSize,
   ValidateNested,
+  ValidateIf,
   IsUUID,
   IsString,
   MaxLength,
@@ -29,19 +33,20 @@ import { Type } from "class-transformer";
 import { randomUUID } from "crypto";
 import {
   Comment,
-  AcpAccessConfig,
-  AcpCredential,
-  AcpUserRole,
+  ApAccessConfig,
+  ApCredential,
+  ApUserRole,
 } from "../database/entities";
-import { AcpAccessGuard } from "../auth/guards/acp-access.guard";
-import { AcpCapabilitiesService } from "../auth/capabilities/acp-capabilities.service";
+import { ApAccessGuard } from "../auth/guards/ap-access.guard";
+import { ApCapabilitiesService } from "../auth/capabilities/ap-capabilities.service";
 import {
   hasCapability,
   isExplorerAvailable,
-} from "../auth/capabilities/acp-capabilities";
+} from "../auth/capabilities/ap-capabilities";
 import { UuidParam } from "../common/uuid-param";
 import { ReviewManifestService } from "./review-manifest.service";
 import { ReviewReadinessService } from "./review-readiness.service";
+import { FilesService } from "../files/files.service";
 
 class ReviewMemberDto {
   @IsIn(["user", "credential"]) kind!: "user" | "credential";
@@ -64,6 +69,9 @@ class CommentCategoryDto {
 }
 class ReviewConfigDto {
   @IsBoolean() enableReview!: boolean;
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  hideReviewMetadata?: boolean;
   @IsOptional() @IsBoolean() hideReviewDeveloperNames?: boolean;
   @IsInt() @Min(1) configVersion!: number;
   @IsIn(["PRIVATE", "SHARED", "GROUP"]) visibilityMode!:
@@ -97,27 +105,33 @@ class ReviewConfigDto {
   @IsUUID(undefined, { each: true })
   deletedCategoryIds?: string[];
 }
-@Controller("view/acp/:acpId")
-@UseGuards(AcpAccessGuard)
+@Controller("view/ap/:apId")
+@UseGuards(ApAccessGuard)
 export class ReviewController {
   constructor(
-    private readonly capabilities: AcpCapabilitiesService,
+    private readonly capabilities: ApCapabilitiesService,
     private readonly manifest: ReviewManifestService,
-    @InjectRepository(AcpAccessConfig)
-    private readonly configs: Repository<AcpAccessConfig>,
+    @InjectRepository(ApAccessConfig)
+    private readonly configs: Repository<ApAccessConfig>,
     private readonly readiness: ReviewReadinessService,
+    private readonly files: FilesService,
   ) {}
 
   @Get("capabilities")
-  async getCapabilities(
-    @UuidParam("acpId") acpId: string,
-    @Request() req: any,
-  ) {
+  async getCapabilities(@UuidParam("apId") apId: string, @Request() req: any) {
     const grants = await this.capabilities.resolve(req);
-    const config = await this.configs.findOne({ where: { acpId } });
+    const config = await this.configs.findOne({ where: { apId } });
     const explorerAvailable = isExplorerAvailable(req, config?.featureConfig);
     return {
       capabilities: grants,
+      canViewUnit:
+        req?.apAccessLevel === "ADMIN" ||
+        req?.apAccessLevel === "MANAGER" ||
+        config?.featureConfig?.enableUnitView !== false ||
+        (config?.featureConfig?.enableReview === true &&
+          Boolean(req?.user?.sub) &&
+          (grants.includes("review:participate") ||
+            grants.includes("review:manage"))),
       canViewExplorer:
         explorerAvailable &&
         (hasCapability(grants, "item-explorer:view") ||
@@ -129,6 +143,10 @@ export class ReviewController {
         grants.includes("review:manage") ||
         (config?.featureConfig?.enableReview === true &&
           grants.includes("review:participate")),
+      canReadReviewComments:
+        Boolean(req?.user?.sub) &&
+        (grants.includes("review:manage") ||
+          grants.includes("review:participate")),
       canManageReview: grants.includes("review:manage"),
       enableReview: config?.featureConfig?.enableReview === true,
     };
@@ -136,15 +154,15 @@ export class ReviewController {
 
   @Put("review/config")
   async configure(
-    @UuidParam("acpId") acpId: string,
+    @UuidParam("apId") apId: string,
     @Body() dto: ReviewConfigDto,
     @Request() req: any,
   ) {
     await this.capabilities.assert(req, "review:manage");
-    const current = await this.configs.findOne({ where: { acpId } });
-    if (!current) throw new ForbiddenException("ACP-Konfiguration fehlt");
+    const current = await this.configs.findOne({ where: { apId } });
+    if (!current) throw new ForbiddenException("AP-Konfiguration fehlt");
     if (dto.enableReview && current.featureConfig.enableReview !== true) {
-      const readiness = await this.readiness.check(acpId);
+      const readiness = await this.readiness.check(apId);
       if (readiness.stale || readiness.status === "BLOCKED") {
         throw new BadRequestException({
           code: "REVIEW_NOT_READY",
@@ -167,11 +185,11 @@ export class ReviewController {
       }
     }
     return this.configs.manager.transaction(async (manager) => {
-      const config = await manager.findOne(AcpAccessConfig, {
-        where: { acpId },
+      const config = await manager.findOne(ApAccessConfig, {
+        where: { apId },
         lock: { mode: "pessimistic_write" },
       });
-      if (!config) throw new ForbiddenException("ACP-Konfiguration fehlt");
+      if (!config) throw new ForbiddenException("AP-Konfiguration fehlt");
       if (config.reviewConfigVersion !== dto.configVersion)
         throw new ConflictException(
           "Die Review-Konfiguration wurde geändert. Bitte neu laden.",
@@ -206,14 +224,14 @@ export class ReviewController {
           for (const member of group.members) {
             const exists =
               member.kind === "user"
-                ? await manager.findOne(AcpUserRole, {
-                    where: { acpId, userId: member.id },
+                ? await manager.findOne(ApUserRole, {
+                    where: { apId, userId: member.id },
                   })
-                : await manager.findOne(AcpCredential, {
+                : await manager.findOne(ApCredential, {
                     where: { accessConfigId: config.id, id: member.id },
                   });
             if (!exists) {
-              // Deleted ACP identities may still occur in saved group JSON.
+              // Deleted AP identities may still occur in saved group JSON.
               // Drop historical references, but reject invalid new assignments.
               if (
                 previousMembers.some(
@@ -223,7 +241,7 @@ export class ReviewController {
               )
                 continue;
               throw new BadRequestException(
-                "Gruppenmitglied gehört nicht zu diesem ACP",
+                "Gruppenmitglied gehört nicht zu diesem AP",
               );
             }
             members.push(member);
@@ -235,11 +253,11 @@ export class ReviewController {
             throw new BadRequestException(
               "Löschen der Gruppe muss bestätigt werden.",
             );
-          // Comment writes acquire this same ACP config lock before choosing a group.
+          // Comment writes acquire this same AP config lock before choosing a group.
           // Include soft-deleted comments: their historical references must survive.
           if (
             await manager.count(Comment, {
-              where: { acpId, groupId: group.id },
+              where: { apId, groupId: group.id },
             })
           ) {
             throw new BadRequestException(
@@ -273,11 +291,11 @@ export class ReviewController {
             throw new BadRequestException(
               "Löschen der Kategorie muss bestätigt werden.",
             );
-          // Comment writes hold the same ACP lock. Historical assignments,
+          // Comment writes hold the same AP lock. Historical assignments,
           // including soft-deleted comments, must survive category management.
           if (
             await manager.count(Comment, {
-              where: { acpId, categoryId: category.id },
+              where: { apId, categoryId: category.id },
             })
           )
             throw new BadRequestException(
@@ -292,6 +310,9 @@ export class ReviewController {
       config.featureConfig = {
         ...config.featureConfig,
         enableReview: dto.enableReview,
+        ...(dto.hideReviewMetadata !== undefined
+          ? { hideReviewMetadata: dto.hideReviewMetadata }
+          : {}),
         ...(dto.hideReviewDeveloperNames !== undefined
           ? { hideReviewDeveloperNames: dto.hideReviewDeveloperNames }
           : {}),
@@ -305,35 +326,35 @@ export class ReviewController {
   }
 
   @Get("review/readiness")
-  async lastReadiness(@UuidParam("acpId") acpId: string, @Request() req: any) {
+  async lastReadiness(@UuidParam("apId") apId: string, @Request() req: any) {
     await this.capabilities.assert(req, "review:manage");
-    return this.readiness.getLast(acpId);
+    return this.readiness.getLast(apId);
   }
 
   @Post("review/readiness")
-  async checkReadiness(@UuidParam("acpId") acpId: string, @Request() req: any) {
+  async checkReadiness(@UuidParam("apId") apId: string, @Request() req: any) {
     await this.capabilities.assert(req, "review:manage");
-    return this.readiness.check(acpId);
+    return this.readiness.check(apId);
   }
 
   @Get("review/config")
-  async getConfig(@UuidParam("acpId") acpId: string, @Request() req: any) {
+  async getConfig(@UuidParam("apId") apId: string, @Request() req: any) {
     await this.capabilities.assert(req, "review:manage");
-    const config = await this.configs.findOne({ where: { acpId } });
-    if (!config) throw new ForbiddenException("ACP-Konfiguration fehlt");
+    const config = await this.configs.findOne({ where: { apId } });
+    if (!config) throw new ForbiddenException("AP-Konfiguration fehlt");
     return this.configView(config);
   }
 
   @Get("review/members")
-  async getMembers(@UuidParam("acpId") acpId: string, @Request() req: any) {
+  async getMembers(@UuidParam("apId") apId: string, @Request() req: any) {
     await this.capabilities.assert(req, "review:manage");
-    const config = await this.configs.findOne({ where: { acpId } });
-    if (!config) throw new ForbiddenException("ACP-Konfiguration fehlt");
-    const users = await this.configs.manager.find(AcpUserRole, {
-      where: { acpId },
+    const config = await this.configs.findOne({ where: { apId } });
+    if (!config) throw new ForbiddenException("AP-Konfiguration fehlt");
+    const users = await this.configs.manager.find(ApUserRole, {
+      where: { apId },
       relations: ["user"],
     });
-    const credentials = await this.configs.manager.find(AcpCredential, {
+    const credentials = await this.configs.manager.find(ApCredential, {
       where: { accessConfigId: config.id },
     });
     return [
@@ -350,9 +371,10 @@ export class ReviewController {
     ];
   }
 
-  private configView(config: AcpAccessConfig) {
+  private configView(config: ApAccessConfig) {
     return {
       enableReview: config.featureConfig.enableReview === true,
+      hideReviewMetadata: config.featureConfig.hideReviewMetadata === true,
       hideReviewDeveloperNames:
         config.featureConfig.hideReviewDeveloperNames === true,
       visibilityMode: config.featureConfig.commentVisibilityMode || "PRIVATE",
@@ -363,10 +385,28 @@ export class ReviewController {
   }
 
   @Get("review")
-  async getReview(@UuidParam("acpId") acpId: string, @Request() req: any) {
-    const access = await this.getCapabilities(acpId, req);
+  async getReview(@UuidParam("apId") apId: string, @Request() req: any) {
+    const access = await this.getCapabilities(apId, req);
     if (!access.canReview)
       throw new ForbiddenException("Review ist deaktiviert oder nicht erlaubt");
-    return this.manifest.getManifest(acpId);
+    return this.manifest.getManifest(apId);
+  }
+
+  @Get("review/booklets/:bookletId/units/:unitId/transcripts")
+  @Header("Cache-Control", "private, no-store")
+  async getTranscripts(
+    @UuidParam("apId") apId: string,
+    @Param("bookletId") bookletId: string,
+    @Param("unitId") unitId: string,
+    @Request() req: any,
+  ) {
+    const manifest = await this.getReview(apId, req);
+    const booklet = manifest.booklets.find(
+      (entry) => !entry.legacy && entry.id === bookletId,
+    );
+    if (!booklet?.units.some((unit) => unit.id === unitId)) {
+      throw new NotFoundException("Aufgabe ist nicht Teil dieses Testhefts.");
+    }
+    return this.files.getReviewTranscripts(apId, unitId);
   }
 }

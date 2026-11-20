@@ -11,7 +11,7 @@ describe('ItemExplorerCommentsService', () => {
   };
   let browser: ItemExplorerBrowser;
   let stop: ReturnType<typeof vi.fn<() => void>>;
-  const context = { acpId: 'a', identity: 'user-a', loggedIn: true, canExport: true };
+  const context = { apId: 'a', identity: 'user-a', loggedIn: true, canExport: true };
   beforeEach(() => {
     vi.useFakeTimers();
     stop = vi.fn();

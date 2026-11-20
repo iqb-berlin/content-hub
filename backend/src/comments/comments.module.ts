@@ -3,7 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { CommentsService } from "./comments.service";
 import { CommentsController } from "./comments.controller";
 import { ReviewCommentsController } from "./review-comments.controller";
-import { Acp, Comment, AcpAccessConfig } from "../database/entities";
+import { Ap, Comment, ApAccessConfig } from "../database/entities";
 import { AuthModule } from "../auth/auth.module";
 import { FilesModule } from "../files/files.module";
 import { ReviewPolicyService } from "./review-policy.service";
@@ -12,7 +12,7 @@ import { ReviewManifestModule } from "../review/review-manifest.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Acp, Comment, AcpAccessConfig]),
+    TypeOrmModule.forFeature([Ap, Comment, ApAccessConfig]),
     AuthModule,
     FilesModule,
     ReviewManifestModule,

@@ -1,7 +1,7 @@
 import { NotFoundException } from "@nestjs/common";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Test } from "@nestjs/testing";
-import { AcpItemPreference } from "../database/entities";
+import { ApItemPreference } from "../database/entities";
 import { ItemCollectionStore } from "./item-collection.store";
 
 describe("ItemCollectionStore", () => {
@@ -27,7 +27,7 @@ describe("ItemCollectionStore", () => {
       providers: [
         ItemCollectionStore,
         {
-          provide: getRepositoryToken(AcpItemPreference),
+          provide: getRepositoryToken(ApItemPreference),
           useValue: repository,
         },
       ],
@@ -41,7 +41,7 @@ describe("ItemCollectionStore", () => {
     });
 
     await expect(
-      store.readPreferences("acp-1", {
+      store.readPreferences("ap-1", {
         kind: "credential",
         credentialId: "credential-1",
         credentialUsername: "reader-a",
@@ -49,7 +49,7 @@ describe("ItemCollectionStore", () => {
     ).resolves.toEqual({ collections: [] });
     expect(repository.findOne).toHaveBeenCalledWith({
       where: {
-        acpId: "acp-1",
+        apId: "ap-1",
         viewId: "item-explorer",
         credentialId: "credential-1",
       },
@@ -66,7 +66,7 @@ describe("ItemCollectionStore", () => {
 
     await expect(
       store.readSharedCollections(
-        "acp-1",
+        "ap-1",
         {
           kind: "user",
           userId: "user-1",
@@ -83,7 +83,7 @@ describe("ItemCollectionStore", () => {
       expect.stringMatching(
         /jsonb_array_elements[\s\S]*collection ->> 'shared' = 'true'[\s\S]*LIMIT \$3/,
       ),
-      ["acp-1", "user-1", 1001],
+      ["ap-1", "user-1", 1001],
     );
   });
 
@@ -98,7 +98,7 @@ describe("ItemCollectionStore", () => {
     });
 
     const state = await store.mutate(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       false,
       () => ({
@@ -120,7 +120,7 @@ describe("ItemCollectionStore", () => {
     expect(state.activeCollectionId).toBe("collection-1");
     expect(repository.findOne).toHaveBeenCalledWith({
       where: {
-        acpId: "acp-1",
+        apId: "ap-1",
         viewId: "item-explorer",
         userId: "user-1",
       },
@@ -148,7 +148,7 @@ describe("ItemCollectionStore", () => {
     });
 
     await store.mutate(
-      "acp-1",
+      "ap-1",
       { kind: "user", userId: "user-1" },
       false,
       (preferences) => {
@@ -171,7 +171,7 @@ describe("ItemCollectionStore", () => {
     });
 
     await store.mutate(
-      "acp-1",
+      "ap-1",
       {
         kind: "credential",
         credentialId: "credential-1",
@@ -190,7 +190,7 @@ describe("ItemCollectionStore", () => {
       expect.stringContaining(
         'ON CONFLICT ("acp_id", "view_id", "credential_id")',
       ),
-      ["acp-1", null, "credential-1", "reader-a"],
+      ["ap-1", null, "credential-1", "reader-a"],
     );
   });
 
@@ -198,7 +198,7 @@ describe("ItemCollectionStore", () => {
     repository.findOne.mockResolvedValue(null);
 
     await expect(
-      store.mutate("acp-1", { kind: "user", userId: "user-1" }, false, () => ({
+      store.mutate("ap-1", { kind: "user", userId: "user-1" }, false, () => ({
         collections: [],
         activeCollectionId: null,
         collectionViewMode: "all",

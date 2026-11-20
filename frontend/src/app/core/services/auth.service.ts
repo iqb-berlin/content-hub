@@ -27,14 +27,14 @@ type AuthChannelMessage =
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly API = '/api/auth';
-  private readonly tokenKey = 'cp_token';
+  private readonly tokenKey = 'ch_token';
   private readonly OIDC_REDIRECT_KEY = 'oidc_redirect_url';
   private readonly OIDC_STATE_KEY = 'oidc_state';
   private readonly OIDC_CODE_VERIFIER_KEY = 'oidc_code_verifier';
-  private readonly ID_TOKEN_KEY = 'cp_oidc_id_token';
-  private readonly ACCESS_TOKEN_KEY = 'cp_oidc_access_token';
-  private readonly REFRESH_TOKEN_KEY = 'cp_oidc_refresh_token';
-  private readonly AUTH_TYPE_KEY = 'cp_auth_type';
+  private readonly ID_TOKEN_KEY = 'ch_oidc_id_token';
+  private readonly ACCESS_TOKEN_KEY = 'ch_oidc_access_token';
+  private readonly REFRESH_TOKEN_KEY = 'ch_oidc_refresh_token';
+  private readonly AUTH_TYPE_KEY = 'ch_auth_type';
   private readonly OIDC_REFRESH_LEEWAY_MS = 60_000;
   private readonly OIDC_REFRESH_FALLBACK_MS = 5 * 60 * 1000;
   private authChannel: BroadcastChannel | null = null;
@@ -83,7 +83,7 @@ export class AuthService {
 
   private initBroadcastChannel(): void {
     if (typeof BroadcastChannel !== 'undefined') {
-      this.authChannel = new BroadcastChannel('cp_auth');
+      this.authChannel = new BroadcastChannel('ch_auth');
       this.authChannel.onmessage = (event: MessageEvent<AuthChannelMessage | 'logout'>) => {
         if (event.data === 'logout' || event.data?.type === 'logout') {
           this.performLogout(false);
@@ -110,11 +110,11 @@ export class AuthService {
     return this.currentUserSubject.value?.isAppAdmin ?? false;
   }
 
-  get hasManagedAcps(): boolean {
+  get hasManagedAps(): boolean {
     const user = this.currentUserSubject.value;
     if (!user) return false;
     if (user.isAppAdmin) return true;
-    return (user.acpRoles || []).some((role) => role.role === 'ACP_MANAGER');
+    return (user.apRoles || []).some((role) => role.role === 'AP_MANAGER');
   }
 
   get isOidcUser(): boolean {
@@ -291,12 +291,12 @@ export class AuthService {
   }
 
   credentialLogin(
-    acpId: string,
+    apId: string,
     username: string,
     password: string,
   ): Observable<CredentialLoginResponse> {
     return this.http
-      .post<CredentialLoginResponse>(`${this.API}/credential-login`, { acpId, username, password })
+      .post<CredentialLoginResponse>(`${this.API}/credential-login`, { apId, username, password })
       .pipe(
         tap((res) => {
           this.switchToCredentialSession();
@@ -401,11 +401,11 @@ export class AuthService {
     );
   }
 
-  hasAcpRole(acpId: string, role: string): boolean {
+  hasApRole(apId: string, role: string): boolean {
     const user = this.currentUserSubject.value;
     if (!user) return false;
     if (user.isAppAdmin) return true;
-    return (user.acpRoles || []).some((r) => r.acpId === acpId && r.role === role);
+    return (user.apRoles || []).some((r) => r.apId === apId && r.role === role);
   }
 
   private async redirectToOidcAuthorization(
@@ -665,7 +665,7 @@ export class AuthService {
   private normalizeUserProfile(user: LoginResponse['user']): UserProfile {
     return {
       ...(user as UserProfile),
-      acpRoles: (user as UserProfile).acpRoles || [],
+      apRoles: (user as UserProfile).apRoles || [],
     };
   }
 

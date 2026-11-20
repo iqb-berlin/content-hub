@@ -26,6 +26,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    if (payload.apId && payload.acpId && payload.apId !== payload.acpId)
+      return null;
+    const apId = payload.apId || payload.acpId;
     // Credential users don't exist in User table - return payload directly
     if (payload.type === "credential") {
       return {
@@ -34,8 +37,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         isAppAdmin: false,
         type: payload.type,
         authType: payload.authType,
-        acpId: payload.acpId,
-        acpRoles: [],
+        apId,
+        apRoles: [],
       };
     }
 
@@ -47,7 +50,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // Load full user with roles from database for OIDC users.
     const user = await this.userRepository.findOne({
       where: { id: payload.sub },
-      relations: ["acpRoles", "acpRoles.acp"],
+      relations: ["apRoles", "apRoles.ap"],
     });
 
     if (!user) {
@@ -61,10 +64,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       isAppAdmin: user.isAppAdmin,
       type: payload.type,
       authType: payload.authType,
-      acpId: payload.acpId,
-      acpRoles: user.acpRoles.map((role) => ({
-        acpId: role.acpId,
-        acpName: role.acp?.name,
+      apId,
+      apRoles: user.apRoles.map((role) => ({
+        apId: role.apId,
+        apName: role.ap?.name,
         role: role.role,
       })),
     };

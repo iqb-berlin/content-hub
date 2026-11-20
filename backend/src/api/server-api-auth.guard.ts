@@ -37,15 +37,18 @@ export class ServerApiAuthGuard implements CanActivate {
       ]) || [];
 
     if (!this.authService.hasScopes(client.scopes, requiredScopes)) {
+      const wireScopes = requiredScopes.map((scope) =>
+        req.apTerminology === "acp" && scope === "ap.read" ? "acp.read" : scope,
+      );
       throw new ForbiddenException(
-        `Missing required scopes: ${requiredScopes.join(", ")}`,
+        `Missing required scopes: ${wireScopes.join(", ")}`,
       );
     }
 
     req.serverApiClient = {
       id: client.id,
       scopes: client.scopes,
-      allowedAcpIds: client.allowedAcpIds || null,
+      allowedApIds: client.allowedApIds || null,
     };
 
     return true;

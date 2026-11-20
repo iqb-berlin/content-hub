@@ -1,7 +1,7 @@
 import { isRecord } from "./unit-file-parsing";
 import type { StudioItemComment } from "./unit-parser.types";
 
-/** Read Studio's VOUC export without creating Content Pool review comments. */
+/** Read Studio's VOUC export without creating Content Hub review comments. */
 export function parseStudioItemComments(
   content: string,
 ): Map<string, StudioItemComment[]> {

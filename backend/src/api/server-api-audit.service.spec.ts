@@ -41,9 +41,9 @@ describe("ServerApiAuditService", () => {
   it("creates and saves normalized audit entries", async () => {
     await service.log({
       clientId: "client-1",
-      action: "acp.read",
+      action: "ap.read",
       method: "GET",
-      path: "/server/acp/acp-1",
+      path: "/server/ap/ap-1",
       success: true,
       statusCode: 200,
     });
@@ -51,10 +51,10 @@ describe("ServerApiAuditService", () => {
     expect(auditRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         clientId: "client-1",
-        action: "acp.read",
+        action: "ap.read",
         method: "GET",
-        path: "/server/acp/acp-1",
-        acpId: undefined,
+        path: "/server/ap/ap-1",
+        apId: undefined,
         resourceId: undefined,
         success: true,
         details: {},
@@ -64,9 +64,9 @@ describe("ServerApiAuditService", () => {
   });
 
   it("returns filtered logs with a clamped limit", async () => {
-    const rows = await service.list(900, "acp.read", "client-1", [
-      "acp-1",
-      "acp-2",
+    const rows = await service.list(900, "ap.read", "client-1", [
+      "ap-1",
+      "ap-2",
     ]);
 
     const qb = auditRepository.createQueryBuilder.mock.results[0].value;
@@ -82,8 +82,8 @@ describe("ServerApiAuditService", () => {
     );
     expect(qb.andWhere).toHaveBeenNthCalledWith(
       3,
-      "log.acp_id IN (:...allowedAcpIds)",
-      { allowedAcpIds: ["acp-1", "acp-2"] },
+      "log.acp_id IN (:...allowedApIds)",
+      { allowedApIds: ["ap-1", "ap-2"] },
     );
     expect(rows).toEqual([{ id: "log-1" }]);
   });

@@ -54,6 +54,7 @@ const IDENTITY_FIELDS = new Set([
   "variableReadOnlyId",
   "useUnitAliasAsPrefix",
   "previewTargetId",
+  "previewStart",
   "excluded",
 ]);
 const PERSONAL_EXPORT_FIELDS = new Set([
@@ -115,7 +116,7 @@ export class ReviewerColumnPolicy {
   }
 
   allowsField(field: string): boolean {
-    // Studio comments have their own ACP feature flag in the source parser;
+    // Studio comments have their own AP feature flag in the source parser;
     // table column selection does not control this read-only preview section.
     if (field === "studioComments") return true;
     return (
@@ -256,6 +257,7 @@ export class ReviewerColumnPolicy {
         id: unit.id,
         name: unitLabels ? unit.name : "",
         occurrenceId: unit.occurrenceId,
+        linkId: unit.linkId,
         blockPath: bookletLabels ? [...unit.blockPath] : [],
       })),
     };
@@ -324,6 +326,7 @@ export class ReviewerColumnPolicy {
           "name",
           "lang",
           "items",
+          "navigationItems",
           "dependencies",
           "codingScheme",
           "richText",
@@ -334,7 +337,7 @@ export class ReviewerColumnPolicy {
         result[key] = [];
         continue;
       }
-      if (key === "acpIndex" || key === "validationResult") continue;
+      if (key === "apIndex" || key === "validationResult") continue;
       if (key === "itemProperties") {
         result[key] = Object.fromEntries(
           Object.entries(record(entry)).map(([id, item]) => [

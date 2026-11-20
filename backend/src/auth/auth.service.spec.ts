@@ -6,8 +6,8 @@ import * as bcrypt from "bcryptjs";
 import { AuthService } from "./auth.service";
 import {
   User,
-  AcpAccessConfig,
-  AcpCredential,
+  ApAccessConfig,
+  ApCredential,
   AccessModel,
 } from "../database/entities";
 
@@ -44,11 +44,11 @@ describe("AuthService", () => {
         AuthService,
         { provide: getRepositoryToken(User), useValue: userRepo },
         {
-          provide: getRepositoryToken(AcpAccessConfig),
+          provide: getRepositoryToken(ApAccessConfig),
           useValue: accessConfigRepo,
         },
         {
-          provide: getRepositoryToken(AcpCredential),
+          provide: getRepositoryToken(ApCredential),
           useValue: credentialRepo,
         },
         { provide: JwtService, useValue: jwtService },
@@ -59,11 +59,11 @@ describe("AuthService", () => {
   });
 
   describe("credentialLogin", () => {
-    it("should return token for valid ACP credentials", async () => {
+    it("should return token for valid AP credentials", async () => {
       const hashedPw = await bcrypt.hash("cred-pass", 12);
       const config = {
         id: "config-1",
-        acpId: "acp-1",
+        apId: "ap-1",
         accessModel: AccessModel.CREDENTIALS_LIST,
         validFrom: null,
         validUntil: null,
@@ -76,17 +76,17 @@ describe("AuthService", () => {
       });
 
       const result = await service.credentialLogin(
-        "acp-1",
+        "ap-1",
         "creduser",
         "cred-pass",
       );
       expect(result.accessToken).toBe("mock-jwt-token");
-      expect(result.acpId).toBe("acp-1");
+      expect(result.apId).toBe("ap-1");
     });
 
     it("should throw when access config not found", async () => {
       accessConfigRepo.findOne.mockResolvedValue(null);
-      await expect(service.credentialLogin("acp-1", "u", "p")).rejects.toThrow(
+      await expect(service.credentialLogin("ap-1", "u", "p")).rejects.toThrow(
         UnauthorizedException,
       );
     });
@@ -95,7 +95,7 @@ describe("AuthService", () => {
       const hashedPw = await bcrypt.hash("cred-pass", 12);
       accessConfigRepo.findOne.mockResolvedValue({
         id: "config-1",
-        acpId: "acp-1",
+        apId: "ap-1",
         accessModel: AccessModel.CREDENTIALS_LIST,
         validFrom: null,
         validUntil: null,
@@ -108,7 +108,7 @@ describe("AuthService", () => {
       for (let i = 0; i < 5; i++) {
         await expect(
           service.credentialLogin(
-            "acp-1",
+            "ap-1",
             "creduser",
             "wrong-password",
             "1.2.3.4",
@@ -118,7 +118,7 @@ describe("AuthService", () => {
 
       await expect(
         service.credentialLogin(
-          "acp-1",
+          "ap-1",
           "creduser",
           "wrong-password",
           "1.2.3.4",
@@ -131,7 +131,7 @@ describe("AuthService", () => {
 
   describe("getProfile", () => {
     it("should return user profile", async () => {
-      userRepo.findOne.mockResolvedValue({ ...mockUser, acpRoles: [] });
+      userRepo.findOne.mockResolvedValue({ ...mockUser, apRoles: [] });
       const result = await service.getProfile("user-1");
       expect(result.username).toBe("testuser");
     });
@@ -145,13 +145,13 @@ describe("AuthService", () => {
   });
 
   describe("generateTokenForOidcUser", () => {
-    it("should include ACP roles in returned user payload", async () => {
+    it("should include AP roles in returned user payload", async () => {
       const result = await service.generateTokenForOidcUser({
         sub: "user-1",
         username: "testuser",
         displayName: "Test User",
         isAppAdmin: false,
-        acpRoles: [{ acpId: "acp-1", role: "ACP_MANAGER" }],
+        apRoles: [{ apId: "ap-1", role: "AP_MANAGER" }],
       });
 
       expect(result.accessToken).toBe("mock-jwt-token");
@@ -159,7 +159,7 @@ describe("AuthService", () => {
         id: "user-1",
         username: "testuser",
         isAppAdmin: false,
-        acpRoles: [{ acpId: "acp-1", role: "ACP_MANAGER" }],
+        apRoles: [{ apId: "ap-1", role: "AP_MANAGER" }],
       });
     });
   });

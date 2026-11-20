@@ -22,7 +22,7 @@ to recognize well-formed legacy scales during migration.
 
 `version` inside an ACP index is the **content package's SemVer version**,
 independent of the schema version. Migration preserves it. Validation reports and
-`acpIndexSchemaId` identify the schema as `acp-index@0.6`.
+`apIndexSchemaId` identify the schema as `acp-index@0.6`.
 
 ## Scale structure and validation
 
@@ -74,3 +74,5 @@ file records in one transaction. Older snapshots retain current item properties
 and use the saved German index name when available. A saved release returns to
 development for a fresh publication decision. Run the snapshot metadata database
 migration before starting the updated backend.
+
+Generating an index from files keeps existing units within their assessment part, including their items, metadata and dependencies. The preview lists units present only in the existing index. Root entries that cannot be identified as mirrors require explicit migration.

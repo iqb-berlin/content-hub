@@ -2,8 +2,8 @@
 
 ## Purpose
 
-The Item Explorer is a shared ACP-level workspace for curating item-oriented metadata and
-presentation preferences without forcing every change directly into the main ACP record.
+The Item Explorer is a shared AP-level workspace for curating item-oriented metadata and
+presentation preferences without forcing every change directly into the main AP record.
 
 It is one of the more advanced parts of the application because it supports:
 
@@ -54,16 +54,16 @@ overwriting someone else's work.
 
 ## Default Explorer State
 
-When an ACP gets explorer state for the first time, the backend builds it from existing
-ACP data:
+When an AP gets explorer state for the first time, the backend builds it from existing
+AP data:
 
 - item tags are derived from `acp.itemProperties`,
 - metadata columns are derived from normalized `featureConfig.metadataColumns`,
 - UI state starts empty, so the client falls back to sorting by task (`unitLabel`),
 - item order starts empty,
-- item properties are taken from the ACP record.
+- item properties are taken from the AP record.
 
-This keeps the explorer aligned with existing ACP data rather than creating a blank editor.
+This keeps the explorer aligned with existing AP data rather than creating a blank editor.
 
 ## Editing Workflow
 
@@ -75,6 +75,46 @@ Typical manager loop:
 4. review the history and current draft status,
 5. save draft to publish changes,
 6. or discard the draft to revert to published state.
+
+## Reduced read-only view
+
+AP managers configure **Ansicht für Reviewer vereinfachen** under **Zugriff & Funktionen**.
+These settings are saved directly in `featureConfig.itemExplorerReducedView`. They take effect on
+subsequent Explorer loads without publishing an Explorer draft. Publishing or discarding an Explorer
+draft does not change them. They are presentation settings, not API permissions.
+
+The feature is opt-in. Existing APs retain the complete view. Managers always retain their full
+editing view and can inspect the configured view through **Leseansicht**. The return action
+**Bearbeitungsansicht** is always available to managers, even when the header is hidden.
+
+The profiles **Vollständig**, **Review mit Vorschau**, and **Nur Tabelle** provide starting points;
+all visibility settings can then be changed independently:
+
+- `showHeader`: title and optional header actions;
+- `headerActions`: stable IDs `readonlyPreview`, `columnManager`, `importParameters`,
+  `clearEmpiricalDifficulties`, `renumberReferences`, and `history`;
+- `showTableToolbarArea`: global search, exclusion controls, and collection controls;
+- `showItemInfo`: selected-item information and preview settings;
+- `showPlayerPreview`: player container and its controls;
+- `showExplorerItemPanel`: the complete right-hand panel, including item actions and review comments.
+
+Fullscreen, permitted manual-order, export and save actions, and loading/error/save messages remain
+available independently of optional controls. Per-column table filters remain in the table.
+Management actions still require their existing permissions. Studio comments are omitted from the
+reduced view, even when their separate AP feature is enabled.
+
+Hidden regions are removed from the DOM. Without the right-hand panel the table fills the available
+width and height, including narrow screens and fullscreen. The existing split percentage is retained
+when switching back to editing; hidden previews do not load item-preview resources on row selection.
+When the table toolbar is hidden, its global search and active-collection filter are suspended;
+per-column filters remain active. The saved search and collection selection are retained for the
+full editing view. Switching back to editing reloads the selected preview, including when an item
+was selected while its preview panel was hidden. Pending preview requests are cancelled when the
+panel disappears. There is no local visibility override for reviewers.
+
+Missing visibility keys default to visible; `enabled` defaults to false. The visibility of each new
+header action must be considered explicitly when introducing it, following the domain decision in
+[issue #167](https://github.com/iqb-berlin/content-hub/issues/167).
 
 ## Keyboard Interaction
 
@@ -166,7 +206,7 @@ request settles and is not carried over to the next selection.
 Backend responses expose `Server-Timing` entries for file-signature and Explorer-version reads,
 source reads, parsing, row-number revision and assignment, total endpoint time, parsed-cache status,
 and numbered-result cache status. File downloads additionally use private `ETag` caching. Calls over
-1.5 seconds produce a structured `item-explorer-slow-load` warning containing the ACP ID, phase,
+1.5 seconds produce a structured `item-explorer-slow-load` warning containing the AP ID, phase,
 duration, and cache status, but no item or file contents.
 
 For detailed browser measurements, enable diagnostics in the browser console and reload the
@@ -270,24 +310,24 @@ The explorer can manage which metadata columns are visible and in what order.
 
 Publishing the explorer draft updates:
 
-- the ACP `itemProperties`,
-- the ACP access-config `featureConfig.metadataColumns`.
+- the AP `itemProperties`,
+- the AP access-config `featureConfig.metadataColumns`.
 
 This means column choices are not just temporary UI preferences. They become part of the
-ACP's published shared configuration.
+AP's published shared configuration.
 
 ## Item Comment Threads
 
-Authenticated ACP users can comment directly below the selected Item Explorer preview when
+Authenticated AP users can comment directly below the selected Item Explorer preview when
 commenting is enabled for the `ITEM` target. The thread is identified by `unitId` and `itemId`;
 partial-credit rows with different Sub-IDs therefore use the same thread.
 
-Managers choose the visibility explicitly in the ACP feature configuration:
+Managers choose the visibility explicitly in the AP feature configuration:
 
 - `PRIVATE` keeps the existing behavior and shows users only their own comments,
-- `SHARED` makes item comments and replies visible to all authenticated users of the ACP.
+- `SHARED` makes item comments and replies visible to all authenticated users of the AP.
 
-Existing ACPs default to `PRIVATE`. Every comment shows an author label and creation time. Users
+Existing APs default to `PRIVATE`. Every comment shows an author label and creation time. Users
 may edit or delete only their own comments; concurrent edits are rejected through a version check.
 Replies have one level and are grouped below their root comment. Deleting a root with replies keeps
 a neutral placeholder so the remaining conversation is understandable.
@@ -305,10 +345,10 @@ and active edits. An active edit keeps the original comment version so a concurr
 produces a version conflict instead of silently overwriting newer text.
 Unsaved main-comment and reply drafts remain assigned to their item while navigating. JSON and
 XLSX comment exports include `unitId`, `itemId`, `threadId`, `parentCommentId`, and the updated
-timestamp. The original `/api/acp/:acpId/comments` endpoints remain available; the threaded Item
-Explorer UI uses `/api/acp/:acpId/review/comments`.
+timestamp. The original `/api/ap/:apId/comments` endpoints remain available; the threaded Item
+Explorer UI uses `/api/ap/:apId/review/comments`.
 
-The ACP start page does not offer a context-free comment action. It links to the Item Explorer
+The AP start page does not offer a context-free comment action. It links to the Item Explorer
 when item comments are enabled and keeps the XLSX export and recent-comment summary available.
 The legacy create endpoint rejects `target_id = acp_id` with `400 Bad Request`, including for
 managers and app admins. Before releasing this safeguard, the affected existing rows can be counted
@@ -324,12 +364,12 @@ WHERE target_type = 'UNIT'
 This audit query does not update or delete comments. Any cleanup requires a separate, explicitly
 approved procedure.
 
-The legacy ACP-wide `DELETE /api/acp/:acpId/comments` endpoint removes only unreferenced,
+The legacy AP-wide `DELETE /api/ap/:apId/comments` endpoint removes only unreferenced,
 non-item legacy rows. Its response reports both `deletedCount` and `retainedCount` plus the
-restricted deletion scope, so callers cannot mistake it for deleting every comment in the ACP.
+restricted deletion scope, so callers cannot mistake it for deleting every comment in the AP.
 
 Ownership and personal exports use stable user or credential IDs, never display names. A central
-review policy contains the temporary ACP permission mapping so future review capabilities can
+review policy contains the temporary AP permission mapping so future review capabilities can
 replace it without changing the thread API. Snapshot revisions are calculated only from the
 comments visible to the requester and can later be used for polling or ETags. Legacy comments with
 an unambiguous unit-qualified target remain available in their item thread; ambiguous raw target
@@ -341,7 +381,7 @@ items.
 Tags can come from two places:
 
 - shared explorer state,
-- existing item properties in the ACP.
+- existing item properties in the AP.
 
 The explorer normalizes tags and exposes them in the UI so managers can:
 
@@ -361,7 +401,7 @@ maintain three private fields for each Explorer row:
 - zero or more configured colored markers,
 - one plain-text note.
 
-ACP managers configure the category label and allowed values as well as marker labels and colors in
+AP managers configure the category label and allowed values as well as marker labels and colors in
 the access configuration. Notes use a plain textarea and are never interpreted as Markdown or HTML.
 Clearing a field removes it from the stored row data.
 
@@ -394,7 +434,7 @@ marker colors, note, competence level, empirical item difficulty, and the mean e
 of the unit when at least one value is available. Missing personal or difficulty values remain empty
 cells.
 
-ACP managers and application admins can additionally download one ACP-wide CSV from the Explorer
+AP managers and application admins can additionally download one AP-wide CSV from the Explorer
 toolbar. The endpoint rejects read-only users, credential logins, and public access. It exports every
 stored personal row across participants, using a stable participant identifier and including unit,
 item, Sub-ID, stable row key, category, tags, note, empirical difficulty, and mean unit difficulty.
@@ -426,7 +466,7 @@ Two modes exist:
 
 ### Direct persistence
 
-The import updates ACP item properties and the clean published explorer state immediately. If an
+The import updates AP item properties and the clean published explorer state immediately. If an
 unpublished explorer draft already exists, the direct operation is rejected with a conflict so it
 cannot silently overwrite or be overwritten by that draft. The caller must then use draft-aware
 persistence or publish/discard the pending draft first.
@@ -441,14 +481,19 @@ The same distinction exists when clearing empirical difficulty values.
 ### Wide item-parameter import
 
 Managers can also upload a semicolon-separated wide CSV through the Item Explorer. Its canonical
-headers are `item`, `sub_id`, `est`, `infit`, `discrimination`, `solution_rate`, `item_time_s`,
+headers are `item`, `sub_id`, `est`, `bista`, `infit`, `discrimination`, `solution_rate`, `item_time_s`,
 `stimulus_time_s`, `text_complexity`, `kstufe`, `booklet`, and `position`. Only `item` and at least one
 parameter column are required. `text_complexity` is imported and filtered as free text, including
 content that looks numeric. `kstufe` accepts the shared competence levels `I` to `V`
 (case-insensitive) and is normalized to upper case. It belongs to the item, so all partial-credit
 rows inherit the same value; conflicting values for the same item are rejected. An empty `kstufe`
 cell clears the value, while omitting the column preserves it. Time values are non-negative seconds;
-decimal point and decimal comma are accepted.
+decimal point and decimal comma are accepted. `bista` imports the numeric BiSta value per Explorer
+row, including partial-credit rows. It has no fixed decimal-place limit: `1.234567` and `1,234567`
+are both accepted without rounding to two decimal places. BiSta values must use decimal notation
+with an optional sign; hexadecimal, binary, octal, and exponent notation are rejected. Like the
+other numeric parameters, BiSta uses JavaScript's finite-number precision; arbitrary-precision
+decimal storage is not provided.
 
 Without a CSV import, the Explorer uses the numeric raw `value` of `iqb_time_item` from each VOMD
 item profile and `iqb_time_stimulus` from the VOMD unit profile. The legacy item property
@@ -472,7 +517,7 @@ booklet columns but supplies no booklet values. A CSV containing only `booklet` 
 `position`) can still clear occurrences explicitly with empty values. Other columns that are absent
 leave stored values unchanged; a supplied but empty value clears that parameter in its defined scope:
 
-- difficulty, Infit, discrimination, solution rate, and booklet occurrences belong to the stable
+- difficulty, BiSta, Infit, discrimination, solution rate, and booklet occurrences belong to the stable
   Explorer row,
 - item time belongs to the underlying item UUID and is shared by its partial-credit rows,
 - stimulus time belongs to the complete unit and is shared by all of its item rows.
@@ -501,7 +546,7 @@ The explorer then creates one table row per Sub-ID. Every row has:
 - a visible and sortable/filterable Sub-ID column,
 - the normal item preview and coding view of the underlying item.
 
-The ACP feature configuration controls `itemSubIdLabel` (the column heading) and
+The AP feature configuration controls `itemSubIdLabel` (the column heading) and
 `itemSubIdLabels` (display labels keyed by imported Sub-ID). Items without a Sub-ID continue to
 use their item UUID as their row key and remain single rows.
 
@@ -514,7 +559,7 @@ item from overwriting one another and gives exports a unique identifier for ever
 When `enableItemCollections` is enabled, authenticated users and credential identities can maintain
 multiple named collections. Collections are stored in the existing `acp_item_preferences` JSONB
 record under the `item-explorer` view. Private collections remain visible only to their owner;
-explicitly shared collections are available to other authorized participants in the same ACP.
+explicitly shared collections are available to other authorized participants in the same AP.
 Every collection stores an ordered list of stable row keys and an optimistic-lock version.
 Non-manager collection access additionally requires the Item Explorer item list to be enabled.
 
@@ -525,7 +570,7 @@ reports how many item and unit time values are missing. Stale row keys remain re
 excluded from totals and exports.
 
 Collections can be created, renamed, cleared, deleted, and exported as semicolon-separated UTF-8
-CSV. Up to 100 named collections can be stored per identity and ACP. Direct generation of ACP
+CSV. Up to 100 named collections can be stored per identity and AP. Direct generation of AP
 booklets or task sequences is intentionally outside this feature.
 
 ## Player Preview and Legacy Player Compatibility
@@ -533,20 +578,87 @@ booklets or task sequences is intentionally outside this feature.
 The Item Explorer and the item detail view both embed the unit player inside an iframe and
 try to focus the currently selected item automatically.
 
+The Item Explorer starts in **Einzelseiten** mode without the player's broad page-navigation
+arrows. Its display-mode selector does not offer **Seiten mit Schaltflächen**, and player-level
+unit-navigation targets are disabled. Switch items through the item list, its keyboard navigation,
+or **Vorheriges Item** / **Nächstes Item** so selection, preview and coding change together.
+Scroll and print display modes remain available. The complete unit view retains its own
+page-navigation controls.
+
+In **Regulärer Aufgabenablauf**, **Einzelseiten** additionally offers **Vorherige Aufgabenseite**
+and **Nächste Aufgabenseite** below the player. These controls navigate the declared task pages
+within the same session, retaining answers and the selected item for context capture.
+They are separate from item navigation and are disabled during a pending page change or a
+correct-solution preview. Context capture waits for the player to confirm the new page.
+The controls also allow leaving a page hidden by conditional visibility, even when only one
+other page remains available. Always-visible stimuli are excluded from this task-page sequence.
+The original visibility rules remain active; navigating to a hidden page does not reveal its content.
+
 By default, the Item Explorer preview neutralizes conditional visibility logic from the VOUD so
 that managers can inspect all relevant content even when the original unit would hide parts
-of it behind section visibility rules or media dependencies. ACP managers can re-enable the
-original conditional behavior through the ACP access-config feature flag
+of it behind section visibility rules or media dependencies. AP managers can re-enable the
+original conditional behavior through the AP access-config feature flag
 `enableItemExplorerConditionalVisibility`.
+
+When enabled, a fresh item preview derives a transient start state from the target section,
+equality rules and stable state-variable triggers on the target and always-visible pages.
+AND/OR constraints must yield exactly one assignment (bounded to 4096 candidates). Trigger
+references use canonical variable IDs; the player receives aliases in `stateVariableCodes`.
+This is a stable preview context, not a simulation of the preceding user interactions.
+
+“Vorschau einstellen” allows managers to constrain declared state variables. For regular item
+targets, the containing page is always selected automatically. Only targets in an always-visible
+stimulus expose an “Aufgabenkontext” selector; its default leaves the navigable context page
+unset. These settings are stored as `itemProperties[rowKey].previewStart` with optional zero-based
+`page` and `values` keyed by canonical state-variable ID. They follow the existing shared
+draft/publish workflow. Empty fields restore automatic resolution. Stored answer states have
+priority and are forwarded unchanged. Prepared states cannot be saved as answer states.
+
+Missing, ambiguous, conflicting, external-response or timer-dependent conditions display an
+unavailable explanation and a link to the regular unit workflow. No audio progress or answers
+are fabricated, and the original unit definition is forwarded unchanged. The AP flag remains
+opt-in. Definition/player version compatibility is still required by Aspect itself.
+
+### Conditional visibility acceptance scope (Issue #150)
+
+The supported preview is an explicit start context, not a replay of a student's interaction
+history. The following describes the technical scope; the broader request for identical
+rendering of arbitrary dynamic tasks still requires subject-matter acceptance before closing
+Issue #150.
+
+| Case | Expected behavior |
+| --- | --- |
+| Option disabled | Existing overview behavior, with conditional visibility neutralized. |
+| Option enabled, uniquely resolvable equality rules | Preserve the original definition, select the target page and show only matching stimulus sections. Switching A → B → A restores each context. |
+| Multiple stable contexts | Explain the ambiguity; managers may constrain declared state values. |
+| Answers, media progress, timers, unsupported or conflicting rules | Explain why the preview is unavailable and link to the complete unit workflow. |
+| Existing saved state, including a fallback state | Use the saved context with priority. It can differ from the automatically derived item context. This is intentional and requires acceptance for the intended review workflow. |
+| Synthetic visibility context or correct-solution preview | Never save it as an answer, including after restarts, solution toggles or late API responses. |
+
+The active player session groups its ID, data origin and received data. Save/delete completions
+and their errors apply only to the item and session that started the operation. A session change
+closes its obsolete confirmation dialog. Saved answer data remains separate; a new session
+must report current data before it can be saved. `stateReportPolicy: eager` requests those reports.
+Correct-solution data does not overwrite the ordinary answer snapshot. In a prepared visibility
+context, solution toggles also restore transient user edits; the restored context remains
+synthetic and cannot be saved as an answer state.
+
+`npm run e2e` downloads and SHA-256-verifies the pinned **Aspect 3.0.1** release into
+`frontend/tmp/` (cached and unversioned). `item-explorer-visibility.spec.ts` runs the real player
+with synthetic VOUD **4.10.0** content, verifying stimulus switching, the disabled option,
+saved-state priority and the unavailable fallback. The response-state regression suite uses
+a separate protocol fixture to test editing, saving, reloading and deleting answers. Other
+player/definition version combinations require their own compatibility checks; these tests
+make no compatibility claim for Aspect 2.12.6 or for the old DLB002 production example.
 
 The preview keeps the corresponding schema fields in place with neutral default values so the
 embedded Aspect player can still parse the generated unit definition reliably.
 
-Visual item highlighting inside the embedded player can be controlled per ACP through
-`enablePlayerFocusHighlight`. Newly created ACPs default this to off. Legacy ACPs keep the
+Visual item highlighting inside the embedded player can be controlled per AP through
+`enablePlayerFocusHighlight`. Newly created APs default this to off. Legacy APs keep the
 previous highlighted behavior until the setting is changed explicitly.
 
-The preview pipeline is intentionally defensive because ACPs can reference different
+The preview pipeline is intentionally defensive because APs can reference different
 generations of Aspect player builds:
 
 1. the client resolves the preview target from `sourceVariable` or `variableId`,
@@ -556,7 +668,7 @@ generations of Aspect player builds:
    the same VOUD element,
 4. the iframe DOM is searched using both newer and older marker conventions.
 
-ACP managers can override the preview target per item in two ways:
+AP managers can override the preview target per item in two ways:
 
 - select a known variable from the coding scheme,
 - enter a free-text VOUD identifier or alias manually.
@@ -607,7 +719,7 @@ ignores `playerConfig.startPage`.
 
 ## History and Auditing
 
-Every explorer change is written to `AcpItemExplorerChangeLog`.
+Every explorer change is written to `ApItemExplorerChangeLog`.
 
 Stored history data includes:
 
@@ -622,7 +734,7 @@ for collaborative curation work.
 
 ## Why the Explorer Exists Separately
 
-The explorer state is intentionally not just another field on the ACP record because it needs:
+The explorer state is intentionally not just another field on the AP record because it needs:
 
 - draft versus published separation,
 - optimistic lock handling,
@@ -630,7 +742,7 @@ The explorer state is intentionally not just another field on the ACP record bec
 - collaborative change tracking.
 
 Those concerns are much easier to model in dedicated tables than through ad-hoc writes to
-the ACP JSON payload.
+the AP JSON payload.
 
 ## Operational Advice
 
@@ -646,6 +758,28 @@ Create a snapshot before a large explorer publishing step if the changes are imp
 
 ## Related Documents
 
-- [ACP Workflows](acp-workflows.md)
+- [AP Workflows](acp-workflows.md)
 - [Data Model](../architecture/data-model.md)
 - [Backend Architecture](../architecture/backend.md)
+
+## Coding Information and Sample Solutions
+
+The coding dialog prefers configured manual instructions and otherwise derives an answer only
+from explicit, unambiguous `FULL_CREDIT` rules. The coding engine validates the generated response
+values before the dialog or player labels them as a correct solution. Unsupported or ambiguous
+cases retain the relevant codebook rules.
+
+Likert rows use their containing table's columns, with one-based response values and readable row
+and column labels. Missing or inconsistent column definitions cannot produce a sample solution.
+Direct `SUM_SCORE` combinations can combine supported checkbox, Likert-row, and drop-list answers
+when every contribution and the resulting aggregate are validated as full credit.
+
+Drag-and-drop supports initially empty single-object targets connected to palettes of uniquely
+identified objects. The player receives arrays of object aliases. The preview removes moved
+objects from their palettes and other targets, returns displaced objects, preserves other valid
+placements, and retains palette objects only when copy-on-drop explicitly allows copies. This
+reconciliation affects only the temporary sample-solution state; hiding the solution restores the
+saved answers. Unrelated response groups and state-variable data remain separate.
+
+Sorting tasks, multi-object target answers, duplicate identifiers, invalid connections, and
+conflicting allocations continue to show codebook information instead of an invented solution.

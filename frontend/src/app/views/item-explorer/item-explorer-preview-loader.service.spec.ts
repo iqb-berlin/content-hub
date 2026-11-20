@@ -25,8 +25,8 @@ describe('ItemExplorerPreviewLoader', () => {
     vi.stubGlobal('fetch', fetchMock);
     const loader = new ItemExplorerPreviewLoader(api as any, diagnostics as any);
 
-    const first = firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1'));
-    const second = firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1'));
+    const first = firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1'));
+    const second = firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1'));
     unitView$.next({
       id: 'UNIT_1',
       dependencies: [
@@ -44,7 +44,7 @@ describe('ItemExplorerPreviewLoader', () => {
     );
     await expect(second).resolves.toEqual(expect.objectContaining({ cacheStatus: 'coalesced' }));
 
-    await expect(firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1'))).resolves.toEqual(
+    await expect(firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1'))).resolves.toEqual(
       expect.objectContaining({ cacheStatus: 'hit' }),
     );
     expect(api.getFileUnitView).toHaveBeenCalledTimes(1);
@@ -53,22 +53,22 @@ describe('ItemExplorerPreviewLoader', () => {
 
   it('keeps requests for the same unit ID separate across parts', async () => {
     const api = {
-      getFileUnitView: vi.fn((_acp, _unit, options) =>
+      getFileUnitView: vi.fn((_ap, _unit, options) =>
         of({ id: 'UNIT_1', partId: options.partId, dependencies: [] }),
       ),
       appendAuthToken: vi.fn((url) => url),
     };
     const diagnostics = { start: vi.fn(), finish: vi.fn() };
     const loader = new ItemExplorerPreviewLoader(api as any, diagnostics as any);
-    const first = await firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1', 'math'));
-    const second = await firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1', 'language'));
+    const first = await firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1', 'math'));
+    const second = await firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1', 'language'));
     expect(first.unit.partId).toBe('math');
     expect(second.unit.partId).toBe('language');
-    expect(api.getFileUnitView).toHaveBeenCalledWith('acp-1', 'UNIT_1', {
+    expect(api.getFileUnitView).toHaveBeenCalledWith('ap-1', 'UNIT_1', {
       perspective: 'editor',
       partId: 'math',
     });
-    expect(api.getFileUnitView).toHaveBeenCalledWith('acp-1', 'UNIT_1', {
+    expect(api.getFileUnitView).toHaveBeenCalledWith('ap-1', 'UNIT_1', {
       perspective: 'editor',
       partId: 'language',
     });
@@ -92,8 +92,8 @@ describe('ItemExplorerPreviewLoader', () => {
     vi.stubGlobal('fetch', fetchMock);
     const loader = new ItemExplorerPreviewLoader(api as any, diagnostics as any);
 
-    await expect(firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1'))).rejects.toThrow();
-    await expect(firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1'))).rejects.toThrow();
+    await expect(firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1'))).rejects.toThrow();
+    await expect(firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1'))).rejects.toThrow();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -119,10 +119,10 @@ describe('ItemExplorerPreviewLoader', () => {
     vi.stubGlobal('fetch', fetchMock);
     const loader = new ItemExplorerPreviewLoader(api as any, diagnostics as any);
 
-    await expect(firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1'))).resolves.toEqual(
+    await expect(firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1'))).resolves.toEqual(
       expect.objectContaining({ definition: null }),
     );
-    await expect(firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1'))).resolves.toEqual(
+    await expect(firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1'))).resolves.toEqual(
       expect.objectContaining({ definition: null, cacheStatus: 'miss' }),
     );
 
@@ -147,11 +147,11 @@ describe('ItemExplorerPreviewLoader', () => {
     };
     const loader = new ItemExplorerPreviewLoader(api as any, diagnostics as any);
 
-    const first = loader.load('acp-1', 'editor', 'UNIT_1').subscribe();
+    const first = loader.load('ap-1', 'editor', 'UNIT_1').subscribe();
     first.unsubscribe();
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    const second = loader.load('acp-1', 'editor', 'UNIT_1').subscribe();
+    const second = loader.load('ap-1', 'editor', 'UNIT_1').subscribe();
     expect(teardown).toHaveBeenCalledTimes(1);
     expect(api.getFileUnitView).toHaveBeenCalledTimes(2);
     second.unsubscribe();
@@ -176,9 +176,9 @@ describe('ItemExplorerPreviewLoader', () => {
     };
     const loader = new ItemExplorerPreviewLoader(api as any, diagnostics as any);
 
-    const first = loader.load('acp-1', 'editor', 'UNIT_1').subscribe();
+    const first = loader.load('ap-1', 'editor', 'UNIT_1').subscribe();
     first.unsubscribe();
-    const second = firstValueFrom(loader.load('acp-1', 'editor', 'UNIT_1'));
+    const second = firstValueFrom(loader.load('ap-1', 'editor', 'UNIT_1'));
 
     expect(sourceSubscriptions).toBe(1);
     expect(teardown).not.toHaveBeenCalled();
@@ -220,7 +220,7 @@ describe('ItemExplorerPreviewLoader', () => {
     vi.stubGlobal('fetch', fetchMock);
     const loader = new ItemExplorerPreviewLoader(api as any, diagnostics as any);
 
-    const subscription = loader.load('acp-1', 'editor', 'UNIT_1').subscribe();
+    const subscription = loader.load('ap-1', 'editor', 'UNIT_1').subscribe();
     subscription.unsubscribe();
     await vi.waitFor(() => {
       expect(signals).toHaveLength(2);

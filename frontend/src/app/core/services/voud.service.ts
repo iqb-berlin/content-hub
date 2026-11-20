@@ -1,4 +1,6 @@
+import { collectVoudNodeEntries, findVoudIdentifierMatches } from './voud-nodes';
 import { Injectable } from '@angular/core';
+import { resolveDropListTarget, PlayerDropList } from './voud-drop-lists';
 
 export interface TransformedVariablePage {
   variable_page_always_visible: string[];
@@ -17,11 +19,18 @@ export interface PlayerTargetLocation {
   isAlwaysVisiblePage: boolean;
 }
 
+export type PlayerTargetIdentifierKind = 'id' | 'alias';
+type PlayerTargetLocations = Record<PlayerTargetIdentifierKind, Map<string, PlayerTargetLocation>>;
+
 export interface PlayerResponseTarget {
   responseId: string;
   elementType: string;
   identifiers: string[];
   optionCount?: number;
+  label?: string;
+  options?: Array<{ position: number; label: string }>;
+  valueOptions?: Array<{ value: string; label: string }>;
+  dropLists?: PlayerDropList[];
 }
 
 interface IdentifierBearingNode {
@@ -29,15 +38,24 @@ interface IdentifierBearingNode {
   alias?: unknown;
   type?: unknown;
   options?: unknown;
+  label?: unknown;
+  text?: unknown;
+  prompt?: unknown;
+  title?: unknown;
+  name?: unknown;
+  rowLabel?: unknown;
+  columnCount?: unknown;
 }
 
 interface IdentifierNodeMatch {
   pageIndex: number;
   node: IdentifierBearingNode;
+  parent?: IdentifierBearingNode;
 }
 
 @Injectable({ providedIn: 'root' })
 export class VoudService {
+  private locationIndex?: { definition: string; locations: PlayerTargetLocations };
   private readonly conditionalVisibilityDefaults = new Map<string, unknown>([
     ['visibilityRules', []],
     ['visibilityDelay', 0],
@@ -130,29 +148,53 @@ export class VoudService {
   resolvePlayerTargetLocation(
     definition: string,
     variableId: string,
+    kind?: PlayerTargetIdentifierKind,
   ): PlayerTargetLocation | undefined {
-    const target = String(variableId || '').trim();
+    const target = String(variableId || '')
+      .trim()
+      .toLowerCase();
     if (!target) return undefined;
+    const locations = this.getPlayerTargetLocations(definition);
+    // A public reference keeps the same alias-first lookup as findTargetNode.
+    return kind
+      ? locations[kind].get(target)
+      : (locations.alias.get(target) ?? locations.id.get(target));
+  }
 
+  private getPlayerTargetLocations(definition: string): PlayerTargetLocations {
+    if (this.locationIndex?.definition === definition) return this.locationIndex.locations;
+    const ids = new Map<string, PlayerTargetLocation>();
+    const aliases = new Map<string, PlayerTargetLocation>();
     try {
-      const unitDefinition = this.parseDefinition(definition);
-      const pages: any[] = Array.isArray(unitDefinition?.pages) ? unitDefinition.pages : [];
-      const match = this.findTargetNode(pages, target);
-      if (!match) return undefined;
-
-      const isAlwaysVisiblePage = this.isPageAlwaysVisible(pages[match.pageIndex]);
-      const scrollPageIndex = pages
-        .slice(0, match.pageIndex)
-        .filter((page) => !this.isPageAlwaysVisible(page)).length;
-      return {
-        absolutePageIndex: match.pageIndex,
-        scrollPageIndex: isAlwaysVisiblePage ? undefined : scrollPageIndex,
-        isAlwaysVisiblePage,
-      };
+      const pages = this.parseDefinition(definition)?.pages;
+      let scrollPageIndex = 0;
+      if (Array.isArray(pages)) {
+        pages.forEach((page, absolutePageIndex) => {
+          const isAlwaysVisiblePage = this.isPageAlwaysVisible(page);
+          const location = {
+            absolutePageIndex,
+            isAlwaysVisiblePage,
+            scrollPageIndex: isAlwaysVisiblePage ? undefined : scrollPageIndex,
+          };
+          if (!isAlwaysVisiblePage) scrollPageIndex++;
+          for (const { node } of collectVoudNodeEntries(page)) {
+            const id = String(node['id'] || '')
+              .trim()
+              .toLowerCase();
+            const alias = String(node['alias'] || '')
+              .trim()
+              .toLowerCase();
+            if (id && !ids.has(id)) ids.set(id, location);
+            if (alias && !aliases.has(alias)) aliases.set(alias, location);
+          }
+        });
+      }
     } catch (e) {
       console.error('Error resolving player target location from VOUD:', e);
-      return undefined;
     }
+    const locations = { id: ids, alias: aliases };
+    this.locationIndex = { definition, locations };
+    return locations;
   }
 
   /**
@@ -186,12 +228,12 @@ export class VoudService {
 
   /**
    * Resolves the identifier and element type expected in Aspect's `elementCodes` data part.
-   * The player serializes responses by alias and falls back to the internal element id when
-   * no alias is present.
+   * Current players use aliases, while ASPECT 2.0–2.5 requires IDs for drop lists.
    */
   resolvePlayerResponseTarget(
     definition: string,
     variableId: string,
+    useLegacyDropListIds = false,
   ): PlayerResponseTarget | undefined {
     const target = String(variableId || '').trim();
     if (!target) return undefined;
@@ -203,15 +245,55 @@ export class VoudService {
       if (!match) return undefined;
 
       const identifiers = this.getNodeIdentifiers(match.node);
-      const responseId = String(match.node.alias || match.node.id || '').trim();
+      const elementType = String(match.node.type || '')
+        .trim()
+        .toLowerCase();
+      const responseId = String(
+        (useLegacyDropListIds && elementType === 'drop-list'
+          ? match.node.id
+          : match.node.alias || match.node.id) || '',
+      ).trim();
       if (!responseId) return undefined;
-      const optionCount = Array.isArray(match.node.options) ? match.node.options.length : undefined;
+      const isLikertRow = elementType === 'likert-row';
+      const optionSource = isLikertRow ? match.parent : match.node;
+      const hasValidOptions =
+        Array.isArray(optionSource?.options) &&
+        (!isLikertRow ||
+          (String(match.parent?.type || '').toLowerCase() === 'likert' &&
+            (match.node.columnCount === undefined ||
+              match.node.columnCount === optionSource.options.length)));
+      // Keep malformed rows identifiable so callers fall back to rules instead of
+      // treating an unvalidated raw codebook value as a player-independent answer.
+      const rawOptions = hasValidOptions ? (optionSource!.options as unknown[]) : undefined;
+      const optionCount = rawOptions?.length;
+      const label = this.extractDisplayText(
+        (isLikertRow ? match.node.rowLabel : undefined) ||
+          match.node.label ||
+          match.node.prompt ||
+          match.node.text ||
+          match.node.title ||
+          match.node.name,
+      );
+      const options = rawOptions?.map((option, index) => ({
+        position: index + 1,
+        label: this.extractDisplayText(option) || `Option ${index + 1}`,
+      }));
+      const dropListTarget =
+        elementType === 'drop-list'
+          ? resolveDropListTarget(pages, match.node, (value) => this.extractDisplayText(value), {
+              useLegacyIds: useLegacyDropListIds,
+              definitionVersion: unitDefinition?.version,
+            })
+          : undefined;
 
       return {
         responseId,
         elementType: String(match.node.type || '').trim(),
         identifiers,
         ...(optionCount !== undefined ? { optionCount } : {}),
+        ...(label ? { label } : {}),
+        ...(options ? { options } : {}),
+        ...(dropListTarget || {}),
       };
     } catch (e) {
       console.error('Error resolving player response target from VOUD:', e);
@@ -235,25 +317,12 @@ export class VoudService {
   }
 
   private findTargetNode(pages: any[], target: string): IdentifierNodeMatch | undefined {
-    const normalizedTarget = target.toLowerCase();
-    const findBy = (key: 'alias' | 'id'): IdentifierNodeMatch | undefined => {
-      for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
-        let matchingNode: IdentifierBearingNode | undefined;
-        this.visitNodes(pages[pageIndex], (node) => {
-          if (matchingNode) return;
-          const value = String(node[key] || '').trim();
-          if (value && value.toLowerCase() === normalizedTarget) {
-            matchingNode = node;
-          }
-        });
-        if (matchingNode) return { pageIndex, node: matchingNode };
-      }
-      return undefined;
-    };
-
-    // Item and coding references use VOUD aliases. Generated element IDs are
-    // a compatibility fallback for manually stored targets.
-    return findBy('alias') || findBy('id');
+    return findVoudIdentifierMatches(
+      pages.flatMap((page, pageIndex) =>
+        collectVoudNodeEntries(page).map((entry) => ({ pageIndex, ...entry })),
+      ),
+      target,
+    )[0];
   }
 
   private isPageAlwaysVisible(page: any): boolean {
@@ -274,29 +343,38 @@ export class VoudService {
     );
   }
 
-  private visitNodes(
-    node: unknown,
-    visitor: (node: IdentifierBearingNode) => void,
-    noParent: string[] = ['visibilityRules'],
-  ): void {
-    if (typeof node !== 'object' || node === null) {
-      return;
+  private extractDisplayText(value: unknown): string {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return String(value)
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;|&#160;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;|&apos;/gi, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
     }
-
-    if (!Array.isArray(node)) {
-      visitor(node as IdentifierBearingNode);
+    if (Array.isArray(value)) {
+      const german = value.find(
+        (entry) =>
+          entry &&
+          typeof entry === 'object' &&
+          String((entry as Record<string, unknown>)['lang'] || '').toLowerCase() === 'de',
+      );
+      if (german) return this.extractDisplayText(german);
+      return value.map((entry) => this.extractDisplayText(entry)).find(Boolean) || '';
     }
-
-    if (Array.isArray(node)) {
-      node.forEach((item) => this.visitNodes(item, visitor, noParent));
-      return;
-    }
-
-    Object.entries(node).forEach(([key, value]) => {
-      if (!noParent.includes(key)) {
-        this.visitNodes(value, visitor, noParent);
+    if (typeof value === 'object') {
+      const objectValue = value as Record<string, unknown>;
+      for (const key of ['de', 'value', 'text', 'label', 'title', 'name']) {
+        const text = this.extractDisplayText(objectValue[key]);
+        if (text) return text;
       }
-    });
+    }
+    return '';
   }
 
   private removeConditionalVisibility(node: unknown): unknown {

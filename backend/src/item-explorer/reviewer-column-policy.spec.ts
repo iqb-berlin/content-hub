@@ -10,6 +10,28 @@ const policy = (...visible: string[]) =>
   });
 
 describe("Reviewer column information boundary", () => {
+  it("preserves unit navigation identities when item columns and raw VOMD dependencies are hidden", () => {
+    const navigationItems = [
+      {
+        id: "I1",
+        fallbackIds: ["U_I1"],
+        variableId: "FIRST",
+        variableReadOnlyId: "internal-first",
+      },
+    ];
+    expect(
+      policy().projectResponse(
+        {
+          id: "U",
+          name: "Hidden name",
+          navigationItems,
+          dependencies: [{ type: "METADATA", fileId: "metadata-1" }],
+        },
+        "units",
+      ),
+    ).toEqual({ id: "U", navigationItems, dependencies: [] });
+  });
+
   it("preserves feature-gated Studio comments independently of table column restrictions", () => {
     const studioComments = [
       { id: 1, body: "Imported Studio hint", hidden: false },
@@ -369,6 +391,9 @@ describe("Restricted review navigation", () => {
       expect(new Set(booklet.units.map((unit) => unit.occurrenceId)).size).toBe(
         2,
       );
+      expect(booklet.units.map((unit) => unit.linkId)).toEqual(
+        original.booklets[0].units.map((unit) => unit.linkId),
+      );
       expect(() =>
         booklet.units.forEach((unit) => unit.blockPath.length),
       ).not.toThrow();
@@ -406,8 +431,8 @@ describe("Restricted review navigation", () => {
     class ReviewController {}
     function getReview() {}
     const req = {
-      params: { acpId: "ACP" },
-      acpCapabilities: ["review:participate", "item-explorer:view"],
+      params: { apId: "AP" },
+      apCapabilities: ["review:participate", "item-explorer:view"],
     };
     const context = {
       getClass: () => ReviewController,
@@ -449,9 +474,9 @@ describe("Restricted review navigation", () => {
       class ViewsController {}
       function getSequence() {}
       const req = {
-        params: { acpId: "ACP", sequenceId: "B" },
+        params: { apId: "AP", sequenceId: "B" },
         query: { kind: "booklet" },
-        acpCapabilities: ["item-explorer:view"],
+        apCapabilities: ["item-explorer:view"],
       };
       const context = {
         getClass: () => ViewsController,
@@ -477,6 +502,7 @@ describe("Restricted review navigation", () => {
         visible.includes("system:unitLabel") ? "SECRET_UNIT" : "",
       );
       expect(result.units[0].occurrenceId).toBe(original.units[0].occurrenceId);
+      expect(result.units[0].linkId).toBe(original.units[0].linkId);
       expect(Array.isArray(result.units[0].blockPath)).toBe(true);
       expect(JSON.stringify(original)).toBe(before);
       expect(await project(null)).toBeNull();

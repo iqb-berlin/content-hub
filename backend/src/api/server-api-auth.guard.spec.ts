@@ -72,15 +72,35 @@ describe("ServerApiAuthGuard", () => {
     ).rejects.toThrow(ForbiddenException);
   });
 
+  it.each([
+    ["acp", "acp.read"],
+    ["ap", "ap.read"],
+  ] as const)(
+    "uses the %s wire scope in authorization errors",
+    async (apTerminology, expected) => {
+      reflector.getAllAndOverride.mockReturnValue(["ap.read", "files.write"]);
+      authService.validateToken.mockResolvedValue({ id: "client", scopes: [] });
+      authService.hasScopes.mockReturnValue(false);
+      await expect(
+        guard.canActivate(
+          createContext({
+            headers: { authorization: "Bearer token" },
+            apTerminology,
+          }),
+        ),
+      ).rejects.toThrow(`Missing required scopes: ${expected}, files.write`);
+    },
+  );
+
   it("accepts x-server-token and enriches request with client identity", async () => {
     const req: Partial<ServerApiRequest> = {
       headers: { "x-server-token": "  token-a  " },
     };
 
-    reflector.getAllAndOverride.mockReturnValue(["acp.read"]);
+    reflector.getAllAndOverride.mockReturnValue(["ap.read"]);
     authService.validateToken.mockResolvedValue({
       id: "client-a",
-      scopes: ["acp.read"],
+      scopes: ["ap.read"],
     });
     authService.hasScopes.mockReturnValue(true);
 
@@ -88,8 +108,8 @@ describe("ServerApiAuthGuard", () => {
     expect(authService.validateToken).toHaveBeenCalledWith("token-a");
     expect(req.serverApiClient).toEqual({
       id: "client-a",
-      scopes: ["acp.read"],
-      allowedAcpIds: null,
+      scopes: ["ap.read"],
+      allowedApIds: null,
     });
   });
 

@@ -2,14 +2,14 @@ import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
-import { AcpIndexService } from "../acp/acp-index.service";
+import { ApIndexService } from "../ap/ap-index.service";
 import { IndexGenerationService } from "./index-generation.service";
 
 describe("IndexGenerationService", () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "acp-index-generator-"));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "ap-index-generator-"));
   });
 
   afterEach(async () => {
@@ -35,7 +35,7 @@ describe("IndexGenerationService", () => {
       await fs.writeFile(filePath, content);
       files.push({
         id: crypto.randomUUID(),
-        acpId: "acp",
+        apId: "ap",
         filePath,
         originalName: path.basename(relativePath),
         relativePath,
@@ -43,14 +43,14 @@ describe("IndexGenerationService", () => {
         fileSize: content.length,
       });
     }
-    const acp = {
-      id: "acp",
+    const ap = {
+      id: "ap",
       packageId: "pkg",
       name: "Paket",
       description: "",
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       itemProperties: {},
-      acpIndex: {
+      apIndex: {
         packageId: "pkg",
         version: "1.0.0",
         name: [{ lang: "de", value: "Paket" }],
@@ -100,8 +100,8 @@ describe("IndexGenerationService", () => {
         ],
       },
     };
-    const acpRepository = {
-      findOne: jest.fn(async () => acp),
+    const apRepository = {
+      findOne: jest.fn(async () => ap),
       save: jest.fn(async (value) => value),
     } as any;
     const fileRepository = { find: jest.fn(async () => files) } as any;
@@ -111,20 +111,20 @@ describe("IndexGenerationService", () => {
       save: jest.fn(async (value) => value),
     } as any;
     const snapshotsService = { create: jest.fn() } as any;
-    const indexService = new AcpIndexService(
-      acpRepository,
+    const indexService = new ApIndexService(
+      apRepository,
       fileRepository,
       cacheRepository,
       snapshotsService,
     );
     const service = new IndexGenerationService(
-      acpRepository,
+      apRepository,
       fileRepository,
       indexService,
       snapshotsService,
     );
 
-    const preview = await service.preview("acp");
+    const preview = await service.preview("ap");
     const parts = (preview.candidateIndex as any).assessmentParts;
     expect(parts.map((part: any) => [part.id, part.units.length])).toEqual([
       ["ma1", 3],
@@ -140,7 +140,7 @@ describe("IndexGenerationService", () => {
     expect(parts[0].units[0].items).toEqual([
       { id: "item-1", sourceVariable: "score" },
     ]);
-    expect(parts[0].units[1]).toEqual(acp.acpIndex.assessmentParts[0].units[1]);
+    expect(parts[0].units[1]).toEqual(ap.apIndex.assessmentParts[0].units[1]);
     expect(parts[0].units[0].name).toBe("Manuell benannt");
     expect(parts[0].units[0].dependencies).toContainEqual({
       id: "manual.html",
@@ -149,7 +149,7 @@ describe("IndexGenerationService", () => {
     expect(preview.warnings).toContainEqual(
       expect.stringContaining("only-in-index"),
     );
-    expect(parts[2]).toEqual(acp.acpIndex.assessmentParts[1]);
+    expect(parts[2]).toEqual(ap.apIndex.assessmentParts[1]);
     expect(preview.validation.valid).toBe(true);
     expect(preview.validation.publishable).toBe(false);
     expect(preview.validation.issues).toEqual(
@@ -158,9 +158,18 @@ describe("IndexGenerationService", () => {
       ]),
     );
 
+    const applied = await service.apply("ap", {
+      sourceRevision: preview.sourceRevision,
+      expectedUpdatedAt: preview.sourceUpdatedAt,
+    });
+    expect(applied.index).toEqual(preview.candidateIndex);
+    expect((await service.preview("ap")).candidateIndex).toEqual(applied.index);
+    expect(snapshotsService.create).toHaveBeenCalledTimes(1);
+    snapshotsService.create.mockClear();
+
     files[0].checksum = "changed-after-preview";
     await expect(
-      service.apply("acp", {
+      service.apply("ap", {
         sourceRevision: preview.sourceRevision,
         expectedUpdatedAt: preview.sourceUpdatedAt,
       }),

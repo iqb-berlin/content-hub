@@ -4,7 +4,7 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["acp/schemas/*.json"],
+    "assets": ["ap/schemas/*.json"],
     "watchAssets": true
   }
 }

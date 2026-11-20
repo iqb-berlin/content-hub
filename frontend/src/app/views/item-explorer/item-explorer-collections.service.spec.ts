@@ -38,7 +38,7 @@ const item = {
   stimulusTimeSeconds: 10,
 } as ExplorerItem;
 const context = {
-  acpId: 'a',
+  apId: 'a',
   identity: 'user-a',
   perspective: 'editor' as const,
   items: [item],

@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { of, Subject, throwError } from 'rxjs';
 import { ReviewComponent } from './review.component';
 
-function setup() {
+function setup(section?: string) {
   const api = {
-    getCapabilities: vi.fn().mockReturnValue(of({ canManageReview: true, canReview: true })),
+    getCapabilities: vi
+      .fn()
+      .mockReturnValue(of({ canManageReview: true, canReview: true, canReadReviewComments: true })),
     getReview: vi.fn().mockReturnValue(of({ booklets: [] })),
     getVisibleReviewComments: vi.fn().mockReturnValue(of([])),
     getReviewConfig: vi.fn(),
@@ -25,10 +27,10 @@ function setup() {
     exportVisibleReviewComments: vi.fn().mockReturnValue(new Subject()),
   };
   const component = new ReviewComponent(
-    { snapshot: { paramMap: { get: () => 'acp' } } } as any,
+    { snapshot: { paramMap: { get: () => 'ap' }, data: { section } } } as any,
     api as any,
   );
-  component.acpId = 'acp';
+  component.apId = 'ap';
   component.config = {
     enableReview: true,
     visibilityMode: 'PRIVATE',
@@ -40,6 +42,39 @@ function setup() {
 }
 
 describe('Review configuration', () => {
+  it.each([true, false])(
+    'opens participant comments and exports with Review activation %s',
+    (canReview) => {
+      const { component, api } = setup();
+      api.getCapabilities.mockReturnValue(
+        of({ canManageReview: false, canReview, canReadReviewComments: true }),
+      );
+      component.ngOnInit();
+      expect(component.activeSection).toBe('analysis');
+      expect(api.getVisibleReviewComments).toHaveBeenCalledWith('ap');
+      expect(api.getReviewConfig).not.toHaveBeenCalled();
+      expect(api.getReviewReadiness).not.toHaveBeenCalled();
+      expect(api.getReviewMembers).not.toHaveBeenCalled();
+      expect(api.getReview).toHaveBeenCalledTimes(canReview ? 1 : 0);
+      component.exportComments();
+      expect(api.exportVisibleReviewComments).toHaveBeenCalledWith('ap', {});
+      component.exportComments('csv');
+      expect(api.exportMyReviewCommentsCsv).toHaveBeenCalledWith('ap', {});
+      component.exportComments('xlsx');
+      expect(api.exportMyReviewCommentsXlsx).toHaveBeenCalledWith('ap', {});
+      expect(component.error).toBe('');
+      component.ngOnDestroy();
+    },
+  );
+
+  it('opens the analysis section for managers following the direct comment link', () => {
+    const { component, api } = setup('analysis');
+    api.getReviewConfig.mockReturnValue(of(component.config));
+    component.ngOnInit();
+    expect(component.activeSection).toBe('analysis');
+    component.ngOnDestroy();
+  });
+
   it('restores category and group deletions together after a rejected save', () => {
     const { component, api } = setup();
     const category = { id: 'c', name: 'Fachlich', archived: false };
@@ -54,7 +89,7 @@ describe('Review configuration', () => {
     );
     component.configure();
     expect(api.configureReview).toHaveBeenCalledWith(
-      'acp',
+      'ap',
       expect.objectContaining({ deletedCategoryIds: ['c'] }),
     );
     expect(component.config!.categories).toEqual([category]);
@@ -74,11 +109,11 @@ describe('Review configuration', () => {
     component.categoryFilter = 'c';
     expect(component.filteredComments.map((comment) => comment.id)).toEqual(['a']);
     component.exportComments('csv');
-    expect(api.exportMyReviewCommentsCsv).toHaveBeenLastCalledWith('acp', { categoryId: 'c' });
+    expect(api.exportMyReviewCommentsCsv).toHaveBeenLastCalledWith('ap', { categoryId: 'c' });
     component.categoryFilter = 'uncategorized';
     expect(component.filteredComments.map((comment) => comment.id)).toEqual(['b']);
     component.exportComments();
-    expect(api.exportVisibleReviewComments).toHaveBeenLastCalledWith('acp', {
+    expect(api.exportVisibleReviewComments).toHaveBeenLastCalledWith('ap', {
       categoryId: 'uncategorized',
     });
     component.resetFilters();
@@ -87,34 +122,37 @@ describe('Review configuration', () => {
     component.ngOnDestroy();
   });
 
-  it('loads, saves and restores the developer-name visibility setting', () => {
-    const { component, api } = setup();
-    const config = { ...component.config!, hideReviewDeveloperNames: true };
-    api.getReviewConfig.mockReturnValue(of(config));
-    component.loadConfig();
-    expect(component.config!.hideReviewDeveloperNames).toBe(true);
-    component.config!.hideReviewDeveloperNames = false;
-    api.configureReview.mockReturnValue(of({ ...component.config!, configVersion: 2 }));
-    component.configure();
-    expect(api.configureReview).toHaveBeenCalledWith(
-      'acp',
-      expect.objectContaining({
-        hideReviewDeveloperNames: false,
-      }),
-    );
-    expect(component.config!.hideReviewDeveloperNames).toBe(false);
-    component.ngOnDestroy();
-  });
+  it.each(['hideReviewMetadata', 'hideReviewDeveloperNames'] as const)(
+    'loads, saves and restores %s',
+    (setting) => {
+      const { component, api } = setup();
+      const config = { ...component.config!, [setting]: true };
+      api.getReviewConfig.mockReturnValue(of(config));
+      component.loadConfig();
+      expect(component.config![setting]).toBe(true);
+      component.config![setting] = false;
+      api.configureReview.mockReturnValue(of({ ...component.config!, configVersion: 2 }));
+      component.configure();
+      expect(api.configureReview).toHaveBeenCalledWith(
+        'ap',
+        expect.objectContaining({
+          [setting]: false,
+        }),
+      );
+      expect(component.config![setting]).toBe(false);
+      component.ngOnDestroy();
+    },
+  );
   it('keeps both personal formats separate from the manager export', () => {
     const { component, api } = setup();
     component.access = { canManageReview: true, canReview: true } as any;
     component.exportComments('csv');
-    expect(api.exportMyReviewCommentsCsv).toHaveBeenCalledWith('acp', {});
+    expect(api.exportMyReviewCommentsCsv).toHaveBeenCalledWith('ap', {});
     component.exportComments('xlsx');
-    expect(api.exportMyReviewCommentsXlsx).toHaveBeenCalledWith('acp', {});
+    expect(api.exportMyReviewCommentsXlsx).toHaveBeenCalledWith('ap', {});
     expect(api.exportVisibleReviewComments).not.toHaveBeenCalled();
     component.exportComments();
-    expect(api.exportVisibleReviewComments).toHaveBeenCalledWith('acp', {});
+    expect(api.exportVisibleReviewComments).toHaveBeenCalledWith('ap', {});
     component.ngOnDestroy();
   });
 
@@ -183,9 +221,9 @@ describe('Review configuration', () => {
 
     component.configure();
 
-    expect(api.checkReviewReadiness).toHaveBeenCalledWith('acp');
+    expect(api.checkReviewReadiness).toHaveBeenCalledWith('ap');
     expect(api.configureReview).toHaveBeenCalledWith(
-      'acp',
+      'ap',
       expect.objectContaining({ enableReview: true, confirmReadinessWarnings: false }),
     );
     component.ngOnDestroy();
@@ -211,7 +249,7 @@ describe('review filters and group removal', () => {
     component.targetFilter = 'UNIT';
     expect(component.filteredComments.map((c) => c.id)).toEqual(['1']);
     component.exportComments();
-    expect(api.exportVisibleReviewComments).toHaveBeenLastCalledWith('acp', {
+    expect(api.exportVisibleReviewComments).toHaveBeenLastCalledWith('ap', {
       q: 'PRÜFEN',
       author: 'Alex',
       groupId: 'g',
@@ -219,7 +257,7 @@ describe('review filters and group removal', () => {
     });
     component.exportAll = true;
     component.exportComments();
-    expect(api.exportVisibleReviewComments).toHaveBeenLastCalledWith('acp', {});
+    expect(api.exportVisibleReviewComments).toHaveBeenLastCalledWith('ap', {});
   });
   it('only stages a persisted group deletion after confirmation', () => {
     const { component } = setup();

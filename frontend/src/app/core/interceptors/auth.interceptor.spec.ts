@@ -43,9 +43,10 @@ describe('authInterceptor', () => {
   });
 
   it('adds bearer token header when token exists', async () => {
-    const req = new HttpRequest('GET', '/api/view/acp/acp-1');
+    const req = new HttpRequest('GET', '/api/view/ap/ap-1');
     const next = vi.fn((forwardedReq: HttpRequest<unknown>) => {
       expect(forwardedReq.headers.get('Authorization')).toBe('Bearer token-1');
+      expect(forwardedReq.headers.get('X-Content-Hub-Terminology')).toBe('ap');
       return of(new HttpResponse({ status: 200, body: {} }));
     });
 
@@ -54,8 +55,17 @@ describe('authInterceptor', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
+  it('does not add the terminology header to external identity-provider requests', async () => {
+    const req = new HttpRequest('GET', 'https://identity.example/realms/test');
+    const next = vi.fn((forwarded: HttpRequest<unknown>) => {
+      expect(forwarded.headers.has('X-Content-Hub-Terminology')).toBe(false);
+      return of(new HttpResponse({ status: 200 }));
+    });
+    await firstValueFrom(runInInjectionContext(injector, () => authInterceptor(req, next as any)));
+  });
+
   it('redirects to session_expired on 401 for protected requests', async () => {
-    const req = new HttpRequest('GET', '/api/view/acp/acp-1');
+    const req = new HttpRequest('GET', '/api/view/ap/ap-1');
     const next = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 401 })));
 
     await expect(
@@ -78,7 +88,7 @@ describe('authInterceptor', () => {
       return true;
     });
 
-    const req = new HttpRequest('GET', '/api/view/acp/acp-1');
+    const req = new HttpRequest('GET', '/api/view/ap/ap-1');
     const next = vi
       .fn()
       .mockImplementationOnce(() => throwError(() => new HttpErrorResponse({ status: 401 })))
@@ -97,7 +107,7 @@ describe('authInterceptor', () => {
     expect(accessMock.redirectToAccess).not.toHaveBeenCalled();
   });
 
-  it('does not redirect for inline ACP credential errors', async () => {
+  it('does not redirect for inline AP credential errors', async () => {
     const req = new HttpRequest('POST', '/api/auth/credential-login');
     const next = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 401 })));
 
@@ -142,13 +152,13 @@ describe('authInterceptor', () => {
   });
 
   it('maps feature-disabled 403 errors to feature_disabled access reason', async () => {
-    const req = new HttpRequest('GET', '/api/view/acp/acp-1/units/u1');
+    const req = new HttpRequest('GET', '/api/view/ap/ap-1/units/u1');
     const next = vi.fn(() =>
       throwError(
         () =>
           new HttpErrorResponse({
             status: 403,
-            error: { message: 'Unit view is not enabled for this ACP' },
+            error: { message: 'Unit view is not enabled for this AP' },
           }),
       ),
     );

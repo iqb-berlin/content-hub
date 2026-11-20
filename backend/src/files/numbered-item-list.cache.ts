@@ -23,7 +23,7 @@ export class NumberedItemListCache {
   }
 
   async getOrLoad(
-    acpId: string,
+    apId: string,
     baseKey: string,
     initialRevision: string,
     load: () => Promise<NumberedItemListCacheValue>,
@@ -31,7 +31,7 @@ export class NumberedItemListCache {
     value: NumberedItemListCacheValue;
     status: AsyncCacheStatus;
   }> {
-    const initialKey = `${acpId}:${baseKey}:${initialRevision}`;
+    const initialKey = `${apId}:${baseKey}:${initialRevision}`;
     const cached = this.entries.get(initialKey);
     if (cached) {
       this.touch(initialKey, cached);
@@ -66,7 +66,7 @@ export class NumberedItemListCache {
       .then(load)
       .then((value) => {
         entry.settled = true;
-        const finalKey = `${acpId}:${baseKey}:${value.rowRevision}`;
+        const finalKey = `${apId}:${baseKey}:${value.rowRevision}`;
         if (finalKey !== initialKey && this.entries.get(initialKey) === entry) {
           this.entries.delete(initialKey);
           if (!this.entries.has(finalKey)) {
@@ -83,8 +83,8 @@ export class NumberedItemListCache {
     return { value: await entry.promise, status: "miss" };
   }
 
-  invalidate(acpId: string): void {
-    const prefix = `${acpId}:`;
+  invalidate(apId: string): void {
+    const prefix = `${apId}:`;
     for (const key of this.entries.keys()) {
       if (key.startsWith(prefix)) this.entries.delete(key);
     }

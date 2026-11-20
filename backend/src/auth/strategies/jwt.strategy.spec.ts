@@ -21,13 +21,30 @@ describe("JwtStrategy", () => {
     );
   });
 
+  it("accepts a credential token issued with only the legacy claim", async () => {
+    const payload = {
+      sub: "cred-1",
+      username: "reader",
+      type: "credential",
+      acpId: "legacy-id",
+    } as any;
+    expect(await strategy.validate(payload)).toMatchObject({
+      apId: "legacy-id",
+      apRoles: [],
+    });
+    expect(userRepository.findOne).not.toHaveBeenCalled();
+    expect(
+      await strategy.validate({ ...payload, apId: "different-id" }),
+    ).toBeNull();
+  });
+
   it("returns credential payload without DB lookup", async () => {
     const payload: any = {
       sub: "cred-1",
       username: "reader",
       type: "credential",
       authType: "credential",
-      acpId: "acp-1",
+      apId: "ap-1",
     };
 
     const result = await strategy.validate(payload);
@@ -38,8 +55,8 @@ describe("JwtStrategy", () => {
       isAppAdmin: false,
       type: "credential",
       authType: "credential",
-      acpId: "acp-1",
-      acpRoles: [],
+      apId: "ap-1",
+      apRoles: [],
     });
     expect(userRepository.findOne).not.toHaveBeenCalled();
   });
@@ -52,13 +69,13 @@ describe("JwtStrategy", () => {
       username: "julian",
       type: "oidc",
       authType: "oidc",
-      acpId: undefined,
+      apId: undefined,
     } as any);
 
     expect(result).toBeNull();
     expect(userRepository.findOne).toHaveBeenCalledWith({
       where: { id: "user-1" },
-      relations: ["acpRoles", "acpRoles.acp"],
+      relations: ["apRoles", "apRoles.ap"],
     });
   });
 
@@ -79,7 +96,7 @@ describe("JwtStrategy", () => {
       username: "current-user",
       displayName: "Current Name",
       isAppAdmin: false,
-      acpRoles: [],
+      apRoles: [],
     });
     const result = await strategy.validate({
       sub: "user-1",
@@ -100,11 +117,11 @@ describe("JwtStrategy", () => {
     userRepository.findOne.mockResolvedValue({
       displayName: "Julian Beispiel",
       isAppAdmin: true,
-      acpRoles: [
+      apRoles: [
         {
-          acpId: "acp-1",
-          role: "ACP_MANAGER",
-          acp: { name: "Demo ACP" },
+          apId: "ap-1",
+          role: "AP_MANAGER",
+          ap: { name: "Demo AP" },
         },
       ],
     });
@@ -114,7 +131,7 @@ describe("JwtStrategy", () => {
       username: "julian",
       type: "oidc",
       authType: "oidc",
-      acpId: "acp-1",
+      apId: "ap-1",
     } as any);
 
     expect(result).toEqual({
@@ -124,12 +141,12 @@ describe("JwtStrategy", () => {
       isAppAdmin: true,
       type: "oidc",
       authType: "oidc",
-      acpId: "acp-1",
-      acpRoles: [
+      apId: "ap-1",
+      apRoles: [
         {
-          acpId: "acp-1",
-          acpName: "Demo ACP",
-          role: "ACP_MANAGER",
+          apId: "ap-1",
+          apName: "Demo AP",
+          role: "AP_MANAGER",
         },
       ],
     });

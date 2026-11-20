@@ -1,5 +1,5 @@
 export const ALL_SERVER_API_SCOPES = [
-  "acp.read",
+  "ap.read",
   "transfer.read",
   "transfer.write",
   "index.read",
