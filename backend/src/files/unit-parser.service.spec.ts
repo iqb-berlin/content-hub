@@ -1,3 +1,4 @@
+import { ReviewItemCatalogService } from "./review-item-catalog.service";
 import { buildReviewManifest } from "../review/review-manifest";
 import { ConflictException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
@@ -522,6 +523,238 @@ describe("UnitParserService", () => {
     const saved = apRepo.save.mock.calls[0][0];
     expect(saved.apIndex.assessmentParts[0].units[0].items).toEqual([
       expect.objectContaining({ id: "i2", name: "Item 2" }),
+    ]);
+  });
+
+  it("keeps the established canonical comment target through a file index sync", async () => {
+    let ap = {
+      id: "ap-1",
+      updatedAt: new Date("2026-09-25T00:00:00Z"),
+      apIndex: {
+        packageId: "pkg-1",
+        version: "0.5.0",
+        assessmentParts: [
+          {
+            id: "part-1",
+            units: [
+              {
+                id: "u1",
+                items: [{ id: "u1_i1" }],
+                dependencies: [{ id: "u1.vomd", type: "METADATA" }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    apRepo.findOne.mockImplementation(async () => ap);
+    apRepo.save.mockImplementation(async (entity: typeof ap) => {
+      ap = { ...entity, updatedAt: new Date("2026-09-26T00:00:00Z") };
+      return ap;
+    });
+    const catalog = new ReviewItemCatalogService(
+      apRepo,
+      new FileCatalogCache(fileRepo),
+      service,
+      fileRepo,
+    );
+    const ids = async () =>
+      (await catalog.getCatalog("ap-1")).map(({ itemId, previousItemId }) => ({
+        itemId,
+        previousItemId,
+      }));
+    expect(await ids()).toEqual([{ itemId: "u1_i1", previousItemId: "i1" }]);
+
+    const report = await service.syncIndexFromFiles("ap-1");
+    expect(report.itemsAdded).toBe(0);
+    expect(ap.apIndex.assessmentParts[0].units[0].items).toEqual([
+      expect.objectContaining({ id: "u1_i1", variableId: "V1" }),
+    ]);
+    expect(await ids()).toEqual([{ itemId: "u1_i1", previousItemId: "i1" }]);
+  });
+
+  it.each([false, true])(
+    "keeps backward and generated aliases distinct in either file order (%s)",
+    async (reversed) => {
+      let ap = {
+        id: "ap-1",
+        updatedAt: new Date("2026-09-25T00:00:00Z"),
+        apIndex: { units: [{ id: "u1", items: [{ id: "u1_i1" }] }] },
+      };
+      apRepo.findOne.mockImplementation(async () => ap);
+      apRepo.save.mockImplementation(async (entity: typeof ap) => {
+        ap = { ...entity, updatedAt: new Date("2026-09-26T00:00:00Z") };
+        return ap;
+      });
+      const items = [
+        { id: "i1", variableId: "FIRST", useUnitAliasAsPrefix: true },
+        { id: "u1_u1_i1", variableId: "SECOND", useUnitAliasAsPrefix: false },
+      ];
+      const vomd = JSON.stringify({
+        items: reversed ? [...items].reverse() : items,
+      });
+      jest.mocked(fs.readFile).mockImplementation(async (path) => {
+        if (path === "/tmp/u1.xml") return xmlContent;
+        if (path === "/tmp/u1.vomd") return vomd;
+        return "{}";
+      });
+      const catalog = new ReviewItemCatalogService(
+        apRepo,
+        new FileCatalogCache(fileRepo),
+        service,
+        fileRepo,
+      );
+      const expected = [
+        expect.objectContaining({
+          itemId: "i1",
+          variableReferences: { variableId: "FIRST" },
+        }),
+        expect.objectContaining({
+          itemId: "u1_i1",
+          variableReferences: { variableId: "SECOND" },
+        }),
+      ];
+      const before = await catalog.getCatalog("ap-1");
+      expect(before).toHaveLength(2);
+      expect(before).toEqual(expect.arrayContaining(expected));
+      expect((await service.syncIndexFromFiles("ap-1")).itemsAdded).toBe(1);
+      const after = await catalog.getCatalog("ap-1");
+      expect(after).toHaveLength(2);
+      expect(after).toEqual(expect.arrayContaining(expected));
+      expect((await service.syncIndexFromFiles("ap-1")).itemsAdded).toBe(0);
+    },
+  );
+
+  it.each([false, true])(
+    "keeps alternate comment targets without changing navigation or index sync (%s)",
+    async (reversed) => {
+      const alternateXml = {
+        id: "f-renamed",
+        originalName: "renamed.xml",
+        filePath: "/tmp/renamed.xml",
+      };
+      const alternateVomd = {
+        id: "f-other",
+        originalName: "alternate.vomd",
+        filePath: "/tmp/alternate.vomd",
+      };
+      const duplicateFiles = reversed
+        ? [alternateXml, alternateVomd, ...files]
+        : [...files, alternateXml, alternateVomd];
+      fileRepo.find.mockImplementation(
+        async ({
+          where,
+        }: {
+          where: { originalName?: { value?: string[] } };
+        }) =>
+          typeof where.originalName === "object" &&
+          Array.isArray(where.originalName.value)
+            ? duplicateFiles.filter(({ originalName }) =>
+                where.originalName?.value?.includes(originalName || ""),
+              )
+            : duplicateFiles,
+      );
+      fileRepo.findOne = jest
+        .fn()
+        .mockImplementation(async ({ where }) =>
+          duplicateFiles.find(
+            ({ originalName }) => originalName === where.originalName,
+          ),
+        );
+
+      const unit = { id: "u1", items: [{ id: "i1" }] };
+      let ap = { id: "ap-1", apIndex: { units: [unit] } };
+      apRepo.findOne.mockImplementation(async () => ap);
+      apRepo.save.mockImplementation(async (entity: typeof ap) => {
+        ap = entity;
+        return entity;
+      });
+      jest.mocked(fs.readFile).mockImplementation(async (path) => {
+        if (path === "/tmp/u1.xml")
+          return xmlContent.replace(
+            "<CodingSchemeRef>u1.vocs</CodingSchemeRef>",
+            "",
+          );
+        if (path === "/tmp/renamed.xml")
+          return xmlContent.replace("u1.vomd", "alternate.vomd");
+        if (path === "/tmp/u1.vomd")
+          return JSON.stringify({
+            items: [{ id: "i1", variableId: "CHOSEN" }],
+          });
+        if (path === "/tmp/alternate.vomd")
+          return JSON.stringify({
+            items: [
+              { id: "i1", variableId: "OTHER" },
+              { id: "u1_i1", variableId: "LEGACY_ALIAS" },
+              { id: "i2", variableId: "OTHER_ONLY" },
+            ],
+          });
+        if (path === "/tmp/u1.vocs") return "{}";
+        return "";
+      });
+      const catalog = new ReviewItemCatalogService(
+        apRepo,
+        new FileCatalogCache(fileRepo),
+        service,
+        fileRepo,
+      );
+      const navigation = await catalog.getUnitNavigation("ap-1", unit, []);
+      expect(navigation.items).toEqual([{ id: "i1", variableId: "CHOSEN" }]);
+      expect(navigation.metadataFile?.originalName).toBe("u1.vomd");
+      expect(
+        await catalog.getActiveUnitCommentTargets("ap-1", "u1", true, false),
+      ).toMatchObject({ codingCommentsAvailable: false });
+      const entries = await catalog.getCatalog("ap-1");
+      expect(entries).toEqual([
+        expect.objectContaining({
+          itemId: "i1",
+          hasCodingScheme: true,
+          variableReferences: { variableId: "CHOSEN" },
+        }),
+        expect.objectContaining({
+          itemId: "i2",
+          hasCodingScheme: true,
+        }),
+      ]);
+      expect(entries[1]).not.toHaveProperty("variableReferences");
+      jest.mocked(fs.readFile).mockClear();
+      expect((await service.syncIndexFromFiles("ap-1")).itemsAdded).toBe(0);
+      expect(apRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          apIndex: expect.objectContaining({
+            units: [
+              expect.objectContaining({
+                items: [
+                  expect.objectContaining({ id: "i1", variableId: "CHOSEN" }),
+                ],
+              }),
+            ],
+          }),
+        }),
+      );
+      expect(fs.readFile).not.toHaveBeenCalledWith(
+        "/tmp/alternate.vomd",
+        "utf-8",
+      );
+    },
+  );
+
+  it("reloads cached VOMD item identities after upload invalidation with the same file signature", async () => {
+    const before = await service.getItemListFromFiles("ap-1");
+    expect(before.items.map(({ variableId }) => variableId)).toEqual(["V1"]);
+
+    jest.mocked(fs.readFile).mockImplementation(async (path) => {
+      if (path === "/tmp/u1.xml") return xmlContent;
+      if (path === "/tmp/u1.vomd") return vomdContent.replace("V1", "UPDATED");
+      return "{}";
+    });
+    const cached = await service.getItemListFromFiles("ap-1");
+    expect(cached.items.map(({ variableId }) => variableId)).toEqual(["V1"]);
+
+    service.invalidateFileCaches("ap-1");
+    const refreshed = await service.getItemListFromFiles("ap-1");
+    expect(refreshed.items.map(({ variableId }) => variableId)).toEqual([
+      "UPDATED",
     ]);
   });
 

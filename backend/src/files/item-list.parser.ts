@@ -12,17 +12,22 @@ import type {
   ItemListResult,
   MetadataColumn,
   VomdItemData,
+  UnitXmlData,
   StudioItemComment,
 } from "./unit-parser.types";
 import { parseStudioItemComments } from "./studio-item-comments";
 import { AsyncCacheStatus, AsyncLruCache } from "./async-lru-cache";
 import {
+  compareUnitXmlFilenames,
   extractLabelText,
   extractValueText,
   extractVomdTimeSeconds,
+  findReferencedMetadataFile,
+  isUnitXmlFilename,
   isValidVomdItem,
   parseUnitXml,
   parseVomd,
+  resolveVomdItemId,
 } from "./unit-file-parsing";
 
 export interface ItemListParseContext {
@@ -40,6 +45,12 @@ export interface ItemListParseResult {
   cacheStatus: AsyncCacheStatus;
   parseMs: number;
   cacheable: boolean;
+  unitSources: ItemListUnitSources;
+}
+
+export interface ItemListUnitSources {
+  unitsWithMetadata: ReadonlySet<string>;
+  alternateUnits: readonly UnitXmlData[];
 }
 
 type CachedItemListParseResult = Omit<ItemListParseResult, "cacheStatus">;
@@ -123,33 +134,60 @@ export class ItemListParser {
     let checkedVariableIdentityItemCount = 0;
     let cacheable = true;
 
-    const xmlFiles = allFiles.filter(
-      (file) =>
-        file.originalName.toLowerCase().endsWith(".xml") &&
-        !file.originalName.toLowerCase().startsWith("booklet") &&
-        !file.originalName.toLowerCase().startsWith("testtaker"),
-    );
+    const onSourceError = (file: ApFile, error: unknown) => {
+      this.logger.error(`Error processing ${file.originalName}: ${error}`);
+      if (strictSourceReads) {
+        if (error instanceof ConflictException) throw error;
+        throw new ConflictException(
+          "The AP source files changed while row numbers were being recalculated",
+        );
+      }
+      cacheable = false;
+    };
 
-    for (const xmlFile of xmlFiles) {
+    const preferredUnits = new Map<
+      string,
+      { file: ApFile; parsed: UnitXmlData }
+    >();
+    const alternateUnits: UnitXmlData[] = [];
+    const unitsWithMetadata = new Set<string>();
+    for (const file of allFiles) {
+      if (!isUnitXmlFilename(file.originalName)) continue;
       try {
-        const xmlContent = await fs.readFile(xmlFile.filePath, "utf-8");
+        const xmlContent = await fs.readFile(file.filePath, "utf-8");
         if (!xmlContent.includes("<Unit")) continue;
 
-        const parsed = parseUnitXml(
-          xmlContent,
-          xmlFile.originalName,
-          this.logger,
-        );
-        if (!parsed || !parsed.unitId.trim()) {
-          if (strictSourceReads) {
+        const parsed = parseUnitXml(xmlContent, file.originalName, this.logger);
+        const unitId = parsed?.unitId.trim();
+        if (!parsed || !unitId) {
+          if (strictSourceReads)
             throw new ConflictException(
-              `Invalid unit XML file: ${xmlFile.originalName}`,
+              `Invalid unit XML file: ${file.originalName}`,
             );
-          }
           cacheable = false;
           continue;
         }
+        const previous = preferredUnits.get(unitId);
+        if (
+          !previous ||
+          compareUnitXmlFilenames(
+            unitId,
+            file.originalName,
+            previous.file.originalName,
+          ) < 0
+        ) {
+          preferredUnits.set(unitId, { file, parsed });
+          if (previous) alternateUnits.push(previous.parsed);
+        } else {
+          alternateUnits.push(parsed);
+        }
+      } catch (error) {
+        onSourceError(file, error);
+      }
+    }
 
+    for (const { file: xmlFile, parsed } of preferredUnits.values()) {
+      try {
         // Uploading missing metadata or a missing scheme changes the source
         // signature. A failed read of a registered file needs a retry.
         // Review can match a coding scheme to items from the AP index without VOMD.
@@ -172,11 +210,7 @@ export class ItemListParser {
 
         const vomdFileName = parsed.metadataRef;
         if (!vomdFileName) continue;
-        const vomdFile = allFiles.find(
-          (file) =>
-            file.originalName === vomdFileName ||
-            file.originalName === `${vomdFileName}.json`,
-        );
+        const vomdFile = findReferencedMetadataFile(allFiles, vomdFileName);
         if (!vomdFile) {
           if (strictSourceReads) {
             throw new ConflictException(
@@ -197,6 +231,7 @@ export class ItemListParser {
           cacheable = false;
           continue;
         }
+        unitsWithMetadata.add(parsed.unitId.trim());
 
         if (vomdData.unitProfiles.length > 0) {
           const entries = vomdData.unitProfiles[0]?.entries;
@@ -256,10 +291,7 @@ export class ItemListParser {
             }
           }
 
-          const resolvedItemId =
-            item.useUnitAliasAsPrefix === false
-              ? item.id
-              : `${parsed.unitId}_${item.id}`;
+          const resolvedItemId = resolveVomdItemId(parsed.unitId, item);
           const variableId = String(item.variableId || "").trim();
           const sourceVariable = String(item.sourceVariable || "").trim();
           const variableReadOnlyId = String(
@@ -432,14 +464,7 @@ export class ItemListParser {
           }
         }
       } catch (error) {
-        this.logger.error(`Error processing ${xmlFile.originalName}: ${error}`);
-        if (strictSourceReads) {
-          if (error instanceof ConflictException) throw error;
-          throw new ConflictException(
-            "The AP source files changed while row numbers were being recalculated",
-          );
-        }
-        cacheable = false;
+        onSourceError(xmlFile, error);
       }
     }
 
@@ -468,6 +493,7 @@ export class ItemListParser {
       sourceFileSignature,
       parseMs: performance.now() - parseStartedAt,
       cacheable,
+      unitSources: { unitsWithMetadata, alternateUnits },
     };
   }
 

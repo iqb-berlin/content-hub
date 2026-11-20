@@ -21,6 +21,7 @@ import {
   Comment,
   CommentThreadSnapshot,
   ItemCommentCountsSnapshot,
+  UnitCommentAvailability,
   ReviewCommentTarget,
   ReviewReadiness,
   AppSettings,
@@ -551,6 +552,12 @@ export class ApiService {
           error.status === 304 && previous ? of(previous) : throwError(() => error),
         ),
       );
+  }
+  getUnitCommentAvailability(apId: string, unitId: string) {
+    return this.http.get<UnitCommentAvailability>(
+      `${this.API}/ap/${apId}/review/comments/availability`,
+      { params: { unitId } },
+    );
   }
   getItemCommentCounts(apId: string): Observable<ItemCommentCountsSnapshot> {
     return this.http.get<ItemCommentCountsSnapshot>(

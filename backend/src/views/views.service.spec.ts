@@ -1,3 +1,5 @@
+import { ReviewItemCatalogService } from "../files/review-item-catalog.service";
+import { FileCatalogCache } from "../files/file-catalog.cache";
 import { buildReviewManifest } from "../review/review-manifest";
 import { ReviewManifestService } from "../review/review-manifest.service";
 import { Test, TestingModule } from "@nestjs/testing";
@@ -6,6 +8,7 @@ import { BadRequestException, UnauthorizedException } from "@nestjs/common";
 import { ViewsService } from "./views.service";
 import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.service";
 import { UnitParserService } from "../files/unit-parser.service";
+import { readFile } from "fs/promises";
 import {
   Ap,
   ApAccessConfig,
@@ -14,12 +17,16 @@ import {
   ApItemPreference,
 } from "../database/entities";
 
+jest.mock("fs/promises", () => ({ readFile: jest.fn() }));
+
 describe("ViewsService", () => {
   let service: ViewsService;
+  let reviewItemCatalog: ReviewItemCatalogService;
   let manifestService: ReviewManifestService;
   let apRepository: { findOne: jest.Mock };
   let accessConfigRepository: { findOne: jest.Mock; find: jest.Mock };
   let fileRepository: { find: jest.Mock; findOne: jest.Mock };
+  let fileCatalogCache: { get: jest.Mock };
   let settingsRepository: { findOne: jest.Mock };
   let itemPreferenceRepository: {
     find: jest.Mock;
@@ -37,9 +44,16 @@ describe("ViewsService", () => {
   };
 
   beforeEach(async () => {
+    jest.mocked(readFile).mockReset();
     apRepository = { findOne: jest.fn() };
     accessConfigRepository = { findOne: jest.fn(), find: jest.fn() };
-    fileRepository = { find: jest.fn(), findOne: jest.fn() };
+    fileRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
+    };
+    fileCatalogCache = {
+      get: jest.fn().mockResolvedValue({ signature: "test", files: [] }),
+    };
     settingsRepository = { findOne: jest.fn() };
     transactionManager = {
       getRepository: jest.fn(),
@@ -80,6 +94,8 @@ describe("ViewsService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ViewsService,
+        ReviewItemCatalogService,
+        { provide: FileCatalogCache, useValue: fileCatalogCache },
         {
           provide: ReviewManifestService,
           useValue: {
@@ -111,6 +127,7 @@ describe("ViewsService", () => {
     }).compile();
 
     service = module.get<ViewsService>(ViewsService);
+    reviewItemCatalog = module.get(ReviewItemCatalogService);
     manifestService = module.get(ReviewManifestService);
   });
 
@@ -917,6 +934,7 @@ describe("ViewsService", () => {
       description: "Desc",
       lang: "de",
       items: [{ id: "item-1" }],
+      navigationItems: [{ id: "item-1" }],
       dependencies: [
         {
           type: "PLAYER",
@@ -929,6 +947,367 @@ describe("ViewsService", () => {
       richText: "<p>x</p>",
     });
   });
+
+  function unitWithMetadata() {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
+        units: [
+          {
+            id: "unit-1",
+            items: [{ id: "I1", variableId: "index-fallback" }],
+            dependencies: [{ id: "unit.vomd", type: "METADATA" }],
+          },
+        ],
+      },
+    });
+    const metadata = {
+      id: "metadata-1",
+      originalName: "unit.vomd",
+      filePath: "/uploads/unit.vomd",
+    };
+    fileRepository.findOne.mockImplementation(async ({ where }) =>
+      where.originalName === metadata.originalName ? metadata : null,
+    );
+    fileCatalogCache.get.mockResolvedValue({
+      signature: "test",
+      files: [metadata],
+    });
+  }
+
+  it("includes complete file-backed navigation identities without exporting VOMD metadata", async () => {
+    unitWithMetadata();
+    const items = Array.from({ length: 25 }, (_, index) => ({
+      id: `I${index + 1} `,
+      ...(index === 1 ? { useUnitAliasAsPrefix: false } : {}),
+      variableId: ` ALIAS_${index + 1} `,
+      variableReadOnlyId: ` internal-${index + 1} `,
+      sourceVariable: index ? "" : " legacy-first ",
+      description: "Unreleased item description",
+      profiles: [{ entries: [{ id: "secret", valueAsText: "Hidden" }] }],
+    }));
+    jest
+      .mocked(readFile)
+      .mockResolvedValue(
+        JSON.stringify({ items: [...items, null, { id: " " }] }),
+      );
+
+    const result = await service.getUnitViewData("ap-1", "unit-1");
+    expect(result.navigationItems).toEqual(
+      items.map((_, index) => ({
+        id: `I${index + 1}`,
+        variableId: `ALIAS_${index + 1}`,
+        variableReadOnlyId: `internal-${index + 1}`,
+        ...(index ? {} : { sourceVariable: "legacy-first" }),
+      })),
+    );
+    expect(result.items).toEqual([{ id: "I1", variableId: "index-fallback" }]);
+    expect(readFile).toHaveBeenCalledWith("/uploads/unit.vomd", "utf8");
+    expect(unitParserService.getItemListFromFiles).not.toHaveBeenCalled();
+    expect(readFile).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([true, false])(
+    "maps raw VOMD items to a prefixed index ID only if enabled (%s)",
+    async (useUnitAliasAsPrefix) => {
+      apRepository.findOne.mockResolvedValue({
+        id: "ap-1",
+        apIndex: {
+          units: [
+            {
+              id: "U",
+              items: [{ id: "U_I", variableId: "OLD" }],
+              dependencies: [{ id: "U.vomd", type: "METADATA" }],
+            },
+            {
+              id: "OTHER",
+              items: [{ id: "unrelated" }],
+              dependencies: [{ id: "OTHER.vomd", type: "METADATA" }],
+            },
+          ],
+        },
+      });
+      fileRepository.findOne.mockImplementation(async ({ where }) =>
+        where.originalName === "U.vomd"
+          ? {
+              id: "metadata",
+              originalName: "U.vomd",
+              filePath: "/uploads/U.vomd",
+            }
+          : null,
+      );
+      jest.mocked(readFile).mockResolvedValue(
+        JSON.stringify({
+          items: [{ id: "I", variableId: "NEW", useUnitAliasAsPrefix }],
+        }),
+      );
+      const result = await service.getUnitViewData("ap-1", "U");
+      expect(result.navigationItems).toEqual(
+        useUnitAliasAsPrefix
+          ? [{ id: "U_I", variableId: "NEW", fallbackIds: ["I"] }]
+          : [
+              { id: "U_I", variableId: "OLD" },
+              { id: "I", variableId: "NEW" },
+            ],
+      );
+      expect(fileRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(readFile).toHaveBeenCalledTimes(1);
+      expect(readFile).toHaveBeenCalledWith("/uploads/U.vomd", "utf8");
+      expect(unitParserService.getItemListFromFiles).not.toHaveBeenCalled();
+    },
+  );
+
+  it("retains canonical comment IDs and uses current file references across prefix collisions", async () => {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
+        units: [
+          {
+            id: "U",
+            items: [
+              { id: "I", variableId: "stale" },
+              { id: "U_I", variableId: "stale-prefixed" },
+              { id: "legacy", variableId: "stale-legacy" },
+            ],
+            dependencies: [{ id: "U.vomd", type: "METADATA" }],
+          },
+        ],
+      },
+    });
+    fileRepository.findOne.mockImplementation(async ({ where }) =>
+      where.originalName === "U.vomd"
+        ? {
+            id: "metadata",
+            originalName: "U.vomd",
+            filePath: "/uploads/U.vomd",
+          }
+        : null,
+    );
+    jest.mocked(readFile).mockResolvedValue(
+      JSON.stringify({
+        items: [
+          { id: "I", variableId: "FIRST" },
+          { id: "U_I", variableId: "SECOND" },
+          { id: "U_legacy", variableId: "THIRD" },
+        ],
+      }),
+    );
+    const result = await service.getUnitViewData("ap-1", "U");
+    expect(result.navigationItems).toEqual([
+      { id: "I", variableId: "FIRST" },
+      { id: "U_I", variableId: "SECOND" },
+      { id: "legacy", variableId: "THIRD", fallbackIds: ["U_legacy"] },
+    ]);
+  });
+
+  it("keeps two file items distinct when the second raw ID looks like a prefix alias", async () => {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: {
+        units: [
+          {
+            id: "U",
+            items: [{ id: "I" }],
+            dependencies: [{ id: "U.vomd", type: "METADATA" }],
+          },
+        ],
+      },
+    });
+    fileRepository.findOne.mockImplementation(async ({ where }) =>
+      where.originalName === "U.vomd"
+        ? {
+            id: "metadata",
+            originalName: "U.vomd",
+            filePath: "/uploads/U.vomd",
+          }
+        : null,
+    );
+    jest.mocked(readFile).mockResolvedValue(
+      JSON.stringify({
+        items: [
+          { id: "U_I", variableId: "SECOND" },
+          { id: "I", variableId: "FIRST" },
+        ],
+      }),
+    );
+    const result = await service.getUnitViewData("ap-1", "U");
+    expect(result.navigationItems).toEqual([
+      { id: "I", variableId: "FIRST" },
+      { id: "U_I", variableId: "SECOND" },
+    ]);
+  });
+
+  it("reads only the requested Unit XML and VOMD for older index entries with no metadata dependency", async () => {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: { units: [{ id: "U" }, { id: "OTHER" }] },
+    });
+    fileRepository.findOne.mockResolvedValueOnce({
+      originalName: "U.xml",
+      filePath: "/uploads/U.xml",
+    });
+    fileRepository.find.mockResolvedValue([
+      {
+        id: "metadata",
+        originalName: "U.vomd.json",
+        filePath: "/uploads/U.vomd.json",
+      },
+    ]);
+    jest
+      .mocked(readFile)
+      .mockResolvedValueOnce(
+        "<Unit><Id>U</Id><Reference>U.vomd</Reference></Unit>",
+      )
+      .mockResolvedValueOnce(
+        JSON.stringify({ items: [{ id: "I", variableId: "ALIAS" }] }),
+      );
+    const result = await service.getUnitViewData("ap-1", "U");
+    expect(result.navigationItems).toEqual([{ id: "I", variableId: "ALIAS" }]);
+    expect(readFile).toHaveBeenCalledTimes(2);
+    expect(readFile).toHaveBeenNthCalledWith(1, "/uploads/U.xml", "utf8");
+    expect(readFile).toHaveBeenNthCalledWith(2, "/uploads/U.vomd.json", "utf8");
+    expect(fileCatalogCache.get).not.toHaveBeenCalled();
+    expect(unitParserService.getItemListFromFiles).not.toHaveBeenCalled();
+  });
+
+  it("resolves an older Unit XML with a different filename without opening unrelated VOMD", async () => {
+    apRepository.findOne.mockResolvedValue({
+      id: "ap-1",
+      apIndex: { units: [{ id: "U" }, { id: "OTHER" }] },
+    });
+    fileRepository.findOne.mockResolvedValue(null);
+    fileCatalogCache.get.mockResolvedValue({
+      signature: "legacy",
+      files: [
+        { originalName: "other.xml", filePath: "/uploads/other.xml" },
+        { originalName: "other.vomd", filePath: "/uploads/other.vomd" },
+        { originalName: "legacy.xml", filePath: "/uploads/legacy.xml" },
+        { originalName: "U.vomd", filePath: "/uploads/U.vomd" },
+      ],
+    });
+    fileRepository.find.mockResolvedValue([
+      { id: "metadata", originalName: "U.vomd", filePath: "/uploads/U.vomd" },
+    ]);
+    jest.mocked(readFile).mockImplementation(async (path) => {
+      if (path === "/uploads/legacy.xml")
+        return "<Unit><Id>U</Id><Reference>U.vomd</Reference></Unit>";
+      return JSON.stringify({ items: [{ id: "I", variableId: "ALIAS" }] });
+    });
+    const result = await service.getUnitViewData("ap-1", "U");
+    expect(result.navigationItems).toEqual([{ id: "I", variableId: "ALIAS" }]);
+    expect(readFile).toHaveBeenCalledTimes(2);
+    expect(readFile).not.toHaveBeenCalledWith("/uploads/other.vomd", "utf8");
+    expect(unitParserService.getItemListFromFiles).not.toHaveBeenCalled();
+  });
+
+  it.each(["stale-index", "missing-first", "invalid-first"] as const)(
+    "selects the same VOMD for review navigation and comment targets (%s)",
+    async (scenario) => {
+      const old = {
+        id: "old",
+        originalName: "old.vomd",
+        filePath: "/uploads/old.vomd",
+      };
+      const current = {
+        id: "new",
+        originalName: "current.vomd",
+        filePath: "/uploads/current.vomd",
+      };
+      const unitXml = {
+        id: "xml",
+        originalName: "U.xml",
+        filePath: "/uploads/U.xml",
+      };
+      const files = scenario === "missing-first" ? [current] : [old, current];
+      apRepository.findOne.mockResolvedValue({
+        id: "ap-1",
+        apIndex: {
+          units: [
+            {
+              id: "U",
+              items: [],
+              dependencies: [
+                { id: "old.vomd", type: "METADATA" },
+                { id: "current.vomd", type: "METADATA" },
+              ],
+            },
+          ],
+        },
+      });
+      fileRepository.findOne.mockImplementation(async ({ where }) =>
+        where.originalName === unitXml.originalName &&
+        scenario === "stale-index"
+          ? unitXml
+          : (files.find(
+              ({ originalName }) => originalName === where.originalName,
+            ) ?? null),
+      );
+      fileCatalogCache.get.mockResolvedValue({ signature: "shared", files });
+      jest.mocked(readFile).mockImplementation(async (path) => {
+        if (path === unitXml.filePath)
+          return "<Unit><Id>U</Id><Reference>current.vomd</Reference></Unit>";
+        if (path === old.filePath && scenario === "invalid-first")
+          return "invalid JSON";
+        return JSON.stringify({
+          items: [
+            path === old.filePath
+              ? { id: "STALE", variableId: "STALE" }
+              : { id: "I", variableId: "CURRENT" },
+          ],
+        });
+      });
+      unitParserService.getItemListFromFiles.mockResolvedValue({
+        items:
+          scenario === "stale-index"
+            ? [{ unitId: "U", itemId: "I", variableId: "CURRENT" }]
+            : [],
+      });
+
+      const unit = await service.getUnitViewData("ap-1", "U");
+      expect(unit.navigationItems).toEqual([
+        { id: "I", variableId: "CURRENT" },
+      ]);
+      expect(unit.dependencies).toEqual([
+        expect.objectContaining({ fileId: current.id }),
+      ]);
+      expect(unitParserService.getItemListFromFiles).not.toHaveBeenCalled();
+      const catalog = await reviewItemCatalog.getCatalog("ap-1");
+      expect(catalog).toEqual([
+        expect.objectContaining({
+          itemId: "I",
+          variableReferences: { variableId: "CURRENT" },
+        }),
+      ]);
+      if (scenario === "stale-index") {
+        expect(fileCatalogCache.get).toHaveBeenCalledTimes(1);
+        expect(readFile).not.toHaveBeenCalledWith(old.filePath, "utf8");
+      }
+    },
+  );
+
+  it.each(["missing", "unreadable", "invalid"])(
+    "keeps index fallback data when the metadata file is %s",
+    async (failure) => {
+      unitWithMetadata();
+      if (failure === "missing") {
+        fileRepository.findOne.mockResolvedValue(null);
+        fileCatalogCache.get.mockResolvedValue({
+          signature: "missing",
+          files: [],
+        });
+      } else if (failure === "unreadable")
+        jest.mocked(readFile).mockRejectedValue(new Error("ENOENT"));
+      else jest.mocked(readFile).mockResolvedValue("invalid JSON");
+      const result = await service.getUnitViewData("ap-1", "unit-1");
+      expect(result.items).toEqual([
+        { id: "I1", variableId: "index-fallback" },
+      ]);
+      expect(result.navigationItems).toEqual([
+        { id: "I1", variableId: "index-fallback" },
+      ]);
+      if (failure === "missing") expect(readFile).not.toHaveBeenCalled();
+    },
+  );
 
   it("returns null for unknown units and computes item list prefixes", async () => {
     apRepository.findOne

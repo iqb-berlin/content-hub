@@ -37,15 +37,22 @@ describe('Unit review comment drafts', () => {
     getReviewTranscripts: vi.fn().mockReturnValue(of([])),
     getReviewCommentThread: vi.fn(),
     getItemCommentThread: vi.fn(),
-    getItemCommentCounts: vi.fn(),
+    getUnitCommentAvailability: vi.fn(),
     createItemComment: vi.fn(),
+    createReviewComment: vi.fn(),
     updateItemComment: vi.fn(),
   };
 
   beforeEach(async () => {
     token = session('user-1');
     api.getViewUnit.mockImplementation((_apId: string, unitId: string) =>
-      of({ id: unitId, name: unitId, items: [], dependencies: [] }),
+      of({
+        id: unitId,
+        name: unitId,
+        items: [],
+        navigationItems: unitId === 'U' ? [{ id: 'I1' }, { id: 'I2' }] : [{ id: 'I1' }],
+        dependencies: [],
+      }),
     );
     api.getReviewCommentThread.mockImplementation((_apId: string, target: unknown) =>
       of({
@@ -61,21 +68,14 @@ describe('Unit review comment drafts', () => {
       }),
     );
     api.updateItemComment.mockReturnValue(of({}));
-    api.getItemCommentCounts.mockReturnValue(
-      of({
-        revision: '1',
-        codingUnitIds: ['U'],
-        counts: [
-          { unitId: 'U', itemId: 'I2', count: 0, codingCount: 0 },
-          { unitId: 'U', itemId: 'I1', count: 0, codingCount: 0 },
-          { unitId: 'V', itemId: 'I1', count: 0, codingCount: 0 },
-        ],
-      }),
+    api.getUnitCommentAvailability.mockImplementation((_apId: string, unitId: string) =>
+      of({ codingCommentsAvailable: unitId === 'U' }),
     );
     api.getItemCommentThread.mockImplementation((_apId: string, unitId: string, itemId: string) =>
       api.getReviewCommentThread(_apId, { targetType: 'ITEM', unitId, itemId }),
     );
     api.createItemComment.mockReturnValue(of({}));
+    api.createReviewComment.mockReturnValue(of({}));
     (ItemCommentThreadComponent as any).ctorParameters = () => [{ type: ApiService }];
     await ɵresolveComponentResources(async (url: string) =>
       url.endsWith('.html') ? threadTemplate : '',
@@ -152,6 +152,7 @@ describe('Unit review comment drafts', () => {
           { id: 'I1', name: 'Erstes Item' },
           { id: 'not-in-catalog', name: 'Veraltet' },
         ],
+        navigationItems: [{ id: 'I1' }, { id: 'I2' }],
         dependencies: [],
       }),
     );
@@ -235,33 +236,109 @@ describe('Unit review comment drafts', () => {
     expectDrafts();
   });
 
-  it('discards delayed item catalogs after changing the unit', () => {
+  it.each(['item', 'coding'] as const)(
+    'preserves %s drafts when page navigation changes the comment target',
+    (scope) => {
+      enableItemComments(['ITEM', 'CODING']);
+      select('.comment-scope-select select', scope);
+      const component = fixture.componentInstance;
+      component.definitionContent = JSON.stringify({
+        pages: [
+          { elements: [{ type: 'text' }] },
+          { elements: [{ alias: 'I1', type: 'text-field' }] },
+          { elements: [{ alias: 'I2', type: 'text-field' }] },
+        ],
+      });
+      component['initializePageNavigation']();
+      component.playerSessionId = 'page-navigation';
+      detect();
+      expect(fixture.nativeElement.querySelector('.comment-thread-shell')).toBeNull();
+      component.navigateToPage(2);
+      detect();
+      expect(thread()!.itemId).toBe('I1');
+      thread()!.newCommentText = 'Entwurf zu Item 1';
+      component.navigateToPage(3);
+      detect();
+      expect(thread()!.itemId).toBe('I2');
+      expect(thread()!.newCommentText).toBe('');
+      thread()!.newCommentText = 'Entwurf zu Item 2';
+      component.navigateToPage(1);
+      detect();
+      expect(fixture.nativeElement.querySelector('.comment-thread-shell')).toBeNull();
+      select('.comment-item-select select', 'I2');
+      component['updateCurrentPage']('0');
+      detect();
+      expect(thread()!.itemId).toBe('I2');
+      expect(thread()!.newCommentText).toBe('Entwurf zu Item 2');
+      component.navigateToPage(2);
+      detect();
+      expect(thread()!.itemId).toBe('I1');
+      expect(thread()!.newCommentText).toBe('Entwurf zu Item 1');
+      component.navigateToPage(3);
+      detect();
+      expect(thread()!.newCommentText).toBe('Entwurf zu Item 2');
+    },
+  );
+
+  it.each(['ITEM', 'CODING'] as const)(
+    'finishes a pending %s comment save while the player shows a page without an item',
+    (targetType) => {
+      const save = new Subject<unknown>();
+      const createComment = targetType === 'ITEM' ? api.createItemComment : api.createReviewComment;
+      createComment.mockReturnValue(save);
+      enableItemComments([targetType]);
+      const component = fixture.componentInstance;
+      component.definitionContent = JSON.stringify({
+        pages: [{ elements: [{ alias: 'I1', type: 'text-field' }] }, {}],
+      });
+      component['initializePageNavigation']();
+      component.playerSessionId = 'page-navigation';
+      detect();
+      const itemThread = thread()!;
+      expect(itemThread.itemId).toBe('I1');
+      itemThread.newCommentText = 'Zu speichern';
+      itemThread.submitComment();
+      expect(createComment).toHaveBeenCalledTimes(1);
+
+      component.navigateToPage(2);
+      detect();
+      expect(fixture.nativeElement.querySelector('.comment-thread-shell')).toBeNull();
+      expect(thread()).toBe(itemThread);
+      expect(save.observed).toBe(true);
+      save.next({});
+      save.complete();
+
+      component.navigateToPage(1);
+      detect();
+      expect(thread()!.itemId).toBe('I1');
+      expect(thread()!.busy).toBe(false);
+      expect(thread()!.newCommentText).toBe('');
+    },
+  );
+
+  it('discards delayed comment availability after changing the unit', () => {
     const oldCatalog = new Subject<any>();
     const currentCatalog = new Subject<any>();
-    api.getItemCommentCounts.mockReturnValueOnce(oldCatalog).mockReturnValueOnce(currentCatalog);
+    api.getUnitCommentAvailability
+      .mockReturnValueOnce(oldCatalog)
+      .mockReturnValueOnce(currentCatalog);
     enableItemComments(['ITEM']);
     expect(thread()).toBeUndefined();
     fixture.componentRef.setInput('unitId', 'V');
     detect();
-    oldCatalog.next({ revision: 'old', counts: [{ unitId: 'U', itemId: 'OLD' }] });
+    oldCatalog.next({ codingCommentsAvailable: true });
     detect();
     expect(thread()).toBeUndefined();
 
-    currentCatalog.next({
-      revision: 'new',
-      counts: [
-        { unitId: 'V', itemId: 'I1' },
-        { unitId: 'U', itemId: 'OLD' },
-      ],
-    });
+    currentCatalog.next({ codingCommentsAvailable: false });
     detect();
     expect(thread()!.unitId).toBe('V');
     expect(thread()!.itemId).toBe('I1');
     expect(api.getItemCommentThread).not.toHaveBeenCalledWith('A', 'V', 'OLD', expect.anything());
   });
 
-  it('supports item-only review, retries catalog errors and respects disabled targets', () => {
-    api.getItemCommentCounts.mockReturnValueOnce(throwError(() => new Error('offline')));
+  it('supports item-only review, retries availability errors and respects disabled targets', () => {
+    api.getUnitCommentAvailability.mockReturnValueOnce(throwError(() => new Error('offline')));
     enableItemComments(['ITEM']);
     expect(thread()).toBeUndefined();
     expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain(
@@ -272,13 +349,16 @@ describe('Unit review comment drafts', () => {
     detect();
     expect(thread()!.targetType).toBe('ITEM');
 
-    const calls = api.getItemCommentCounts.mock.calls.length;
+    const calls = api.getUnitCommentAvailability.mock.calls.length;
     enableItemComments(['UNIT', 'BOOKLET']);
     expect(thread()!.targetType).toBe('UNIT');
     expect(fixture.nativeElement.querySelector('.comment-item-select')).toBeNull();
-    expect(api.getItemCommentCounts).toHaveBeenCalledTimes(calls);
+    expect(api.getUnitCommentAvailability).toHaveBeenCalledTimes(calls);
 
-    api.getItemCommentCounts.mockReturnValue(of({ revision: 'empty', counts: [] }));
+    api.getViewUnit.mockReturnValueOnce(
+      of({ id: 'U', name: 'U', items: [], navigationItems: [], dependencies: [] }),
+    );
+    fixture.componentInstance['loadUnit']();
     enableItemComments(['ITEM']);
     expect(thread()).toBeUndefined();
     expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain(
@@ -311,11 +391,10 @@ describe('Unit review comment drafts', () => {
     );
   });
 
-  it('reloads coding comments after an incomplete catalog response', () => {
-    const counts = [{ unitId: 'U', itemId: 'I1', count: 0, codingCount: 1 }];
-    api.getItemCommentCounts
-      .mockReturnValueOnce(of({ revision: 'partial', codingUnitIds: [], counts }))
-      .mockReturnValue(of({ revision: 'recovered', codingUnitIds: ['U'], counts }));
+  it('rechecks coding comment availability after loading a scheme', () => {
+    api.getUnitCommentAvailability
+      .mockReturnValueOnce(of({ codingCommentsAvailable: false }))
+      .mockReturnValue(of({ codingCommentsAvailable: true }));
     enableItemComments(['CODING']);
 
     expect(thread()).toBeUndefined();
@@ -324,7 +403,7 @@ describe('Unit review comment drafts', () => {
     retry.click();
     detect();
 
-    expect(api.getItemCommentCounts).toHaveBeenCalledTimes(2);
+    expect(api.getUnitCommentAvailability).toHaveBeenCalledTimes(2);
     expect(thread()?.targetType).toBe('CODING');
     expect(thread()?.itemId).toBe('I1');
     expect(fixture.nativeElement.textContent).toContain(root.commentText);
@@ -439,7 +518,13 @@ describe('Unit review comment drafts', () => {
     fixture.componentRef.setInput('unitId', 'V');
     detect();
     expect(thread()).toBeUndefined();
-    response.next({ id: 'V', name: 'V', items: [], dependencies: [] });
+    response.next({
+      id: 'V',
+      name: 'V',
+      items: [],
+      navigationItems: [{ id: 'I1' }],
+      dependencies: [],
+    });
     detect();
     expect(thread()!.newCommentText).toBe('');
     thread()!.newCommentText = 'Andere Unit';

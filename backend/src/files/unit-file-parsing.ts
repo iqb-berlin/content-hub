@@ -20,6 +20,28 @@ export function getXmlRootElement(xmlContent: string): string | undefined {
   return rootElement;
 }
 
+export function isUnitXmlFilename(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  return (
+    lower.endsWith(".xml") &&
+    !lower.startsWith("booklet") &&
+    !lower.startsWith("testtaker")
+  );
+}
+
+export function compareUnitXmlFilenames(
+  unitId: string,
+  left: string,
+  right: string,
+): number {
+  const conventionalName = `${unitId}.xml`;
+  if (left === right) return 0;
+  if (left === conventionalName) return -1;
+  if (right === conventionalName) return 1;
+  // Keep the result independent of database order or upload order.
+  return left < right ? -1 : 1;
+}
+
 export function parseUnitXml(
   xmlContent: string,
   xmlFilename: string,
@@ -117,6 +139,59 @@ export function isValidVomdItem(
   }
   const profiles = value.profiles === undefined ? [] : value.profiles;
   return Array.isArray(profiles) && profiles.every(isValidVomdProfile);
+}
+
+export function resolveVomdItemId(
+  unitId: string,
+  item: { id: string; useUnitAliasAsPrefix?: boolean },
+): string {
+  return item.useUnitAliasAsPrefix === false ? item.id : `${unitId}_${item.id}`;
+}
+
+export function findReferencedMetadataFile<T extends { originalName: string }>(
+  files: readonly T[],
+  reference: string,
+): T | undefined {
+  return (
+    files.find((file) => file.originalName === reference) ??
+    files.find((file) => file.originalName === `${reference}.json`)
+  );
+}
+
+export function matchIndexedVomdItem<T>(
+  unitId: string,
+  item: { id: string; useUnitAliasAsPrefix?: boolean },
+  indexedItems: ReadonlyMap<string, T>,
+  fileItemIds: ReadonlySet<string>,
+): { indexedItem?: T; wasSeparateTarget: boolean } {
+  const exact = indexedItems.get(item.id);
+  if (exact !== undefined)
+    return { indexedItem: exact, wasSeparateTarget: false };
+
+  const prefix = `${unitId}_`;
+  if (item.id.startsWith(prefix)) {
+    const raw = item.id.slice(prefix.length);
+    const legacy = raw ? indexedItems.get(raw) : undefined;
+    if (legacy !== undefined) {
+      // When both raw IDs occur in the VOMD, the exact item owns the indexed ID.
+      return {
+        indexedItem: fileItemIds.has(raw) ? undefined : legacy,
+        wasSeparateTarget: false,
+      };
+    }
+  }
+
+  const prefixedId = resolveVomdItemId(unitId, item);
+  // An existing backward alias owns the index ID before a generated prefix
+  // can claim it. With distinct file items, the generated item keeps its raw ID.
+  const existingAlias = `${prefix}${prefixedId}`;
+  const aliasOwnsIndex =
+    fileItemIds.has(existingAlias) && !indexedItems.has(existingAlias);
+  const indexedItem =
+    prefixedId !== item.id && !fileItemIds.has(prefixedId) && !aliasOwnsIndex
+      ? indexedItems.get(prefixedId)
+      : undefined;
+  return { indexedItem, wasSeparateTarget: true };
 }
 
 export function findPlayerFile(
