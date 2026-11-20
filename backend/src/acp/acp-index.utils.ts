@@ -107,16 +107,11 @@ export function toRuntimeAcpIndex(index: unknown): UnknownRecord {
   };
 }
 
-/**
- * Storage normalization:
- * - preserve schema-defined incoming fields
- * - remove legacy top-level units/scales; explicit migration places them in parts
- */
+// The file synchronizer can omit an empty optional part list. Keep legacy
+// fields intact so that only the explicit migration can reconcile their data.
 export function normalizeIndexForStorage(index: unknown): UnknownRecord {
-  const source = asRecord(index);
-  const { units: _legacyUnits, scales: _legacyScales, ...canonical } = source;
-  const parts = getAssessmentParts(source).map((part) => ({ ...part }));
-  if (parts.length) canonical.assessmentParts = parts;
-  else delete canonical.assessmentParts;
-  return canonical;
+  const result = { ...asRecord(index) };
+  if (Array.isArray(result.assessmentParts) && !result.assessmentParts.length)
+    delete result.assessmentParts;
+  return result;
 }

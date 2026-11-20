@@ -75,23 +75,17 @@ describe("acp-index.utils", () => {
       "base",
       "derived",
     ]);
-    expect(normalizeIndexForStorage(index)).toEqual(index);
     expect(toRuntimeAcpIndex(index).scales).toEqual([
       { id: "base" },
       { id: "derived" },
     ]);
   });
 
-  it("drops legacy top-level units/scales instead of persisting them", () => {
-    const normalized = normalizeIndexForStorage({
-      units: [{ id: "u1" }],
-      scales: [{ id: "s1" }],
-      assessmentParts: [],
-    }) as any;
-
-    expect(normalized.assessmentParts).toBeUndefined();
-    expect(normalized.units).toBeUndefined();
-    expect(normalized.scales).toBeUndefined();
+  it("keeps root-only entries during file synchronization until explicit migration", () => {
+    const entries = { units: [{ id: "legacy" }], scales: [{ id: "scale" }] };
+    expect(
+      normalizeIndexForStorage({ ...entries, assessmentParts: [] }),
+    ).toEqual(entries);
   });
 
   it("adds runtime compatibility units/scales for modern ACPs", () => {

@@ -306,6 +306,77 @@ describe("ACP index 0.6", () => {
     expect((await service.migrationPreview("acp")).changes).toEqual([]);
   });
 
+  it("reconciles mirrors in their original part and retains ambiguous root entries for review", async () => {
+    const index = indexWith();
+    const first = index.assessmentParts[0];
+    const second = structuredClone(first);
+    second.id = "second";
+    second.units[0].id = "u2";
+    index.assessmentParts.push(second);
+    index.units = [structuredClone(second.units[0])];
+    const row = { acpIndex: index, updatedAt: new Date() };
+    acpRepository.findOne.mockResolvedValue(row);
+    const preview = await service.migrationPreview("acp");
+    expect(preview.candidateIndex.units).toBeUndefined();
+    expect(preview.candidateIndex.assessmentParts).toEqual(
+      index.assessmentParts,
+    );
+    const conflict = { ...second.units[0], name: "Other" };
+    index.units.push(conflict, { id: "unassigned" });
+    const blocked = await service.migrationPreview("acp");
+    expect(blocked.validation.valid).toBe(false);
+    expect(blocked.candidateIndex.units).toEqual([
+      conflict,
+      { id: "unassigned" },
+    ]);
+    await expect(
+      service.migrate("acp", row.updatedAt.toISOString()),
+    ).rejects.toThrow();
+    expect(snapshots.create).not.toHaveBeenCalled();
+  });
+
+  it("keeps a mirrored legacy scale only once and makes a second apply a no-op", async () => {
+    const scale = {
+      id: "base",
+      scaleType: "BASE",
+      name,
+      typeParameters: { method: "SCORE_SUM", items: [{ id: "alias_x" }] },
+    };
+    const index = indexWith({ scales: [scale] });
+    index.units = structuredClone(index.assessmentParts[0].units);
+    index.scales = [structuredClone(scale)];
+    const row = {
+      acpIndex: index,
+      updatedAt: new Date(),
+      packageId: "pkg",
+      itemProperties: {},
+    };
+    acpRepository.findOne.mockResolvedValue(row);
+    acpRepository.save = jest.fn(async (value) => value);
+    await service.migrate("acp", row.updatedAt.toISOString());
+    expect(row.acpIndex.assessmentParts[0].units).toHaveLength(1);
+    expect(row.acpIndex.assessmentParts[0].baseScales).toHaveLength(1);
+    await service.migrate("acp", row.updatedAt.toISOString());
+    expect(snapshots.create).toHaveBeenCalledTimes(1);
+    expect(acpRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a direct index save with legacy contents instead of stripping them", async () => {
+    const row = {
+      acpIndex: indexWith(),
+      packageId: "pkg",
+      updatedAt: new Date(),
+    };
+    acpRepository.findOne.mockResolvedValue(row);
+    await expect(
+      service.saveCandidate(
+        "acp",
+        { packageId: "pkg", version: "1.0.0", name, units: [{ id: "unique" }] },
+        row.updatedAt.toISOString(),
+      ),
+    ).rejects.toThrow("ACP index violates");
+  });
+
   it.each(["weights", "vocabularies", "invalid"])(
     "keeps %s requiring review and refuses to apply a lossy migration",
     async (reason) => {

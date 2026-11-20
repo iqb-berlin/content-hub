@@ -44,6 +44,11 @@ errors prevent saving; semantic and external-resource errors prevent publication
 Use **Migration preview** before applying. Applying takes a snapshot and requires
 the current revision. The preview does not change stored data.
 
+- Renaming a package updates its German index name in place, including on legacy
+  indexes. Index editing and import validate the submitted structure before saving.
+- Migration compares root units and scales with their part entries. Identical
+  mirrors are removed. Conflicting contents or an ambiguous part assignment
+  block applying the preview. Missing required fields still need correction.
 - Legacy base scales move their type parameters directly into `baseScales`.
 - Legacy derived scales become `MAP` scales with a single source. Numeric outputs,
   labels and descriptions move into `newValue` objects. The old implicit fallback
@@ -62,3 +67,10 @@ still use the original `AcpIndex05Compliance1785000000000` migration identity so
 that installations which tested the earlier branch do not apply it twice. On
 startup, all existing indexes are revalidated against 0.6 without modifying their
 content.
+
+New snapshots include package names, descriptions, item properties and file
+metadata. Restore accepts the saved index format and restores the index and its
+file records in one transaction. Older snapshots retain current item properties
+and use the saved German index name when available. A saved release returns to
+development for a fresh publication decision. Run the snapshot metadata database
+migration before starting the updated backend.

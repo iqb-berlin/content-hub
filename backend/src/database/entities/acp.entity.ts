@@ -40,7 +40,7 @@ export class Acp {
     type: "jsonb",
     nullable: true,
   })
-  acpIndexValidationReport?: Record<string, unknown>;
+  acpIndexValidationReport?: Record<string, unknown> | null;
 
   @Column({ name: "item_properties", type: "jsonb", default: {} })
   itemProperties!: Record<string, Record<string, any>>;

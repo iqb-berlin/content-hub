@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { LessThan, Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
-import { ModuleRef } from "@nestjs/core";
+import { randomUUID } from "node:crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
 import {
@@ -20,14 +24,11 @@ export class SnapshotsService {
   constructor(
     @InjectRepository(AcpSnapshot)
     private readonly snapshotRepository: Repository<AcpSnapshot>,
-    @InjectRepository(AcpSnapshotFile)
-    private readonly snapshotFileRepository: Repository<AcpSnapshotFile>,
     @InjectRepository(Acp)
     private readonly acpRepository: Repository<Acp>,
     @InjectRepository(AcpFile)
     private readonly fileRepository: Repository<AcpFile>,
     private readonly configService: ConfigService,
-    private readonly moduleRef: ModuleRef,
   ) {
     this.storagePath = this.configService.get<string>(
       "FILE_STORAGE_PATH",
@@ -47,6 +48,7 @@ export class SnapshotsService {
     const snapshot = await this.snapshotRepository.findOne({
       where: { id },
       relations: ["snapshotFiles"],
+      relationLoadStrategy: "query",
     });
     if (!snapshot) {
       throw new NotFoundException(`Snapshot with ID ${id} not found`);
@@ -96,178 +98,162 @@ export class SnapshotsService {
     ]);
   }
 
-  async create(acpId: string, changelog?: string): Promise<AcpSnapshot> {
-    const acp = await this.getAcpOrFail(acpId);
-
-    // Determine next version number
-    const latestSnapshot = await this.snapshotRepository.findOne({
-      where: { acpId },
-      order: { versionNumber: "DESC" },
-    });
-    const nextVersion = latestSnapshot ? latestSnapshot.versionNumber + 1 : 1;
-
-    // Create snapshot
-    const snapshot = this.snapshotRepository.create({
-      acpId,
-      versionNumber: nextVersion,
-      acpIndexSnapshot: { ...acp.acpIndex },
-      changelog,
-    });
-    const savedSnapshot = await this.snapshotRepository.save(snapshot);
-
-    // Persist file state for this snapshot so restore stays independent
-    // from future file deletions or replacements in the active ACP.
-    const files = await this.fileRepository.find({ where: { acpId } });
-    const snapshotFiles: AcpSnapshotFile[] = [];
-    for (const [index, file] of files.entries()) {
-      const snapshotFilePath = await this.persistSnapshotFile(
-        acpId,
-        savedSnapshot.id,
-        file,
-        index,
-      );
-      snapshotFiles.push(
-        this.snapshotFileRepository.create({
-          snapshotId: savedSnapshot.id,
-          filePath: snapshotFilePath,
-          originalName: file.originalName,
-          relativePath: file.relativePath || file.originalName,
-          checksum: file.checksum,
-          fileSize: file.fileSize,
-        }),
-      );
+  async create(
+    acpId: string,
+    changelog?: string,
+    expectedUpdatedAt?: string,
+  ): Promise<AcpSnapshot> {
+    assertUuidParam(acpId, "acpId");
+    let snapshotDir: string | undefined;
+    try {
+      return await this.acpRepository.manager.transaction(async (manager) => {
+        const acp = await manager.getRepository(Acp).findOne({
+          where: { id: acpId },
+          lock: { mode: "pessimistic_write" },
+        });
+        if (!acp) throw new NotFoundException("ACP not found");
+        if (
+          expectedUpdatedAt &&
+          acp.updatedAt.toISOString() !== expectedUpdatedAt
+        )
+          throw new ConflictException("ACP has changed since preview");
+        const snapshots = manager.getRepository(AcpSnapshot);
+        const latest = await snapshots.findOne({
+          where: { acpId },
+          order: { versionNumber: "DESC" },
+        });
+        const snapshot = await snapshots.save(
+          snapshots.create({
+            acpId,
+            versionNumber: (latest?.versionNumber ?? 0) + 1,
+            acpIndexSnapshot: acp.acpIndex,
+            packageMetadataSnapshot: {
+              name: acp.name,
+              description: acp.description,
+              itemProperties: acp.itemProperties,
+            },
+            changelog,
+          }),
+        );
+        const files = await manager
+          .getRepository(AcpFile)
+          .find({ where: { acpId } });
+        snapshotDir = path.join(
+          this.storagePath,
+          acpId,
+          "snapshots",
+          snapshot.id,
+        );
+        if (files.length) await fs.mkdir(snapshotDir, { recursive: true });
+        const snapshotFiles = manager.getRepository(AcpSnapshotFile);
+        snapshot.snapshotFiles = [];
+        for (const [index, file] of files.entries()) {
+          const filePath = path.join(
+            snapshotDir,
+            `${index}-${path.basename(file.filePath)}`,
+          );
+          await fs.copyFile(file.filePath, filePath);
+          snapshot.snapshotFiles.push(
+            snapshotFiles.create({
+              snapshotId: snapshot.id,
+              filePath,
+              originalName: file.originalName,
+              relativePath: file.relativePath || file.originalName,
+              checksum: file.checksum,
+              fileType: file.fileType,
+              validationResult: file.validationResult,
+              fileSize: file.fileSize,
+            }),
+          );
+        }
+        if (snapshot.snapshotFiles.length)
+          await snapshotFiles.save(snapshot.snapshotFiles, { chunk: 500 });
+        return snapshot;
+      });
+    } catch (error) {
+      if (snapshotDir)
+        await fs.rm(snapshotDir, { recursive: true, force: true });
+      throw error;
     }
-    if (snapshotFiles.length > 0) {
-      await this.snapshotFileRepository.save(snapshotFiles);
-    }
-
-    return this.findById(savedSnapshot.id);
   }
 
   async restore(snapshotId: string): Promise<Acp> {
     const snapshot = await this.findById(snapshotId);
-    const acp = await this.acpRepository.findOne({
-      where: { id: snapshot.acpId },
-    });
-    if (!acp) {
-      throw new NotFoundException("ACP not found");
-    }
-
-    // Resolve all file data first; only mutate DB state after all files
-    // are restorable to avoid partial restores.
-    const restoredFiles: AcpFile[] = [];
-    if (snapshot.snapshotFiles?.length) {
-      for (const sf of snapshot.snapshotFiles) {
-        const { filePath, fileSize } = await this.resolveRestoredFilePath(
-          acp.id,
-          snapshot.id,
-          sf,
-        );
-        restoredFiles.push(
-          this.fileRepository.create({
-            acpId: acp.id,
-            filePath,
-            originalName: sf.originalName,
-            relativePath: sf.relativePath || sf.originalName,
-            fileSize: fileSize ?? sf.fileSize,
-            checksum: sf.checksum,
-          }),
-        );
-      }
-    }
-    const restoredIndex = {
-      ...snapshot.acpIndexSnapshot,
-      status: "IN_DEVELOPMENT",
-    };
-    let restoredAcp: Acp;
-    let indexService: any;
+    const copied: string[] = [];
     try {
-      const { AcpIndexService } = require("../acp/acp-index.service");
-      indexService = this.moduleRef.get(AcpIndexService, {
-        strict: false,
+      return await this.acpRepository.manager.transaction(async (manager) => {
+        const packages = manager.getRepository(Acp);
+        const acp = await packages.findOne({
+          where: { id: snapshot.acpId },
+          lock: { mode: "pessimistic_write" },
+        });
+        if (!acp) throw new NotFoundException("ACP not found");
+        const released = (status: unknown) =>
+          status === "RELEASED_PUBLIC" || status === "RELEASED_CONFIDENTIAL";
+        if (released(acp.acpIndex.status))
+          throw new ConflictException(
+            "Published ACP must be reopened before it can be changed",
+          );
+        const files = manager.getRepository(AcpFile);
+        const restoredFiles: AcpFile[] = [];
+        const activeDir = path.join(this.storagePath, acp.id);
+        if (snapshot.snapshotFiles?.length)
+          await fs.mkdir(activeDir, { recursive: true });
+        for (const sf of snapshot.snapshotFiles || []) {
+          const filePath = path.join(
+            activeDir,
+            randomUUID() + path.extname(sf.originalName),
+          );
+          copied.push(filePath);
+          try {
+            await fs.copyFile(sf.filePath, filePath);
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === "ENOENT")
+              throw new NotFoundException(
+                `Snapshot file "${sf.originalName}" is missing on disk and cannot be restored`,
+              );
+            throw error;
+          }
+          restoredFiles.push(
+            files.create({
+              acpId: acp.id,
+              filePath,
+              originalName: sf.originalName,
+              relativePath: sf.relativePath || sf.originalName,
+              checksum: sf.checksum,
+              fileSize: sf.fileSize,
+              fileType: sf.fileType,
+              validationResult: sf.validationResult,
+            }),
+          );
+        }
+        acp.acpIndex = { ...snapshot.acpIndexSnapshot };
+        // Publication is a separate operation even when restoring an old release.
+        if (released(acp.acpIndex.status))
+          acp.acpIndex.status = "IN_DEVELOPMENT";
+        if (snapshot.packageMetadataSnapshot) {
+          const metadata = snapshot.packageMetadataSnapshot;
+          acp.name = metadata.name;
+          acp.description = metadata.description;
+          acp.itemProperties = metadata.itemProperties;
+        } else if (Array.isArray(acp.acpIndex.name)) {
+          const german = acp.acpIndex.name.find(
+            (entry) => entry?.lang === "de",
+          );
+          if (typeof german?.value === "string") acp.name = german.value;
+        }
+        acp.acpIndexValidationReport = null;
+        acp.acpIndexValidationStatus = "UNKNOWN";
+        await files.delete({ acpId: acp.id });
+        if (restoredFiles.length)
+          await files.save(restoredFiles, { chunk: 500 });
+        return packages.save(acp);
       });
-      restoredAcp = await indexService.saveCandidate(
-        acp.id,
-        restoredIndex,
-        acp.updatedAt.toISOString(),
-      );
     } catch (error) {
-      if (error?.constructor?.name !== "UnknownElementException") throw error;
-      acp.acpIndex = restoredIndex;
-      restoredAcp = await this.acpRepository.save(acp);
-    }
-
-    await this.fileRepository.delete({ acpId: snapshot.acpId });
-    if (restoredFiles.length) {
-      await this.fileRepository.save(restoredFiles);
-    }
-    if (indexService) {
-      await indexService.validateStoredIndex(acp.id, {
-        external: false,
-        persist: true,
-      });
-    }
-
-    return restoredAcp;
-  }
-
-  private async resolveRestoredFilePath(
-    acpId: string,
-    snapshotId: string,
-    snapshotFile: AcpSnapshotFile,
-  ): Promise<{ filePath: string; fileSize?: number }> {
-    try {
-      await fs.access(snapshotFile.filePath);
-    } catch {
-      throw new NotFoundException(
-        `Snapshot file "${snapshotFile.originalName}" is missing on disk and cannot be restored`,
+      await Promise.allSettled(
+        copied.map((filePath) => fs.rm(filePath, { force: true })),
       );
-    }
-
-    try {
-      const targetDir = path.join(
-        this.storagePath,
-        acpId,
-        "snapshot-restore",
-        snapshotId,
-      );
-      await fs.mkdir(targetDir, { recursive: true });
-      const targetPath = path.join(targetDir, snapshotFile.originalName);
-      await fs.copyFile(snapshotFile.filePath, targetPath);
-      const stats = await fs.stat(targetPath);
-      return { filePath: targetPath, fileSize: Number(stats.size) };
-    } catch {
-      throw new NotFoundException(
-        `Snapshot file "${snapshotFile.originalName}" could not be copied for restore`,
-      );
-    }
-  }
-
-  private async persistSnapshotFile(
-    acpId: string,
-    snapshotId: string,
-    file: AcpFile,
-    index: number,
-  ): Promise<string> {
-    const snapshotDir = path.join(
-      this.storagePath,
-      acpId,
-      "snapshots",
-      snapshotId,
-    );
-    await fs.mkdir(snapshotDir, { recursive: true });
-    const sourceBaseName = path.basename(file.filePath) || file.originalName;
-    const snapshotFilePath = path.join(
-      snapshotDir,
-      `${index}-${sourceBaseName}`,
-    );
-
-    try {
-      await fs.copyFile(file.filePath, snapshotFilePath);
-      return snapshotFilePath;
-    } catch {
-      // Fall back to previous behavior if copy fails unexpectedly.
-      return file.filePath;
+      throw error;
     }
   }
 
@@ -282,6 +268,7 @@ export class SnapshotsService {
       },
       order: { versionNumber: "DESC" },
       relations: ["snapshotFiles"],
+      relationLoadStrategy: "query",
     });
 
     if (!previousSnapshot) {

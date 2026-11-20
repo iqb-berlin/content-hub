@@ -9,6 +9,8 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import Ajv, { ErrorObject, ValidateFunction } from "ajv";
 import addFormats from "ajv-formats";
+import { isDeepStrictEqual } from "node:util";
+import { reconcileLegacyEntries } from "./acp-index-migration";
 import { promises as dns } from "dns";
 import { isIP } from "net";
 import * as ipaddr from "ipaddr.js";
@@ -17,10 +19,7 @@ import { Agent } from "undici";
 import { migrateLegacyScales } from "./acp-scale-migration";
 import { Acp, AcpExternalResourceCache, AcpFile } from "../database/entities";
 import { SnapshotsService } from "../snapshots/snapshots.service";
-import {
-  getAssessmentParts,
-  normalizeIndexForStorage,
-} from "./acp-index.utils";
+import { getAssessmentParts } from "./acp-index.utils";
 import {
   AcpExternalCheck,
   AcpIndexMigrationPreview,
@@ -189,7 +188,7 @@ export class AcpIndexService implements OnApplicationBootstrap {
 
   async saveCandidate(
     acpId: string,
-    candidateInput: Record<string, unknown>,
+    candidate: Record<string, unknown>,
     expectedUpdatedAt?: string,
     options: {
       allowReleasedStatus?: boolean;
@@ -205,7 +204,6 @@ export class AcpIndexService implements OnApplicationBootstrap {
         "Published ACP must be reopened before it can be changed",
       );
     }
-    const candidate = normalizeIndexForStorage(candidateInput);
     if (candidate.packageId !== acp.packageId) {
       throw new UnprocessableEntityException(
         "packageId must match the ACP packageId",
@@ -264,42 +262,38 @@ export class AcpIndexService implements OnApplicationBootstrap {
     const changes: Array<{ path: string; message: string }> = [];
     const migrationIssues: AcpIndexValidationIssue[] = [];
     const candidateItemProperties = structuredClone(acp.itemProperties || {});
-    const legacyUnits = Array.isArray((candidate as any).units)
-      ? (candidate as any).units
-      : [];
-    const legacyScales = Array.isArray((candidate as any).scales)
-      ? (candidate as any).scales
-      : [];
-    let parts = Array.isArray((candidate as any).assessmentParts)
-      ? (candidate as any).assessmentParts
-      : [];
-
-    if ((legacyUnits.length || legacyScales.length) && !parts.length) {
-      parts = [
-        {
+    const parts = getAssessmentParts(candidate);
+    if (
+      candidate.assessmentParts === undefined ||
+      Array.isArray(candidate.assessmentParts)
+    ) {
+      if (
+        !parts.length &&
+        [candidate.units, candidate.scales].some(
+          (entries) => Array.isArray(entries) && entries.length,
+        )
+      ) {
+        parts.push({
           id: "default-assessment-part",
           name: [{ lang: "de", value: "Default Assessment Part" }],
-          units: legacyUnits,
-          ...(legacyScales.length ? { scales: legacyScales } : {}),
           bookletModules: [],
           instruments: [],
-        },
-      ];
-      changes.push({
-        path: "/assessmentParts",
-        message:
-          "Top-Level-Units und -Skalen in einen Assessment-Part verschoben.",
-      });
-    } else if (parts.length) {
-      if (legacyUnits.length)
-        parts[0].units = [...(parts[0].units || []), ...legacyUnits];
-      if (legacyScales.length)
-        parts[0].scales = [...(parts[0].scales || []), ...legacyScales];
+          units: [],
+        });
+        candidate.assessmentParts = parts;
+      }
+      for (const field of ["units", "scales"] as const) {
+        reconcileLegacyEntries(
+          candidate,
+          parts,
+          field,
+          changes,
+          migrationIssues,
+        );
+      }
+      if (Array.isArray(candidate.assessmentParts) && !parts.length)
+        delete candidate.assessmentParts;
     }
-    delete (candidate as any).units;
-    delete (candidate as any).scales;
-    if (parts.length) (candidate as any).assessmentParts = parts;
-    else delete (candidate as any).assessmentParts;
 
     for (const [partIndex, part] of parts.entries()) {
       migrationIssues.push(
@@ -336,6 +330,22 @@ export class AcpIndexService implements OnApplicationBootstrap {
         for (const item of unit.items || []) {
           if (item.metadata !== undefined) {
             const key = `${part.id}/${unit.id}/${item.id}`;
+            const previous = candidateItemProperties[key]?.metadata;
+            if (
+              previous !== undefined &&
+              !isDeepStrictEqual(previous, item.metadata)
+            ) {
+              migrationIssues.push(
+                this.issue(
+                  "ITEM_METADATA_CONFLICT",
+                  "semantic",
+                  "error",
+                  `/assessmentParts/${partIndex}/units/${unitIndex}/items`,
+                  `Abweichende Item-Metadaten für ${key}.`,
+                ),
+              );
+              continue;
+            }
             candidateItemProperties[key] = {
               ...(candidateItemProperties[key] || {}),
               metadata: item.metadata,
@@ -366,6 +376,13 @@ export class AcpIndexService implements OnApplicationBootstrap {
     const validation = await this.validateCandidate(acpId, candidate, {
       external: true,
     });
+    if (
+      validation.issues.some((issue) =>
+        ["DUPLICATE_UNIT_ID", "DUPLICATE_SCALE_ID"].includes(issue.code),
+      )
+    ) {
+      validation.valid = false;
+    }
     if (migrationIssues.length) {
       validation.issues.push(...migrationIssues);
       validation.valid = false;
@@ -391,11 +408,28 @@ export class AcpIndexService implements OnApplicationBootstrap {
         preview,
       });
     }
-    await this.snapshotsService.create(acpId, "ACP-Index 0.6 migration");
+    const acp = await this.getAcp(acpId);
+    this.assertExpectedUpdatedAt(acp, expectedUpdatedAt);
+    this.assertExpectedUpdatedAt(acp, preview.sourceUpdatedAt);
+    if (RELEASED_STATUSES.has(String(acp.acpIndex.status)))
+      throw new ConflictException(
+        "Published ACP must be reopened before it can be changed",
+      );
+    if (
+      JSON.stringify(acp.acpIndex) === JSON.stringify(preview.candidateIndex) &&
+      JSON.stringify(acp.itemProperties || {}) ===
+        JSON.stringify(preview.candidateItemProperties)
+    )
+      return acp;
+    await this.snapshotsService.create(
+      acpId,
+      "ACP-Index 0.6 migration",
+      preview.sourceUpdatedAt,
+    );
     return this.saveCandidate(
       acpId,
       preview.candidateIndex,
-      expectedUpdatedAt,
+      preview.sourceUpdatedAt,
       {
         itemProperties: preview.candidateItemProperties,
       },

@@ -102,39 +102,37 @@ export class AcpService {
   }
 
   async update(id: string, dto: UpdateAcpDto): Promise<Acp> {
-    const acp = await this.findById(id);
-    if (
-      acp.acpIndex?.status === "RELEASED_PUBLIC" ||
-      acp.acpIndex?.status === "RELEASED_CONFIDENTIAL"
-    ) {
-      throw new ConflictException(
-        "Published ACP must be reopened before it can be changed",
-      );
-    }
-    if (dto.name !== undefined) {
-      const localizedNames = Array.isArray(acp.acpIndex?.name)
-        ? [...(acp.acpIndex.name as Array<{ lang: string; value: string }>)]
-        : [];
-      const germanIndex = localizedNames.findIndex(
-        (entry) => entry?.lang === "de",
-      );
-      if (germanIndex >= 0)
-        localizedNames[germanIndex] = { lang: "de", value: dto.name };
-      else localizedNames.push({ lang: "de", value: dto.name });
-      const candidate = { ...acp.acpIndex, name: localizedNames };
-      if (this.acpIndexService) {
-        return this.acpIndexService.saveCandidate(
-          id,
-          candidate,
-          acp.updatedAt.toISOString(),
-          { name: dto.name, description: dto.description },
+    return this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(Acp);
+      const acp = await repository.findOne({
+        where: { id },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!acp) throw new NotFoundException(`ACP with ID ${id} not found`);
+      if (
+        ["RELEASED_PUBLIC", "RELEASED_CONFIDENTIAL"].includes(
+          String(acp.acpIndex?.status),
+        )
+      ) {
+        throw new ConflictException(
+          "Published ACP must be reopened before it can be changed",
         );
       }
-      acp.name = dto.name;
-      acp.acpIndex = candidate;
-    }
-    if (dto.description !== undefined) acp.description = dto.description;
-    return this.acpRepository.save(acp);
+      if (dto.name !== undefined) {
+        const names = Array.isArray(acp.acpIndex.name)
+          ? [...acp.acpIndex.name]
+          : [];
+        const german = names.findIndex((entry) => entry?.lang === "de");
+        if (german < 0) names.push({ lang: "de", value: dto.name });
+        else names[german] = { ...names[german], value: dto.name };
+        acp.name = dto.name;
+        acp.acpIndex = { ...acp.acpIndex, name: names };
+        acp.acpIndexValidationStatus = "UNKNOWN";
+        acp.acpIndexValidationReport = null;
+      }
+      if (dto.description !== undefined) acp.description = dto.description;
+      return repository.save(acp);
+    });
   }
 
   async delete(id: string): Promise<void> {

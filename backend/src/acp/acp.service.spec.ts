@@ -204,6 +204,8 @@ describe("AcpService", () => {
       ...mockAcp,
       acpIndex: {
         ...mockAcp.acpIndex,
+        units: [{ id: "root-only", items: [{ id: "a" }] }],
+        scales: [{ id: "legacy-scale" }],
         name: [
           { lang: "en", value: "English name" },
           { lang: "de", value: "Alter Name" },
@@ -211,6 +213,13 @@ describe("AcpService", () => {
       },
     });
     const updated = await service.update("acp-1", { name: "Neuer Name" });
+    expect(updated.acpIndex.units).toEqual([
+      { id: "root-only", items: [{ id: "a" }] },
+    ]);
+    expect(updated.acpIndex.scales).toEqual([{ id: "legacy-scale" }]);
+    expect(acpRepo.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ lock: { mode: "pessimistic_write" } }),
+    );
     expect(updated.name).toBe("Neuer Name");
     expect(updated.acpIndex.name).toEqual([
       { lang: "en", value: "English name" },

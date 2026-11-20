@@ -82,6 +82,18 @@ describe("SnapshotsService", () => {
       save: jest.fn().mockResolvedValue([]),
       delete: jest.fn().mockResolvedValue({ affected: 0 }),
     };
+    acpRepo.manager = {
+      transaction: async (fn: any) =>
+        fn({
+          getRepository: (type: any) =>
+            new Map<any, any>([
+              [Acp, acpRepo],
+              [AcpFile, fileRepo],
+              [AcpSnapshot, snapshotRepo],
+              [AcpSnapshotFile, snapshotFileRepo],
+            ]).get(type),
+        }),
+    };
     configService = {
       get: jest.fn().mockImplementation((key: string, fallback: string) => {
         if (key === "FILE_STORAGE_PATH") return "/tmp/uploads-test";
@@ -246,7 +258,6 @@ describe("SnapshotsService", () => {
         expect.objectContaining({
           acpIndex: {
             ...snapshotWithFiles.acpIndexSnapshot,
-            status: "IN_DEVELOPMENT",
           },
         }),
       );
@@ -260,6 +271,64 @@ describe("SnapshotsService", () => {
         }),
       );
       expect(fileRepo.save).toHaveBeenCalled();
+    });
+
+    it("restores saved package and file metadata and keeps equal basenames independent", async () => {
+      const meta = {
+        name: "Vorher",
+        description: "Alt",
+        itemProperties: { item: { metadata: "alt" } },
+      };
+      snapshotRepo.findOne.mockResolvedValue({
+        ...mockSnapshot,
+        packageMetadataSnapshot: meta,
+        snapshotFiles: ["a", "b"].map((dir) => ({
+          originalName: "unit.xml",
+          relativePath: dir + "/unit.xml",
+          filePath: "/snapshot/" + dir,
+          fileType: "text/xml",
+          validationResult: { ok: true },
+          fileSize: 1,
+        })),
+      });
+      acpRepo.findOne.mockResolvedValue({ ...mockAcp });
+      const restored = await service.restore("snap-1");
+      expect(restored).toMatchObject({
+        ...meta,
+        acpIndex: mockSnapshot.acpIndexSnapshot,
+        acpIndexValidationStatus: "UNKNOWN",
+      });
+      const [[files]] = fileRepo.save.mock.calls;
+      expect(files.map((f: any) => f.relativePath)).toEqual([
+        "a/unit.xml",
+        "b/unit.xml",
+      ]);
+      expect(files[0].filePath).not.toBe(files[1].filePath);
+      expect(files[0]).toMatchObject({
+        fileType: "text/xml",
+        validationResult: { ok: true },
+      });
+    });
+
+    it("restores the German package name from a legacy snapshot and keeps unsaved item properties", async () => {
+      const index = {
+        ...mockSnapshot.acpIndexSnapshot,
+        name: [{ lang: "de", value: "Vorher" }],
+      };
+      snapshotRepo.findOne.mockResolvedValue({
+        ...mockSnapshot,
+        acpIndexSnapshot: index,
+      });
+      acpRepo.findOne.mockResolvedValue({
+        ...mockAcp,
+        itemProperties: { item: { value: "keep" } },
+      });
+      const restored = await service.restore("snap-1");
+      expect(restored).toMatchObject({
+        name: "Vorher",
+        acpIndex: index,
+        itemProperties: { item: { value: "keep" } },
+      });
     });
 
     it("should fail restore when a snapshot file is missing on disk", async () => {
@@ -278,7 +347,9 @@ describe("SnapshotsService", () => {
       };
       snapshotRepo.findOne.mockResolvedValue(snapshotWithMissingFile);
       acpRepo.findOne.mockResolvedValue({ ...mockAcp });
-      (fs.access as jest.Mock).mockRejectedValueOnce(new Error("ENOENT"));
+      (fs.copyFile as jest.Mock).mockRejectedValueOnce(
+        Object.assign(new Error("missing"), { code: "ENOENT" }),
+      );
 
       await expect(service.restore("snap-1")).rejects.toThrow(
         NotFoundException,
