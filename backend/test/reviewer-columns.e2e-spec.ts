@@ -266,6 +266,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
       const file = await db.getRepository(ApFile).save({
         apId,
         originalName: name,
+        relativePath: name,
         filePath,
         fileType: "text/plain",
         fileSize: 10,

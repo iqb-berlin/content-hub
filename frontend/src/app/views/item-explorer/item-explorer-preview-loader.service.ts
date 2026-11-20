@@ -48,8 +48,9 @@ export class ItemExplorerPreviewLoader {
     apId: string,
     perspective: ItemExplorerPerspective,
     unitId: string,
+    partId?: string,
   ): Observable<ItemExplorerPreviewAssets> {
-    const key = `${apId}:${perspective}:${unitId}`;
+    const key = `${apId}:${perspective}:${partId || 'legacy'}:${unitId}`;
     const cached = this.unitCache.get(key);
     if (cached) {
       const cacheStatus = cached.settled ? 'hit' : 'coalesced';
@@ -74,6 +75,7 @@ export class ItemExplorerPreviewLoader {
     entry.observable = this.api
       .getFileUnitView(apId, unitId, {
         perspective,
+        ...(partId ? { partId } : {}),
       })
       .pipe(
         tap({

@@ -14,12 +14,14 @@ import { ServerApiAuthGuard } from "./server-api-auth.guard";
 import { ServerApiAuditService } from "./server-api-audit.service";
 import { ServerApiAuditInterceptor } from "./server-api-audit.interceptor";
 import { SnapshotsModule } from "../snapshots/snapshots.module";
+import { ApModule } from "../ap/ap.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Ap, ApFile, ApplicationToken, ServerApiAuditLog]),
     FilesModule,
     SnapshotsModule,
+    ApModule,
   ],
   controllers: [ServerApiController],
   providers: [

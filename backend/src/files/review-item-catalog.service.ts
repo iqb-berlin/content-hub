@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { posix } from "node:path";
 import { readFile } from "fs/promises";
 import { EntityManager, In, Repository } from "typeorm";
 import { getIndexUnits } from "../ap/ap-index.utils";
@@ -124,15 +125,42 @@ export class ReviewItemCatalogService {
     apId: string,
     unit: CatalogIndexUnit,
     indexMetadata: ApFile[],
+    scopedXml?: ApFile | null,
   ): Promise<{ items: UnitNavigationItem[]; metadataFile?: ApFile }> {
     const unitId = unit.id.trim();
-    const source = await this.findUnitXml(apId, unitId);
-    const metadata = await this.readUnitMetadata(
-      unitId,
-      source,
-      indexMetadata,
-      apId,
-    );
+    let metadata;
+    if (scopedXml === undefined) {
+      const source = await this.findUnitXml(apId, unitId);
+      metadata = await this.readUnitMetadata(
+        unitId,
+        source,
+        indexMetadata,
+        apId,
+      );
+    } else {
+      const source = scopedXml && (await this.readUnitXml(unitId, scopedXml));
+      const relative =
+        source?.metadataRef && scopedXml
+          ? posix.join(
+              posix.dirname(scopedXml.relativePath || scopedXml.originalName),
+              source.metadataRef,
+            )
+          : undefined;
+      const xmlMetadata = relative
+        ? ((await this.fileRepository.findOneBy({
+            apId,
+            relativePath: relative,
+          })) ??
+          (await this.fileRepository.findOneBy({
+            apId,
+            relativePath: relative + ".json",
+          })))
+        : undefined;
+      metadata = await this.readFirstMetadata(unitId, [
+        xmlMetadata ?? undefined,
+        ...indexMetadata,
+      ]);
+    }
     const entries = this.mergeItems([unit], metadata?.items ?? [], new Set());
     const canonicalIds = new Set(entries.map(({ itemId }) => itemId));
     const prefix = `${unitId}_`;

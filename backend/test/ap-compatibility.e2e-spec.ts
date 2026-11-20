@@ -42,6 +42,16 @@ describe("AP API and legacy integration compatibility", () => {
     custom: { acpId: "opaque", role: "ACP_MANAGER" },
   };
 
+  const validIndex = {
+    packageId: index.packageId,
+    version: "1.0.0",
+    name: [{ lang: "de", value: "ACP_MANAGER" }],
+  };
+  async function currentRevision() {
+    const ap = await db.getRepository(Ap).findOneByOrFail({ id: apId });
+    return ap.updatedAt.toISOString();
+  }
+
   jest.setTimeout(60000);
   beforeAll(async () => {
     if (
@@ -95,6 +105,7 @@ describe("AP API and legacy integration compatibility", () => {
       apId,
       filePath,
       originalName: "compat-resource.bin",
+      relativePath: "compat-resource.bin",
       fileType: "application/octet-stream",
       fileSize: fixtureBytes.length,
       checksum: createHash("sha256").update(fixtureBytes).digest("hex"),
@@ -303,14 +314,17 @@ describe("AP API and legacy integration compatibility", () => {
     const old = await request(app.getHttpServer())
       .put(`/api/server/acp/${apId}/index`)
       .set("X-Server-Token", integrationToken)
-      .send({ acpIndex: index })
+      .send({
+        acpIndex: validIndex,
+        expectedUpdatedAt: await currentRevision(),
+      })
       .expect(200);
     expect(old.body.acpId).toBe(apId);
     const current = await request(app.getHttpServer())
       .get(`/api/server/ap/${apId}/index`)
       .set("X-Server-Token", integrationToken)
       .expect(200);
-    expect(current.body.apIndex).toEqual(index);
+    expect(current.body.apIndex).toEqual(validIndex);
     await request(app.getHttpServer())
       .put(`/api/server/ap/${apId}/index`)
       .set("X-Server-Token", integrationToken)
@@ -328,8 +342,10 @@ describe("AP API and legacy integration compatibility", () => {
     await request(app.getHttpServer())
       .put(`/api/ap/${apId}/index`)
       .auth(managerToken, { type: "bearer" })
+      .query({ expectedUpdatedAt: await currentRevision() })
       .send(raw)
-      .expect(200);
+      .expect(422);
+    await db.getRepository(Ap).update(apId, { apIndex: raw });
     const old = await request(app.getHttpServer())
       .get(`/api/acp/${apId}/index`)
       .auth(managerToken, { type: "bearer" })
@@ -518,10 +534,8 @@ describe("AP API and legacy integration compatibility", () => {
         scopes: ["ap.read"],
       },
     ];
-    await request(app.getHttpServer())
-      .put(`/api/ap/${apId}/index`)
-      .auth(adminToken, { type: "bearer" })
-      .send({
+    await db.getRepository(Ap).update(apId, {
+      apIndex: {
         ...index,
         assessmentParts: [
           {
@@ -537,8 +551,8 @@ describe("AP API and legacy integration compatibility", () => {
             ],
           },
         ],
-      })
-      .expect(200);
+      },
+    });
     for (const prefix of ["ap", "acp"]) {
       const result = await request(app.getHttpServer())
         .get(`/api/view/${prefix}/${apId}/units/custom-unit`)
@@ -576,12 +590,20 @@ describe("AP API and legacy integration compatibility", () => {
   });
 
   it("keeps Express case-insensitive path compatibility and opaque raw indexes", async () => {
+    await request(app.getHttpServer())
+      .put(`/api/AP/${apId}/INDEX`)
+      .auth(adminToken, { type: "bearer" })
+      .query({ expectedUpdatedAt: await currentRevision() })
+      .send(validIndex)
+      .expect(200);
     const raw = { ...index, apId: "custom AP", acpId: "custom ACP" };
     await request(app.getHttpServer())
       .put(`/api/AP/${apId}/INDEX`)
       .auth(adminToken, { type: "bearer" })
+      .query({ expectedUpdatedAt: await currentRevision() })
       .send(raw)
-      .expect(200);
+      .expect(422);
+    await db.getRepository(Ap).update(apId, { apIndex: raw });
     const old = await request(app.getHttpServer())
       .get(`/API/AcP/${apId}/INDEX`)
       .auth(adminToken, { type: "bearer" })

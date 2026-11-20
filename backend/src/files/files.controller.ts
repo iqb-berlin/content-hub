@@ -6,6 +6,7 @@ import {
   Controller,
   Get,
   Logger,
+  Optional,
   Post,
   Delete,
   Param,
@@ -46,6 +47,7 @@ import {
   ExplorerEditGuard,
 } from "../auth/capabilities/explorer-access.guard";
 import { UuidParam } from "../common/uuid-param";
+import { IndexGenerationService } from "./index-generation.service";
 
 @ApiTags("AP Files")
 @Controller("ap/:apId/files")
@@ -59,6 +61,8 @@ export class FilesController {
     private readonly fileProcessingJobsService: FileProcessingJobsService,
     private readonly itemExplorerStateService: ItemExplorerStateService,
     private readonly capabilities: ApCapabilitiesService,
+    @Optional()
+    private readonly indexGenerationService?: IndexGenerationService,
   ) {}
 
   @Get()
@@ -71,6 +75,7 @@ export class FilesController {
     @Query("sequenceId") sequenceId?: string,
     @Request() req?: any,
     @Res({ passthrough: true }) res?: Response,
+    @Query("partId") partId?: string,
   ) {
     const isManager =
       req?.apAccessLevel === "MANAGER" || req?.apAccessLevel === "ADMIN";
@@ -95,7 +100,9 @@ export class FilesController {
       }
 
       const archive = unitId
-        ? await this.filesService.createUnitZip(apId, unitId)
+        ? partId
+          ? await this.filesService.createUnitZip(apId, unitId, partId)
+          : await this.filesService.createUnitZip(apId, unitId)
         : req?.query?.kind === "booklet"
           ? await this.filesService.createSequenceZip(
               apId,
@@ -223,7 +230,7 @@ export class FilesController {
     return this.unitParserService.recalculatePublishedItemRowNumbers(apId);
   }
 
-  @Get("unit-view/:unitId")
+  @Get(["unit-view/:unitId", "unit-view/:partId/:unitId"])
   @UseGuards(ApAccessGuard)
   @ApiOperation({
     summary: "Get unit view data from uploaded files (player, definition)",
@@ -234,6 +241,7 @@ export class FilesController {
     @Request() req: any,
     @Query("perspective") perspective?: string,
     @Res({ passthrough: true }) res?: Response,
+    @Param("partId") partId?: string,
   ) {
     await this.capabilities.resolve(req);
     const startedAt = performance.now();
@@ -262,6 +270,7 @@ export class FilesController {
         diagnostics = value;
       },
       explorerStateResolution.then(({ signature }) => signature),
+      ...(partId ? [partId] : []),
     );
     const { durationMs: explorerStateMs } = await explorerStateResolution;
     diagnostics = diagnostics
@@ -383,13 +392,27 @@ export class FilesController {
     @UploadedFiles() files: Express.Multer.File[],
     @Query("conflictStrategy") conflictStrategy?: string,
     @Body("conflictDecisions") conflictDecisions?: string,
+    @Body("relativePaths") relativePathsInput?: string | string[],
   ) {
+    const relativePaths = this.parseRelativePaths(relativePathsInput);
     return {
       files: await this.filesService.uploadMultiple(apId, files, {
         conflictStrategy,
         conflictDecisions,
+        relativePaths,
       }),
     };
+  }
+
+  private parseRelativePaths(input?: string | string[]): string[] | undefined {
+    if (input === undefined) return undefined;
+    if (Array.isArray(input)) return input;
+    try {
+      const parsed = JSON.parse(input);
+      return Array.isArray(parsed) ? parsed.map(String) : [String(input)];
+    } catch {
+      return [String(input)];
+    }
   }
 
   @Post("bulk-download")
@@ -488,7 +511,9 @@ export class FilesController {
       "Synchronize AP-Index from uploaded unit files (non-destructive merge)",
   })
   async syncIndex(@UuidParam("apId") apId: string) {
-    return this.unitParserService.syncIndexFromFiles(apId);
+    return this.indexGenerationService
+      ? this.indexGenerationService.preview(apId)
+      : this.unitParserService.syncIndexFromFiles(apId);
   }
 
   @Get(":fileId/download")

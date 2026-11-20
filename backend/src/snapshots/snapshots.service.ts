@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { LessThan, Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
+import { randomUUID } from "node:crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { Ap, ApSnapshot, ApSnapshotFile, ApFile } from "../database/entities";
@@ -14,8 +19,6 @@ export class SnapshotsService {
   constructor(
     @InjectRepository(ApSnapshot)
     private readonly snapshotRepository: Repository<ApSnapshot>,
-    @InjectRepository(ApSnapshotFile)
-    private readonly snapshotFileRepository: Repository<ApSnapshotFile>,
     @InjectRepository(Ap)
     private readonly apRepository: Repository<Ap>,
     @InjectRepository(ApFile)
@@ -40,6 +43,7 @@ export class SnapshotsService {
     const snapshot = await this.snapshotRepository.findOne({
       where: { id },
       relations: ["snapshotFiles"],
+      relationLoadStrategy: "query",
     });
     if (!snapshot) {
       throw new NotFoundException(`Snapshot with ID ${id} not found`);
@@ -89,152 +93,159 @@ export class SnapshotsService {
     ]);
   }
 
-  async create(apId: string, changelog?: string): Promise<ApSnapshot> {
-    const ap = await this.getApOrFail(apId);
-
-    // Determine next version number
-    const latestSnapshot = await this.snapshotRepository.findOne({
-      where: { apId },
-      order: { versionNumber: "DESC" },
-    });
-    const nextVersion = latestSnapshot ? latestSnapshot.versionNumber + 1 : 1;
-
-    // Create snapshot
-    const snapshot = this.snapshotRepository.create({
-      apId,
-      versionNumber: nextVersion,
-      apIndexSnapshot: { ...ap.apIndex },
-      changelog,
-    });
-    const savedSnapshot = await this.snapshotRepository.save(snapshot);
-
-    // Persist file state for this snapshot so restore stays independent
-    // from future file deletions or replacements in the active AP.
-    const files = await this.fileRepository.find({ where: { apId } });
-    const snapshotFiles: ApSnapshotFile[] = [];
-    for (const [index, file] of files.entries()) {
-      const snapshotFilePath = await this.persistSnapshotFile(
-        apId,
-        savedSnapshot.id,
-        file,
-        index,
-      );
-      snapshotFiles.push(
-        this.snapshotFileRepository.create({
-          snapshotId: savedSnapshot.id,
-          filePath: snapshotFilePath,
-          originalName: file.originalName,
-          checksum: file.checksum,
-          fileSize: file.fileSize,
-        }),
-      );
+  async create(
+    apId: string,
+    changelog?: string,
+    expectedUpdatedAt?: string,
+  ): Promise<ApSnapshot> {
+    assertUuidParam(apId, "apId");
+    let snapshotDir: string | undefined;
+    try {
+      return await this.apRepository.manager.transaction(async (manager) => {
+        const ap = await manager.getRepository(Ap).findOne({
+          where: { id: apId },
+          lock: { mode: "pessimistic_write" },
+        });
+        if (!ap) throw new NotFoundException("AP not found");
+        if (
+          expectedUpdatedAt &&
+          ap.updatedAt.toISOString() !== expectedUpdatedAt
+        )
+          throw new ConflictException("AP has changed since preview");
+        const snapshots = manager.getRepository(ApSnapshot);
+        const latest = await snapshots.findOne({
+          where: { apId },
+          order: { versionNumber: "DESC" },
+        });
+        const snapshot = await snapshots.save(
+          snapshots.create({
+            apId,
+            versionNumber: (latest?.versionNumber ?? 0) + 1,
+            apIndexSnapshot: ap.apIndex,
+            packageMetadataSnapshot: {
+              name: ap.name,
+              description: ap.description,
+              itemProperties: ap.itemProperties,
+            },
+            changelog,
+          }),
+        );
+        const files = await manager
+          .getRepository(ApFile)
+          .find({ where: { apId } });
+        snapshotDir = path.join(
+          this.storagePath,
+          apId,
+          "snapshots",
+          snapshot.id,
+        );
+        if (files.length) await fs.mkdir(snapshotDir, { recursive: true });
+        const snapshotFiles = manager.getRepository(ApSnapshotFile);
+        snapshot.snapshotFiles = [];
+        for (const [index, file] of files.entries()) {
+          const filePath = path.join(
+            snapshotDir,
+            `${index}-${path.basename(file.filePath)}`,
+          );
+          await fs.copyFile(file.filePath, filePath);
+          snapshot.snapshotFiles.push(
+            snapshotFiles.create({
+              snapshotId: snapshot.id,
+              filePath,
+              originalName: file.originalName,
+              relativePath: file.relativePath || file.originalName,
+              checksum: file.checksum,
+              fileType: file.fileType,
+              validationResult: file.validationResult,
+              fileSize: file.fileSize,
+            }),
+          );
+        }
+        if (snapshot.snapshotFiles.length)
+          await snapshotFiles.save(snapshot.snapshotFiles, { chunk: 500 });
+        return snapshot;
+      });
+    } catch (error) {
+      if (snapshotDir)
+        await fs.rm(snapshotDir, { recursive: true, force: true });
+      throw error;
     }
-    if (snapshotFiles.length > 0) {
-      await this.snapshotFileRepository.save(snapshotFiles);
-    }
-
-    return this.findById(savedSnapshot.id);
   }
 
   async restore(snapshotId: string): Promise<Ap> {
     const snapshot = await this.findById(snapshotId);
-    const ap = await this.apRepository.findOne({
-      where: { id: snapshot.apId },
-    });
-    if (!ap) {
-      throw new NotFoundException("AP not found");
-    }
-
-    // Restore AP-Index
-    ap.apIndex = { ...snapshot.apIndexSnapshot };
-    await this.apRepository.save(ap);
-
-    // Resolve all file data first; only mutate DB state after all files
-    // are restorable to avoid partial restores.
-    const restoredFiles: ApFile[] = [];
-    if (snapshot.snapshotFiles?.length) {
-      for (const sf of snapshot.snapshotFiles) {
-        const { filePath, fileSize } = await this.resolveRestoredFilePath(
-          ap.id,
-          snapshot.id,
-          sf,
-        );
-        restoredFiles.push(
-          this.fileRepository.create({
-            apId: ap.id,
-            filePath,
-            originalName: sf.originalName,
-            fileSize: fileSize ?? sf.fileSize,
-            checksum: sf.checksum,
-          }),
-        );
-      }
-    }
-    await this.fileRepository.delete({ apId: snapshot.apId });
-    if (restoredFiles.length) {
-      await this.fileRepository.save(restoredFiles);
-    }
-
-    return ap;
-  }
-
-  private async resolveRestoredFilePath(
-    apId: string,
-    snapshotId: string,
-    snapshotFile: ApSnapshotFile,
-  ): Promise<{ filePath: string; fileSize?: number }> {
+    const copied: string[] = [];
     try {
-      await fs.access(snapshotFile.filePath);
-    } catch {
-      throw new NotFoundException(
-        `Snapshot file "${snapshotFile.originalName}" is missing on disk and cannot be restored`,
+      return await this.apRepository.manager.transaction(async (manager) => {
+        const packages = manager.getRepository(Ap);
+        const ap = await packages.findOne({
+          where: { id: snapshot.apId },
+          lock: { mode: "pessimistic_write" },
+        });
+        if (!ap) throw new NotFoundException("AP not found");
+        const released = (status: unknown) =>
+          status === "RELEASED_PUBLIC" || status === "RELEASED_CONFIDENTIAL";
+        if (released(ap.apIndex.status))
+          throw new ConflictException(
+            "Published AP must be reopened before it can be changed",
+          );
+        const files = manager.getRepository(ApFile);
+        const restoredFiles: ApFile[] = [];
+        const activeDir = path.join(this.storagePath, ap.id);
+        if (snapshot.snapshotFiles?.length)
+          await fs.mkdir(activeDir, { recursive: true });
+        for (const sf of snapshot.snapshotFiles || []) {
+          const filePath = path.join(
+            activeDir,
+            randomUUID() + path.extname(sf.originalName),
+          );
+          copied.push(filePath);
+          try {
+            await fs.copyFile(sf.filePath, filePath);
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === "ENOENT")
+              throw new NotFoundException(
+                `Snapshot file "${sf.originalName}" is missing on disk and cannot be restored`,
+              );
+            throw error;
+          }
+          restoredFiles.push(
+            files.create({
+              apId: ap.id,
+              filePath,
+              originalName: sf.originalName,
+              relativePath: sf.relativePath || sf.originalName,
+              checksum: sf.checksum,
+              fileSize: sf.fileSize,
+              fileType: sf.fileType,
+              validationResult: sf.validationResult,
+            }),
+          );
+        }
+        ap.apIndex = { ...snapshot.apIndexSnapshot };
+        // Publication is a separate operation even when restoring an old release.
+        if (released(ap.apIndex.status)) ap.apIndex.status = "IN_DEVELOPMENT";
+        if (snapshot.packageMetadataSnapshot) {
+          const metadata = snapshot.packageMetadataSnapshot;
+          ap.name = metadata.name;
+          ap.description = metadata.description;
+          ap.itemProperties = metadata.itemProperties;
+        } else if (Array.isArray(ap.apIndex.name)) {
+          const german = ap.apIndex.name.find((entry) => entry?.lang === "de");
+          if (typeof german?.value === "string") ap.name = german.value;
+        }
+        ap.apIndexValidationReport = null;
+        ap.apIndexValidationStatus = "UNKNOWN";
+        await files.delete({ apId: ap.id });
+        if (restoredFiles.length)
+          await files.save(restoredFiles, { chunk: 500 });
+        return packages.save(ap);
+      });
+    } catch (error) {
+      await Promise.allSettled(
+        copied.map((filePath) => fs.rm(filePath, { force: true })),
       );
-    }
-
-    try {
-      const targetDir = path.join(
-        this.storagePath,
-        apId,
-        "snapshot-restore",
-        snapshotId,
-      );
-      await fs.mkdir(targetDir, { recursive: true });
-      const targetPath = path.join(targetDir, snapshotFile.originalName);
-      await fs.copyFile(snapshotFile.filePath, targetPath);
-      const stats = await fs.stat(targetPath);
-      return { filePath: targetPath, fileSize: Number(stats.size) };
-    } catch {
-      throw new NotFoundException(
-        `Snapshot file "${snapshotFile.originalName}" could not be copied for restore`,
-      );
-    }
-  }
-
-  private async persistSnapshotFile(
-    apId: string,
-    snapshotId: string,
-    file: ApFile,
-    index: number,
-  ): Promise<string> {
-    const snapshotDir = path.join(
-      this.storagePath,
-      apId,
-      "snapshots",
-      snapshotId,
-    );
-    await fs.mkdir(snapshotDir, { recursive: true });
-    const sourceBaseName = path.basename(file.filePath) || file.originalName;
-    const snapshotFilePath = path.join(
-      snapshotDir,
-      `${index}-${sourceBaseName}`,
-    );
-
-    try {
-      await fs.copyFile(file.filePath, snapshotFilePath);
-      return snapshotFilePath;
-    } catch {
-      // Fall back to previous behavior if copy fails unexpectedly.
-      return file.filePath;
+      throw error;
     }
   }
 
@@ -249,6 +260,7 @@ export class SnapshotsService {
       },
       order: { versionNumber: "DESC" },
       relations: ["snapshotFiles"],
+      relationLoadStrategy: "query",
     });
 
     if (!previousSnapshot) {

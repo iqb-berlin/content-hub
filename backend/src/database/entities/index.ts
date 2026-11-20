@@ -2,6 +2,7 @@ export { User } from "./user.entity";
 export { Ap } from "./ap.entity";
 export { ApUserRole, ApRole } from "./ap-user-role.entity";
 export { ApFile } from "./ap-file.entity";
+export { ApExternalResourceCache } from "./ap-external-resource-cache.entity";
 export { ApFileProcessingJob } from "./ap-file-processing-job.entity";
 export { ApSnapshot } from "./ap-snapshot.entity";
 export { ApSnapshotFile } from "./ap-snapshot-file.entity";

@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -18,6 +19,8 @@ import {
 } from "../database/entities";
 import {
   findUnitInIndex,
+  findUnitInPart,
+  findUnitsInIndex,
   getAssessmentParts,
   getIndexUnits,
   toRuntimeApIndex,
@@ -252,15 +255,13 @@ export class FilesService {
 
   async delete(id: string): Promise<void> {
     const file = await this.findById(id);
-    await this.fileRepository.remove(file);
-    await this.fileStorageService.removePhysicalFile(file);
+    await this.fileMutationService.deleteMultiple(file.apId, [file.id]);
     this.unitParserService.invalidateFileCaches(file.apId);
   }
 
   async deleteForAp(apId: string, id: string): Promise<void> {
     const file = await this.findByIdForAp(apId, id);
-    await this.fileRepository.remove(file);
-    await this.fileStorageService.removePhysicalFile(file);
+    await this.fileMutationService.deleteMultiple(apId, [file.id]);
     this.unitParserService.invalidateFileCaches(apId);
   }
 
@@ -287,16 +288,22 @@ export class FilesService {
     }
 
     const filesToDelete = normalizedIds.map((id) => filesById.get(id)!);
-    await this.fileRepository.remove(filesToDelete);
-    await this.fileStorageService.removePhysicalFiles(filesToDelete);
+    await this.fileMutationService.deleteMultiple(
+      apId,
+      filesToDelete.map((file) => file.id),
+    );
     this.unitParserService.invalidateFileCaches(apId);
     return normalizedIds;
   }
 
   async deleteAll(apId: string): Promise<void> {
     const files = await this.findByAp(apId);
-    await this.fileRepository.remove(files);
-    await this.fileStorageService.removePhysicalFiles(files);
+    if (files.length) {
+      await this.fileMutationService.deleteMultiple(
+        apId,
+        files.map((file) => file.id),
+      );
+    }
     this.unitParserService.invalidateFileCaches(apId);
   }
 
@@ -561,16 +568,26 @@ export class FilesService {
   async createUnitZip(
     apId: string,
     unitId: string,
+    partId?: string,
   ): Promise<{ buffer: Buffer; fileName: string }> {
     const index = await this.getApIndex(apId);
     const allFiles = await this.findByAp(apId);
-    const unitFiles = this.collectUnitFiles(index, allFiles, unitId);
+    const unitFiles = this.collectUnitFiles(
+      index,
+      allFiles,
+      unitId,
+      true,
+      partId,
+    );
     if (!unitFiles.length) {
       throw new NotFoundException(`No files found for unit "${unitId}"`);
     }
 
     const buffer = await this.createZipBuffer(unitFiles);
-    return { buffer, fileName: `ap-${apId}-unit-${unitId}.zip` };
+    return {
+      buffer,
+      fileName: `ap-${apId}${partId ? `-part-${partId}` : ""}-unit-${unitId}.zip`,
+    };
   }
 
   async createSequenceZip(
@@ -580,24 +597,39 @@ export class FilesService {
   ): Promise<{ buffer: Buffer; fileName: string }> {
     const index = await this.getApIndex(apId);
     const allFiles = await this.findByAp(apId);
-    const unitIds =
+    const sequence =
       kind === "booklet"
-        ? [
-            ...new Set(
-              (await this.reviewManifestService.getManifest(apId)).booklets
-                .find((entry) => !entry.legacy && entry.id === sequenceId)
-                ?.units.map((unit) => unit.id) || [],
-            ),
-          ]
+        ? {
+            partId: getAssessmentParts(index).find((part: any) =>
+              (part.instruments || []).some((instrument: any) =>
+                (instrument.testcenterBooklet || []).some(
+                  (booklet: any) => booklet.id === sequenceId,
+                ),
+              ),
+            )?.id,
+            unitIds: [
+              ...new Set(
+                (await this.reviewManifestService.getManifest(apId)).booklets
+                  .find((entry) => !entry.legacy && entry.id === sequenceId)
+                  ?.units.map((unit) => unit.id) || [],
+              ),
+            ],
+          }
         : this.resolveSequenceUnitIds(index, sequenceId);
 
-    if (!unitIds.length) {
+    if (!sequence.unitIds.length) {
       throw new NotFoundException(`Sequence "${sequenceId}" not found`);
     }
 
     const fileMap = new Map<string, ApFile>();
-    for (const unitId of unitIds) {
-      const unitFiles = this.collectUnitFiles(index, allFiles, unitId, false);
+    for (const unitId of sequence.unitIds) {
+      const unitFiles = this.collectUnitFiles(
+        index,
+        allFiles,
+        unitId,
+        false,
+        sequence.partId,
+      );
       for (const file of unitFiles) {
         fileMap.set(file.id, file);
       }
@@ -1259,23 +1291,29 @@ export class FilesService {
     return toRuntimeApIndex(ap.apIndex);
   }
 
-  private resolveSequenceUnitIds(index: any, sequenceId: string): string[] {
+  private resolveSequenceUnitIds(
+    index: any,
+    sequenceId: string,
+  ): { partId?: string; unitIds: string[] } {
     const parts = getAssessmentParts(index);
     for (const part of parts) {
       for (const module of part.bookletModules || []) {
         if (module.id === sequenceId) {
-          return (module.units || [])
-            .slice()
-            .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-            .map((u: any) => u.id)
-            .filter(
-              (id: unknown): id is string =>
-                typeof id === "string" && id.length > 0,
-            );
+          return {
+            partId: part.id,
+            unitIds: (module.units || [])
+              .slice()
+              .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+              .map((u: any) => u.id)
+              .filter(
+                (id: unknown): id is string =>
+                  typeof id === "string" && id.length > 0,
+              ),
+          };
         }
       }
     }
-    return [];
+    return { unitIds: [] };
   }
 
   private collectUnitFiles(
@@ -1283,8 +1321,18 @@ export class FilesService {
     allFiles: ApFile[],
     unitId: string,
     throwOnMissingUnit = true,
+    partId?: string,
   ): ApFile[] {
-    const unit = findUnitInIndex(index, unitId);
+    const matches = findUnitsInIndex(index, unitId);
+    if (!partId && matches.length > 1) {
+      throw new ConflictException({
+        message: `Unit ${unitId} exists in multiple assessment parts`,
+        possibleParts: matches.map((entry) => entry.partId),
+      });
+    }
+    const unit = partId
+      ? findUnitInPart(index, partId, unitId)
+      : matches[0]?.unit || findUnitInIndex(index, unitId);
     if (!unit) {
       if (throwOnMissingUnit) {
         throw new NotFoundException(`Unit "${unitId}" not found`);
@@ -1293,16 +1341,22 @@ export class FilesService {
     }
 
     const dependencyNames = new Set<string>();
+    let hasUnitIndexDependency = false;
     for (const dep of unit.dependencies || []) {
       if (dep?.id && typeof dep.id === "string") {
         dependencyNames.add(dep.id);
+        if (dep.type === "UNIT_INDEX") hasUnitIndexDependency = true;
       }
     }
 
     // Most AP exports include one XML per unit; include it if available.
-    dependencyNames.add(`${unitId}.xml`);
+    if (!hasUnitIndexDependency) dependencyNames.add(`${unitId}.xml`);
 
-    return allFiles.filter((file) => dependencyNames.has(file.originalName));
+    return allFiles.filter(
+      (file) =>
+        dependencyNames.has(file.relativePath || file.originalName) ||
+        dependencyNames.has(file.originalName),
+    );
   }
 
   private async createZipBuffer(
@@ -1321,7 +1375,7 @@ export class FilesService {
       const fileBytes = this.getArchiveProgressBytes(file);
       try {
         const data = await fs.readFile(file.filePath);
-        zip.file(file.originalName, data);
+        zip.file(file.relativePath || file.originalName, data);
         added++;
       } catch {
         // Ignore missing on-disk files; we still zip what is available.

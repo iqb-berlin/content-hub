@@ -2,6 +2,7 @@ import { ReviewerColumnPolicy } from "../item-explorer/reviewer-column-policy";
 import { ReviewManifestService } from "../review/review-manifest.service";
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -17,6 +18,8 @@ import {
 } from "../database/entities";
 import {
   findUnitInIndex,
+  findUnitInPart,
+  findUnitsInIndex,
   getAssessmentParts,
   getIndexUnits,
   toRuntimeApIndex,
@@ -49,6 +52,11 @@ import {
   projectSimpleItemListEntry,
   simpleItemListKey,
 } from "./simple-item-list-projection";
+
+const viewDependencyTypes = new Map([
+  ["UNIT_UI_DEFINITION", "UNIT_DEFINITION"],
+  ["UNIT_CODING_SCHEME", "CODING_SCHEME"],
+]);
 
 const MAX_PERSONAL_ITEM_ROWS = 10_000;
 const MAX_EXPORT_ROW_KEY_LENGTH = 500;
@@ -189,16 +197,25 @@ export class ViewsService {
     const index = toRuntimeApIndex(ap.apIndex);
 
     // Extract units from AP-Index
-    const units = getIndexUnits(index).map((u: any) => ({
-      id: u.id,
-      name: u.name,
-      description: u.description,
-    }));
+    const assessmentParts = getAssessmentParts(index);
+    const units = assessmentParts.length
+      ? assessmentParts.flatMap((part: any) =>
+          (Array.isArray(part?.units) ? part.units : []).map((unit: any) => ({
+            id: unit.id,
+            partId: part.id,
+            name: unit.name,
+            description: unit.description,
+          })),
+        )
+      : getIndexUnits(index).map((unit: any) => ({
+          id: unit.id,
+          name: unit.name,
+          description: unit.description,
+        }));
 
     // Sequence model: one sequence equals one booklet module.
     const sequenceMap = new Map<string, any>();
-    const parts = getAssessmentParts(index);
-    for (const part of parts) {
+    for (const part of assessmentParts) {
       const modulesById = new Map<string, any>();
       for (const module of part.bookletModules || []) {
         if (!module?.id || typeof module.id !== "string") continue;
@@ -272,33 +289,50 @@ export class ViewsService {
   async getApIndex(apId: string): Promise<Record<string, unknown> | null> {
     const ap = await this.apRepository.findOne({ where: { id: apId } });
     if (!ap) return null;
-    return toRuntimeApIndex(ap.apIndex);
+    return ap.apIndex;
   }
 
   /**
    * Get unit view data including player reference.
    */
-  async getUnitViewData(apId: string, unitId: string): Promise<any> {
+  async getUnitViewData(
+    apId: string,
+    unitId: string,
+    partId?: string,
+  ): Promise<any> {
     const ap = await this.apRepository.findOne({ where: { id: apId } });
     if (!ap) return null;
 
     const index = toRuntimeApIndex(ap.apIndex);
-    const unit = findUnitInIndex(index, unitId);
+    const matches = findUnitsInIndex(index, unitId);
+    if (!partId && matches.length > 1) {
+      throw new ConflictException({
+        message: `Unit ${unitId} exists in multiple assessment parts`,
+        possibleParts: matches.map((entry) => entry.partId),
+      });
+    }
+    const unit = partId
+      ? findUnitInPart(index, partId, unitId)
+      : matches[0]?.unit || findUnitInIndex(index, unitId);
     if (!unit) return null;
 
     // Resolve file references
     const dependencies = unit.dependencies || [];
     const fileRefs: any[] = [];
     const metadataFiles: ApFile[] = [];
+    let unitXml: ApFile | undefined;
     for (const dep of dependencies) {
       const file = await this.fileRepository.findOne({
-        where: { apId, originalName: dep.id },
+        where: { apId, relativePath: dep.id },
       });
       if (file) {
-        if (String(dep.type).toLowerCase() === "metadata")
+        if (dep.type === "UNIT_INDEX") unitXml = file;
+        if (
+          ["METADATA", "UNIT_METADATA"].includes(String(dep.type).toUpperCase())
+        )
           metadataFiles.push(file);
         fileRefs.push({
-          type: dep.type,
+          type: viewDependencyTypes.get(dep.type) ?? dep.type,
           originalName: file.originalName,
           downloadUrl: `/api/ap/${apId}/files/${file.id}/download`,
           fileId: file.id,
@@ -310,13 +344,16 @@ export class ViewsService {
       apId,
       unit,
       metadataFiles,
+      unitXml ?? (matches.length > 1 ? null : undefined),
     );
     const metadata = navigation.metadataFile;
     const resolvedRefs = metadata
       ? [
           ...fileRefs.filter(
             (dependency) =>
-              String(dependency.type).toLowerCase() !== "metadata",
+              !["METADATA", "UNIT_METADATA"].includes(
+                String(dependency.type).toUpperCase(),
+              ),
           ),
           {
             type: "METADATA",
@@ -329,6 +366,9 @@ export class ViewsService {
 
     return {
       id: unit.id,
+      ...(partId || matches[0]?.partId
+        ? { partId: partId || matches[0]?.partId }
+        : {}),
       name: unit.name,
       description: unit.description,
       lang: unit.lang,

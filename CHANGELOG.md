@@ -8,12 +8,32 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ### Changes
 
+- Validate and manage AP indexes against the upstream 0.6 development schema,
+  including base/derived scales, scoped references and explicit migration previews.
 - Keep upload file validation separate from AP-wide consistency errors and show
   Booklet/reference issues once in the validation summary with their source paths.
   Preserve these AP-wide errors and warnings in review readiness checks and
   invalidate older readiness snapshots. Refs #271.
 - Reload AP-wide validation messages when opening the files page and refresh
   them after single, selected, or complete file deletion, including empty APs.
+
+### Breaking changes
+
+- Index edits require the current revision and a schema-conformant index. Published packages must be reopened before editing.
+
+### Database migrations
+
+Classification: `manual`
+
+- `1785000000000-AcpIndex05Compliance` adds validation state and relative file paths.
+- `1795200000000-PreserveAcpSnapshotMetadata` preserves package and file metadata for restores.
+
+### Rollback
+
+- Version 0.7.0 omits the required relative path when writing uploads and
+  snapshot files. Returning to 0.7.0 requires restoring the matching
+  pre-upgrade database and upload backup. See the rollback and restore
+  procedure in [the release guide](docs/operations/releases.md#rollback-and-restore).
 
 ## [0.7.0] - Unreleased
 

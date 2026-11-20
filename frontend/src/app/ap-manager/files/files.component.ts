@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { filter, firstValueFrom, map, tap } from 'rxjs';
 import {
   ApFile,
@@ -37,6 +37,7 @@ type ApValidationSummary = Pick<
   standalone: true,
   imports: [
     FormsModule,
+    RouterLink,
     ApManagerContextComponent,
     ConfirmDialogComponent,
     FilePreviewPanelComponent,
@@ -165,10 +166,15 @@ type ApValidationSummary = Pick<
 
     @if (lastSyncReport) {
       <div class="alert alert-info">
-        Index-Sync: {{ lastSyncReport.unitsAdded }} Aufgaben hinzugefügt,
-        {{ lastSyncReport.unitsUpdated }} Aufgaben aktualisiert,
-        {{ lastSyncReport.itemsAdded }} Items hinzugefügt, {{ lastSyncReport.itemsUpdated }} Items
-        aktualisiert.
+        @if (lastSyncReport.requiresConfirmation) {
+          Der AP-Index wurde nicht verändert. Prüfen und übernehmen Sie die Generatorvorschau im
+          <a [routerLink]="['/manage', apId, 'index']">AP-Index-Editor</a>.
+        } @else {
+          Index-Sync: {{ lastSyncReport.unitsAdded }} Aufgaben hinzugefügt,
+          {{ lastSyncReport.unitsUpdated }} Aufgaben aktualisiert,
+          {{ lastSyncReport.itemsAdded }} Items hinzugefügt, {{ lastSyncReport.itemsUpdated }} Items
+          aktualisiert.
+        }
         @if (lastSyncReport.warnings?.length) {
           <div style="margin-top:6px">
             Warnungen:

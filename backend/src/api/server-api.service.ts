@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
@@ -11,6 +12,8 @@ import { Ap, ApFile } from "../database/entities";
 import { FilesService } from "../files/files.service";
 import { SnapshotsService } from "../snapshots/snapshots.service";
 import { assertUuidParam } from "../common/uuid-param";
+import { ApIndexService } from "../ap/ap-index.service";
+import { UnprocessableEntityException } from "@nestjs/common";
 
 export type ConflictStrategy = "reject" | "overwrite" | "merge";
 export type IndexUpdateStrategy = "overwrite" | "merge";
@@ -40,6 +43,7 @@ export class ServerApiService {
     private readonly fileRepository: Repository<ApFile>,
     private readonly filesService: FilesService,
     private readonly snapshotsService: SnapshotsService,
+    @Optional() private readonly apIndexService?: ApIndexService,
   ) {}
 
   /**
@@ -123,18 +127,24 @@ export class ServerApiService {
     if (!apIndex || typeof apIndex !== "object" || Array.isArray(apIndex)) {
       throw new BadRequestException("apIndex must be an object");
     }
+    this.requireExpectedUpdatedAt(expectedUpdatedAt);
 
     this.assertApAllowed(apId, allowedApIds);
     const ap = await this.getApOrFail(apId);
     this.assertExpectedUpdatedAt(ap, expectedUpdatedAt);
 
     const strategy = this.resolveIndexUpdateStrategy(strategyInput);
-    ap.apIndex =
+    const candidate =
       strategy === "merge"
         ? this.deepMergeObjects(ap.apIndex as Record<string, any>, apIndex)
         : apIndex;
-
-    const saved = await this.apRepository.save(ap);
+    const saved = this.apIndexService
+      ? await this.apIndexService.saveCandidate(
+          apId,
+          candidate,
+          expectedUpdatedAt,
+        )
+      : await this.apRepository.save({ ...ap, apIndex: candidate });
     return {
       apId: saved.id,
       packageId: saved.packageId,
@@ -150,6 +160,7 @@ export class ServerApiService {
     Array<{
       id: string;
       originalName: string;
+      relativePath: string;
       fileType?: string;
       fileSize: number;
       checksum?: string;
@@ -173,6 +184,7 @@ export class ServerApiService {
   ): Promise<{
     id: string;
     originalName: string;
+    relativePath: string;
     fileType?: string;
     fileSize: number;
     checksum?: string;
@@ -212,6 +224,7 @@ export class ServerApiService {
     Array<{
       id: string;
       originalName: string;
+      relativePath: string;
       fileType?: string;
       fileSize: number;
       checksum?: string;
@@ -297,6 +310,7 @@ export class ServerApiService {
     const replacementPlan: Array<{
       incoming: Express.Multer.File;
       canonicalName: string;
+      relativePath: string;
     }> = [];
 
     for (const incoming of files) {
@@ -324,10 +338,19 @@ export class ServerApiService {
           `Coding scheme "${incomingName}" does not exist in AP and cannot be replaced`,
         );
       }
+      if (matches.length > 1) {
+        throw new ConflictException({
+          message: `Coding scheme "${incomingName}" is ambiguous`,
+          possiblePaths: matches.map(
+            (file) => file.relativePath || file.originalName,
+          ),
+        });
+      }
 
       replacementPlan.push({
         incoming,
         canonicalName: matches[0].originalName,
+        relativePath: matches[0].relativePath || matches[0].originalName,
       });
     }
 
@@ -336,6 +359,7 @@ export class ServerApiService {
         ({
           ...plan.incoming,
           originalname: plan.canonicalName,
+          relativePath: plan.relativePath,
         }) as Express.Multer.File,
     );
     const replacedFiles = await this.filesService.uploadMultiple(
@@ -407,6 +431,20 @@ export class ServerApiService {
     const conflictStrategy = this.resolveConflictStrategy(
       conflictStrategyInput,
     );
+    const incomingIndex = this.withGermanName(data.apIndex, data.name);
+    if (incomingIndex.packageId !== data.packageId) {
+      throw new UnprocessableEntityException(
+        "apIndex.packageId must match packageId",
+      );
+    }
+    if (
+      incomingIndex.status === "RELEASED_PUBLIC" ||
+      incomingIndex.status === "RELEASED_CONFIDENTIAL"
+    ) {
+      throw new UnprocessableEntityException(
+        "Released status can only be set through the publish endpoint",
+      );
+    }
 
     let ap = await this.apRepository.findOne({
       where: { packageId: data.packageId },
@@ -420,12 +458,36 @@ export class ServerApiService {
       this.assertApAllowed(ap.id, allowedApIds);
     }
     if (!ap) {
+      const validation = this.apIndexService
+        ? await this.apIndexService.validateCandidate(
+            "00000000-0000-4000-8000-000000000000",
+            incomingIndex,
+          )
+        : ({ valid: true, publishable: false } as any);
+      if (!validation.valid) {
+        throw new UnprocessableEntityException({
+          message: "AP index violates acp-index@0.6",
+          report: validation,
+        });
+      }
       ap = this.apRepository.create({
         packageId: data.packageId,
         name: data.name,
         description: data.description || "",
-        apIndex: data.apIndex,
+        apIndex: incomingIndex,
         settings: {},
+        ...(this.apIndexService
+          ? {
+              apIndexSchemaId: validation.schemaId,
+              apIndexValidationStatus: validation.publishable
+                ? "CONFORMANT"
+                : "CONFORMANT_WITH_ISSUES",
+              apIndexValidationReport: validation as unknown as Record<
+                string,
+                unknown
+              >,
+            }
+          : {}),
       });
       const saved = await this.apRepository.save(ap);
       return { ap: saved, operation: "created", conflictStrategy };
@@ -438,18 +500,33 @@ export class ServerApiService {
         `AP with packageId \"${data.packageId}\" already exists. Use conflictStrategy=overwrite or conflictStrategy=merge.`,
       );
     }
+    this.requireExpectedUpdatedAt(data.expectedUpdatedAt);
 
-    ap.name = data.name;
-    if (data.description !== undefined) {
-      ap.description = data.description;
-    }
-
-    ap.apIndex =
+    const candidate =
       conflictStrategy === "merge"
-        ? this.deepMergeObjects(ap.apIndex as Record<string, any>, data.apIndex)
-        : data.apIndex;
+        ? this.deepMergeObjects(
+            ap.apIndex as Record<string, any>,
+            incomingIndex,
+          )
+        : incomingIndex;
 
-    const saved = await this.apRepository.save(ap);
+    const synchronizedCandidate = this.withGermanName(candidate, data.name);
+
+    const saved = this.apIndexService
+      ? await this.apIndexService.saveCandidate(
+          ap.id,
+          synchronizedCandidate,
+          data.expectedUpdatedAt,
+          { name: data.name, description: data.description },
+        )
+      : await this.apRepository.save({
+          ...ap,
+          name: data.name,
+          ...(data.description !== undefined
+            ? { description: data.description }
+            : {}),
+          apIndex: synchronizedCandidate,
+        });
     return { ap: saved, operation: "updated", conflictStrategy };
   }
 
@@ -494,6 +571,7 @@ export class ServerApiService {
   private toTransferFileMeta(file: ApFile): {
     id: string;
     originalName: string;
+    relativePath: string;
     fileType?: string;
     fileSize: number;
     checksum?: string;
@@ -503,6 +581,7 @@ export class ServerApiService {
     return {
       id: file.id,
       originalName: file.originalName,
+      relativePath: file.relativePath || file.originalName,
       fileType: file.fileType,
       fileSize: Number(file.fileSize),
       checksum: file.checksum,
@@ -526,6 +605,16 @@ export class ServerApiService {
     if (ap.updatedAt.toISOString() !== parsed.toISOString()) {
       throw new ConflictException(
         "AP was modified since the expected version timestamp",
+      );
+    }
+  }
+
+  private requireExpectedUpdatedAt(
+    expectedUpdatedAt?: string,
+  ): asserts expectedUpdatedAt is string {
+    if (!expectedUpdatedAt || Number.isNaN(Date.parse(expectedUpdatedAt))) {
+      throw new BadRequestException(
+        "expectedUpdatedAt must be a valid ISO timestamp",
       );
     }
   }
@@ -598,6 +687,19 @@ export class ServerApiService {
     }
 
     return result;
+  }
+
+  private withGermanName(
+    index: Record<string, any>,
+    name: string,
+  ): Record<string, any> {
+    const localizedNames = Array.isArray(index.name)
+      ? index.name.filter((entry) => entry?.lang !== "de")
+      : [];
+    return {
+      ...index,
+      name: [{ lang: "de", value: name }, ...localizedNames],
+    };
   }
 
   private isRecord(value: unknown): value is Record<string, any> {

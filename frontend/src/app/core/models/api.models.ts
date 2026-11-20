@@ -124,6 +124,13 @@ export interface Ap {
   name: string;
   description?: string | null;
   apIndex: Record<string, unknown>;
+  apIndexSchemaId?: string;
+  apIndexValidationStatus?:
+    | 'UNKNOWN'
+    | 'CONFORMANT'
+    | 'CONFORMANT_WITH_ISSUES'
+    | 'LEGACY_NONCONFORMANT';
+  apIndexValidationReport?: ApIndexValidationReport;
   settings: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -134,6 +141,7 @@ export interface ApFile {
   apId: string;
   filePath: string;
   originalName: string;
+  relativePath: string;
   fileType?: string;
   fileSize: number;
   checksum?: string;
@@ -147,6 +155,48 @@ export interface IndexSyncReport {
   itemsAdded: number;
   itemsUpdated: number;
   warnings: string[];
+}
+
+export interface ApIndexValidationIssue {
+  code: string;
+  scope: 'schema' | 'semantic' | 'vocabulary' | 'file';
+  severity: 'error' | 'warning' | 'info';
+  path: string;
+  message: string;
+}
+
+export interface ApIndexValidationReport {
+  schemaId: 'acp-index@0.6';
+  valid: boolean;
+  publishable: boolean;
+  checkedAt: string;
+  issues: ApIndexValidationIssue[];
+  externalChecks: Array<{
+    url: string;
+    status: 'valid' | 'invalid' | 'cached' | 'unavailable';
+    checkedAt?: string;
+  }>;
+}
+
+export interface ApIndexGenerationPreview {
+  candidateIndex: Record<string, any>;
+  validation: ApIndexValidationReport;
+  sourceRevision: string;
+  sourceUpdatedAt: string;
+  assignments: Record<string, string>;
+  unassignedUnitPaths: string[];
+  ambiguousBooklets: Array<{ path: string; possibleParts: string[] }>;
+  warnings: string[];
+  diff: Array<{ operation: 'add' | 'remove' | 'replace'; path: string }>;
+  canApply: boolean;
+}
+
+export interface ApIndexMigrationPreview {
+  candidateIndex: Record<string, any>;
+  changes: Array<{ path: string; message: string }>;
+  unresolved: ApIndexValidationIssue[];
+  validation: ApIndexValidationReport;
+  sourceUpdatedAt: string;
 }
 
 export type FileUploadConflictStrategy = 'reject' | 'overwrite' | 'keep-both';
@@ -636,6 +686,7 @@ export interface ReviewNavigationItem extends ReviewItemVariableReferences {
 
 export interface UnitViewData {
   id: string;
+  partId?: string;
   name: string;
   description?: string;
   lang?: string;

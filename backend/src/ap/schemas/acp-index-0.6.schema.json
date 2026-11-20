@@ -1,0 +1,467 @@
+{
+  "$id": "acp-index@0.6",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Assessment Content Package Index",
+  "description": "Specification for assessment content package index.",
+  "type": "object",
+  "properties": {
+    "packageId": {
+      "description": "Identifier for the assessment content package",
+      "type": "string"
+    },
+    "version": {
+      "description": "Package Version in SemVer format.",
+      "type": "string"
+    },
+    "name": {
+      "$ref": "#/$defs/languageTaggedText"
+    },
+    "description": {
+      "$ref": "#/$defs/languageTaggedText"
+    },
+    "maintainerName": {
+      "description": "Name of the person or institution responsable for creating and maintaining",
+      "type": "string",
+      "examples": [
+        "IQB - Institut zur Qualitätsentwicklung im Bildungswesen"
+      ]
+    },
+    "maintainerUrl": {
+      "description": "Url of maintainer to get more information or to get in contact",
+      "type": "string",
+      "examples": [
+        "https://www.iqb.hu-berlin.de/tba"
+      ]
+    },
+    "status": {
+      "description": "Describes the progress of development and visibility issues.",
+      "type": "string",
+      "enum": [
+        "IN_DEVELOPMENT",
+        "DISCONTINUED",
+        "RELEASED_PUBLIC",
+        "RELEASED_CONFIDENTIAL"
+      ],
+      "default": "IN_DEVELOPMENT"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "codingParameters": {
+      "$ref": "#/$defs/codingParameters"
+    },
+    "assessmentParts": {
+      "description": "Groups of instruments, administrated the same way or at the same time.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/assessmentPart"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "packageId",
+    "version",
+    "name"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "languageTaggedText": {
+      "description": "Language tagged text",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lang": {
+            "description": "ISO-language code",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z]{2}$"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lang",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "languageTaggedObjectRef": {
+      "description": "Variants of the same object in different languages",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "id/path to the object, used as reference",
+            "type": "string"
+          },
+          "lang": {
+            "type": "string",
+            "minLength": 1,
+            "description": "ISO-language code",
+            "pattern": "^[a-z]{2}$"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "lang",
+          "label"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "bookletModule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Id to be referred in instruments",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "lang": {
+          "description": "ISO-language code",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z]{2}$",
+          "default": "de"
+        },
+        "units": {
+          "description": "All units being part of the module",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "Identifier referring to unit list",
+                "type": "string"
+              },
+              "alias": {
+                "description": "Prefix for full item identifier. If not given, the id will be used instead.",
+                "type": "string"
+              },
+              "order": {
+                "description": "Default sorting is alpha-numeric.",
+                "type": "integer",
+                "minimum": 0,
+                "default": 0
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "units"
+      ],
+      "additionalProperties": false
+    },
+    "instrument": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Identifier for the instrument",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/languageTaggedText"
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        },
+        "testcenterBooklet": {
+          "description": "If part of TBA, this ids refer to the language specific XML definition used to run the instrument in IQB-Testcenter.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lang": {
+                "type": "string",
+                "minLength": 1,
+                "description": "ISO-language code",
+                "pattern": "^[a-z]{2}$",
+                "default": "de"
+              },
+              "definitionId": {
+                "description": "Id/path to the booklet XML to run this instrument",
+                "type": "string"
+              },
+              "modules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "moduleId": {
+                      "description": "Reference to the module id at assessmentPart level",
+                      "type": "string"
+                    },
+                    "order": {
+                      "description": "Default sorting is alpha-numeric.",
+                      "type": "integer",
+                      "minimum": 0,
+                      "default": 0
+                    }
+                  },
+                  "required": [
+                    "moduleId"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "definitionId",
+              "modules"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "administrationMode": {
+          "type": "string",
+          "enum": [
+            "TEST_BY_TEST_TAKER",
+            "TEST_BY_PROCTOR",
+            "STIMULUS_FOR_TEST_TAKER"
+          ],
+          "default": "TEST_BY_TEST_TAKER"
+        },
+        "handOutsForTestTaker": {
+          "description": "All documents must be presented to the test taker (online or print-out).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "order": {
+                "description": "Default sorting is alpha-numeric.",
+                "type": "integer",
+                "minimum": 0,
+                "default": 0
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "PRINT_SHOW",
+                  "PRINT_WRITE_DRAW",
+                  "ON_SCREEN"
+                ],
+                "default": "PRINT"
+              },
+              "file": {
+                "description": "All language variants of the same hand-out",
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/languageTaggedObjectRef"
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "file"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "testcenterBooklet"
+      ],
+      "additionalProperties": false
+    },
+    "itemValueType": {
+      "type": "string",
+      "enum": [
+        "FULL_CREDIT",
+        "NO_CREDIT",
+        "MISSING"
+      ]
+    },
+    "codingParameters": {
+      "description": "Some parameters for coding and analysis in general",
+      "type": "object",
+      "properties": {
+        "itemValues": {
+          "description": "Mapping logical item values to numeric values. Standards are 1-FULL_CREDIT, 0-NO_CREDIT, -99-MISSING.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "$ref": "#/$defs/itemValueType"
+              },
+              "value": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "statusMapping": {
+          "description": "Rules how to translate response status into item value",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "itemValueType": {
+                "$ref": "#/$defs/itemValueType"
+              },
+              "status": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "UNSET",
+                    "NOT_REACHED",
+                    "DISPLAYED",
+                    "INVALID",
+                    "CODING_ERROR"
+                  ]
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "itemValueType",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "assessmentPart": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identifier for the assessment part"
+        },
+        "name": {
+          "$ref": "#/$defs/languageTaggedText"
+        },
+        "description": {
+          "$ref": "#/$defs/languageTaggedText"
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        },
+        "units": {
+          "description": "Definition of all units and items used by modules.",
+          "type": "array",
+          "items": {
+            "$ref": "https://w3id.org/iqb/spec/acp-unit/0.5"
+          },
+          "minItems": 1
+        },
+        "bookletModules": {
+          "description": "All modules used in this assessmentPart by instruments",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bookletModule"
+          },
+          "minItems": 1
+        },
+        "instruments": {
+          "description": "All instruments for the assessment part, online or to hand out",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/instrument"
+          },
+          "minItems": 1
+        },
+        "baseScales": {
+          "description": "Scales to calculate performance indicators directly from item values",
+          "type": "array",
+          "items": {
+            "$ref": "https://w3id.org/iqb/spec/acp-scale-base/0.4"
+          },
+          "minItems": 1
+        },
+        "derivedScales": {
+          "description": "Scales to calculate performance indicators by processing values of other scales",
+          "type": "array",
+          "items": {
+            "$ref": "https://w3id.org/iqb/spec/acp-scale-derived/0.4"
+          },
+          "minItems": 1
+        },
+        "additionalDocuments": {
+          "description": "Additional documents supporting the assessment",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "contentType": {
+                "type": "string",
+                "enum": [
+                  "CODING_INSTRUCTIONS",
+                  "STUDY_BACKGROUND"
+                ]
+              },
+              "targeting": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "PROCTOR",
+                    "TEST_TAKER",
+                    "TEACHER",
+                    "TEST_ADMINISTRATION",
+                    "GOVERNANCE",
+                    "CODER"
+                  ]
+                },
+                "minItems": 1
+              },
+              "file": {
+                "$ref": "#/$defs/languageTaggedObjectRef"
+              }
+            },
+            "required": [
+              "file",
+              "targeting",
+              "contentType"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "bookletModules",
+        "instruments",
+        "units"
+      ],
+      "additionalProperties": false
+    },
+    "metadata": {
+      "$ref": "https://w3id.org/iqb/spec/metadata-values/3.0"
+    }
+  }
+}

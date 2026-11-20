@@ -1,5 +1,6 @@
 export interface ItemDifficultyValue {
   unitId: string;
+  partId?: string;
   empiricalDifficulty?: number;
 }
 
@@ -16,10 +17,11 @@ export function calculateMeanTaskDifficultyByUnit(
       continue;
     }
 
-    const total = totals.get(item.unitId) || { sum: 0, count: 0 };
+    const unitKey = item.partId ? `${item.partId}/${item.unitId}` : item.unitId;
+    const total = totals.get(unitKey) || { sum: 0, count: 0 };
     total.sum += item.empiricalDifficulty;
     total.count += 1;
-    totals.set(item.unitId, total);
+    totals.set(unitKey, total);
   }
 
   return new Map(
