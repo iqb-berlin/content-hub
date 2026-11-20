@@ -25,6 +25,7 @@ import { FileStorageService } from "./file-storage.service";
 import { FileCatalogCache } from "./file-catalog.cache";
 import { ItemListParser } from "./item-list.parser";
 import { NumberedItemListCache } from "./numbered-item-list.cache";
+import { ReviewItemCatalogService } from "./review-item-catalog.service";
 import { UnitViewResolver } from "./unit-view.resolver";
 
 const MAX_UPLOAD_FILE_SIZE_BYTES = 512 * 1024 * 1024;
@@ -59,6 +60,7 @@ const MAX_UPLOAD_FILE_SIZE_BYTES = 512 * 1024 * 1024;
     NumberedItemListCache,
     UnitViewResolver,
     UnitParserService,
+    ReviewItemCatalogService,
     FileProcessingJobsService,
     ItemRowNumberingService,
   ],
@@ -66,6 +68,7 @@ const MAX_UPLOAD_FILE_SIZE_BYTES = 512 * 1024 * 1024;
     FilesService,
     FileCatalogCache,
     UnitParserService,
+    ReviewItemCatalogService,
     FileProcessingJobsService,
     ItemRowNumberingService,
   ],

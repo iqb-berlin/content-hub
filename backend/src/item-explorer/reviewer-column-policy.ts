@@ -326,6 +326,7 @@ export class ReviewerColumnPolicy {
           "name",
           "lang",
           "items",
+          "navigationItems",
           "dependencies",
           "codingScheme",
           "richText",

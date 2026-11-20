@@ -1,3 +1,4 @@
+import { ReviewItemCatalogService } from "../src/files/review-item-catalog.service";
 import { Test } from "@nestjs/testing";
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
@@ -1302,9 +1303,11 @@ describe("Review visibility, groups and synchronization API", () => {
     async function createCodingFixture({
       withMissingStudioFile = false,
       missingFile,
+      indexedItemId = "I",
     }: {
       withMissingStudioFile?: boolean;
       missingFile?: keyof typeof itemFiles;
+      indexedItemId?: string;
     } = {}) {
       const ap = await db.getRepository(Ap).save({
         packageId: `review-coding-catalog-${Date.now()}`,
@@ -1313,7 +1316,7 @@ describe("Review visibility, groups and synchronization API", () => {
           units: [
             {
               id: "U",
-              items: [{ id: "I" }],
+              items: [{ id: indexedItemId }],
               dependencies: [{ id: "U.vocs", type: "CODING_SCHEME" }],
             },
           ],
@@ -1381,6 +1384,7 @@ describe("Review visibility, groups and synchronization API", () => {
         .set(headers(reviewer.token))
         .expect(200);
       expect(unit.body.items).toEqual([{ id: "I" }]);
+      expect(unit.body.navigationItems).toEqual([{ id: "I" }]);
       expect(unit.body.dependencies).toContainEqual(
         expect.objectContaining({
           originalName: "U.vocs",
@@ -1416,6 +1420,479 @@ describe("Review visibility, groups and synchronization API", () => {
       );
     });
 
+    it("checks coding comment availability for one unit without loading the AP comment catalog", async () => {
+      const { reviewer, apId, threadPath, comment } =
+        await createCodingFixture();
+      const headersForReviewer = headers(reviewer.token);
+      const endpoint = `${threadPath}/availability`;
+      await request(server).get(endpoint).set(headersForReviewer).expect(400);
+      const available = await request(server)
+        .get(endpoint)
+        .query({ unitId: "U" })
+        .set(headersForReviewer)
+        .expect(200);
+      expect(available.body).toEqual({ codingCommentsAvailable: true });
+      const unavailable = await request(server)
+        .get(endpoint)
+        .query({ unitId: "OTHER" })
+        .set(headersForReviewer)
+        .expect(200);
+      expect(unavailable.body).toEqual({ codingCommentsAvailable: false });
+      expect(parserSpy).not.toHaveBeenCalled();
+
+      await db.getRepository(Comment).delete(comment.id);
+      const schemePath = join(directory, "U.vocs");
+      const hiddenPath = join(directory, "hidden.vocs");
+      await rename(schemePath, hiddenPath);
+      try {
+        const missing = await request(server)
+          .get(endpoint)
+          .query({ unitId: "U" })
+          .set(headersForReviewer)
+          .expect(200);
+        expect(missing.body).toEqual({ codingCommentsAvailable: false });
+      } finally {
+        await rename(hiddenPath, schemePath);
+      }
+      const restored = await request(server)
+        .get(endpoint)
+        .query({ unitId: "U" })
+        .set(headersForReviewer)
+        .expect(200);
+      expect(restored.body).toEqual({ codingCommentsAvailable: true });
+
+      const configRepository = db.getRepository(ApAccessConfig);
+      const access = await configRepository.findOneByOrFail({ apId });
+      access.featureConfig = {
+        ...access.featureConfig,
+        commentTargets: [CommentTargetType.ITEM],
+      };
+      await configRepository.save(access);
+      const itemOnly = await request(server)
+        .get(endpoint)
+        .query({ unitId: "U" })
+        .set(headersForReviewer)
+        .expect(200);
+      expect(itemOnly.body).toEqual({ codingCommentsAvailable: false });
+      expect(parserSpy).not.toHaveBeenCalled();
+    });
+
+    it("keeps existing alternate-XML threads and counts after adding the preferred Unit XML", async () => {
+      const { reviewer, apId, threadPath, target, comment } =
+        await createCodingFixture();
+      const files = db.getRepository(ApFile);
+      const preferred = await files.findOneByOrFail({
+        apId,
+        originalName: "U.xml",
+      });
+      await files.delete(preferred.id);
+      const alternateFiles = {
+        "Archived.xml":
+          "<Unit><Id>U</Id><Reference>archive.vomd</Reference><CodingSchemeRef>U.vocs</CodingSchemeRef></Unit>",
+        "archive.vomd": JSON.stringify({
+          items: [
+            { id: "I", variableId: "OTHER" },
+            { id: "ARCHIVE", variableId: "ARCHIVE" },
+          ],
+        }),
+      };
+      for (const [originalName, content] of Object.entries(alternateFiles)) {
+        const filePath = join(directory, originalName);
+        await writeFile(filePath, content);
+        await files.save({
+          apId,
+          originalName,
+          filePath,
+          fileSize: Buffer.byteLength(content),
+        });
+      }
+      const archiveTarget = { ...target, itemId: "ARCHIVE" };
+      const auth = headers(reviewer.token);
+      const created = await request(server)
+        .post(threadPath)
+        .set(auth)
+        .send({ ...archiveTarget, commentText: "Existing archived comment" })
+        .expect(201);
+      const accessRepository = db.getRepository(ApAccessConfig);
+      const access = await accessRepository.findOneByOrFail({ apId });
+      await accessRepository.save({
+        ...access,
+        featureConfig: {
+          ...access.featureConfig,
+          commentTargets: [CommentTargetType.ITEM, CommentTargetType.CODING],
+          commentVisibilityMode: "PRIVATE",
+        },
+      });
+      const legacyItemComment = await db.getRepository(Comment).save({
+        apId,
+        userId: reviewer.id,
+        targetType: CommentTargetType.ITEM,
+        targetId: "U_ARCHIVE",
+        commentText: "Legacy archived comment",
+      });
+      const preferredXml =
+        "<Unit><Id>U</Id><Reference>U.vomd</Reference></Unit>";
+      await writeFile(preferred.filePath, preferredXml);
+      await files.save({
+        apId,
+        originalName: preferred.originalName,
+        filePath: preferred.filePath,
+        fileSize: Buffer.byteLength(preferredXml),
+      });
+      app.get(FileCatalogCache).invalidate(apId);
+      app.get(UnitParserService).invalidateFileCaches(apId);
+
+      const unit = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(auth)
+        .expect(200);
+      expect(unit.body.navigationItems).toEqual([{ id: "I", variableId: "I" }]);
+      const availability = await request(server)
+        .get(`${threadPath}/availability`)
+        .query({ unitId: "U" })
+        .set(auth)
+        .expect(200);
+      expect(availability.body).toEqual({
+        codingCommentsAvailable: false,
+        additionalItems: [
+          { id: "ARCHIVE", label: "ARCHIVE", targetTypes: ["CODING", "ITEM"] },
+          { id: "I", label: "I", targetTypes: ["CODING"] },
+        ],
+      });
+      await db.getRepository(ApUserRole).save({
+        apId,
+        userId: actors[1].id,
+        role: ApRole.READ_ONLY,
+        capabilities: ["review:participate"],
+      });
+      const other = await request(server)
+        .get(`${threadPath}/availability`)
+        .query({ unitId: "U" })
+        .set(headers(actors[1].token))
+        .expect(200);
+      expect(other.body).toEqual({ codingCommentsAvailable: false });
+      const thread = await request(server)
+        .get(threadPath)
+        .query(archiveTarget)
+        .set(auth)
+        .expect(200);
+      expect(thread.body.comments).toEqual([
+        expect.objectContaining({ id: created.body.id }),
+      ]);
+      await request(server)
+        .get(threadPath)
+        .query({ ...archiveTarget, targetType: CommentTargetType.ITEM })
+        .set(auth)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.comments).toEqual([
+            expect.objectContaining({ id: legacyItemComment.id }),
+          ]);
+        });
+      await request(server)
+        .get(threadPath)
+        .query(target)
+        .set(auth)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.comments).toEqual([
+            expect.objectContaining({ id: comment.id }),
+          ]);
+        });
+      const counts = await request(server)
+        .get(`${threadPath}/counts`)
+        .set(auth)
+        .expect(200);
+      expect(counts.body.counts).toContainEqual({
+        unitId: "U",
+        itemId: "ARCHIVE",
+        count: 1,
+        codingCount: 1,
+      });
+    });
+
+    it("keeps a stored archive ID separate from a new index alias after upload sync", async () => {
+      const { reviewer, apId, threadPath, target, comment } =
+        await createCodingFixture({ indexedItemId: "SENTINEL" });
+      await db.getRepository(Comment).delete(comment.id);
+      const files = db.getRepository(ApFile);
+      const preferred = await files.findOneByOrFail({
+        apId,
+        originalName: "U.xml",
+      });
+      await files.delete(preferred.id);
+      const alternate = {
+        "Archived.xml":
+          "<Unit><Id>U</Id><Reference>archive.vomd</Reference><CodingSchemeRef>U.vocs</CodingSchemeRef></Unit>",
+        "archive.vomd": JSON.stringify({
+          items: [
+            {
+              id: "U_I",
+              variableId: "ARCHIVE_ONLY",
+              useUnitAliasAsPrefix: false,
+            },
+          ],
+        }),
+      };
+      for (const [originalName, content] of Object.entries(alternate)) {
+        const filePath = join(directory, originalName);
+        await writeFile(filePath, content);
+        await files.save({
+          apId,
+          originalName,
+          filePath,
+          fileSize: Buffer.byteLength(content),
+        });
+      }
+      const historicalTarget = { ...target, itemId: "U_I" };
+      const auth = headers(reviewer.token);
+      const old = await request(server)
+        .post(threadPath)
+        .set(auth)
+        .send({
+          ...historicalTarget,
+          commentText: "Archive item before preferred XML",
+        })
+        .expect(201);
+      expect(old.body.itemId).toBe("U_I");
+      await files.save({
+        apId,
+        originalName: preferred.originalName,
+        filePath: preferred.filePath,
+        fileSize: preferred.fileSize,
+      });
+      const stillPresent = await request(server)
+        .get(threadPath)
+        .query(historicalTarget)
+        .set(auth)
+        .expect(200);
+      expect(
+        stillPresent.body.comments.map(({ id }: { id: string }) => id),
+      ).toEqual([old.body.id]);
+
+      const sync = await realItemParser(db, catalog).syncIndexFromFiles(apId);
+      expect(sync.itemsAdded).toBeGreaterThan(0);
+      const recent = await request(server)
+        .post(threadPath)
+        .set(auth)
+        .send({ ...target, commentText: "Current item after syncing" })
+        .expect(201);
+      const after = await request(server)
+        .get(threadPath)
+        .query(historicalTarget)
+        .set(auth)
+        .expect(200);
+      const counts = await request(server)
+        .get(`${threadPath}/counts`)
+        .set(auth)
+        .expect(200);
+      expect(
+        await db.getRepository(Comment).existsBy({ id: old.body.id }),
+      ).toBe(true);
+      expect({
+        id: after.body.target.itemId,
+        comments: after.body.comments.map(({ id }: { id: string }) =>
+          id === recent.body.id
+            ? "CURRENT"
+            : id === old.body.id
+              ? "ARCHIVE"
+              : id,
+        ),
+        counts: counts.body.counts
+          .filter(({ codingCount }: { codingCount: number }) => codingCount)
+          .map(
+            ({
+              itemId,
+              codingCount,
+            }: {
+              itemId: string;
+              codingCount: number;
+            }) => [itemId, codingCount],
+          ),
+      }).toEqual({
+        id: "U_I",
+        comments: ["ARCHIVE"],
+        counts: [
+          ["I", 1],
+          ["U_I", 1],
+        ],
+      });
+    });
+
+    it.each([true, false])(
+      "keeps valid task metadata with no items when the index lists it: %s",
+      async (listedInIndex) => {
+        const { reviewer, apId, threadPath } = await createCodingFixture();
+        await writeFile(
+          join(directory, "U.vomd"),
+          JSON.stringify({
+            profiles: [
+              { entries: [{ id: "current", value: "Task metadata" }] },
+            ],
+            items: [],
+          }),
+        );
+        const oldPath = join(directory, "historical.vomd");
+        const oldContent = JSON.stringify({
+          items: [{ id: "STALE", variableId: "OLD" }],
+        });
+        await writeFile(oldPath, oldContent);
+        await db.getRepository(ApFile).save({
+          apId,
+          originalName: "historical.vomd",
+          filePath: oldPath,
+          fileSize: Buffer.byteLength(oldContent),
+        });
+        await db.getRepository(Ap).update(apId, {
+          apIndex: {
+            units: [
+              {
+                id: "U",
+                items: [{ id: "I" }],
+                dependencies: [
+                  ...(listedInIndex
+                    ? [{ id: "U.vomd", type: "METADATA" }]
+                    : []),
+                  { id: "historical.vomd", type: "METADATA" },
+                  { id: "U.vocs", type: "CODING_SCHEME" },
+                ],
+              },
+            ],
+          },
+        });
+
+        const auth = headers(reviewer.token);
+        const unit = await request(server)
+          .get(`/api/view/ap/${apId}/units/U`)
+          .set(auth)
+          .expect(200);
+        expect(unit.body.navigationItems).toEqual([{ id: "I" }]);
+        expect(
+          unit.body.dependencies.filter(
+            ({ type }: { type: string }) => type === "METADATA",
+          ),
+        ).toEqual([expect.objectContaining({ originalName: "U.vomd" })]);
+        await request(server)
+          .get(threadPath)
+          .query({
+            targetType: CommentTargetType.CODING,
+            unitId: "U",
+            itemId: "STALE",
+          })
+          .set(auth)
+          .expect(404);
+      },
+    );
+
+    it("uses the Unit XML VOMD for both navigation and comment targets when the index retains an old file", async () => {
+      const { reviewer, apId, threadPath } = await createCodingFixture();
+      const oldFile = join(directory, "old.vomd");
+      const oldContent = JSON.stringify({
+        items: [{ id: "STALE", variableId: "OLD" }],
+      });
+      await writeFile(oldFile, oldContent);
+      await db.getRepository(ApFile).save({
+        apId,
+        originalName: "old.vomd",
+        filePath: oldFile,
+        fileSize: Buffer.byteLength(oldContent),
+      });
+      await db.getRepository(Ap).update(apId, {
+        apIndex: {
+          units: [
+            {
+              id: "U",
+              items: [{ id: "I" }],
+              dependencies: [
+                { id: "old.vomd", type: "METADATA" },
+                { id: "U.vomd", type: "METADATA" },
+                { id: "U.vocs", type: "CODING_SCHEME" },
+              ],
+            },
+          ],
+        },
+      });
+
+      const headersForReviewer = headers(reviewer.token);
+      const unit = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(headersForReviewer)
+        .expect(200);
+      const counts = await request(server)
+        .get(`${threadPath}/counts`)
+        .set(headersForReviewer)
+        .expect(200);
+      expect(unit.body.navigationItems).toEqual([{ id: "I", variableId: "I" }]);
+      expect(
+        unit.body.dependencies.filter(
+          ({ type }: { type: string }) => type === "METADATA",
+        ),
+      ).toEqual([expect.objectContaining({ originalName: "U.vomd" })]);
+      expect(counts.body.counts).toEqual([
+        { unitId: "U", itemId: "I", variableId: "I", count: 0, codingCount: 1 },
+      ]);
+    });
+
+    it("uses the prefixed indexed ID while reading and replying to comments saved under the raw ID", async () => {
+      const { apId, reviewer, target, comment, threadPath } =
+        await createCodingFixture({ indexedItemId: "U_I" });
+      const canonicalTarget = { ...target, itemId: "U_I" };
+      const headersForReviewer = headers(reviewer.token);
+      const unit = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(headersForReviewer)
+        .expect(200);
+      expect(unit.body.navigationItems).toEqual([
+        { id: "U_I", variableId: "I", fallbackIds: ["I"] },
+      ]);
+      const thread = await request(server)
+        .get(threadPath)
+        .query(canonicalTarget)
+        .set(headersForReviewer)
+        .expect(200);
+      expect(thread.body.comments.map(({ id }: { id: string }) => id)).toEqual([
+        comment.id,
+      ]);
+
+      const replied = await request(server)
+        .post(threadPath)
+        .set(headersForReviewer)
+        .send({
+          ...canonicalTarget,
+          parentCommentId: comment.id,
+          commentText: "Reply to an existing comment",
+        })
+        .expect(201);
+      expect(replied.body).toMatchObject({
+        itemId: "U_I",
+        parentCommentId: comment.id,
+      });
+
+      const legacyIdThread = await request(server)
+        .get(threadPath)
+        .query(target)
+        .set(headersForReviewer)
+        .expect(200);
+      expect(legacyIdThread.body.target.itemId).toBe("U_I");
+      expect(
+        legacyIdThread.body.comments.map(({ id }: { id: string }) => id),
+      ).toEqual([comment.id, replied.body.id]);
+      const counts = await request(server)
+        .get(`${threadPath}/counts`)
+        .set(headersForReviewer)
+        .expect(200);
+      expect(counts.body.counts).toEqual([
+        {
+          unitId: "U",
+          itemId: "U_I",
+          itemIdAlias: "I",
+          variableId: "I",
+          count: 0,
+          codingCount: 2,
+        },
+      ]);
+    });
+
     it("restores coding comments after a temporary scheme read failure with the same file signature", async () => {
       const { apId, reviewer, target, comment, threadPath } =
         await createCodingFixture();
@@ -1431,7 +1908,13 @@ describe("Review visibility, groups and synchronization API", () => {
           .expect(200);
         expect(partial.body.codingUnitIds).toEqual([]);
         expect(partial.body.counts).toEqual([
-          { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+          {
+            unitId: "U",
+            itemId: "I",
+            variableId: "I",
+            count: 0,
+            codingCount: 1,
+          },
         ]);
         partialEtag = partial.headers.etag;
       } finally {
@@ -1445,7 +1928,34 @@ describe("Review visibility, groups and synchronization API", () => {
         .set("If-None-Match", partialEtag)
         .expect(200);
       expect(recovered.body.codingUnitIds).toEqual(["U"]);
+      expect(recovered.body.counts).toEqual([
+        {
+          unitId: "U",
+          itemId: "I",
+          variableId: "I",
+          count: 0,
+          codingCount: 1,
+        },
+      ]);
       expect(recovered.headers.etag).not.toBe(partialEtag);
+      const unit = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(headers(reviewer.token))
+        .expect(200);
+      expect(unit.body.navigationItems).toEqual(
+        recovered.body.counts.map(
+          ({
+            itemId,
+            variableId,
+          }: {
+            itemId: string;
+            variableId?: string;
+          }) => ({
+            id: itemId,
+            variableId,
+          }),
+        ),
+      );
       const thread = await request(server)
         .get(threadPath)
         .query(target)
@@ -1470,7 +1980,13 @@ describe("Review visibility, groups and synchronization API", () => {
         .expect(200);
       expect(first.body.codingUnitIds).toEqual(["U"]);
       expect(first.body.counts).toEqual([
-        { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+        {
+          unitId: "U",
+          itemId: "I",
+          variableId: "I",
+          count: 0,
+          codingCount: 1,
+        },
       ]);
 
       const second = await request(server)
@@ -1497,7 +2013,13 @@ describe("Review visibility, groups and synchronization API", () => {
           missingFile === "U.vomd" ? ["U"] : [],
         );
         expect(first.body.counts).toEqual([
-          { unitId: "U", itemId: "I", count: 0, codingCount: 1 },
+          {
+            unitId: "U",
+            itemId: "I",
+            ...(missingFile === "U.vomd" ? {} : { variableId: "I" }),
+            count: 0,
+            codingCount: 1,
+          },
         ]);
         const cached = await request(server)
           .get(countsPath)
@@ -1521,7 +2043,17 @@ describe("Review visibility, groups and synchronization API", () => {
           .set(headers(reviewer.token))
           .expect(200);
         expect(rebuilt.body.codingUnitIds).toEqual(["U"]);
-        expect(rebuilt.body.counts).toEqual(first.body.counts);
+        expect(rebuilt.body.counts).toEqual([
+          {
+            unitId: "U",
+            itemId: "I",
+            variableId: "I",
+            count: 0,
+            codingCount: 1,
+          },
+        ]);
+        expect(rebuilt.headers.etag).not.toBe(first.headers.etag);
+        expect(rebuilt.body.revision).not.toBe(first.body.revision);
         expect(parserSpy).toHaveBeenCalledTimes(2);
       },
     );
@@ -1583,8 +2115,12 @@ describe("Review visibility, groups and synchronization API", () => {
         const service = new CommentsService(
           limited.getRepository(Comment),
           new ReviewPolicyService(limited.getRepository(ApAccessConfig)),
-          parser,
-          catalog,
+          new ReviewItemCatalogService(
+            limited.getRepository(Ap),
+            catalog,
+            parser,
+            limited.getRepository(ApFile),
+          ),
           limited.getRepository(Ap),
           new ReviewManifestService(
             limited.getRepository(Ap),

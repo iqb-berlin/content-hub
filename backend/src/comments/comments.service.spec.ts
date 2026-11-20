@@ -1,3 +1,5 @@
+import { readFile } from "fs/promises";
+import { ReviewItemCatalogService } from "../files/review-item-catalog.service";
 import { ReviewerColumnPolicy } from "../item-explorer/reviewer-column-policy";
 import {
   BadRequestException,
@@ -8,6 +10,11 @@ import {
 import { CommentsService } from "./comments.service";
 import { Ap, Comment, CommentTargetType } from "../database/entities";
 import { ReviewPolicyService } from "./review-policy.service";
+
+jest.mock("fs/promises", () => ({
+  ...jest.requireActual("fs/promises"),
+  readFile: jest.fn(),
+}));
 
 describe("CommentsService", () => {
   let service: CommentsService;
@@ -30,6 +37,7 @@ describe("CommentsService", () => {
   let reviewManifestService: { getManifest: jest.Mock };
 
   beforeEach(() => {
+    jest.mocked(readFile).mockReset();
     deleteQueryBuilder = {
       delete: jest.fn().mockReturnThis(),
       from: jest.fn().mockReturnThis(),
@@ -64,7 +72,7 @@ describe("CommentsService", () => {
       }),
     };
     fileCatalogCache = {
-      get: jest.fn().mockResolvedValue({ signature: "files-v1" }),
+      get: jest.fn().mockResolvedValue({ signature: "files-v1", files: [] }),
     };
     apRepository = {
       findOne: jest.fn().mockResolvedValue({
@@ -94,8 +102,12 @@ describe("CommentsService", () => {
     service = new CommentsService(
       commentRepository as any,
       new ReviewPolicyService(accessConfigRepository as any),
-      unitParserService as any,
-      fileCatalogCache as any,
+      new ReviewItemCatalogService(
+        apRepository as any,
+        fileCatalogCache as any,
+        unitParserService as any,
+        {} as any,
+      ),
       apRepository as any,
       reviewManifestService as any,
     );
@@ -500,6 +512,63 @@ describe("CommentsService", () => {
       expect(counts.counts[0]?.count || 0).toBe(thread.comments.length);
     },
   );
+
+  it("preserves legacy comment ownership when unrelated metadata only adds an item for navigation", async () => {
+    accessConfigRepository.findOne.mockResolvedValue({
+      featureConfig: {
+        enableReview: true,
+        enableCommenting: true,
+        commentTargets: ["ITEM"],
+      },
+    });
+    apRepository.findOne.mockResolvedValue({
+      apIndex: {
+        units: [
+          { id: "U", items: [{ id: "I" }] },
+          { id: "V", dependencies: [{ id: "V.vomd", type: "METADATA" }] },
+        ],
+      },
+    });
+    fileCatalogCache.get.mockResolvedValue({
+      signature: "test",
+      files: [{ originalName: "V.vomd", filePath: "/test/V.vomd" }],
+    });
+    jest
+      .mocked(readFile)
+      .mockResolvedValue(JSON.stringify({ items: [{ id: "U_I" }] }));
+    unitParserService.getItemListFromFiles.mockResolvedValue({ items: [] });
+    const existing = {
+      id: "existing",
+      apId: "ap-1",
+      targetType: CommentTargetType.ITEM,
+      targetId: "U_I",
+      unitId: null,
+      itemId: null,
+      userId: "me",
+      createdAt: new Date(),
+      version: 1,
+    };
+    commentRepository.find.mockImplementation(async ({ where }) =>
+      where.some((clause: any) => clause.targetId === "U_I" || !clause.unitId)
+        ? [existing]
+        : [],
+    );
+
+    const actor = { userId: "me", authorLabel: "Me", isManager: false };
+    const counts = await service.getItemCommentCounts("ap-1", actor);
+    expect(counts.counts).toEqual([
+      { unitId: "U", itemId: "I", count: 1, codingCount: 0 },
+      { unitId: "V", itemId: "U_I", count: 0, codingCount: 0 },
+    ]);
+    expect(
+      (await service.getItemThread("ap-1", "U", "I", actor)).comments.map(
+        ({ id }) => id,
+      ),
+    ).toEqual(["existing"]);
+    expect(
+      (await service.getItemThread("ap-1", "V", "U_I", actor)).comments,
+    ).toEqual([]);
+  });
 
   it("loads visible item comment counts in one repository query and shares them across rows", async () => {
     const createdAt = new Date("2026-01-01T10:00:00.000Z");
@@ -1466,8 +1535,8 @@ describe("CommentsService", () => {
       },
     });
     fileCatalogCache.get
-      .mockResolvedValueOnce({ signature: "files-v1" })
-      .mockResolvedValueOnce({ signature: "files-v2" });
+      .mockResolvedValueOnce({ signature: "files-v1", files: [] })
+      .mockResolvedValueOnce({ signature: "files-v2", files: [] });
     const actor = { userId: "me", authorLabel: "ME", isManager: false };
 
     await service.getItemThread("ap-1", "unit-1", "item-1", actor);
@@ -1915,6 +1984,121 @@ describe("CommentsService", () => {
         itemId: "item-1",
       }),
     );
+  });
+
+  it("returns file variable identities for canonical review targets, including prefixed aliases", async () => {
+    accessConfigRepository.findOne.mockResolvedValue({
+      featureConfig: {
+        enableReview: true,
+        enableCommenting: true,
+        commentTargets: ["ITEM", "CODING"],
+      },
+    });
+    apRepository.findOne.mockResolvedValue({
+      apIndex: {
+        assessmentParts: [
+          {
+            units: [
+              {
+                id: "unit-1",
+                items: [
+                  {
+                    id: "item-1",
+                    variableId: "stale",
+                    sourceVariable: "index-source",
+                    variableReadOnlyId: "index-id",
+                  },
+                  {
+                    id: "index-only",
+                    variableId: "INDEX",
+                    variableReadOnlyId: "index-internal",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    unitParserService.getItemListFromFiles.mockResolvedValue({
+      items: [
+        {
+          unitId: "unit-1",
+          itemId: "index-only",
+          sourceVariable: "   ",
+        },
+        {
+          unitId: "unit-1",
+          itemId: "unit-1_item-1",
+          variableId: " FIRST ",
+          variableReadOnlyId: "a",
+        },
+        {
+          unitId: "unit-1",
+          itemId: "file-only",
+          sourceVariable: "SECOND",
+          variableReadOnlyId: "b",
+        },
+      ],
+      codingSchemes: { "unit-1": { variableCodings: [] } },
+    });
+    commentRepository.find.mockResolvedValue([]);
+    const actor = { userId: "me", authorLabel: "ME", isManager: false };
+    const snapshot = await service.getItemCommentCounts("ap-1", actor);
+    expect(snapshot.counts).toEqual([
+      {
+        unitId: "unit-1",
+        itemId: "file-only",
+        sourceVariable: "SECOND",
+        variableReadOnlyId: "b",
+        count: 0,
+        codingCount: 0,
+      },
+      {
+        unitId: "unit-1",
+        itemId: "index-only",
+        variableId: "INDEX",
+        variableReadOnlyId: "index-internal",
+        count: 0,
+        codingCount: 0,
+      },
+      {
+        unitId: "unit-1",
+        itemId: "item-1",
+        variableId: "FIRST",
+        variableReadOnlyId: "a",
+        count: 0,
+        codingCount: 0,
+      },
+    ]);
+    expect(snapshot.codingUnitIds).toEqual(["unit-1"]);
+
+    // A changed mapping must invalidate the snapshot even if all counts stay zero.
+    fileCatalogCache.get.mockResolvedValue({
+      signature: "files-v2",
+      files: [],
+    });
+    unitParserService.getItemListFromFiles.mockResolvedValue({
+      items: [
+        { unitId: "unit-1", itemId: "unit-1_item-1", variableId: "UPDATED" },
+        {
+          unitId: "unit-1",
+          itemId: "file-only",
+          sourceVariable: "SECOND",
+          variableReadOnlyId: "b",
+        },
+      ],
+      codingSchemes: { "unit-1": { variableCodings: [] } },
+    });
+    const updated = await service.getItemCommentCounts("ap-1", actor);
+    expect(updated.counts.find((entry) => entry.itemId === "item-1")).toEqual({
+      unitId: "unit-1",
+      itemId: "item-1",
+      variableId: "UPDATED",
+      count: 0,
+      codingCount: 0,
+    });
+    expect(updated.revision).not.toBe(snapshot.revision);
   });
 
   it("keeps item and coding counts separate", async () => {

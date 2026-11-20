@@ -18,6 +18,7 @@ import {
   FindOptionsWhere,
   In,
   IsNull,
+  Like,
   Repository,
 } from "typeorm";
 import { createHash } from "crypto";
@@ -27,9 +28,12 @@ import {
   Comment,
   CommentTargetType,
 } from "../database/entities";
-import { UnitParserService } from "../files/unit-parser.service";
-import { FileCatalogCache } from "../files/file-catalog.cache";
-import { AsyncLruCache } from "../files/async-lru-cache";
+import {
+  itemCatalogKey,
+  ItemVariableReferences,
+  ReviewItemCatalogEntry,
+  ReviewItemCatalogService,
+} from "../files/review-item-catalog.service";
 import { getAssessmentParts, getIndexUnits } from "../ap/ap-index.utils";
 import { extractLabelText } from "../files/unit-file-parsing";
 import { ReviewManifestService } from "../review/review-manifest.service";
@@ -82,9 +86,10 @@ export interface CommentThreadSnapshot {
   categories: CommentCategory[];
 }
 
-export interface ItemCommentCount {
+export interface ItemCommentCount extends ItemVariableReferences {
   unitId: string;
   itemId: string;
+  itemIdAlias?: string;
   count: number;
   codingCount: number;
 }
@@ -93,6 +98,15 @@ export interface ItemCommentCountsSnapshot {
   revision: string;
   codingUnitIds: string[];
   counts: ItemCommentCount[];
+}
+
+export interface UnitCommentAvailability {
+  codingCommentsAvailable: boolean;
+  additionalItems?: {
+    id: string;
+    label: string;
+    targetTypes: CommentTargetType[];
+  }[];
 }
 
 export interface ReviewCommentExportActor {
@@ -114,28 +128,15 @@ export interface ReviewCommentTarget {
 
 interface ResolvedReviewCommentTarget extends ReviewCommentTarget {
   targetId: string;
+  previousItemId?: string;
   legacyTargetIds: string[];
 }
 
 interface ItemTargetResolution {
   unitId: string;
   itemId: string;
+  previousItemId?: string;
   legacyTargetIds: string[];
-}
-
-interface ItemCatalogEntry {
-  unitId: string;
-  itemId: string;
-  hasCodingScheme: boolean;
-  unitLabel: string;
-  itemLabel: string;
-  unitOrder: number;
-  itemOrder: number;
-}
-
-interface ItemCatalog {
-  entries: ItemCatalogEntry[];
-  cacheable: boolean;
 }
 
 interface ReviewBookletCatalogEntry {
@@ -181,8 +182,7 @@ export class CommentsService {
       const scoped = new CommentsService(
         manager.getRepository(Comment),
         new ReviewPolicyService(manager.getRepository(ApAccessConfig)),
-        this.unitParserService,
-        this.fileCatalogCache,
+        this.reviewItemCatalog,
         manager.getRepository(Ap),
         this.reviewManifestService,
       );
@@ -193,16 +193,11 @@ export class CommentsService {
     });
   }
 
-  private readonly itemCatalogCache = new AsyncLruCache<string, ItemCatalog>(
-    100,
-  );
-
   constructor(
     @InjectRepository(Comment)
     private readonly commentRepository: Repository<Comment>,
     private readonly reviewPolicy: ReviewPolicyService,
-    private readonly unitParserService: UnitParserService,
-    private readonly fileCatalogCache: FileCatalogCache,
+    private readonly reviewItemCatalog: ReviewItemCatalogService,
     @InjectRepository(Ap)
     private readonly apRepository: Repository<Ap>,
     private readonly reviewManifestService: ReviewManifestService,
@@ -513,37 +508,146 @@ export class CommentsService {
     return (await this.getVoteStates(apId, [comment], actor)).get(commentId)!;
   }
 
+  async getUnitCommentAvailability(
+    apId: string,
+    unitId: string,
+    actor: CommentActor,
+  ): Promise<UnitCommentAvailability> {
+    const { targetTypes, visibilityMode } =
+      await this.reviewPolicy.assertItemAndCodingCountAccess(apId, actor);
+    const where = this.visibleItemCommentWhere(
+      apId,
+      targetTypes,
+      visibilityMode,
+      actor,
+    );
+    const legacyPrefix = unitId.replace(/[\\%_]/g, "\\$&");
+    const comments = await this.commentRepository.find({
+      where: where.flatMap((scope) => [
+        { ...scope, unitId },
+        ...(scope.targetType === CommentTargetType.ITEM
+          ? [
+              {
+                ...scope,
+                unitId: IsNull(),
+                targetId: Like(`${legacyPrefix}\\_%`),
+              },
+            ]
+          : []),
+      ]),
+      select: {
+        unitId: true,
+        itemId: true,
+        targetType: true,
+        targetId: true,
+        userId: true,
+        credentialId: true,
+        groupId: true,
+      },
+    });
+    const visible = comments.filter((comment) =>
+      this.reviewPolicy.canViewComment(visibilityMode, actor, comment),
+    );
+    const { codingCommentsAvailable, itemIds } =
+      await this.reviewItemCatalog.getActiveUnitCommentTargets(
+        apId,
+        unitId,
+        targetTypes.includes(CommentTargetType.CODING),
+        visible.length > 0,
+      );
+    const isActive = (
+      itemId: string | null | undefined,
+      type: CommentTargetType,
+    ) =>
+      Boolean(
+        itemId &&
+        itemIds.has(itemId) &&
+        (type !== CommentTargetType.CODING || codingCommentsAvailable),
+      );
+    const candidates = visible.filter(
+      ({ itemId, targetType }) => !isActive(itemId, targetType),
+    );
+    if (!candidates.length) return { codingCommentsAvailable };
+
+    const catalog = await this.getItemCatalog(apId);
+    const lookup = this.buildItemTargetLookup(catalog);
+    const additional = new Map<
+      string,
+      NonNullable<UnitCommentAvailability["additionalItems"]>[number]
+    >();
+    for (const comment of candidates) {
+      const target = lookup(comment);
+      if (
+        !target ||
+        target.unitId !== unitId ||
+        isActive(target.itemId, comment.targetType)
+      )
+        continue;
+      if (
+        comment.targetType === CommentTargetType.CODING &&
+        !target.hasCodingScheme
+      )
+        continue;
+      const entry = additional.get(target.itemId) ?? {
+        id: target.itemId,
+        label: target.itemLabel,
+        targetTypes: [],
+      };
+      if (!entry.targetTypes.includes(comment.targetType))
+        entry.targetTypes.push(comment.targetType);
+      additional.set(entry.id, entry);
+    }
+    return {
+      codingCommentsAvailable,
+      ...(additional.size && {
+        additionalItems: [...additional.values()]
+          .sort((a, b) =>
+            a.id.localeCompare(b.id, undefined, { numeric: true }),
+          )
+          .map((entry) => ({
+            ...entry,
+            targetTypes: entry.targetTypes.sort(),
+          })),
+      }),
+    };
+  }
+
+  private visibleItemCommentWhere(
+    apId: string,
+    targetTypes: CommentTargetType[],
+    visibilityMode: CommentVisibilityMode,
+    actor: CommentActor,
+  ): FindOptionsWhere<Comment>[] {
+    return targetTypes.map((targetType) => ({
+      apId,
+      targetType,
+      deletedAt: IsNull(),
+      ...(visibilityMode === "PRIVATE" && !actor.isManager
+        ? actor.userId
+          ? { userId: actor.userId }
+          : { credentialId: actor.credentialId }
+        : {}),
+    }));
+  }
+
   async getItemCommentCounts(
     apId: string,
     actor: CommentActor,
   ): Promise<ItemCommentCountsSnapshot> {
     const { visibilityMode, targetTypes } =
       await this.reviewPolicy.assertItemAndCodingCountAccess(apId, actor);
-    const commentWhere: FindOptionsWhere<Comment>[] = targetTypes.map(
-      (targetType) => ({
-        apId,
-        targetType,
-        deletedAt: IsNull(),
-        ...(visibilityMode === "PRIVATE" && !actor.isManager
-          ? actor.userId
-            ? { userId: actor.userId }
-            : { credentialId: actor.credentialId }
-          : {}),
-      }),
-    );
     const [comments, catalog] = await Promise.all([
       this.commentRepository.find({
-        where: commentWhere,
+        where: this.visibleItemCommentWhere(
+          apId,
+          targetTypes,
+          visibilityMode,
+          actor,
+        ),
       }),
       this.getItemCatalog(apId),
     ]);
-    const catalogByKey = new Map(
-      catalog.map((entry) => [
-        this.itemCatalogKey(entry.unitId, entry.itemId),
-        entry,
-      ]),
-    );
-    const legacyTargets = this.buildLegacyItemTargets(catalog);
+    const lookup = this.buildItemTargetLookup(catalog);
 
     const counts = new Map<string, number>();
     const codingCounts = new Map<string, number>();
@@ -551,29 +655,24 @@ export class CommentsService {
       if (!this.reviewPolicy.canViewComment(visibilityMode, actor, comment)) {
         continue;
       }
-      let key =
-        comment.unitId && comment.itemId
-          ? this.itemCatalogKey(comment.unitId, comment.itemId)
-          : "";
-      if (!key && comment.unitId == null) {
-        const target = legacyTargets.get(comment.targetId);
-        key = target ? this.itemCatalogKey(target.unitId, target.itemId) : "";
-      }
-      if (!key || !catalogByKey.has(key)) continue;
+      const target = lookup(comment);
+      if (!target) continue;
+      const key = itemCatalogKey(target.unitId, target.itemId);
       const targetCounts =
         comment.targetType === CommentTargetType.CODING ? codingCounts : counts;
       targetCounts.set(key, (targetCounts.get(key) || 0) + 1);
     }
 
-    // Zero counts retain the complete canonical catalog for client-side alias resolution.
+    // Include items without any comments so count consumers can address canonical IDs.
     const result = catalog
       .map((entry) => ({
         unitId: entry.unitId,
         itemId: entry.itemId,
-        count: counts.get(this.itemCatalogKey(entry.unitId, entry.itemId)) || 0,
+        ...(entry.previousItemId ? { itemIdAlias: entry.previousItemId } : {}),
+        ...entry.variableReferences,
+        count: counts.get(itemCatalogKey(entry.unitId, entry.itemId)) || 0,
         codingCount:
-          codingCounts.get(this.itemCatalogKey(entry.unitId, entry.itemId)) ||
-          0,
+          codingCounts.get(itemCatalogKey(entry.unitId, entry.itemId)) || 0,
       }))
       .sort(
         (left, right) =>
@@ -736,6 +835,7 @@ export class CommentsService {
     const candidates = catalog.filter(
       (entry) =>
         entry.itemId === input.targetId ||
+        entry.previousItemId === input.targetId ||
         this.legacyItemTargetId(entry.unitId, entry.itemId) === input.targetId,
     );
     if (candidates.length !== 1) {
@@ -1343,6 +1443,7 @@ export class CommentsService {
       targetId: this.legacyItemTargetId(itemTarget.unitId, itemTarget.itemId),
       unitId: itemTarget.unitId,
       itemId: itemTarget.itemId,
+      previousItemId: itemTarget.previousItemId,
       legacyTargetIds:
         input.targetType === CommentTargetType.ITEM
           ? itemTarget.legacyTargetIds
@@ -1383,13 +1484,16 @@ export class CommentsService {
         },
       ];
     }
+    const itemIds = target.previousItemId
+      ? [target.itemId, target.previousItemId]
+      : [target.itemId];
     return [
-      {
+      ...itemIds.map((itemId) => ({
         apId,
         targetType: target.targetType,
         unitId: target.unitId,
-        itemId: target.itemId,
-      },
+        itemId,
+      })),
       ...target.legacyTargetIds.map((targetId) => ({
         apId,
         targetType: target.targetType,
@@ -1409,13 +1513,18 @@ export class CommentsService {
     const exactMatches = unitItems.filter(
       (item) => item.itemId === requestedItemId,
     );
+    const historicalMatches = unitItems.filter(
+      (item) => item.previousItemId === requestedItemId,
+    );
     const matches = exactMatches.length
       ? exactMatches
-      : unitItems.filter(
-          (item) =>
-            this.legacyItemTargetId(item.unitId, item.itemId) ===
-            requestedItemId,
-        );
+      : historicalMatches.length
+        ? historicalMatches
+        : unitItems.filter(
+            (item) =>
+              this.legacyItemTargetId(item.unitId, item.itemId) ===
+              requestedItemId,
+          );
     if (matches.length === 0) {
       throw new NotFoundException("Item not found in this AP");
     }
@@ -1424,189 +1533,96 @@ export class CommentsService {
     }
 
     const target = matches[0];
-    const legacyTargetId = this.legacyItemTargetId(
-      target.unitId,
-      target.itemId,
-    );
-    const legacyTargetIsUnique =
-      this.buildLegacyItemTargets(catalog).get(legacyTargetId) === target;
-
+    const legacyTargets = this.buildLegacyItemTargets(catalog);
     return {
       ...target,
-      legacyTargetIds: legacyTargetIsUnique ? [legacyTargetId] : [],
+      legacyTargetIds: [...legacyTargets]
+        .filter(([, entry]) => entry === target)
+        .map(([id]) => id),
     };
   }
 
   private buildLegacyItemTargets(
-    catalog: ItemCatalogEntry[],
-  ): Map<string, ItemCatalogEntry> {
-    const owners = new Map<string, Set<ItemCatalogEntry>>();
+    catalog: ReviewItemCatalogEntry[],
+  ): Map<string, ReviewItemCatalogEntry> {
+    const owners = new Map<string, Set<string>>();
+    const targets = new Map<string, ReviewItemCatalogEntry>();
     for (const entry of catalog) {
-      for (const alias of [
-        entry.itemId,
-        this.legacyItemTargetId(entry.unitId, entry.itemId),
-      ]) {
-        const entries = owners.get(alias) || new Set<ItemCatalogEntry>();
-        entries.add(entry);
-        owners.set(alias, entries);
+      // Only IDs known to the original comment catalog can own untyped comments.
+      if (entry.excludeFromLegacyTargets) continue;
+      const ids = entry.previousItemId
+        ? [entry.itemId, entry.previousItemId]
+        : [entry.itemId];
+      for (const id of ids) {
+        const key = itemCatalogKey(entry.unitId, id);
+        const legacyId = this.legacyItemTargetId(entry.unitId, id);
+        for (const alias of [id, legacyId]) {
+          const keys = owners.get(alias) || new Set<string>();
+          keys.add(key);
+          owners.set(alias, keys);
+        }
+        targets.set(legacyId, entry);
       }
     }
-    const targets = new Map<string, ItemCatalogEntry>();
-    for (const entry of catalog) {
-      const legacyId = this.legacyItemTargetId(entry.unitId, entry.itemId);
-      if (owners.get(legacyId)?.size === 1) targets.set(legacyId, entry);
+    for (const id of targets.keys()) {
+      if (owners.get(id)?.size !== 1) targets.delete(id);
     }
     return targets;
   }
 
-  private async getItemCatalog(apId: string): Promise<ItemCatalogEntry[]> {
-    const [fileCatalog, ap] = await Promise.all([
-      this.fileCatalogCache.get(apId, this.transactionManager),
-      this.apRepository.findOne({ where: { id: apId } }),
-    ]);
-    const cacheKey = `${apId}:${fileCatalog.signature}:${
-      ap?.updatedAt?.toISOString() || "missing"
-    }`;
-    this.itemCatalogCache.deleteWhere(
-      (key) => key.startsWith(`${apId}:`) && key !== cacheKey,
-    );
-    const { value } = await this.itemCatalogCache.getOrLoad(
-      cacheKey,
-      () => this.buildItemCatalog(apId, ap),
-      { shouldCache: (catalog) => catalog.cacheable },
-    );
-    return value.entries;
+  private getItemCatalog(apId: string): Promise<ReviewItemCatalogEntry[]> {
+    return this.reviewItemCatalog.getCatalog(apId, {
+      manager: this.transactionManager,
+      findStoredTargets: async (candidates) => {
+        const byUnit = new Map<string, string[]>();
+        for (const { unitId, itemId } of candidates) {
+          const ids = byUnit.get(unitId) ?? [];
+          ids.push(itemId);
+          byUnit.set(unitId, ids);
+        }
+        const comments = await this.commentRepository.find({
+          where: [...byUnit].map(([unitId, ids]) => ({
+            apId,
+            unitId,
+            itemId: In(ids),
+            targetType: In([CommentTargetType.ITEM, CommentTargetType.CODING]),
+          })),
+          select: { unitId: true, itemId: true },
+        });
+        return new Set(
+          comments.map((comment) =>
+            itemCatalogKey(comment.unitId!, comment.itemId!),
+          ),
+        );
+      },
+    });
   }
 
-  private async buildItemCatalog(
-    apId: string,
-    ap: Ap | null,
-  ): Promise<ItemCatalog> {
-    let cacheable = false;
-    const itemList = await this.unitParserService.getItemListFromFiles(
-      apId,
-      {
-        includeStudioItemComments: false,
-        onDiagnostics: (diagnostics) => {
-          cacheable = diagnostics.cacheable;
-        },
-      },
-      this.transactionManager,
-    );
-    const codingUnitIds = new Set(
-      Object.entries(itemList.codingSchemes || {})
-        .filter(([, scheme]) => Boolean(scheme))
-        .map(([unitId]) => unitId),
-    );
-    const indexEntries: ItemCatalogEntry[] = [];
-    const indexUnits = getIndexUnits(ap?.apIndex);
-    for (const [unitOrder, unit] of indexUnits.entries()) {
-      const indexUnitId = String(unit?.id || "").trim();
-      const unitLabel =
-        extractLabelText(unit?.name || unit?.label) ||
-        String(unit?.description || indexUnitId).trim();
-      const items = Array.isArray(unit?.items) ? unit.items : [];
-      for (const [itemOrder, item] of items.entries()) {
-        const itemId = String(item?.id || "").trim();
-        indexEntries.push({
-          unitId: indexUnitId,
-          itemId,
-          hasCodingScheme: codingUnitIds.has(indexUnitId),
-          unitLabel,
-          itemLabel:
-            extractLabelText(item?.name || item?.label) ||
-            String(item?.description || itemId).trim(),
-          unitOrder,
-          itemOrder,
-        });
-      }
+  private buildItemTargetLookup(catalog: ReviewItemCatalogEntry[]) {
+    const exact = new Map<string, ReviewItemCatalogEntry>();
+    const previous = new Map<string, ReviewItemCatalogEntry>();
+    for (const entry of catalog) {
+      exact.set(itemCatalogKey(entry.unitId, entry.itemId), entry);
+      if (entry.previousItemId)
+        previous.set(itemCatalogKey(entry.unitId, entry.previousItemId), entry);
     }
-    const entries = [...indexEntries];
-    const indexUnitOrders = new Map(
-      indexUnits.map((unit, unitOrder) => [
-        String(unit?.id || "").trim(),
-        unitOrder,
-      ]),
-    );
-    const indexAliases = new Map<string, ItemCatalogEntry | null>();
-    for (const indexEntry of indexEntries) {
-      for (const alias of [
-        indexEntry.itemId,
-        this.legacyItemTargetId(indexEntry.unitId, indexEntry.itemId),
-      ]) {
-        const aliasKey = this.itemCatalogKey(indexEntry.unitId, alias);
-        indexAliases.set(
-          aliasKey,
-          indexAliases.has(aliasKey) ? null : indexEntry,
-        );
+    const legacy = this.buildLegacyItemTargets(catalog);
+    return ({
+      unitId,
+      itemId,
+      targetId,
+    }: Pick<Comment, "unitId" | "itemId" | "targetId">) => {
+      if (unitId && itemId) {
+        const key = itemCatalogKey(unitId, itemId);
+        return exact.get(key) ?? previous.get(key);
       }
-    }
-    const parsedUnitOrders = new Map<string, number>();
-    for (const [parsedOrder, item] of (itemList.items || []).entries()) {
-      const unitId = String(item.unitId || "").trim();
-      const parsedEntry = {
-        unitId,
-        itemId: String(item.itemId || "").trim(),
-        hasCodingScheme: codingUnitIds.has(unitId),
-        unitLabel: String(item.unitLabel || item.unitId || "").trim(),
-        itemLabel: String(item.description || item.itemId || "").trim(),
-        unitOrder: 0,
-        itemOrder: Number.isFinite(item.rowNumber)
-          ? Number(item.rowNumber)
-          : parsedOrder,
-      };
-      if (!parsedUnitOrders.has(parsedEntry.unitId)) {
-        parsedUnitOrders.set(
-          parsedEntry.unitId,
-          indexUnits.length + parsedUnitOrders.size,
-        );
-      }
-      parsedEntry.unitOrder =
-        indexUnitOrders.get(parsedEntry.unitId) ??
-        parsedUnitOrders.get(parsedEntry.unitId)!;
-      const aliasKey = this.itemCatalogKey(
-        parsedEntry.unitId,
-        parsedEntry.itemId,
-      );
-      const indexEntry = indexAliases.get(aliasKey);
-      if (indexAliases.has(aliasKey)) {
-        if (
-          indexEntry &&
-          (!indexEntry.unitLabel || indexEntry.unitLabel === indexEntry.unitId)
-        ) {
-          indexEntry.unitLabel = parsedEntry.unitLabel;
-        }
-        if (
-          indexEntry &&
-          (!indexEntry.itemLabel || indexEntry.itemLabel === indexEntry.itemId)
-        ) {
-          indexEntry.itemLabel = parsedEntry.itemLabel;
-        }
-      } else {
-        entries.push(parsedEntry);
-      }
-    }
-
-    const unique = new Map<string, ItemCatalogEntry>();
-    for (const entry of entries) {
-      if (!entry.unitId || !entry.itemId) continue;
-      const key = this.itemCatalogKey(entry.unitId, entry.itemId);
-      const existing = unique.get(key);
-      if (!existing) {
-        unique.set(key, entry);
-      } else {
-        existing.unitOrder = Math.min(existing.unitOrder, entry.unitOrder);
-        existing.itemOrder = Math.min(existing.itemOrder, entry.itemOrder);
-        if (!existing.unitLabel) existing.unitLabel = entry.unitLabel;
-        if (!existing.itemLabel) existing.itemLabel = entry.itemLabel;
-      }
-    }
-    return { entries: [...unique.values()], cacheable };
+      return unitId == null ? legacy.get(targetId) : undefined;
+    };
   }
 
   private buildReviewUnitCatalog(
     index: unknown,
-    itemCatalog: ItemCatalogEntry[],
+    itemCatalog: ReviewItemCatalogEntry[],
   ): Map<string, ReviewUnitCatalogEntry> {
     const catalog = new Map<string, ReviewUnitCatalogEntry>();
     for (const [unitOrder, unit] of getIndexUnits(index).entries()) {
@@ -1655,7 +1671,7 @@ export class CommentsService {
 
   private resolveReviewExportTarget(
     comment: Comment,
-    itemCatalog: ItemCatalogEntry[],
+    itemCatalog: ReviewItemCatalogEntry[],
     bookletCatalog: Map<string, ReviewBookletCatalogEntry>,
     unitCatalog: Map<string, ReviewUnitCatalogEntry>,
   ): ReviewExportTarget {
@@ -1687,7 +1703,7 @@ export class CommentsService {
     const unitId =
       comment.unitId ||
       (comment.targetType === CommentTargetType.UNIT ? comment.targetId : "");
-    let itemEntry: ItemCatalogEntry | undefined;
+    let itemEntry: ReviewItemCatalogEntry | undefined;
     if (
       comment.targetType === CommentTargetType.ITEM ||
       comment.targetType === CommentTargetType.CODING
@@ -1695,15 +1711,23 @@ export class CommentsService {
       const itemId = comment.itemId || "";
       if (unitId && itemId) {
         itemEntry = itemCatalog.find(
-          (entry) => entry.unitId === unitId && entry.itemId === itemId,
+          (entry) =>
+            entry.unitId === unitId &&
+            (entry.itemId === itemId || entry.previousItemId === itemId),
         );
       } else {
-        const candidates = itemCatalog.filter(
-          (entry) =>
-            entry.itemId === comment.targetId ||
-            this.legacyItemTargetId(entry.unitId, entry.itemId) ===
-              comment.targetId,
-        );
+        const candidates = itemCatalog.flatMap((entry) => {
+          if (entry.excludeFromLegacyTargets) return [];
+          return [entry.itemId, entry.previousItemId]
+            .filter(
+              (id) =>
+                id &&
+                (id === comment.targetId ||
+                  this.legacyItemTargetId(entry.unitId, id) ===
+                    comment.targetId),
+            )
+            .map(() => entry);
+        });
         if (candidates.length === 1) itemEntry = candidates[0];
       }
     }
@@ -1742,10 +1766,6 @@ export class CommentsService {
     };
   }
 
-  private itemCatalogKey(unitId: string, itemId: string): string {
-    return `${unitId}\u0000${itemId}`;
-  }
-
   private async findMutableComment(
     apId: string,
     commentId: string,
@@ -1773,19 +1793,6 @@ export class CommentsService {
     return comment;
   }
 
-  private matchesItemTarget(
-    comment: Comment,
-    target: ItemTargetResolution,
-  ): boolean {
-    if (comment.targetType !== CommentTargetType.ITEM) return false;
-    if (comment.unitId || comment.itemId) {
-      return (
-        comment.unitId === target.unitId && comment.itemId === target.itemId
-      );
-    }
-    return target.legacyTargetIds.includes(comment.targetId);
-  }
-
   private matchesTarget(
     comment: Comment,
     target: ResolvedReviewCommentTarget,
@@ -1797,15 +1804,18 @@ export class CommentsService {
     if (target.targetType === CommentTargetType.UNIT) {
       return (comment.unitId || comment.targetId) === target.unitId;
     }
-    if (target.targetType === CommentTargetType.ITEM) {
-      if (!target.unitId || !target.itemId) return false;
-      return this.matchesItemTarget(comment, {
-        unitId: target.unitId,
-        itemId: target.itemId,
-        legacyTargetIds: target.legacyTargetIds,
-      });
+    if (comment.unitId || comment.itemId) {
+      return (
+        comment.unitId === target.unitId &&
+        !!comment.itemId &&
+        (comment.itemId === target.itemId ||
+          comment.itemId === target.previousItemId)
+      );
     }
-    return comment.unitId === target.unitId && comment.itemId === target.itemId;
+    return (
+      target.targetType === CommentTargetType.ITEM &&
+      target.legacyTargetIds.includes(comment.targetId)
+    );
   }
 
   private async assertStoredTargetExists(

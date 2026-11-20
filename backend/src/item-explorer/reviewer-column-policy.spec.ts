@@ -10,6 +10,28 @@ const policy = (...visible: string[]) =>
   });
 
 describe("Reviewer column information boundary", () => {
+  it("preserves unit navigation identities when item columns and raw VOMD dependencies are hidden", () => {
+    const navigationItems = [
+      {
+        id: "I1",
+        fallbackIds: ["U_I1"],
+        variableId: "FIRST",
+        variableReadOnlyId: "internal-first",
+      },
+    ];
+    expect(
+      policy().projectResponse(
+        {
+          id: "U",
+          name: "Hidden name",
+          navigationItems,
+          dependencies: [{ type: "METADATA", fileId: "metadata-1" }],
+        },
+        "units",
+      ),
+    ).toEqual({ id: "U", navigationItems, dependencies: [] });
+  });
+
   it("preserves feature-gated Studio comments independently of table column restrictions", () => {
     const studioComments = [
       { id: 1, body: "Imported Studio hint", hidden: false },

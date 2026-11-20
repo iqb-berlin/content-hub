@@ -24,6 +24,7 @@ import {
 import { normalizeFeatureConfig } from "../ap/feature-config.utils";
 import { ItemExplorerStateService } from "../item-explorer/item-explorer-state.service";
 import { UnitParserService, VomdItemData } from "../files/unit-parser.service";
+import { ReviewItemCatalogService } from "../files/review-item-catalog.service";
 import {
   buildPatchPersonalItemPreferenceRowQuery,
   PreferenceIdentityColumn,
@@ -70,6 +71,7 @@ export class ViewsService {
     private readonly itemExplorerStateService: ItemExplorerStateService,
     private readonly unitParserService: UnitParserService,
     private readonly reviewManifestService: ReviewManifestService,
+    private readonly reviewItemCatalog: ReviewItemCatalogService,
   ) {}
 
   /**
@@ -287,11 +289,14 @@ export class ViewsService {
     // Resolve file references
     const dependencies = unit.dependencies || [];
     const fileRefs: any[] = [];
+    const metadataFiles: ApFile[] = [];
     for (const dep of dependencies) {
       const file = await this.fileRepository.findOne({
         where: { apId, originalName: dep.id },
       });
       if (file) {
+        if (String(dep.type).toLowerCase() === "metadata")
+          metadataFiles.push(file);
         fileRefs.push({
           type: dep.type,
           originalName: file.originalName,
@@ -301,13 +306,35 @@ export class ViewsService {
       }
     }
 
+    const navigation = await this.reviewItemCatalog.getUnitNavigation(
+      apId,
+      unit,
+      metadataFiles,
+    );
+    const metadata = navigation.metadataFile;
+    const resolvedRefs = metadata
+      ? [
+          ...fileRefs.filter(
+            (dependency) =>
+              String(dependency.type).toLowerCase() !== "metadata",
+          ),
+          {
+            type: "METADATA",
+            originalName: metadata.originalName,
+            downloadUrl: `/api/ap/${apId}/files/${metadata.id}/download`,
+            fileId: metadata.id,
+          },
+        ]
+      : fileRefs;
+
     return {
       id: unit.id,
       name: unit.name,
       description: unit.description,
       lang: unit.lang,
       items: unit.items,
-      dependencies: fileRefs,
+      navigationItems: navigation.items,
+      dependencies: resolvedRefs,
       codingScheme: unit.codingScheme,
       richText: unit.richText,
     };
