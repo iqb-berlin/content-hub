@@ -1,0 +1,411 @@
+Copyright and license records extracted from the 25 font binaries in the unchanged ASPECT 3.0.1 player.
+The complete applicable font license texts accompany these records in this directory.
+
+projects/common/assets/fonts/mathlive/KaTeX_AMS-Regular.woff2
+SHA-256: 0cdd387c9590a1a9f9794560022dbb59654a7d86f187aa0c81495ad42d3a7308
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_AMS.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Caligraphic-Bold.woff2
+SHA-256: de7701e42cf1f4cf0b766c03fb27977207eee2f4fd5d76fa82188406da43ea4c
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Caligraphic.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Caligraphic-Regular.woff2
+SHA-256: 5d53e70ad607c2352162dec9e0923fb54ecdafaccbf604cd8dcf7d00facb989b
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Caligraphic.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Fraktur-Bold.woff2
+SHA-256: 74444efd593c005e3f4573b44524704c0af0a937fe911cca9e94068d0d140d3f
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Fraktur.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Fraktur-Regular.woff2
+SHA-256: 51814d270d06ff0255dba0799994fa4d8c84d11f09951d47595f4abb1f3602dc
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Fraktur.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Main-BoldItalic.woff2
+SHA-256: 99cd42a3c072d918f2f44984a807cf7aa16e13545fd0875fc07c6c65f99e715b
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Main.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Main-Bold.woff2
+SHA-256: 0f60d1b897938ec918c8ce073092411baf9438f6739465693ff18b0f9d20b021
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Main.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Main-Italic.woff2
+SHA-256: 97479ca6cce906abc961ecac96faa5f9ca2e61b8e7670d475826bcdee9a7c267
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Main.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Main-Regular.woff2
+SHA-256: c2342cd8b869e01752a9321dc17213fc40d4d04c79688c1d43f2cf316abd7866
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Main.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Math-BoldItalic.woff2
+SHA-256: dc47344dbb6cb5b655c8460d561f4df5f501b90c804ad3c6cec65fe322351ab1
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Math.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Math-Italic.woff2
+SHA-256: 7af58c5ec8f132a2ddde9027c6d7814decce4d3b822a11192a42a20e2e973264
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Math.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_SansSerif-Bold.woff2
+SHA-256: e99ae51144bf1232efcc1bfe5add36262c6866b0faab24fa75740e1b98577a62
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_SansSerif.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_SansSerif-Italic.woff2
+SHA-256: 00b26ac825e2095056396e0553b8ac26d3f8ad158c3826e28b4c45b385c4714a
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_SansSerif.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_SansSerif-Regular.woff2
+SHA-256: 68e8c73ef42afd3ccec58bf0fba302cce448938e7fc020a5e31f8a952eee1342
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_SansSerif.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Script-Regular.woff2
+SHA-256: 036d4e95149b69ff9bcc0cd55771efeb25ffa3947293e69acd78d5ac328c684b
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Script.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Size1-Regular.woff2
+SHA-256: 6b47c40166b6dbe21a5dfca7718413f2147fd2399be1ba605d8ad39cedf25dfe
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Size1.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Size2-Regular.woff2
+SHA-256: d04c54219f9eaec6d4d4fd42dfb28785975a4794d6b2fc71e566b9cd6db842dd
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Size2.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Size3-Regular.woff2
+SHA-256: 73d591271b1604960cb10bb90fee021670af7297017e0e98480b332d11f51995
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Size3.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Size4-Regular.woff2
+SHA-256: a4af7d414440a1c1790825cfb700cf9cf43b0f2c4b04f0ebc523011ad9853ec0
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Size4.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/mathlive/KaTeX_Typewriter-Regular.woff2
+SHA-256: 71d517d67827787cfabdf186914cc3358eda539e37931941f2b2fd4a21f68c0b
+License: OFL-1.1
+Copyright (c) 2009-2010 Design Science, Inc.
+Copyright (c) 2014-2018 Khan Academy
+Copyright (c) 2009-2010, Design Science, Inc. (<www.mathjax.org>)
+Copyright (c) 2014-2018 Khan Academy (<www.khanacademy.org>),
+with Reserved Font Name KaTeX_Typewriter.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license available with a FAQ at:
+http://scripts.sil.org/OFL
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/NunitoSans.woff2
+SHA-256: 455142ddd21614a3fffa067c6804a5eb934ede13730a59016159163cc4d2a4ea
+License: OFL-1.1
+Copyright 2016 The Nunito Sans Project Authors (https://github.com/Fonthausen/NunitoSans)
+https://scripts.sil.org/OFL
+
+projects/common/assets/fonts/ptsans.woff2
+SHA-256: 95dc30d8b40e0bae97c0a41fa52d8d43ef7b66a7de4645c913aa994def62e5dd
+License: OFL-1.1
+Copyright © 2009 ParaType Ltd. All rights reserved.
+http://scripts.sil.org/OFL_web
+
+projects/common/assets/fonts/noto-sans-symbols-2-v13-symbols-regular.woff2
+SHA-256: a9a6cdbf751f93eb1a00d834c76c815b580dd696b98c6f4fd38e7c4a0ca9dba5
+License: OFL-1.1
+Copyright 2017 Google Inc. All Rights Reserved.
+http://scripts.sil.org/OFL
+
+projects/common/assets/fonts/dejavu-sans-super-subscripts.woff2
+SHA-256: 9d8eddcd30b59b332b9192c33c6c1e8ea234cba8d30ad09e727a7db5ae0d23e4
+License: Bitstream-Vera/Arev; DejaVu public-domain changes
+Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved.
+Copyright (c) 2006 by Tavmjong Bah. All Rights Reserved.
+DejaVu changes are in public domain
+
+Fonts are (c) Bitstream (see below). DejaVu changes are in public domain. Glyphs imported from Arev fonts are (c) Tavmjung Bah (see below)
+
+Bitstream Vera Fonts Copyright
+------------------------------
+
+Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved. Bitstream Vera is
+a trademark of Bitstream, Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of the fonts accompanying this license ("Fonts") and associated
+documentation files (the "Font Software"), to reproduce and distribute the
+Font Software, including without limitation the rights to use, copy, merge,
+publish, distribute, and/or sell copies of the Font Software, and to permit
+persons to whom the Font Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright and trademark notices and this permission notice shall
+be included in all copies of one or more of the Font Software typefaces.
+
+The Font Software may be modified, altered, or added to, and in particular
+the designs of glyphs or characters in the Fonts may be modified and
+additional glyphs or characters may be added to the Fonts, only if the fonts
+are renamed to names not containing either the words "Bitstream" or the word
+"Vera".
+
+This License becomes null and void to the extent applicable to Fonts or Font
+Software that has been modified and is distributed under the "Bitstream
+Vera" names.
+
+The Font Software may be sold as part of a larger software package but no
+copy of one or more of the Font Software typefaces may be sold by itself.
+
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT,
+TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL BITSTREAM OR THE GNOME
+FOUNDATION BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING
+ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE
+FONT SOFTWARE.
+
+Except as contained in this notice, the names of Gnome, the Gnome
+Foundation, and Bitstream Inc., shall not be used in advertising or
+otherwise to promote the sale, use or other dealings in this Font Software
+without prior written authorization from the Gnome Foundation or Bitstream
+Inc., respectively. For further information, contact: fonts at gnome dot
+org. 
+
+Arev Fonts Copyright
+------------------------------
+
+Copyright (c) 2006 by Tavmjong Bah. All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the fonts accompanying this license ("Fonts") and
+associated documentation files (the "Font Software"), to reproduce
+and distribute the modifications to the Bitstream Vera Font Software,
+including without limitation the rights to use, copy, merge, publish,
+distribute, and/or sell copies of the Font Software, and to permit
+persons to whom the Font Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright and trademark notices and this permission notice
+shall be included in all copies of one or more of the Font Software
+typefaces.
+
+The Font Software may be modified, altered, or added to, and in
+particular the designs of glyphs or characters in the Fonts may be
+modified and additional glyphs or characters may be added to the
+Fonts, only if the fonts are renamed to names not containing either
+the words "Tavmjong Bah" or the word "Arev".
+
+This License becomes null and void to the extent applicable to Fonts
+or Font Software that has been modified and is distributed under the 
+"Tavmjong Bah Arev" names.
+
+The Font Software may be sold as part of a larger software package but
+no copy of one or more of the Font Software typefaces may be sold by
+itself.
+
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL
+TAVMJONG BAH BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+
+Except as contained in this notice, the name of Tavmjong Bah shall not
+be used in advertising or otherwise to promote the sale, use or other
+dealings in this Font Software without prior written authorization
+from Tavmjong Bah. For further information, contact: tavmjong @ free
+. fr.
+http://dejavu.sourceforge.net/wiki/index.php/License
+
+projects/common/assets/fonts/material-icons.woff2
+SHA-256: ff253fe18544cbbce7aab407c64ac2bc1e7bd6b933b9e0ed8865e60d96cd9b39
+License: Apache-2.0
+Copyright 2018 Google, Inc. All Rights Reserved.
+

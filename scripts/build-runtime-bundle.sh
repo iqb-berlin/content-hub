@@ -17,6 +17,9 @@ mkdir -p "$(dirname "$OUTPUT")"
 cd "$ROOT_DIR"
 
 files=(
+  LICENSE
+  CONTRIBUTING.md
+  docs/compliance.md
   VERSION
   CHANGELOG.md
   RELEASE_CHECKLIST.md

@@ -52,6 +52,7 @@ jobs:
         with:
           fetch-depth: 0
       - run: ./scripts/check-release-metadata.sh
+      - run: python3 scripts/check-license-metadata.py
       - run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - run: ./scripts/test-deployment-scripts.sh
 
@@ -368,6 +369,11 @@ jobs:
           cache-dependency-path: |
             backend/package-lock.json
             frontend/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
       - run: npm ci
         working-directory: backend
       - run: npm audit --audit-level=critical
@@ -376,6 +382,14 @@ jobs:
         working-directory: frontend
       - run: npm audit --audit-level=critical
         working-directory: frontend
+      - name: Enforce dependency license policy
+        run: |
+          ./scripts/generate-dependency-sboms.sh dist/compliance
+          python3 scripts/check-dependency-licenses.py \
+            --policy compliance/dependency-license-policy.json \
+            dist/compliance/backend-runtime.cdx.json \
+            dist/compliance/frontend-runtime.cdx.json \
+            dist/compliance/keycloak-altcha-runtime.json
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
