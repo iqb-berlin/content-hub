@@ -141,11 +141,11 @@ test('index export, import and reset remain available without leaving the overvi
   await expect(page).toHaveURL(overview);
   let imported: unknown;
   let resets = 0;
-  await page.route(`**/api/ap/${apId}/index/import`, (route) => {
+  await page.route(new RegExp(`/api/ap/${apId}/index/import(?:\\?.*)?$`), (route) => {
     imported = route.request().postDataJSON();
     return route.fulfill({ json: imported });
   });
-  await page.route(`**/api/ap/${apId}/index`, (route) => {
+  await page.route(new RegExp(`/api/ap/${apId}/index(?:\\?.*)?$`), (route) => {
     if (route.request().method() === 'DELETE') {
       resets++;
       return route.fulfill({ json: {} });

@@ -197,6 +197,34 @@ describe("ApService", () => {
     });
   });
 
+  it("updates the German index name while preserving other languages", async () => {
+    apRepo.findOne.mockResolvedValue({
+      ...mockAp,
+      apIndex: {
+        ...mockAp.apIndex,
+        units: [{ id: "root-only", items: [{ id: "a" }] }],
+        scales: [{ id: "legacy-scale" }],
+        name: [
+          { lang: "en", value: "English name" },
+          { lang: "de", value: "Alter Name" },
+        ],
+      },
+    });
+    const updated = await service.update("ap-1", { name: "Neuer Name" });
+    expect(updated.apIndex.units).toEqual([
+      { id: "root-only", items: [{ id: "a" }] },
+    ]);
+    expect(updated.apIndex.scales).toEqual([{ id: "legacy-scale" }]);
+    expect(apRepo.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ lock: { mode: "pessimistic_write" } }),
+    );
+    expect(updated.name).toBe("Neuer Name");
+    expect(updated.apIndex.name).toEqual([
+      { lang: "en", value: "English name" },
+      { lang: "de", value: "Neuer Name" },
+    ]);
+  });
+
   describe("delete", () => {
     it("should delete existing AP", async () => {
       apRepo.findOne.mockResolvedValue(mockAp);

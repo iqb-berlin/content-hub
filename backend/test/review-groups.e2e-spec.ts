@@ -1355,6 +1355,7 @@ describe("Review visibility, groups and synchronization API", () => {
         await db.getRepository(ApFile).save({
           apId: ap.id,
           originalName,
+          relativePath: originalName,
           filePath,
           fileSize: Buffer.byteLength(content),
         });
@@ -1502,6 +1503,7 @@ describe("Review visibility, groups and synchronization API", () => {
         await files.save({
           apId,
           originalName,
+          relativePath: originalName,
           filePath,
           fileSize: Buffer.byteLength(content),
         });
@@ -1536,6 +1538,7 @@ describe("Review visibility, groups and synchronization API", () => {
       await files.save({
         apId,
         originalName: preferred.originalName,
+        relativePath: preferred.relativePath,
         filePath: preferred.filePath,
         fileSize: Buffer.byteLength(preferredXml),
       });
@@ -1640,6 +1643,7 @@ describe("Review visibility, groups and synchronization API", () => {
         await files.save({
           apId,
           originalName,
+          relativePath: originalName,
           filePath,
           fileSize: Buffer.byteLength(content),
         });
@@ -1658,6 +1662,7 @@ describe("Review visibility, groups and synchronization API", () => {
       await files.save({
         apId,
         originalName: preferred.originalName,
+        relativePath: preferred.relativePath,
         filePath: preferred.filePath,
         fileSize: preferred.fileSize,
       });
@@ -1740,6 +1745,7 @@ describe("Review visibility, groups and synchronization API", () => {
         await db.getRepository(ApFile).save({
           apId,
           originalName: "historical.vomd",
+          relativePath: "historical.vomd",
           filePath: oldPath,
           fileSize: Buffer.byteLength(oldContent),
         });
@@ -1794,6 +1800,7 @@ describe("Review visibility, groups and synchronization API", () => {
       await db.getRepository(ApFile).save({
         apId,
         originalName: "old.vomd",
+        relativePath: "old.vomd",
         filePath: oldFile,
         fileSize: Buffer.byteLength(oldContent),
       });
@@ -2104,6 +2111,7 @@ describe("Review visibility, groups and synchronization API", () => {
           await limited.getRepository(ApFile).save({
             apId: ap.id,
             originalName,
+            relativePath: originalName,
             filePath,
             fileSize: content.length,
           });

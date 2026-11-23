@@ -268,6 +268,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
       const file = await db.getRepository(ApFile).save({
         apId,
         originalName: name,
+        relativePath: name,
         filePath,
         fileType: "text/plain",
         fileSize: 10,
@@ -310,6 +311,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
         await files.save({
           apId,
           originalName,
+          relativePath: originalName,
           filePath,
           fileSize: Buffer.byteLength(content),
         });
@@ -469,6 +471,7 @@ describe("Published reviewer column boundary (HTTP)", () => {
     const metadata = await files.save({
       apId,
       originalName: "current.vomd.json",
+      relativePath: "current.vomd.json",
       filePath,
       fileSize: 100,
     });

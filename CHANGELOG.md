@@ -4,6 +4,31 @@ All notable changes to Content Hub are documented in this file. Releases use
 [Semantic Versioning](https://semver.org/); release candidates add an
 `-rc.N` suffix without changing the canonical version in `VERSION`.
 
+## [Unreleased]
+
+### Changes
+
+- Validate and manage AP indexes against the upstream 0.6 development schema,
+  including base/derived scales, scoped references and explicit migration previews.
+
+### Breaking changes
+
+- Index edits require the current revision and a schema-conformant index. Published packages must be reopened before editing.
+
+### Database migrations
+
+Classification: `manual`
+
+- `1785000000000-AcpIndex05Compliance` adds validation state and relative file paths.
+- `1795200000000-PreserveAcpSnapshotMetadata` preserves package and file metadata for restores.
+
+### Rollback
+
+- Version 0.8.0 omits the required relative path when writing uploads and
+  snapshot files. Returning to 0.8.0 requires restoring the matching
+  pre-upgrade database and upload backup. See the rollback and restore
+  procedure in [the release guide](docs/operations/releases.md#rollback-and-restore).
+
 ## [0.8.0] - 2026-11-23
 
 ### Changes

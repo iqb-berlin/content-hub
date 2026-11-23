@@ -125,6 +125,13 @@ import { BookletSelectionComponent } from '../../shared/components/booklet-selec
       <section class="card overview-section" aria-labelledby="management-heading">
         <h2 id="management-heading">Verwaltung</h2>
         <div class="grid management-grid">
+          <a [routerLink]="['/manage', ap.id, 'index']" class="card link-card">
+            <span class="tile-icon" aria-hidden="true">🧭</span>
+            <div>
+              <h3>AP-Index 0.6</h3>
+              <p>Validieren, migrieren, erzeugen und veröffentlichen</p>
+            </div>
+          </a>
           <a [routerLink]="['/manage', ap.id, 'files']" class="card link-card">
             <span class="tile-icon" aria-hidden="true">📁</span>
             <div>
@@ -772,11 +779,12 @@ export class DashboardComponent implements OnInit {
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result as string);
-        this.api.importApIndex(this.ap!.id, data).subscribe({
+        this.api.importApIndex(this.ap!.id, data, this.ap!.updatedAt).subscribe({
           next: (idx) => {
             this.ap!.apIndex = idx;
             this.error = '';
             this.indexSuccessMessage = 'AP-Index wurde importiert.';
+            this.refreshAp();
             this.reloadContent();
           },
           error: () => (this.error = 'AP-Index konnte nicht importiert werden.'),
@@ -805,12 +813,13 @@ export class DashboardComponent implements OnInit {
     this.deleteIndexError = '';
     this.indexSuccessMessage = '';
 
-    this.api.deleteApIndex(this.ap.id).subscribe({
+    this.api.deleteApIndex(this.ap.id, this.ap.updatedAt).subscribe({
       next: (idx) => {
         this.ap!.apIndex = idx;
         this.indexSuccessMessage = 'AP-Index wurde auf den Standardzustand zurückgesetzt.';
         this.deletingIndex = false;
         this.showDeleteIndexDialog = false;
+        this.refreshAp();
         this.reloadContent();
       },
       error: (err) => {
@@ -818,6 +827,11 @@ export class DashboardComponent implements OnInit {
         this.deleteIndexError = err?.error?.message || 'Fehler beim Zurücksetzen des AP-Index.';
       },
     });
+  }
+
+  private refreshAp() {
+    if (!this.ap) return;
+    this.api.getAp(this.ap.id).subscribe((ap) => (this.ap = ap));
   }
 
   assignRole() {

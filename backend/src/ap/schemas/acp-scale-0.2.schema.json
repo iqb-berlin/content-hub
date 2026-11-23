@@ -1,0 +1,362 @@
+{
+  "$id": "acp-scale@0.2",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Assessment Content Package: Scale",
+  "description": "Specification for assessment content package scale.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "description": "Identifier referred by other scales and assessment output.",
+      "type": "string"
+    },
+    "name": {
+      "$ref": "#/$defs/languageTaggedText"
+    },
+    "description": {
+      "$ref": "#/$defs/languageTaggedText"
+    },
+    "scaleType": {
+      "type": "string",
+      "enum": [
+        "BASE",
+        "DERIVED",
+        "AGGREGATED"
+      ]
+    },
+    "typeParameters": {
+      "description": "Every type needs a different set of parameters.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/parametersBASE"
+        },
+        {
+          "$ref": "#/$defs/parametersDERIVED"
+        },
+        {
+          "$ref": "#/$defs/parametersAGGREGATED"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "scaleType",
+    "typeParameters"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "languageTaggedText": {
+      "description": "Language tagged text",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lang": {
+            "description": "ISO-language code",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z]{2}$"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lang",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "itemValueType": {
+      "type": "string",
+      "enum": [
+        "FULL_CREDIT",
+        "NO_CREDIT",
+        "MISSING"
+      ]
+    },
+    "methodParametersScoreRatio": {
+      "description": "Parameters for the processing method SCORE_RATIO.",
+      "type": "object",
+      "properties": {
+        "maxValue": {
+          "description": "If methodParameters is not given, the number of items will be taken as maxValue",
+          "type": "number"
+        }
+      },
+      "required": [
+        "maxValue"
+      ],
+      "additionalProperties": false
+    },
+    "methodParametersCodeCount": {
+      "description": "Parameters for the processing method CODE_COUNT.",
+      "type": "object",
+      "properties": {
+        "codeValue": {
+          "description": "Value of code to be counted",
+          "type": "number"
+        }
+      },
+      "required": [
+        "codeValue"
+      ],
+      "additionalProperties": false
+    },
+    "itemInScale": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Identifier referring to unique identifier of item in unit list.",
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "description": "List of item values relevant for processing",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "enum": [
+                  "LOGIT_FULL_CREDIT",
+                  "LOGIT_PARTIAL_CREDIT_1",
+                  "LOGIT_PARTIAL_CREDIT_2",
+                  "LOGIT_PARTIAL_CREDIT_3"
+                ]
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "weight": {
+          "type": "number",
+          "default": 1
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "parametersBASE": {
+      "description": "These parameters will be used for scaleType BASE",
+      "type": "object",
+      "properties": {
+        "method": {
+          "description": "Way how to process the item values.",
+          "type": "string",
+          "enum": [
+            "SCORE_SUM",
+            "SCORE_RATIO",
+            "SCORE_MEAN",
+            "SCORE_MEDIAN",
+            "WLE",
+            "CODE_COUNT"
+          ]
+        },
+        "methodParameters": {
+          "description": "Depending on the method, different parameters may specify the processing.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/methodParametersScoreRatio"
+            },
+            {
+              "$ref": "#/$defs/methodParametersCodeCount"
+            }
+          ]
+        },
+        "items": {
+          "description": "List of all items providing it's value to this scale",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/itemInScale"
+          },
+          "minItems": 1
+        },
+        "minItemNumber": {
+          "description": "Minimum number of items in responses for this scale to be reported; set '0' for unlimited",
+          "type": "number",
+          "default": 0
+        }
+      },
+      "required": [
+        "method",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "parametersAGGREGATED": {
+      "description": "These parameters will be used for scaleType AGGREGATED",
+      "type": "object",
+      "properties": {
+        "method": {
+          "description": "Way how to process the item values.",
+          "type": "string",
+          "enum": [
+            "SUM",
+            "MEAN"
+          ],
+          "default": "SUM"
+        },
+        "sources": {
+          "description": "List of all scales providing it's value to this scale",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "Id of the scale providing the value for this aggregation.",
+                "type": "string"
+              },
+              "weight": {
+                "description": "Factor to adapt the scale value",
+                "type": "number",
+                "default": 1
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 2
+        }
+      },
+      "required": [
+        "sources"
+      ],
+      "additionalProperties": false
+    },
+    "parametersDERIVED": {
+      "description": "These parameters will be used for scaleType DERIVED",
+      "type": "object",
+      "properties": {
+        "source": {
+          "description": "Id of the scale providing the value for this derived scale.",
+          "type": "string"
+        },
+        "mappings": {
+          "description": "Applies the method to the value. The first match will go.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "method": {
+                "type": "string",
+                "description": "Condition for evaluation",
+                "enum": [
+                  "EQUALS",
+                  "LESS_THAN",
+                  "MORE_THAN",
+                  "MAX",
+                  "MIN"
+                ]
+              },
+              "parameters": {
+                "type": "array",
+                "description": "Depending on the method, additional parameter(s) is needed.",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              },
+              "newValue": {
+                "description": "Value as outcome of this scale",
+                "type": "number"
+              },
+              "valueLabel": {
+                "$ref": "#/$defs/languageTaggedText"
+              },
+              "valueDescription": {
+                "$ref": "#/$defs/languageTaggedText"
+              }
+            },
+            "required": [
+              "method",
+              "parameters",
+              "newValue"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "elseValue": {
+          "description": "Value if no mapping matches",
+          "type": "number",
+          "default": 0
+        },
+        "elseValueLabel": {
+          "$ref": "#/$defs/languageTaggedText"
+        },
+        "elseValueDescription": {
+          "$ref": "#/$defs/languageTaggedText"
+        },
+        "relatedVocabularies": {
+          "description": "Refers to public vocabularies to map the proficiency level to well known concepts",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "description": "URL to access the related vocabulary",
+                "type": "string"
+              },
+              "name": {
+                "description": "Shorthand title or name to understand the relation quickly",
+                "type": "string"
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "relationShip": {
+                      "type": "string",
+                      "enum": [
+                        "SAME_AS",
+                        "ALIKE"
+                      ],
+                      "default": "SAME_AS"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "values",
+              "url"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "source",
+        "mappings"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -86,6 +86,13 @@ export const routes: Routes = [
           import('./ap-manager/files/files.component').then((m) => m.FilesComponent),
       },
       {
+        path: 'index',
+        loadComponent: () =>
+          import('./ap-manager/index/ap-index-manager.component').then(
+            (m) => m.ApIndexManagerComponent,
+          ),
+      },
+      {
         path: 'snapshots',
         loadComponent: () =>
           import('./ap-manager/snapshots/snapshots.component').then((m) => m.SnapshotsComponent),
@@ -124,6 +131,11 @@ export const routes: Routes = [
       },
       {
         path: 'unit/:unitId',
+        loadComponent: () =>
+          import('./views/unit-view/unit-view.component').then((m) => m.UnitViewComponent),
+      },
+      {
+        path: 'part/:partId/unit/:unitId',
         loadComponent: () =>
           import('./views/unit-view/unit-view.component').then((m) => m.UnitViewComponent),
       },

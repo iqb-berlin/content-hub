@@ -25,14 +25,20 @@ import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/bre
           </tr>
         </thead>
         <tbody>
-          @for (unit of units; track unit.id) {
+          @for (unit of units; track (unit.partId || 'legacy') + '/' + unit.id) {
             <tr>
               <td>
                 <code>{{ unit.id }}</code>
               </td>
               <td>{{ unit.name }}</td>
               <td>
-                <a [routerLink]="['/view', apId, 'unit', unit.id]" class="btn btn-sm btn-primary"
+                <a
+                  [routerLink]="
+                    unit.partId
+                      ? ['/view', apId, 'part', unit.partId, 'unit', unit.id]
+                      : ['/view', apId, 'unit', unit.id]
+                  "
+                  class="btn btn-sm btn-primary"
                   >Ansehen</a
                 >
               </td>

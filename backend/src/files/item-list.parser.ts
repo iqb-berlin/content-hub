@@ -2,7 +2,9 @@ import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import * as fs from "fs/promises";
 import { createHash } from "crypto";
 import { performance } from "perf_hooks";
+import * as path from "path";
 import type { ApFile } from "../database/entities";
+import { normalizePartId } from "./relative-path";
 import {
   buildItemRowKey,
   parseItemRowKeyParts,
@@ -22,7 +24,6 @@ import {
   extractLabelText,
   extractValueText,
   extractVomdTimeSeconds,
-  findReferencedMetadataFile,
   isUnitXmlFilename,
   isValidVomdItem,
   parseUnitXml,
@@ -167,7 +168,11 @@ export class ItemListParser {
           cacheable = false;
           continue;
         }
-        const previous = preferredUnits.get(unitId);
+        const part = this.partFromUnitPath(
+          file.relativePath || file.originalName,
+        );
+        const key = part ? `${part}/${unitId}` : unitId;
+        const previous = preferredUnits.get(key);
         if (
           !previous ||
           compareUnitXmlFilenames(
@@ -176,7 +181,7 @@ export class ItemListParser {
             previous.file.originalName,
           ) < 0
         ) {
-          preferredUnits.set(unitId, { file, parsed });
+          preferredUnits.set(key, { file, parsed });
           if (previous) alternateUnits.push(previous.parsed);
         } else {
           alternateUnits.push(parsed);
@@ -191,14 +196,20 @@ export class ItemListParser {
         // Uploading missing metadata or a missing scheme changes the source
         // signature. A failed read of a registered file needs a retry.
         // Review can match a coding scheme to items from the AP index without VOMD.
+        const partId = this.partFromUnitPath(
+          xmlFile.relativePath || xmlFile.originalName,
+        );
+        const unitCacheKey = partId
+          ? `${partId}/${parsed.unitId}`
+          : parsed.unitId;
         if (parsed.codingSchemeRef) {
-          const vocsFile = allFiles.find(
-            (file) => file.originalName === parsed.codingSchemeRef,
-          );
+          const vocsFile = this.findReferencedFile(allFiles, xmlFile, [
+            parsed.codingSchemeRef,
+          ]);
           if (vocsFile) {
             try {
               const vocsContent = await fs.readFile(vocsFile.filePath, "utf-8");
-              codingSchemes[parsed.unitId] = JSON.parse(vocsContent);
+              codingSchemes[unitCacheKey] = JSON.parse(vocsContent);
             } catch {
               cacheable = false;
               this.logger.warn(
@@ -210,7 +221,10 @@ export class ItemListParser {
 
         const vomdFileName = parsed.metadataRef;
         if (!vomdFileName) continue;
-        const vomdFile = findReferencedMetadataFile(allFiles, vomdFileName);
+        const vomdFile = this.findReferencedFile(allFiles, xmlFile, [
+          vomdFileName,
+          `${vomdFileName}.json`,
+        ]);
         if (!vomdFile) {
           if (strictSourceReads) {
             throw new ConflictException(
@@ -235,7 +249,7 @@ export class ItemListParser {
 
         if (vomdData.unitProfiles.length > 0) {
           const entries = vomdData.unitProfiles[0]?.entries;
-          unitMetadata[parsed.unitId] = Array.isArray(entries) ? entries : [];
+          unitMetadata[unitCacheKey] = Array.isArray(entries) ? entries : [];
         }
         const vomdStimulusTimeSeconds = extractVomdTimeSeconds(
           vomdData.unitProfiles,
@@ -247,9 +261,9 @@ export class ItemListParser {
           normalizedFeatureConfig.showStudioItemComments === true &&
           parsed.commentsRef
         ) {
-          const commentsFile = allFiles.find(
-            (file) => file.originalName === parsed.commentsRef,
-          );
+          const commentsFile = this.findReferencedFile(allFiles, xmlFile, [
+            parsed.commentsRef,
+          ]);
           if (commentsFile) {
             try {
               studioComments = parseStudioItemComments(
@@ -299,11 +313,11 @@ export class ItemListParser {
           ).trim();
           if (variableReadOnlyId) {
             const codingVariables = Array.isArray(
-              codingSchemes[parsed.unitId]?.variableCodings,
+              codingSchemes[unitCacheKey]?.variableCodings,
             )
-              ? codingSchemes[parsed.unitId].variableCodings
-              : Array.isArray(codingSchemes[parsed.unitId])
-                ? codingSchemes[parsed.unitId]
+              ? codingSchemes[unitCacheKey].variableCodings
+              : Array.isArray(codingSchemes[unitCacheKey])
+                ? codingSchemes[unitCacheKey]
                 : [];
             const exactVariables = codingVariables.filter(
               (variable: any) =>
@@ -434,6 +448,9 @@ export class ItemListParser {
                 ? subIdLabels[explorerRow.subId] || explorerRow.subId
                 : undefined,
               unitId: parsed.unitId,
+              partId: this.partFromUnitPath(
+                xmlFile.relativePath || xmlFile.originalName,
+              ),
               unitLabel: parsed.unitLabel,
               description: item.description || "",
               variableId,
@@ -470,7 +487,9 @@ export class ItemListParser {
 
     const meanTaskDifficultyByUnit = calculateMeanTaskDifficultyByUnit(items);
     for (const item of items) {
-      item.meanTaskDifficulty = meanTaskDifficultyByUnit.get(item.unitId);
+      item.meanTaskDifficulty = meanTaskDifficultyByUnit.get(
+        item.partId ? `${item.partId}/${item.unitId}` : item.unitId,
+      );
     }
     const columns: MetadataColumn[] = Array.from(columnMap.entries()).map(
       ([id, label]) => ({ id, label }),
@@ -495,6 +514,43 @@ export class ItemListParser {
       cacheable,
       unitSources: { unitsWithMetadata, alternateUnits },
     };
+  }
+
+  private findReferencedFile(
+    allFiles: ApFile[],
+    source: ApFile,
+    references: string[],
+  ): ApFile | undefined {
+    const sourceDir = path.posix.dirname(
+      source.relativePath || source.originalName,
+    );
+    for (const reference of references) {
+      const localPath = path.posix.normalize(
+        path.posix.join(sourceDir === "." ? "" : sourceDir, reference),
+      );
+      const local = allFiles.find(
+        (file) => (file.relativePath || file.originalName) === localPath,
+      );
+      if (local) return local;
+    }
+    const basenames = new Set(
+      references.map((entry) => path.posix.basename(entry)),
+    );
+    const matches = allFiles.filter((file) =>
+      basenames.has(
+        path.posix.basename(file.relativePath || file.originalName),
+      ),
+    );
+    return matches.length === 1 ? matches[0] : undefined;
+  }
+
+  private partFromUnitPath(relativePath: string): string | undefined {
+    const segments = relativePath.split("/");
+    const unitsIndex = segments.findIndex(
+      (segment) => segment.toLowerCase() === "units",
+    );
+    const part = unitsIndex >= 0 ? segments[unitsIndex + 1] : undefined;
+    return part ? normalizePartId(part) : undefined;
   }
 
   private buildCacheKey(apId: string, context: ItemListParseContext): string {

@@ -22,7 +22,13 @@ import {
   ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
-import { IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+} from "class-validator";
 import { Response } from "express";
 import { FilesInterceptor } from "@nestjs/platform-express";
 import { ApResponseEnvelopes } from "../common/ap-contract.metadata";
@@ -68,7 +74,7 @@ class ServerImportApDto {
     description: "Optimistic concurrency check (ISO timestamp)",
   })
   @IsOptional()
-  @IsString()
+  @IsDateString()
   expectedUpdatedAt?: string;
 }
 
@@ -81,12 +87,11 @@ class UpdateIndexDto {
   @IsObject()
   apIndex!: Record<string, any>;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: "Optimistic concurrency check (ISO timestamp)",
   })
-  @IsOptional()
-  @IsString()
-  expectedUpdatedAt?: string;
+  @IsDateString()
+  expectedUpdatedAt!: string;
 }
 
 class ReplaceCodingSchemeDto {

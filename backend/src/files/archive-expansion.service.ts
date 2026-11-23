@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import * as path from "path";
+import { normalizeRelativePath } from "./relative-path";
 
 @Injectable()
 export class ArchiveExpansionService {
@@ -65,13 +66,17 @@ export class ArchiveExpansionService {
     for (const entry of archiveEntries as Array<{
       dir?: boolean;
       name?: string;
+      unsafeOriginalName?: string;
     }>) {
       if (entry?.dir) {
         continue;
       }
 
-      const originalEntryName = String(entry?.name || "");
-      const extractedName = this.getArchiveEntryFileName(originalEntryName);
+      const originalEntryName = String(
+        entry?.unsafeOriginalName || entry?.name || "",
+      );
+      const relativePath = normalizeRelativePath(originalEntryName);
+      const extractedName = this.getArchiveEntryFileName(relativePath);
       if (
         !extractedName ||
         this.shouldSkipArchiveEntry(originalEntryName, extractedName)
@@ -79,7 +84,7 @@ export class ArchiveExpansionService {
         continue;
       }
 
-      const zipEntry = archive.file(originalEntryName);
+      const zipEntry = archive.file(String(entry?.name || originalEntryName));
       if (!zipEntry) {
         continue;
       }
@@ -91,7 +96,8 @@ export class ArchiveExpansionService {
         mimetype: this.inferMimeTypeFromFileName(extractedName),
         size: buffer.length,
         buffer,
-      });
+        relativePath,
+      } as Express.Multer.File & { relativePath: string });
     }
 
     return extractedFiles;

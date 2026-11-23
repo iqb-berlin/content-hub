@@ -10,10 +10,14 @@ import {
   ApCredential,
   AppSettings,
   User,
+  ApFile,
+  ApExternalResourceCache,
 } from "../database/entities";
 import { AuthModule } from "../auth/auth.module";
 import { ItemExplorerModule } from "../item-explorer/item-explorer.module";
 import { AdminModule } from "../admin/admin.module";
+import { SnapshotsModule } from "../snapshots/snapshots.module";
+import { ApIndexService } from "./ap-index.service";
 
 @Module({
   imports: [
@@ -24,13 +28,16 @@ import { AdminModule } from "../admin/admin.module";
       ApCredential,
       AppSettings,
       User,
+      ApFile,
+      ApExternalResourceCache,
     ]),
     AuthModule,
     ItemExplorerModule,
     AdminModule,
+    SnapshotsModule,
   ],
   controllers: [ApController],
-  providers: [ApService, ApCredentialsService],
-  exports: [ApService],
+  providers: [ApService, ApIndexService, ApCredentialsService],
+  exports: [ApService, ApIndexService],
 })
 export class ApModule {}

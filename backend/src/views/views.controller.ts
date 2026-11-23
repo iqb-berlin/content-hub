@@ -369,7 +369,7 @@ export class ViewsController {
     return data?.units || [];
   }
 
-  @Get("ap/:apId/units/:unitId")
+  @Get(["ap/:apId/units/:unitId", "ap/:apId/parts/:partId/units/:unitId"])
   @UseGuards(ApAccessGuard)
   @ApiOperation({ summary: "Get unit view data" })
   @ApResponseEnvelopes("dependencies")
@@ -377,12 +377,17 @@ export class ViewsController {
     @UuidParam("apId") apId: string,
     @Param("unitId") unitId: string,
     @Request() req: any,
+    @Param("partId") partId?: string,
   ) {
     if (!(await this.canUseFeature(apId, req, "enableUnitView", true))) {
       throw new ForbiddenException("Unit view is not enabled for this AP");
     }
 
-    return this.viewsService.getUnitViewData(apId, unitId);
+    return this.viewsService.getUnitViewData(
+      apId,
+      unitId,
+      ...(partId ? [partId] : []),
+    );
   }
 
   @Get("ap/:apId/items")

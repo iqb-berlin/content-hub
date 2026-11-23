@@ -54,6 +54,9 @@ import {
   ItemCollectionRowsMutationResult,
   ItemExplorerPerspective,
   SimpleItemListEntry,
+  ApIndexValidationReport,
+  ApIndexMigrationPreview,
+  ApIndexGenerationPreview,
   BuildVersion,
 } from '../models/api.models';
 
@@ -191,14 +194,70 @@ export class ApiService {
   getApIndex(id: string): Observable<any> {
     return this.http.get(`${this.API}/ap/${id}/index`);
   }
-  updateApIndex(id: string, data: any): Observable<any> {
-    return this.http.put(`${this.API}/ap/${id}/index`, data);
+  updateApIndex(id: string, data: any, expectedUpdatedAt: string): Observable<any> {
+    return this.http.put(
+      `${this.API}/ap/${id}/index?expectedUpdatedAt=${encodeURIComponent(expectedUpdatedAt)}`,
+      data,
+    );
   }
-  importApIndex(id: string, data: any): Observable<any> {
-    return this.http.post(`${this.API}/ap/${id}/index/import`, data);
+  importApIndex(id: string, data: any, expectedUpdatedAt: string): Observable<any> {
+    return this.http.post(
+      `${this.API}/ap/${id}/index/import?expectedUpdatedAt=${encodeURIComponent(expectedUpdatedAt)}`,
+      data,
+    );
   }
-  deleteApIndex(id: string): Observable<any> {
-    return this.http.delete(`${this.API}/ap/${id}/index`);
+  deleteApIndex(id: string, expectedUpdatedAt: string): Observable<any> {
+    return this.http.delete(
+      `${this.API}/ap/${id}/index?expectedUpdatedAt=${encodeURIComponent(expectedUpdatedAt)}`,
+    );
+  }
+  validateApIndex(id: string): Observable<ApIndexValidationReport> {
+    return this.http.post<ApIndexValidationReport>(`${this.API}/ap/${id}/index/validate`, {});
+  }
+  previewApIndexMigration(id: string): Observable<ApIndexMigrationPreview> {
+    return this.http.post<ApIndexMigrationPreview>(
+      `${this.API}/ap/${id}/index/migration-preview`,
+      {},
+    );
+  }
+  migrateApIndex(id: string, expectedUpdatedAt: string): Observable<Ap> {
+    return this.http.post<Ap>(`${this.API}/ap/${id}/index/migrate`, { expectedUpdatedAt });
+  }
+  publishApIndex(
+    id: string,
+    status: 'RELEASED_PUBLIC' | 'RELEASED_CONFIDENTIAL',
+    expectedUpdatedAt: string,
+  ): Observable<Ap> {
+    return this.http.post<Ap>(`${this.API}/ap/${id}/index/publish`, {
+      status,
+      expectedUpdatedAt,
+    });
+  }
+  reopenApIndex(id: string, expectedUpdatedAt: string): Observable<Ap> {
+    return this.http.post<Ap>(`${this.API}/ap/${id}/index/reopen`, { expectedUpdatedAt });
+  }
+  previewIndexGeneration(
+    apId: string,
+    options: { partAssignments?: Record<string, string>; omittedUnitPaths?: string[] } = {},
+  ): Observable<ApIndexGenerationPreview> {
+    return this.http.post<ApIndexGenerationPreview>(
+      `${this.API}/files/${apId}/index-generation/preview`,
+      options,
+    );
+  }
+  applyIndexGeneration(
+    apId: string,
+    input: {
+      sourceRevision: string;
+      expectedUpdatedAt: string;
+      partAssignments?: Record<string, string>;
+      omittedUnitPaths?: string[];
+    },
+  ): Observable<{ index: Record<string, any>; validation: ApIndexValidationReport }> {
+    return this.http.post<{ index: Record<string, any>; validation: ApIndexValidationReport }>(
+      `${this.API}/files/${apId}/index-generation/apply`,
+      input,
+    );
   }
 
   // AP Roles
@@ -465,10 +524,13 @@ export class ApiService {
   getFileUnitView(
     apId: string,
     unitId: string,
-    options?: { perspective?: ItemExplorerPerspective },
+    options?: { perspective?: ItemExplorerPerspective; partId?: string },
   ): Observable<any> {
     const query = this.buildPerspectiveQuery(options?.perspective);
-    return this.http.get(`${this.API}/ap/${apId}/files/unit-view/${unitId}${query}`);
+    const route = options?.partId
+      ? `${this.API}/ap/${apId}/files/unit-view/${encodeURIComponent(options.partId)}/${encodeURIComponent(unitId)}`
+      : `${this.API}/ap/${apId}/files/unit-view/${encodeURIComponent(unitId)}`;
+    return this.http.get(`${route}${query}`);
   }
 
   getIndexExportUrl(id: string): string {
@@ -656,8 +718,11 @@ export class ApiService {
   getViewUnits(apId: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.API}/view/ap/${apId}/units`);
   }
-  getViewUnit(apId: string, unitId: string): Observable<UnitViewData> {
-    return this.http.get<UnitViewData>(`${this.API}/view/ap/${apId}/units/${unitId}`);
+  getViewUnit(apId: string, unitId: string, partId?: string): Observable<UnitViewData> {
+    const url = partId
+      ? `${this.API}/view/ap/${apId}/parts/${encodeURIComponent(partId)}/units/${encodeURIComponent(unitId)}`
+      : `${this.API}/view/ap/${apId}/units/${encodeURIComponent(unitId)}`;
+    return this.http.get<UnitViewData>(url);
   }
   getViewItems(apId: string): Observable<SimpleItemListEntry[]> {
     return this.http.get<SimpleItemListEntry[]>(`${this.API}/view/ap/${apId}/items`);

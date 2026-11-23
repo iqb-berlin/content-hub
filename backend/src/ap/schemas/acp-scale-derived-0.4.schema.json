@@ -1,0 +1,141 @@
+{
+  "$id": "acp-scale-derived@0.4",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Assessment Content Package: Derived Scale",
+  "description": "Specification for assessment content package scale: Derived.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "description": "Identifier referred by other scales and assessment output.",
+      "type": "string",
+      "examples": [
+        "bs2004.ma.9.global",
+        "bs2024.ma.9.3",
+        "fcr.de.reading"
+      ]
+    },
+    "name": {
+      "$ref": "#/$defs/languageTaggedText"
+    },
+    "description": {
+      "$ref": "#/$defs/languageTaggedText"
+    },
+    "sources": {
+      "description": "List of all scales providing it's value to this scale",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "method": {
+      "description": "Way how to process the scale values.",
+      "type": "string",
+      "enum": [
+        "SUM",
+        "MEAN",
+        "MAP"
+      ],
+      "default": "MAP"
+    },
+    "publicVocabularyUrl": {
+      "description": "Url of a public vocabulary matching this scale.",
+      "type": "string"
+    },
+    "mappings": {
+      "description": "Applies the method MAP to the value. The first match will go.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "description": "Condition for evaluation",
+            "enum": [
+              "EQUALS",
+              "LESS_THAN",
+              "MORE_THAN",
+              "MAX",
+              "MIN"
+            ]
+          },
+          "parameters": {
+            "type": "array",
+            "description": "Depending on the method, additional parameter(s) is needed.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "newValue": {
+            "$ref": "#/$defs/newValue"
+          }
+        },
+        "required": [
+          "method",
+          "parameters",
+          "newValue"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "mappingsElse": {
+      "$ref": "#/$defs/newValue"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "sources"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "languageTaggedText": {
+      "description": "Language tagged text",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lang": {
+            "description": "ISO-language code",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z]{2}$"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lang",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "newValue": {
+      "description": "Properties for the new value for scaleType DERIVED",
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "Value as outcome of this scale",
+          "type": "number"
+        },
+        "label": {
+          "$ref": "#/$defs/languageTaggedText"
+        },
+        "description": {
+          "$ref": "#/$defs/languageTaggedText"
+        },
+        "publicVocabularyEntry": {
+          "description": "Url-suffix for a specific entry of a public vocabulary.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

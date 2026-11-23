@@ -629,32 +629,40 @@ describe('ApiService', () => {
       const indexData = { entries: [{ id: '1' }] };
       httpClientMock.put.mockReturnValue(of(indexData));
 
-      service.updateApIndex('ap1', indexData).subscribe((result) => {
+      service.updateApIndex('ap1', indexData, '2026-01-01T00:00:00.000Z').subscribe((result) => {
         expect(result).toEqual(indexData);
       });
 
-      expect(httpClientMock.put).toHaveBeenCalledWith('/api/ap/ap1/index', indexData);
+      expect(httpClientMock.put).toHaveBeenCalledWith(
+        '/api/ap/ap1/index?expectedUpdatedAt=2026-01-01T00%3A00%3A00.000Z',
+        indexData,
+      );
     });
 
     it('should import AP index', () => {
       const importData = { entries: [{ id: '1' }] };
       httpClientMock.post.mockReturnValue(of(importData));
 
-      service.importApIndex('ap1', importData).subscribe((result) => {
+      service.importApIndex('ap1', importData, '2026-01-01T00:00:00.000Z').subscribe((result) => {
         expect(result).toEqual(importData);
       });
 
-      expect(httpClientMock.post).toHaveBeenCalledWith('/api/ap/ap1/index/import', importData);
+      expect(httpClientMock.post).toHaveBeenCalledWith(
+        '/api/ap/ap1/index/import?expectedUpdatedAt=2026-01-01T00%3A00%3A00.000Z',
+        importData,
+      );
     });
 
     it('should delete AP index', () => {
       httpClientMock.delete.mockReturnValue(of({}));
 
-      service.deleteApIndex('ap1').subscribe((result) => {
+      service.deleteApIndex('ap1', '2026-01-01T00:00:00.000Z').subscribe((result) => {
         expect(result).toEqual({});
       });
 
-      expect(httpClientMock.delete).toHaveBeenCalledWith('/api/ap/ap1/index');
+      expect(httpClientMock.delete).toHaveBeenCalledWith(
+        '/api/ap/ap1/index?expectedUpdatedAt=2026-01-01T00%3A00%3A00.000Z',
+      );
     });
 
     it('should build index export URL with auth token', () => {

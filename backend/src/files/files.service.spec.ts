@@ -98,6 +98,7 @@ describe("FilesService", () => {
           ],
         },
       }),
+      save: jest.fn().mockImplementation(async (entity) => entity),
     };
     accessConfigRepo = {
       findOne: jest.fn().mockResolvedValue({ featureConfig: {} }),
@@ -271,6 +272,39 @@ describe("FilesService", () => {
       expect(fs.mkdir).not.toHaveBeenCalled();
       expect(fs.writeFile).not.toHaveBeenCalled();
       expect(repo.save).not.toHaveBeenCalled();
+    });
+
+    it("should report a path conflict for a direct upload", async () => {
+      const incoming = {
+        originalname: "test.json",
+        mimetype: "application/json",
+        size: 2,
+        buffer: Buffer.from("{}"),
+      } as Express.Multer.File;
+
+      await expect(service.upload(apId, incoming)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(repo.save).not.toHaveBeenCalled();
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it("should require reopening before uploading to a released AP", async () => {
+      apRepo.findOne.mockResolvedValue({
+        id: apId,
+        apIndex: { status: "RELEASED_PUBLIC" },
+      });
+      const incoming = {
+        originalname: "new.json",
+        mimetype: "application/json",
+        size: 2,
+        buffer: Buffer.from("{}"),
+      } as Express.Multer.File;
+
+      await expect(service.upload(apId, incoming)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(fs.writeFile).not.toHaveBeenCalled();
     });
   });
 
@@ -576,10 +610,10 @@ describe("FilesService", () => {
       expect(apRepo.findOne.mock.invocationCallOrder[1]).toBeLessThan(
         repo.find.mock.invocationCallOrder[0],
       );
-      expect(repo.save.mock.invocationCallOrder[0]).toBeLessThan(
-        repo.remove.mock.invocationCallOrder[0],
-      );
       expect(repo.remove.mock.invocationCallOrder[0]).toBeLessThan(
+        repo.save.mock.invocationCallOrder[0],
+      );
+      expect(repo.save.mock.invocationCallOrder[0]).toBeLessThan(
         (fs.unlink as jest.Mock).mock.invocationCallOrder[0],
       );
     });
@@ -781,21 +815,21 @@ describe("FilesService", () => {
     it("should delete file from disk and DB", async () => {
       repo.findOne.mockResolvedValue(mockFile);
       await service.delete("file-1");
-      expect(repo.remove).toHaveBeenCalledWith(mockFile);
+      expect(repo.remove).toHaveBeenCalledWith([mockFile]);
       expect(unitParserService.invalidateFileCaches).toHaveBeenCalledWith(apId);
     });
 
     it("should ignore unlink errors during delete operations", async () => {
       (fs.unlink as jest.Mock).mockRejectedValueOnce(new Error("gone"));
       await expect(service.delete("file-1")).resolves.toBeUndefined();
-      expect(repo.remove).toHaveBeenCalledWith(mockFile);
+      expect(repo.remove).toHaveBeenCalledWith([mockFile]);
     });
 
     it("should delete by AP and remove all files", async () => {
       await expect(
         service.deleteForAp(apId, "file-1"),
       ).resolves.toBeUndefined();
-      expect(repo.remove).toHaveBeenCalledWith(mockFile);
+      expect(repo.remove).toHaveBeenCalledWith([mockFile]);
 
       repo.find.mockResolvedValue([
         { ...mockFile, id: "file-1", filePath: "/x/1" },
@@ -1224,6 +1258,49 @@ describe("FilesService", () => {
       await expect(service.createUnitZip(apId, "unit-1")).rejects.toThrow(
         NotFoundException,
       );
+    });
+
+    it("requires a part for duplicate unit ids and exports only that part", async () => {
+      apRepo.findOne.mockResolvedValue({
+        id: apId,
+        apIndex: {
+          assessmentParts: ["ma1", "sp1"].map((partId) => ({
+            id: partId,
+            units: [
+              {
+                id: "shared",
+                dependencies: [
+                  {
+                    id: `units/${partId}/shared.xml`,
+                    type: "UNIT_INDEX",
+                  },
+                ],
+              },
+            ],
+          })),
+        },
+      });
+      repo.find.mockResolvedValue(
+        ["ma1", "sp1"].map((partId) => ({
+          ...mockFile,
+          id: `file-${partId}`,
+          originalName: "shared.xml",
+          relativePath: `units/${partId}/shared.xml`,
+        })),
+      );
+
+      await expect(service.createUnitZip(apId, "shared")).rejects.toThrow(
+        ConflictException,
+      );
+      const archive = await service.createUnitZip(apId, "shared", "ma1");
+      const JSZip = require("jszip");
+      const zip = await JSZip.loadAsync(archive.buffer);
+      expect(Object.keys(zip.files)).toEqual([
+        "units/",
+        "units/ma1/",
+        "units/ma1/shared.xml",
+      ]);
+      expect(archive.fileName).toContain("part-ma1");
     });
   });
 

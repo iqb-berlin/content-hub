@@ -67,7 +67,7 @@ test('snapshot diff, cancelled restore and confirmed restore track an index chan
   const snapshot = page.locator('tbody tr').filter({ hasText: 'Vor Indexänderung' });
   await expect(snapshot).toBeVisible();
 
-  index.assessmentParts[0].name = 'Geänderter E2E-Abschnitt';
+  index.name[0].value = 'Geändertes E2E-Paket';
   await page.goto(`/manage/${snapshotsAp}`);
   await page.locator('details.index-section summary').click();
   await page.locator('details.index-section input[type=file]').setInputFiles({
@@ -124,14 +124,20 @@ test('imports a task package, renders it, activates review and retains a partici
   expect(await readFile((await download.path())!)).toEqual(definition.buffer);
   await page.reload();
   await expect(page.locator('tbody tr')).toHaveCount(6);
-  // Only the import/processing pipeline has populated this initially empty AP.
+  await page.goto(`/manage/${filesAp}/index`);
+  const generator = page.locator('.card').filter({ hasText: 'Index aus Dateien erzeugen' });
+  await generator.getByRole('button', { name: 'Vorschau erzeugen' }).click();
+  await generator.getByPlaceholder('Part-ID').fill('journey-part');
+  await generator.getByRole('button', { name: 'Vorschau erzeugen' }).click();
+  await generator.getByRole('button', { name: 'Übernehmen' }).click();
+  await expect(page.getByText('Index erzeugt und Snapshot erstellt.')).toBeVisible();
   await page.goto(`/view/${filesAp}/units`);
   await page
     .locator('tbody tr')
     .filter({ hasText: journeyUnitName })
     .getByRole('link', { name: 'Ansehen' })
     .click();
-  await expect(page).toHaveURL(`/view/${filesAp}/unit/${journeyUnitId}`);
+  await expect(page).toHaveURL(`/view/${filesAp}/part/journey-part/unit/${journeyUnitId}`);
   const player = page.frameLocator('iframe.player-iframe');
   await expect(player.getByText('Ein Ausflug zum See', { exact: true })).toBeVisible();
   await player.getByRole('radio', { name: 'zum See', exact: true }).check();

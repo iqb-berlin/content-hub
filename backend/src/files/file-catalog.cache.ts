@@ -85,6 +85,7 @@ export class FileCatalogCache {
                   chr(31),
                   id::text,
                   original_name,
+                  relative_path,
                   file_path,
                   COALESCE(checksum, ''),
                   file_size::text,
@@ -113,6 +114,7 @@ export class FileCatalogCache {
         apId: true,
         filePath: true,
         originalName: true,
+        relativePath: true,
         fileType: true,
         fileSize: true,
         checksum: true,
@@ -128,6 +130,7 @@ export function buildSourceFileSignature(files: ApFile[]): string {
       .map((file) => [
         file.id,
         file.originalName,
+        file.relativePath,
         file.filePath,
         file.checksum || "",
         String(file.fileSize || ""),

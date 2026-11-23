@@ -224,21 +224,42 @@ describe("ApController", () => {
       packageId: "pkg-1",
     });
     await expect(
-      controller.updateIndex("ap-1", { assessmentParts: [] }),
+      controller.updateIndex(
+        "ap-1",
+        { assessmentParts: [] },
+        "2026-01-01T00:00:00.000Z",
+      ),
     ).resolves.toEqual({
       packageId: "pkg-1",
       version: "1.0.0",
     });
     await expect(
-      controller.importIndex("ap-1", { assessmentParts: [] }),
+      controller.importIndex(
+        "ap-1",
+        { assessmentParts: [] },
+        "2026-01-01T00:00:00.000Z",
+      ),
     ).resolves.toEqual({
       packageId: "pkg-1",
       version: "1.1.0",
     });
-    await expect(controller.deleteIndex("ap-1")).resolves.toEqual({
+    await expect(
+      controller.deleteIndex("ap-1", "2026-01-01T00:00:00.000Z"),
+    ).resolves.toEqual({
       packageId: "pkg-1",
       version: "0.5.0",
     });
+    expect(apService.updateIndex).toHaveBeenCalledWith(
+      "ap-1",
+      { assessmentParts: [] },
+      "2026-01-01T00:00:00.000Z",
+    );
+  });
+
+  it("rejects index mutations without a revision", async () => {
+    await expect(
+      controller.updateIndex("ap-1", { assessmentParts: [] }),
+    ).rejects.toThrow("expectedUpdatedAt");
   });
 
   it("exports AP index as JSON attachment", async () => {

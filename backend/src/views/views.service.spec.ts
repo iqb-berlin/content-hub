@@ -967,7 +967,9 @@ describe("ViewsService", () => {
       filePath: "/uploads/unit.vomd",
     };
     fileRepository.findOne.mockImplementation(async ({ where }) =>
-      where.originalName === metadata.originalName ? metadata : null,
+      (where.relativePath ?? where.originalName) === metadata.originalName
+        ? metadata
+        : null,
     );
     fileCatalogCache.get.mockResolvedValue({
       signature: "test",
@@ -1028,7 +1030,7 @@ describe("ViewsService", () => {
         },
       });
       fileRepository.findOne.mockImplementation(async ({ where }) =>
-        where.originalName === "U.vomd"
+        (where.relativePath ?? where.originalName) === "U.vomd"
           ? {
               id: "metadata",
               originalName: "U.vomd",
@@ -1075,7 +1077,7 @@ describe("ViewsService", () => {
       },
     });
     fileRepository.findOne.mockImplementation(async ({ where }) =>
-      where.originalName === "U.vomd"
+      (where.relativePath ?? where.originalName) === "U.vomd"
         ? {
             id: "metadata",
             originalName: "U.vomd",
@@ -1114,7 +1116,7 @@ describe("ViewsService", () => {
       },
     });
     fileRepository.findOne.mockImplementation(async ({ where }) =>
-      where.originalName === "U.vomd"
+      (where.relativePath ?? where.originalName) === "U.vomd"
         ? {
             id: "metadata",
             originalName: "U.vomd",
@@ -1235,11 +1237,12 @@ describe("ViewsService", () => {
         },
       });
       fileRepository.findOne.mockImplementation(async ({ where }) =>
-        where.originalName === unitXml.originalName &&
+        (where.relativePath ?? where.originalName) === unitXml.originalName &&
         scenario === "stale-index"
           ? unitXml
           : (files.find(
-              ({ originalName }) => originalName === where.originalName,
+              ({ originalName }) =>
+                originalName === (where.relativePath ?? where.originalName),
             ) ?? null),
       );
       fileCatalogCache.get.mockResolvedValue({ signature: "shared", files });

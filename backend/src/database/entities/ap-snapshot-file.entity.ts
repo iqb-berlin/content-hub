@@ -21,6 +21,15 @@ export class ApSnapshotFile {
   @Column({ name: "original_name" })
   originalName!: string;
 
+  @Column({ name: "relative_path" })
+  relativePath!: string;
+
+  @Column({ name: "file_type", nullable: true })
+  fileType?: string;
+
+  @Column({ name: "validation_result", type: "jsonb", nullable: true })
+  validationResult?: Record<string, unknown>;
+
   @Column({ nullable: true })
   checksum?: string;
 

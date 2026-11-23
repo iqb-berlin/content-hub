@@ -2076,6 +2076,7 @@ export class ItemExplorerFacade implements OnDestroy {
     item.rowKey = this.getStableRowKey(item);
     if (
       this.selectedItem &&
+      this.selectedItem.partId === item.partId &&
       this.getStableRowKey(this.selectedItem) === this.getStableRowKey(item) &&
       (!this.showExplorerItemPanel || this.previewCoordinator.status.kind !== 'idle')
     ) {
@@ -2110,8 +2111,9 @@ export class ItemExplorerFacade implements OnDestroy {
     };
 
     // Load unit metadata and coding scheme from cache
-    this.currentUnitMetadata = this.unitMetadataCache[item.unitId] || [];
-    this.coding.setScheme(this.codingSchemeCache[item.unitId] || null);
+    const unitCacheKey = item.partId ? `${item.partId}/${item.unitId}` : item.unitId;
+    this.currentUnitMetadata = this.unitMetadataCache[unitCacheKey] || [];
+    this.coding.setScheme(this.codingSchemeCache[unitCacheKey] || null);
     this.syncPreviewTargetResolution(item);
     this.refreshCorrectSolutionPrefill();
 
@@ -2186,7 +2188,12 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   private hasReusablePreviewUnit(item: ExplorerItem): boolean {
-    return this.unit?.id === item.unitId && !!this.playerSrcDoc && !!this.definitionContent;
+    return (
+      this.unit?.id === item.unitId &&
+      (this.unit?.partId || '') === (item.partId || '') &&
+      !!this.playerSrcDoc &&
+      !!this.definitionContent
+    );
   }
 
   // --- Response State ---
@@ -2387,6 +2394,7 @@ export class ItemExplorerFacade implements OnDestroy {
     if (!item) return '';
     if (
       this.selectedItem &&
+      this.selectedItem.partId === item.partId &&
       this.getStableRowKey(this.selectedItem) === this.getStableRowKey(item)
     ) {
       return this.selectedPreviewTarget;
@@ -2755,7 +2763,10 @@ export class ItemExplorerFacade implements OnDestroy {
   }
 
   downloadUnit() {
-    const url = `/api/ap/${this.apId}/files?unitId=${this.selectedItem?.unitId}&format=zip`;
+    const partQuery = this.selectedItem?.partId
+      ? `&partId=${encodeURIComponent(this.selectedItem.partId)}`
+      : '';
+    const url = `/api/ap/${this.apId}/files?unitId=${encodeURIComponent(this.selectedItem?.unitId || '')}${partQuery}&format=zip`;
     window.open(this.api.appendAuthToken(url), '_blank');
   }
 

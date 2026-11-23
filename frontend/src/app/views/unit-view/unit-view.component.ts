@@ -1148,12 +1148,12 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
 
   @Input() apId = '';
   @Input() unitId = '';
+  @Input() partId = '';
   @Input() bookletId = '';
   @Input() bookletName = '';
   @Input() embedded = false;
   @Input() reviewMode = false;
   @Input() featureConfigOverride: FeatureConfig | null = null;
-
   unit: UnitViewData | null = null;
   playerSrcDoc: any = null;
   breadcrumbs: BreadcrumbItem[] = [];
@@ -1521,6 +1521,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     });
     this.apId = this.apId || this.route.snapshot.paramMap.get('apId') || '';
     this.unitId = this.unitId || this.route.snapshot.paramMap.get('unitId') || '';
+    this.partId = this.partId || this.route.snapshot.paramMap.get('partId') || '';
 
     this.onWindowResize();
     window.addEventListener('resize', this.resizeHandler);
@@ -1546,7 +1547,7 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
       } else this.loadFeatureConfig();
     }
 
-    if (changes['apId'] || changes['unitId']) this.loadUnit();
+    if (changes['apId'] || changes['unitId'] || changes['partId']) this.loadUnit();
     else if (changes['reviewMode'] || changes['bookletId']) this.loadReviewTranscripts();
   }
 
@@ -1688,7 +1689,10 @@ export class UnitViewComponent implements OnInit, OnChanges, OnDestroy {
     this.codingFilterText = '';
     this.showAllCodingVariables = false;
     this.loadReviewTranscripts();
-    this.unitRequest = this.api.getViewUnit(this.apId, this.unitId).subscribe((u) => {
+    const unitRequest = this.partId
+      ? this.api.getViewUnit(this.apId, this.unitId, this.partId)
+      : this.api.getViewUnit(this.apId, this.unitId);
+    this.unitRequest = unitRequest.subscribe((u) => {
       if (requestToken !== this.unitLoadToken) return;
       this.unit = u;
       const labels = new Map(

@@ -253,6 +253,7 @@ async function seed(): Promise<void> {
           apId: ap.id,
           filePath,
           originalName: file.name,
+          relativePath: file.name,
           fileType: file.type,
           fileSize: Buffer.byteLength(file.content),
         }),

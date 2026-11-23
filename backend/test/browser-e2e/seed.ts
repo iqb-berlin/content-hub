@@ -224,6 +224,7 @@ async function seed(): Promise<void> {
           apId: ap.id,
           filePath,
           originalName: file.name,
+          relativePath: file.name,
           fileType: file.type,
           fileSize: Buffer.byteLength(file.content),
         }),
@@ -544,6 +545,7 @@ async function seed(): Promise<void> {
           apId: regressionAp.id,
           filePath,
           originalName: file.name,
+          relativePath: file.name,
           fileType: file.type,
           fileSize: Buffer.byteLength(file.content),
         }),
@@ -875,6 +877,7 @@ async function seed(): Promise<void> {
           apId: bistaAp.id,
           filePath,
           originalName: file.name,
+          relativePath: file.name,
           fileType: file.type,
           fileSize: Buffer.byteLength(file.content),
         }),
@@ -897,11 +900,14 @@ async function seed(): Promise<void> {
       const realTask =
         project.name.startsWith("review") ||
         project.name.startsWith("explorer-");
-      const apIndex = structuredClone(regressionAp.apIndex);
+      const apIndex: Record<string, any> =
+        project.name === "files" || project.name === "snapshots"
+          ? {
+              version: "1.0.0",
+              name: [{ lang: "de", value: `Browser E2E ${project.name}` }],
+            }
+          : structuredClone(regressionAp.apIndex);
       apIndex.packageId = `browser-e2e-${project.name}`;
-      if (project.name === "files" || realTask) {
-        apIndex.assessmentParts = [];
-      }
       if (realTask) {
         apIndex.assessmentParts = [
           {
@@ -1018,6 +1024,7 @@ async function seed(): Promise<void> {
             apId: isolatedAp.id,
             filePath,
             originalName: sourceFile.originalName,
+            relativePath: sourceFile.relativePath,
             fileType: sourceFile.fileType,
             fileSize: content.length,
           }),
@@ -1054,6 +1061,7 @@ async function seed(): Promise<void> {
               apId: isolatedAp.id,
               filePath,
               originalName: file.name,
+              relativePath: file.name,
               fileType: file.type,
               fileSize: file.buffer.length,
             }),

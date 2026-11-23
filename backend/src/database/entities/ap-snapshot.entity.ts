@@ -24,6 +24,13 @@ export class ApSnapshot {
   @Column({ name: "acp_index_snapshot", type: "jsonb" })
   apIndexSnapshot!: Record<string, unknown>;
 
+  @Column({ name: "package_metadata_snapshot", type: "jsonb", nullable: true })
+  packageMetadataSnapshot?: {
+    name: string;
+    description?: string;
+    itemProperties: Record<string, Record<string, unknown>>;
+  };
+
   @Column({ type: "text", nullable: true })
   changelog?: string;
 

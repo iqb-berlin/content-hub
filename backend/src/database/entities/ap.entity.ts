@@ -29,6 +29,19 @@ export class Ap {
   @Column({ name: "acp_index", type: "jsonb", default: {} })
   apIndex!: Record<string, unknown>;
 
+  @Column({ name: "acp_index_schema_id", nullable: true })
+  apIndexSchemaId?: string;
+
+  @Column({ name: "acp_index_validation_status", default: "UNKNOWN" })
+  apIndexValidationStatus!: string;
+
+  @Column({
+    name: "acp_index_validation_report",
+    type: "jsonb",
+    nullable: true,
+  })
+  apIndexValidationReport?: Record<string, unknown> | null;
+
   @Column({ name: "item_properties", type: "jsonb", default: {} })
   itemProperties!: Record<string, Record<string, any>>;
 

@@ -5,6 +5,7 @@ import {
   Logger,
   MessageEvent,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
@@ -19,6 +20,7 @@ import {
   FileProcessingJobSnapshot,
   FileProcessingProgressReporter,
 } from "./file-processing-progress";
+import { IndexGenerationService } from "./index-generation.service";
 
 @Injectable()
 export class FileProcessingJobsService {
@@ -37,6 +39,8 @@ export class FileProcessingJobsService {
     private readonly filesService: FilesService,
     private readonly unitParserService: UnitParserService,
     private readonly validationService: ValidationService,
+    @Optional()
+    private readonly indexGenerationService?: IndexGenerationService,
   ) {}
 
   async createAndStartJob(
@@ -254,10 +258,9 @@ export class FileProcessingJobsService {
         });
       } else {
         const uploadedFiles = await this.loadUploadedFiles(job);
-        const syncReport = await this.unitParserService.syncIndexFromFiles(
-          job.apId,
-          reporter,
-        );
+        const syncReport = this.indexGenerationService
+          ? await this.buildGenerationPreviewReport(job.apId)
+          : await this.unitParserService.syncIndexFromFiles(job.apId, reporter);
         const validationRun =
           await this.validationService.autoValidateUploadedFiles(
             job.apId,
@@ -327,6 +330,27 @@ export class FileProcessingJobsService {
     } finally {
       this.runningJobs.delete(jobId);
     }
+  }
+
+  private async buildGenerationPreviewReport(
+    apId: string,
+  ): Promise<Record<string, unknown>> {
+    const preview = await this.indexGenerationService!.preview(apId);
+    return {
+      unitsAdded: 0,
+      unitsUpdated: 0,
+      itemsAdded: 0,
+      itemsUpdated: 0,
+      requiresConfirmation: true,
+      canApply: preview.canApply,
+      sourceRevision: preview.sourceRevision,
+      unassignedUnitPaths: preview.unassignedUnitPaths,
+      ambiguousBooklets: preview.ambiguousBooklets,
+      warnings: [
+        "Der AP-Index wurde nicht automatisch geändert. Bitte die Generatorvorschau prüfen und übernehmen.",
+        ...preview.warnings,
+      ],
+    };
   }
 
   private async ensureNoActiveJob(apId: string): Promise<void> {
