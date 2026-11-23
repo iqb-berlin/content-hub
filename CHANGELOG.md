@@ -39,6 +39,9 @@ All notable changes to Content Hub are documented in this file. Releases use
 - Allow an authorized release owner to record production approval. Prefer an
   independent second review when available.
 
+- Update the frontend runtime to nginx 1.30.7 and require the patched
+  Alpine runtime libraries identified by the release image scans.
+
 ### Breaking changes
 
 - None. Legacy ACP clients can migrate incrementally to the AP API.
