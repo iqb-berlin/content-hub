@@ -187,11 +187,19 @@ export class ReviewCommentsController {
   ): Promise<UnitCommentAvailability> {
     const unitId = typeof rawUnitId === "string" ? rawUnitId.trim() : "";
     if (!unitId) throw new BadRequestException("unitId is required");
-    return this.commentsService.getUnitCommentAvailability(
+    const availability = await this.commentsService.getUnitCommentAvailability(
       apId,
       unitId,
       this.reviewPolicy.resolveActor(req),
     );
+    if (!req.reviewerColumnPolicy?.restricted || !availability.additionalItems)
+      return availability;
+    return {
+      ...availability,
+      additionalItems: availability.additionalItems.map(
+        ({ id, targetTypes }) => ({ id, label: id, targetTypes }),
+      ),
+    };
   }
 
   @Get("counts")

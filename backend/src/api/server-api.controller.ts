@@ -31,6 +31,7 @@ import {
 } from "class-validator";
 import { Response } from "express";
 import { FilesInterceptor } from "@nestjs/platform-express";
+import { ApResponseEnvelopes } from "../common/ap-contract.metadata";
 import { ServerApiService } from "./server-api.service";
 import { ServerApiAuditService } from "./server-api-audit.service";
 import { ServerApiAuthGuard } from "./server-api-auth.guard";
@@ -309,6 +310,7 @@ export class ServerApiController {
   }
 
   @Post("ap/:apId/coding-schemes/replace")
+  @ApResponseEnvelopes("replacedFiles")
   @ServerApiScopes("files.write")
   @ServerApiAudit("ap.coding-schemes.replace", "file")
   @ApiOperation({

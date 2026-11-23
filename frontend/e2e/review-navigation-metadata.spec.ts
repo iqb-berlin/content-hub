@@ -126,20 +126,26 @@ async function installContent(
     (route) =>
       route.fulfill({ json: route.request().url().includes('/review-u1/') ? transcripts : [] }),
   );
-  await page.route(`**/api/ap/${apId}/files/review-metadata-*/preview`, (route) =>
-    route.fulfill({
-      json: {
-        structuredData: {
-          type: 'vomd',
-          unitProfiles: [
-            { id: 'iqb_author', label: 'Entwickler:in', value: 'Elsa Mignon (EM)' },
-            { id: 'subject', label: 'Fach', value: 'Deutsch' },
-            ...(route.request().url().includes('review-u1') ? transcripts : []),
-          ],
-        },
+  for (const unitId of ['review-u1', 'review-u2']) {
+    await page.route(
+      (url) => url.pathname === `/api/ap/${apId}/files/review-metadata-${unitId}/preview`,
+      async (route) => {
+        expect(new URL(route.request().url()).searchParams.get('unitId')).toBe(unitId);
+        await route.fulfill({
+          json: {
+            structuredData: {
+              type: 'vomd',
+              unitProfiles: [
+                { id: 'iqb_author', label: 'Entwickler:in', value: 'Elsa Mignon (EM)' },
+                { id: 'subject', label: 'Fach', value: 'Deutsch' },
+                ...(unitId === 'review-u1' ? transcripts : []),
+              ],
+            },
+          },
+        });
       },
-    }),
-  );
+    );
+  }
 }
 
 for (const fileCatalog of [false, true]) {

@@ -22,6 +22,7 @@ import { DataSource } from "typeorm";
 import { ArchiveExpansionService } from "./archive-expansion.service";
 import { FileMutationService } from "./file-mutation.service";
 import { FileStorageService } from "./file-storage.service";
+import { ReviewItemCatalogService } from "./review-item-catalog.service";
 import { createApFileFixture, TEST_UUIDS } from "../testing/test-fixtures";
 
 jest.mock("fs/promises", () => ({
@@ -167,6 +168,10 @@ describe("FilesService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FilesService,
+        {
+          provide: ReviewItemCatalogService,
+          useValue: { getUnitMetadata: jest.fn() },
+        },
         { provide: ReviewManifestService, useValue: manifestService },
         ArchiveExpansionService,
         FileMutationService,

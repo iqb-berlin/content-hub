@@ -619,6 +619,54 @@ describe("AP API and legacy integration compatibility", () => {
     );
   });
 
+  it("reads 0.7.0 validation results without package-wide issues in file lists and details", async () => {
+    const files = db.getRepository(ApFile);
+    const semantic = {
+      severity: "error",
+      scope: "semantic",
+      message: "Missing booklet",
+    };
+    const warning = {
+      severity: "warning",
+      scope: "syntactic",
+      message: "Empty file",
+    };
+    const error = {
+      severity: "error",
+      scope: "schema",
+      message: "Invalid status",
+    };
+    try {
+      for (const [fileIssue, valid] of [
+        [warning, true],
+        [error, false],
+      ] as const) {
+        await files.update(fixtureFile.id, {
+          validationResult: { valid: false, issues: [semantic, fileIssue] },
+        });
+        const response = await request(app.getHttpServer())
+          .get(`/api/ap/${apId}/files`)
+          .auth(managerToken, { type: "bearer" })
+          .expect(200);
+        const expected = { valid, issues: [fileIssue] };
+        expect(
+          response.body.find((file: ApFile) => file.id === fixtureFile.id)
+            .validationResult,
+        ).toEqual(expected);
+        const detail = await request(app.getHttpServer())
+          .get(`/api/ap/${apId}/files/${fixtureFile.id}/validation`)
+          .auth(managerToken, { type: "bearer" })
+          .expect(200);
+        expect(detail.body).toEqual(expected);
+      }
+    } finally {
+      await db.query(
+        "UPDATE acp_files SET validation_result = NULL WHERE id = $1",
+        [fixtureFile.id],
+      );
+    }
+  });
+
   it("retains the existing physical package schema and stored manager enum", async () => {
     const schema = await db.driver.createSchemaBuilder().log();
     expect(

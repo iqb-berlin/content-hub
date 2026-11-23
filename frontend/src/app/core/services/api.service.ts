@@ -499,8 +499,11 @@ export class ApiService {
     const suffix = query.length ? `?${query.join('&')}` : '';
     return `${this.API}/ap/${apId}/files/${fileId}/download${suffix}`;
   }
-  getFilePreview(apId: string, fileId: string): Observable<FilePreviewResponse> {
-    return this.http.get<FilePreviewResponse>(`${this.API}/ap/${apId}/files/${fileId}/preview`);
+  getFilePreview(apId: string, fileId: string, unitId?: string): Observable<FilePreviewResponse> {
+    const query = unitId ? `?unitId=${encodeURIComponent(unitId)}` : '';
+    return this.http.get<FilePreviewResponse>(
+      `${this.API}/ap/${apId}/files/${fileId}/preview${query}`,
+    );
   }
   validateUnitFiles(apId: string): Observable<ValidateUnitsResponse> {
     return this.http.get<ValidateUnitsResponse>(`${this.API}/ap/${apId}/files/validate-units`);

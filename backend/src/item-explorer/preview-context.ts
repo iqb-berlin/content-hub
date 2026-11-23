@@ -14,6 +14,8 @@ export function normalizePreviewContext(
     !Number.isInteger(raw.page) ||
     raw.page < 0 ||
     raw.page >= 10000 ||
+    (raw.playerPageId !== undefined &&
+      (typeof raw.playerPageId !== "string" || !raw.playerPageId.length)) ||
     !raw.dataParts ||
     typeof raw.dataParts !== "object" ||
     Array.isArray(raw.dataParts)
@@ -43,6 +45,7 @@ export function normalizePreviewContext(
     definitionKey: raw.definitionKey,
     target: raw.target.trim(),
     page: raw.page,
+    ...(raw.playerPageId !== undefined && { playerPageId: raw.playerPageId }),
     dataParts: { ...raw.dataParts },
   };
 }

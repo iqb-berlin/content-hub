@@ -3,6 +3,7 @@ export interface PreviewContext {
   definitionKey: string;
   target: string;
   page: number;
+  playerPageId?: string;
   dataParts: Record<string, string>;
 }
 

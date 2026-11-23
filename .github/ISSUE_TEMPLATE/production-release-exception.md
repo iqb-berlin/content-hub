@@ -23,7 +23,7 @@ claim that staging validation occurred.
 
 ## Required production preconditions
 
-- [ ] Release owner and authorized production approver recorded
+- [ ] Authorized release owner and production Go decision recorded, with independent review when available
 - [ ] Maintenance window defined and communicated
 - [ ] Current production version and exact image digests recorded
 - [ ] Current deployment adopted by the managed release tooling if required

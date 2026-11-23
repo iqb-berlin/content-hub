@@ -1,5 +1,10 @@
-import { expect, test, type Page } from '@playwright/test';
-import { journeyBookletId, journeyUnitName } from '../../test-fixtures/browser-journey-package';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import {
+  journeyBookletId,
+  journeyUnitId,
+  journeyUnitName,
+} from '../../test-fixtures/browser-journey-package';
+import { persistentMediaVisibilityDefinition } from './fixtures/conditional-visibility';
 import { installOidcSession } from './oidc-test-session';
 
 const apId = '10000000-0000-4000-8000-000000000307';
@@ -10,6 +15,18 @@ async function expectPosition(page: Page, position: number, total = 3) {
   await expect(
     page.frameLocator('app-unit-view iframe').getByText(journeyUnitName, { exact: true }),
   ).toBeVisible();
+}
+
+function measurePlayer(iframe: Locator) {
+  return iframe.evaluate((frame: HTMLIFrameElement) => {
+    const { width, height } = frame.getBoundingClientRect();
+    return {
+      width,
+      height,
+      innerWidth: frame.contentWindow!.innerWidth,
+      innerHeight: frame.contentWindow!.innerHeight,
+    };
+  });
 }
 
 test.beforeEach(async ({ context }) => {
@@ -44,6 +61,148 @@ test('keeps the comment placeholder readable against its surface', async ({ page
     return (Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05);
   });
   expect(contrast).toBeGreaterThanOrEqual(4.5);
+});
+
+test('scales the review player without changing its viewport or answers', async ({ page }) => {
+  await page.setViewportSize({ width: 1150, height: 900 });
+  await page.goto(baseUrl);
+  await expectPosition(page, 1);
+
+  const iframe = page.locator('app-unit-view iframe');
+  const player = iframe.contentFrame();
+  const hidePanel = page.getByRole('button', { name: 'Reviewbereich ausblenden' });
+  const showPanel = page.getByRole('button', { name: 'Reviewbereich einblenden' });
+  const notice = page.getByText('Abweichende Darstellung', { exact: true });
+  const frameDocument = await iframe.evaluateHandle(
+    (frame: HTMLIFrameElement) => frame.contentDocument,
+  );
+  const measure = () => measurePlayer(iframe);
+  const answer = player.getByRole('radio', { name: 'zum See', exact: true });
+  const alternateAnswer = player.getByRole('radio', { name: 'zur Schule', exact: true });
+
+  await hidePanel.click();
+  await expect.poll(async () => (await measure()).width).toBeGreaterThan(1000);
+  const fullSize = await measure();
+  await answer.check();
+  await showPanel.click();
+  await expect.poll(async () => (await measure()).width).toBeLessThan(700);
+  const scaled = await measure();
+  expect(scaled.innerWidth).toBe(fullSize.innerWidth);
+  expect(scaled.innerHeight).toBe(fullSize.innerHeight);
+  expect(scaled.height / fullSize.height).toBeCloseTo(scaled.width / fullSize.width, 3);
+  await expect(notice).toBeHidden();
+  await expect(answer).toBeChecked();
+  await alternateAnswer.check();
+
+  const resizeHandle = page.getByRole('button', { name: 'Breite des Reviewbereichs ändern' });
+  for (let step = 0; step < 3; step += 1) await resizeHandle.press('ArrowLeft');
+  await expect(notice).toBeVisible();
+  for (let step = 0; step < 3; step += 1) await resizeHandle.press('ArrowRight');
+  await expect(notice).toBeHidden();
+  await expect(alternateAnswer).toBeChecked();
+
+  await page.setViewportSize({ width: 801, height: 900 });
+  await expect(notice).toBeVisible();
+  await expect(iframe).toBeHidden();
+  await hidePanel.click();
+  await expect(notice).toBeHidden();
+  await expect(alternateAnswer).toBeChecked();
+  expect(
+    await iframe.evaluate(
+      (frame: HTMLIFrameElement, original) => frame.contentDocument === original,
+      frameDocument,
+    ),
+  ).toBe(true);
+
+  await page.setViewportSize({ width: 800, height: 900 });
+  const container = page.locator('.player-container');
+  await expect
+    .poll(
+      async () =>
+        (await measure()).innerWidth === (await container.evaluate((card) => card.clientWidth)),
+    )
+    .toBe(true);
+  const narrow = await measure();
+  await showPanel.click();
+  await expect(page.locator('#unit-additional-data')).toBeVisible();
+  await expect(iframe).toBeVisible();
+  await expect(notice).toBeHidden();
+  await expect.poll(async () => (await measure()).innerWidth).toBe(narrow.innerWidth);
+});
+
+for (const mode of ['view-all', 'print-ids']) {
+  test(`scales the ${mode} review preview and keeps the print viewport`, async ({ page }) => {
+    await page.setViewportSize({ width: 1150, height: 900 });
+    await page.goto(baseUrl);
+    await expectPosition(page, 1);
+    const iframe = page.locator('app-unit-view iframe');
+    const hidePanel = page.getByRole('button', { name: 'Reviewbereich ausblenden' });
+    const showPanel = page.getByRole('button', { name: 'Reviewbereich einblenden' });
+    const notice = page.getByText('Abweichende Darstellung', { exact: true });
+
+    await hidePanel.click();
+    await page.getByRole('combobox', { name: 'Seitendarstellung der Aufgabe' }).selectOption(mode);
+    await expectPosition(page, 1);
+    await expect.poll(async () => (await measurePlayer(iframe)).width).toBeGreaterThan(1000);
+    const full = await measurePlayer(iframe);
+
+    await showPanel.click();
+    await expect.poll(async () => (await measurePlayer(iframe)).width).toBeLessThan(700);
+    const scaled = await measurePlayer(iframe);
+    expect(scaled.innerWidth).toBe(full.innerWidth);
+    expect(scaled.innerHeight).toBe(full.innerHeight);
+    expect(scaled.height / full.height).toBeCloseTo(scaled.width / full.width, 3);
+
+    await page.setViewportSize({ width: 801, height: 900 });
+    await expect(notice).toBeVisible();
+    await expect(iframe).toBeHidden();
+    await hidePanel.click();
+    await expect(notice).toBeHidden();
+    await expectPosition(page, 1);
+  });
+}
+
+test('pauses single-play audio while the review preview is too small', async ({ page }) => {
+  const definition = persistentMediaVisibilityDefinition({ durationSeconds: 8, maxRuns: 1 });
+  const definitionUrl = '/review-test-media.voud';
+  await page.route(`**/api/view/ap/${apId}/units/${journeyUnitId}`, async (route) => {
+    const response = await route.fetch();
+    const data = await response.json();
+    const dependency = data.dependencies.find(
+      ({ type }: { type: string }) => type === 'UNIT_DEFINITION',
+    );
+    dependency.downloadUrl = definitionUrl;
+    await route.fulfill({ response, json: data });
+  });
+  await page.route(`**${definitionUrl}*`, (route) => route.fulfill({ json: definition }));
+
+  await page.setViewportSize({ width: 900, height: 900 });
+  await page.goto(baseUrl);
+  const hidePanel = page.getByRole('button', { name: 'Reviewbereich ausblenden' });
+  const showPanel = page.getByRole('button', { name: 'Reviewbereich einblenden' });
+  const notice = page.getByText('Abweichende Darstellung', { exact: true });
+  const iframe = page.locator('app-unit-view iframe');
+  const player = iframe.contentFrame();
+  const play = player.locator('button').filter({ hasText: 'play_arrow' });
+  const audio = player.locator('audio');
+  const playingTime = () => audio.evaluate((media: HTMLAudioElement) => media.currentTime);
+
+  await hidePanel.click();
+  await play.click();
+  await expect.poll(playingTime).toBeGreaterThan(0);
+  await showPanel.click();
+  await expect(notice).toBeVisible();
+  await expect(iframe).toBeHidden();
+  await expect(audio).toHaveJSProperty('paused', true);
+  const pausedAt = await playingTime();
+  expect(pausedAt).toBeGreaterThan(0);
+
+  await hidePanel.click();
+  await expect(iframe).toBeVisible();
+  await expect(audio).toHaveJSProperty('paused', true);
+  expect(await playingTime()).toBeCloseTo(pausedAt, 2);
+  await play.click();
+  await expect.poll(playingTime).toBeGreaterThan(pausedAt + 0.05);
 });
 
 test('keeps the review panel resizable and the workspace usable on narrow screens', async ({

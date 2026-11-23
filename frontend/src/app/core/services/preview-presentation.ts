@@ -15,6 +15,7 @@ import type { PreviewContext } from './preview-visibility';
 export interface PreviewPresentation {
   kind: 'ready';
   page?: number;
+  playerPageId?: string;
   dataParts: Record<string, string>;
   /** Run the original player's page/trigger sequence instead of requiring a fixed point. */
   navigate?: number[];
@@ -47,6 +48,8 @@ export function readPreviewContext(value: unknown): PreviewContext | null {
     !Number.isInteger(raw.page) ||
     raw.page < 0 ||
     raw.page >= 10000 ||
+    (raw.playerPageId !== undefined &&
+      (typeof raw.playerPageId !== 'string' || !raw.playerPageId.length)) ||
     !raw.dataParts ||
     typeof raw.dataParts !== 'object' ||
     Array.isArray(raw.dataParts)
@@ -72,6 +75,7 @@ export function readPreviewContext(value: unknown): PreviewContext | null {
     definitionKey: raw.definitionKey,
     target: raw.target.trim(),
     page: raw.page,
+    ...(raw.playerPageId !== undefined && { playerPageId: raw.playerPageId }),
     dataParts: { ...raw.dataParts },
   };
 }
@@ -108,6 +112,7 @@ export function preparePreviewPresentation(
     return {
       kind: 'ready',
       page: captured.page,
+      playerPageId: captured.playerPageId,
       dataParts: captured.dataParts,
       message:
         'Übernommener Vorschaukontext. Dieser Kontext wird getrennt von Antworten verwendet.',

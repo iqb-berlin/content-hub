@@ -3161,6 +3161,7 @@ export class ItemExplorerFacade implements OnDestroy {
             item.previewStart.context.definitionKey,
             item.previewStart.context.target,
             item.previewStart.context.page,
+            item.previewStart.context.playerPageId,
             Object.entries(item.previewStart.context.dataParts).sort(([a], [b]) =>
               a.localeCompare(b),
             ),

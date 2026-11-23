@@ -347,6 +347,10 @@ export class ViewsService {
       unitXml ?? (matches.length > 1 ? null : undefined),
     );
     const metadata = navigation.metadataFile;
+    const metadataQuery =
+      metadata && !metadataFiles.some((file) => file.id === metadata.id)
+        ? `?unitId=${encodeURIComponent(unitId)}`
+        : "";
     const resolvedRefs = metadata
       ? [
           ...fileRefs.filter(
@@ -358,7 +362,7 @@ export class ViewsService {
           {
             type: "METADATA",
             originalName: metadata.originalName,
-            downloadUrl: `/api/ap/${apId}/files/${metadata.id}/download`,
+            downloadUrl: `/api/ap/${apId}/files/${metadata.id}/download${metadataQuery}`,
             fileId: metadata.id,
           },
         ]
