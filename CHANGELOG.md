@@ -36,6 +36,9 @@ All notable changes to Content Hub are documented in this file. Releases use
   Cover immediate display of AP renames with a browser regression test.
   Refs #140.
 
+- Allow an authorized release owner to record production approval. Prefer an
+  independent second review when available.
+
 ### Breaking changes
 
 - None. Legacy ACP clients can migrate incrementally to the AP API.

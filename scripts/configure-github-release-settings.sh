@@ -12,7 +12,7 @@ Options:
   --repo OWNER/REPO  Repository (default: current gh repository)
   --branch NAME      Protected release branch (default: master)
   --reviewer USER    Different GitHub user who may approve production
-  --no-reviewer      Create production without an approval rule (temporary)
+  --no-reviewer      Allow an authorized release owner to record the Go decision
   --no-branch-review Require pull requests, but no approving review
 USAGE
 }

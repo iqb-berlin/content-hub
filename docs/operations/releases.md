@@ -11,13 +11,20 @@ GitHub Actions is the only release authority. GitLab validation never publishes
 images. Managed deployments never use `latest`, moving major/minor tags, or a
 source archive from `master`.
 
-After this workflow has been merged, a repository administrator configures the
-required branch check and the protected environment once, naming a second
-person as production approver:
+An authorized release owner may review the evidence, record the production Go
+decision and run promotion. Prefer an independent second review when available.
+
+After the workflow has been merged, a repository administrator can configure
+the required branch check and protected production environment for a single
+release owner:
 
 ```bash
-./scripts/configure-github-release-settings.sh --reviewer RELEASE_APPROVER
+./scripts/configure-github-release-settings.sh --no-reviewer --no-branch-review
 ```
+
+To enforce an independent review in GitHub, use
+`--reviewer RELEASE_APPROVER`. Follow any configured GitHub approval rules.
+The required `release-gate` and protected release branch apply in both modes.
 
 ## Release flow
 
@@ -43,9 +50,9 @@ refuses package versions carrying any additional tag.
 
 5. Complete `RELEASE_CHECKLIST.md` against staging and retain the evidence URL
    or issue reference.
-6. Run **Promote Release** with the candidate and staging evidence. The
-   protected `production` environment requires approval. Promotion creates the
-   stable Git tag and GHCR tags from the existing digests; it never rebuilds.
+6. Record the production Go decision and run **Promote Release** with the
+   candidate and staging evidence. Complete any configured environment approval.
+   Promotion creates the stable Git tag and GHCR tags from the existing digests.
 7. Deploy the stable release manually on production:
 
    ```bash
@@ -70,9 +77,9 @@ preconditions**. The issue must remain open as the operational record.
 Run **Promote Production Exception** with the candidate and that repository
 issue URL. The separate workflow validates the issue marker and completed
 preconditions, records `production-exception` in the stable release notes, and
-still requires approval through the protected `production` environment. It
-validates candidate checksums, source identity, migration classification, and
-image digests, but does not claim that staging validation occurred.
+uses the same production Go decision and configured environment approval rules.
+It validates candidate checksums, source identity, migration classification, and
+image digests. The recorded validation mode identifies this as an exception.
 
 Promotion does not deploy the application. After promotion, use the normal
 production update command during the recorded maintenance window, complete the
