@@ -225,6 +225,8 @@ describe('ApStartComponent', () => {
           sequences: [
             { id: 'booklet-10', name: 'Teil 2', kind: 'booklet' },
             { id: 'booklet-2', name: 'Teil 1', kind: 'booklet' },
+            { id: 'booklet-20', name: 'booklet-20', kind: 'booklet' },
+            { id: 'booklet-21', kind: 'booklet' },
             { id: 'sequence-1', name: 'Folge A' },
           ],
         }),
@@ -253,17 +255,20 @@ describe('ApStartComponent', () => {
           link.textContent?.includes('Review öffnen'),
       ),
     ).toBe(true);
-    expect(
-      Array.from(element.querySelectorAll('.booklet-id')).map((node) => node.textContent),
-    ).toEqual(['booklet-2', 'booklet-10']);
-    expect(
-      Array.from(element.querySelectorAll('.booklet-name')).map((node) => node.textContent),
-    ).toEqual(['Teil 1', 'Teil 2']);
+    const bookletIdentities = Array.from(element.querySelectorAll('.booklet-identity')).map(
+      (identity) => Array.from(identity.children).map((node) => node.textContent?.trim()),
+    );
+    expect(bookletIdentities).toEqual([
+      ['Teil 1', 'booklet-2'],
+      ['Teil 2', 'booklet-10'],
+      ['booklet-20'],
+      ['booklet-21'],
+    ]);
     expect(
       element.querySelector('input[placeholder="Bezeichnung oder Booklet-ID"]'),
     ).not.toBeNull();
     expect(element.querySelector('.review-card select')).toBeNull();
-    expect(element.textContent).toContain('2 von 2 Testheften');
+    expect(element.textContent).toContain('4 von 4 Testheften');
     expect(element.textContent).toContain('Folge A');
   });
 

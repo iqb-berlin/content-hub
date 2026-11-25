@@ -24,9 +24,9 @@ export interface BookletSelectionItem {
       @for (booklet of filteredBooklets; track booklet.id) {
         <li>
           <div class="booklet-identity">
-            <code class="booklet-id">{{ booklet.id }}</code>
+            <span class="booklet-name">{{ displayName(booklet) }}</span>
             @if (hasDistinctName(booklet)) {
-              <span class="booklet-name">{{ displayName(booklet) }}</span>
+              <code class="booklet-id">{{ booklet.id }}</code>
             }
           </div>
           <a
@@ -105,18 +105,15 @@ export interface BookletSelectionItem {
         min-width: 0;
       }
       .booklet-name {
-        overflow: hidden;
-        color: var(--color-text-secondary);
-        font-size: 0.82rem;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        overflow-wrap: anywhere;
+        font-size: 0.95rem;
+        font-weight: 700;
       }
       .booklet-id {
         overflow-wrap: anywhere;
-        color: inherit;
+        color: var(--color-text-secondary);
         font-family: inherit;
-        font-size: 0.95rem;
-        font-weight: 700;
+        font-size: 0.82rem;
       }
       .booklet-list a {
         flex: 0 0 auto;
@@ -162,7 +159,7 @@ export class BookletSelectionComponent {
   }
 
   hasDistinctName(booklet: BookletSelectionItem): boolean {
-    return !!booklet.name?.trim() && booklet.name.trim() !== booklet.id;
+    return this.displayName(booklet) !== booklet.id;
   }
 
   private normalize(value: string): string {
