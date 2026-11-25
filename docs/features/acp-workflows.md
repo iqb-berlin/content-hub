@@ -166,6 +166,10 @@ not grant AP or Review access.
 
 ## 10. Collect Comments
 
+For anonymous publication of selected tasks with a permanent link, use the separate
+[public task publication workflow](public-tasks.md). This freezes an explicitly reviewed task
+without opening the AP or its private Review comments to the public.
+
 Comments can target:
 
 - units,

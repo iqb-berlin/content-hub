@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, firstValueFrom, map, switchMap, tap, throwError } from 'rxjs';
 import {
   LoginResponse,
@@ -378,16 +378,30 @@ export class AuthService {
   loadProfile(): void {
     const authType = localStorage.getItem(this.AUTH_TYPE_KEY);
     const idToken = localStorage.getItem(this.ID_TOKEN_KEY);
+    const applicationToken = this.getToken();
+    const onError = (error: unknown) => {
+      // Optional profile restoration must not leave an anonymous publication page.
+      if (window.location.pathname.startsWith('/public/task/')) {
+        if (
+          error instanceof HttpErrorResponse &&
+          [401, 403].includes(error.status) &&
+          this.getToken() === applicationToken
+        )
+          this.clearSession();
+        return;
+      }
+      this.logout();
+    };
 
     if (authType === 'oidc' && idToken) {
       this.syncOidcRoles(idToken).subscribe({
         next: (profile) => this.currentUserSubject.next(profile),
-        error: () => this.logout(),
+        error: onError,
       });
     } else {
       this.http.get<UserProfile>(`${this.API}/profile`).subscribe({
         next: (profile) => this.currentUserSubject.next(profile),
-        error: () => this.logout(),
+        error: onError,
       });
     }
   }

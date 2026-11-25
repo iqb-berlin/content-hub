@@ -4,6 +4,25 @@ All notable changes to Content Hub are documented in this file. Releases use
 [Semantic Versioning](https://semver.org/); release candidates add an
 `-rc.N` suffix without changing the canonical version in `VERSION`.
 
+## [Unreleased]
+
+### Changes
+
+- Publish selected digital tasks under stable public links. Each publication
+  preserves a snapshot of the task and keeps its link when withdrawn and
+  republished. Refs #250.
+
+### Database migrations
+
+- Classification: `backward-compatible`
+- Add the `public_tasks` table and an index on the source AP. Existing tables
+  and records are unaffected.
+
+### Rollback
+
+- Roll back the application while retaining the `public_tasks` table. The
+  down migration refuses to remove the table while it contains publications.
+
 ## [0.8.0] - 2026-11-23
 
 ### Changes

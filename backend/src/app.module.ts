@@ -24,6 +24,7 @@ import { ServerApiModule } from "./api/server-api.module";
 import { HealthModule } from "./health/health.module";
 import { ItemExplorerModule } from "./item-explorer/item-explorer.module";
 import { createApplicationDataSource } from "./database/database-compatibility";
+import { PublicTasksModule } from "./public-tasks/public-tasks.module";
 
 @Module({
   providers: [
@@ -70,6 +71,7 @@ import { createApplicationDataSource } from "./database/database-compatibility";
     FilesModule,
     SnapshotsModule,
     ViewsModule,
+    PublicTasksModule,
     CommentsModule,
     ItemsModule,
     AdminModule,

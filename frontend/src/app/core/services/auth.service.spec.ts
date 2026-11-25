@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from './auth.service';
 import type { CredentialLoginResponse, UserProfile } from '../models/api.models';
 import { PendingPersonalSessionStorageService } from './pending-personal-session-storage.service';
@@ -327,6 +328,39 @@ describe('AuthService', () => {
   });
 
   describe('loadProfile', () => {
+    it.each([
+      { status: 0, oidc: false },
+      { status: 500, oidc: false },
+      { status: 503, oidc: true },
+      { status: 0, oidc: true },
+      { status: 401, oidc: false },
+      { status: 403, oidc: true },
+    ])(
+      'keeps a public task open when optional profile restoration fails: %j',
+      ({ status, oidc }) => {
+        const originalUrl = `${window.location.pathname}${window.location.search}`;
+        window.history.replaceState(null, '', '/public/task/publication-id');
+        try {
+          localStorage.setItem('ch_token', 'test-token');
+          localStorage.setItem('ch_auth_type', 'oidc');
+          if (oidc) localStorage.setItem('ch_oidc_id_token', 'id-token');
+          const failure = throwError(() => new HttpErrorResponse({ status }));
+          httpClientMock.get.mockReturnValue(failure);
+          httpClientMock.post.mockReturnValue(failure);
+          const logout = vi.spyOn(service, 'logout');
+          service.loadProfile();
+          expect(logout).not.toHaveBeenCalled();
+          expect(window.location.pathname).toBe('/public/task/publication-id');
+          expect(localStorage.getItem('ch_token')).toBe(
+            [401, 403].includes(status) ? null : 'test-token',
+          );
+          expect(httpClientMock.post).not.toHaveBeenCalledWith('/api/auth/logout', {});
+        } finally {
+          window.history.replaceState(null, '', originalUrl);
+        }
+      },
+    );
+
     it('should load and set user profile', () => {
       localStorage.setItem('ch_token', 'test-token');
       httpClientMock.get.mockReturnValue(of(mockUserProfile));

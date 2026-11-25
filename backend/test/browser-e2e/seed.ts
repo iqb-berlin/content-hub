@@ -5,6 +5,10 @@ import { DataSource } from "typeorm";
 import * as bcrypt from "bcryptjs";
 import { responseStatePlayerHtml } from "./response-state-player";
 import {
+  preparePublicTaskResources,
+  publicTaskResourceProbe,
+} from "./public-task-resources";
+import {
   journeyFiles,
   journeyUnitId,
   journeyUnitName,
@@ -99,6 +103,14 @@ async function seed(): Promise<void> {
     );
     await dataSource.getRepository(User).save(
       dataSource.getRepository(User).create({
+        id: "10000000-0000-4000-8000-000000000005",
+        username: "e2e-publications-admin",
+        displayName: "E2E Publications Admin",
+        isAppAdmin: true,
+      }),
+    );
+    await dataSource.getRepository(User).save(
+      dataSource.getRepository(User).create({
         id: VIEWER_ID,
         username: VIEWER_USERNAME,
         displayName: "E2E Viewer",
@@ -172,6 +184,7 @@ async function seed(): Promise<void> {
     const fixtureDirectory =
       process.env.BROWSER_E2E_FIXTURE_DIR || "/tmp/content-hub-browser-e2e";
     await mkdir(fixtureDirectory, { recursive: true });
+    await preparePublicTaskResources();
     const unitXml = `<?xml version="1.0" encoding="UTF-8"?>
 <Unit>
   <Id>u1</Id>
@@ -892,6 +905,10 @@ async function seed(): Promise<void> {
       { id: "10000000-0000-4000-8000-000000000305", name: "explorer-firefox" },
       { id: "10000000-0000-4000-8000-000000000306", name: "explorer-webkit" },
       { id: "10000000-0000-4000-8000-000000000307", name: "review-links" },
+      {
+        id: "10000000-0000-4000-8000-000000000308",
+        name: "review-publications",
+      },
     ];
     for (const project of isolatedProjects) {
       const realTask =
@@ -1025,6 +1042,30 @@ async function seed(): Promise<void> {
       }
       if (realTask) {
         const projectFiles = [...journeyFiles];
+        if (project.name === "review-publications") {
+          for (const [index, file] of projectFiles.entries()) {
+            if (file.type === "PLAYER") {
+              projectFiles[index] = {
+                ...file,
+                buffer: Buffer.concat([file.buffer, publicTaskResourceProbe]),
+              };
+            }
+            if (file.type === "CODING_SCHEME") {
+              const scheme = JSON.parse(file.buffer.toString("utf8"));
+              const manual = scheme.variableCodings[0];
+              manual.codeModel = "MANUAL_ONLY";
+              manual.manualInstruction =
+                "<p>Manuelle Kodieranweisung ohne Regelsets.</p>";
+              for (const code of manual.codes) delete code.ruleSets;
+              manual.codes[0].manualInstruction =
+                "<p>Öffentliche Musterlösung für die manuelle Kodierung.</p>";
+              projectFiles[index] = {
+                ...file,
+                buffer: Buffer.from(JSON.stringify(scheme)),
+              };
+            }
+          }
+        }
         if (project.name === "review-links") {
           const booklet = (id: string, units: string) =>
             Buffer.from(
