@@ -138,6 +138,43 @@ describe("AP API and legacy integration compatibility", () => {
     if (fixtureDirectory) await rm(fixtureDirectory, { recursive: true });
   });
 
+  it.each(["ap", "acp"])(
+    "loads consistency through /%s without changing saved file validation",
+    async (prefix) => {
+      const files = db.getRepository(ApFile);
+      const before = await files.findOneByOrFail({ id: fixtureFile.id });
+      const response = await request(app.getHttpServer())
+        .get(`/api/${prefix}/${apId}/files/consistency`)
+        .auth(managerToken, { type: "bearer" })
+        .expect(200);
+
+      expect(response.body).toEqual({
+        valid: true,
+        issues: [],
+        timestamp: expect.any(String),
+      });
+      const after = await files.findOneByOrFail({ id: fixtureFile.id });
+      expect(after.validationResult).toEqual(before.validationResult);
+    },
+  );
+
+  it.each(["ap", "acp"])(
+    "protects consistency checks through /%s with package-specific manager access",
+    async (prefix) => {
+      await request(app.getHttpServer())
+        .get(`/api/${prefix}/${apId}/files/consistency`)
+        .expect(401);
+      await request(app.getHttpServer())
+        .get(`/api/${prefix}/${otherId}/files/consistency`)
+        .auth(managerToken, { type: "bearer" })
+        .expect(403);
+      await request(app.getHttpServer())
+        .get(`/api/${prefix}/invalid/files/consistency`)
+        .auth(adminToken, { type: "bearer" })
+        .expect(400);
+    },
+  );
+
   it("exposes canonical fields and retains the old management response", async () => {
     const current = await request(app.getHttpServer())
       .get(`/api/ap/${apId}`)
@@ -558,6 +595,54 @@ describe("AP API and legacy integration compatibility", () => {
     expect(exported.headers["content-disposition"]).toContain(
       `acp-index-${apId}.json`,
     );
+  });
+
+  it("reads 0.7.0 validation results without package-wide issues in file lists and details", async () => {
+    const files = db.getRepository(ApFile);
+    const semantic = {
+      severity: "error",
+      scope: "semantic",
+      message: "Missing booklet",
+    };
+    const warning = {
+      severity: "warning",
+      scope: "syntactic",
+      message: "Empty file",
+    };
+    const error = {
+      severity: "error",
+      scope: "schema",
+      message: "Invalid status",
+    };
+    try {
+      for (const [fileIssue, valid] of [
+        [warning, true],
+        [error, false],
+      ] as const) {
+        await files.update(fixtureFile.id, {
+          validationResult: { valid: false, issues: [semantic, fileIssue] },
+        });
+        const response = await request(app.getHttpServer())
+          .get(`/api/ap/${apId}/files`)
+          .auth(managerToken, { type: "bearer" })
+          .expect(200);
+        const expected = { valid, issues: [fileIssue] };
+        expect(
+          response.body.find((file: ApFile) => file.id === fixtureFile.id)
+            .validationResult,
+        ).toEqual(expected);
+        const detail = await request(app.getHttpServer())
+          .get(`/api/ap/${apId}/files/${fixtureFile.id}/validation`)
+          .auth(managerToken, { type: "bearer" })
+          .expect(200);
+        expect(detail.body).toEqual(expected);
+      }
+    } finally {
+      await db.query(
+        "UPDATE acp_files SET validation_result = NULL WHERE id = $1",
+        [fixtureFile.id],
+      );
+    }
   });
 
   it("retains the existing physical package schema and stored manager enum", async () => {

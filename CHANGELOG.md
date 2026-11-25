@@ -6,7 +6,85 @@ All notable changes to Content Hub are documented in this file. Releases use
 
 ## [Unreleased]
 
-## [0.7.0] - Unreleased
+### Changes
+
+- Publish selected digital tasks under stable public links. Each publication
+  preserves a snapshot of the task and keeps its link when withdrawn and
+  republished. Refs #250.
+
+### Database migrations
+
+- Classification: `backward-compatible`
+- Add the `public_tasks` table and an index on the source AP. Existing tables
+  and records are unaffected.
+
+### Rollback
+
+- Roll back the application while retaining the `public_tasks` table. The
+  down migration refuses to remove the table while it contains publications.
+
+## [0.8.0] - 2026-11-23
+
+### Changes
+
+- Scale the booklet review preview proportionally, including both print
+  views, and pause media when opening the review pane. Warn below 60% of the
+  reference size. Refs #244.
+- Keep audio transcripts and original text visible when review metadata is
+  hidden or the published reviewer columns are restricted. Use the metadata
+  file referenced by the unit. Refs #278.
+- Keep coding and item comments aligned with the player page. Follow the
+  player's page identifiers in Item Explorer navigation and saved previews.
+  Refs #268, #279.
+- Offer enabled coding comment targets to review-only participants, show
+  coding alongside the comment editor, and hide group/category selectors
+  when there is no choice. Refs #280, #285, #286.
+- Let participants view and export their own review comments, including when
+  booklet review is disabled. Scope group exports to their own contributions
+  in their current groups. Refs #287.
+- Preserve drag-and-drop example and answer placement in ASPECT solution
+  previews, including older player versions. Refs #283.
+- Ask how to handle individual duplicate uploads, including ZIP entries.
+  Keep AP-wide consistency findings in the validation summary and refresh
+  it after opening the file list or deleting files. Refs #270, #271.
+- Accept additional decimal places in BiSta imports. Make the XML-referenced
+  VOMD available to authorized unit readers under the configured permissions.
+  Refs #269.
+- Use AP terminology in the interface, documentation and new API contracts.
+  Retain legacy ACP routes, saved tokens, payloads and download links.
+  Cover immediate display of AP renames with a browser regression test.
+  Refs #140.
+
+- Allow an authorized release owner to record production approval. Prefer an
+  independent second review when available.
+
+- Update the frontend runtime to nginx 1.30.7 and require the patched
+  Alpine runtime libraries identified by the release image scans.
+
+### Breaking changes
+
+- None. Legacy ACP clients can migrate incrementally to the AP API.
+  Shared endpoints retain their legacy response by default and support
+  the opt-in header `X-Content-Hub-Terminology: ap`.
+
+### Configuration
+
+- No new required environment settings. See
+  [AP API compatibility](docs/features/ap-api-compatibility.md) for clients.
+
+### Database migrations
+
+- Classification: `none`
+- No database migration files changed since 0.7.0.
+
+### Rollback
+
+- Use the managed production rollback to `v0.7.0` and its verified runtime
+  and image digests. Clients already switched to the new AP API must use
+  the legacy ACP contract again after application rollback.
+- Keep the complete pre-update backup for a full state restore if required.
+
+## [0.7.0] - 2026-11-02
 
 ### Changes
 

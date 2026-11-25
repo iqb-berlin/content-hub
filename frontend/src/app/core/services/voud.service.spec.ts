@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { VoudService } from './voud.service';
 
 describe('VoudService.getStartPage', () => {
@@ -71,6 +71,24 @@ describe('VoudService.getStartPage', () => {
     });
 
     expect(service.getStartPage(definition, 'field-b-2')).toBe(1);
+  });
+
+  it('reuses the location index across lookups and switches it with the definition', () => {
+    const first = JSON.stringify({ pages: [{ elements: [{ id: 'A' }, { id: 'B' }] }] });
+    const next = JSON.stringify({ pages: [{}, { elements: [{ id: 'B' }] }] });
+    const parse = vi.spyOn(JSON, 'parse');
+    try {
+      expect(service.getStartPage(first, 'A')).toBe(0);
+      expect(service.getStartPage(first, 'B')).toBe(0);
+      expect(service.getStartPage(next, 'B')).toBe(1);
+      expect(service.getStartPage(next, 'A')).toBeUndefined();
+      expect(parse.mock.calls.filter(([input]) => input === first || input === next)).toEqual([
+        [first],
+        [next],
+      ]);
+    } finally {
+      parse.mockRestore();
+    }
   });
 
   it('prefers a matching alias over an earlier unrelated element id', () => {

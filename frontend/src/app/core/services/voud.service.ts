@@ -19,6 +19,9 @@ export interface PlayerTargetLocation {
   isAlwaysVisiblePage: boolean;
 }
 
+export type PlayerTargetIdentifierKind = 'id' | 'alias';
+type PlayerTargetLocations = Record<PlayerTargetIdentifierKind, Map<string, PlayerTargetLocation>>;
+
 export interface PlayerResponseTarget {
   responseId: string;
   elementType: string;
@@ -52,6 +55,7 @@ interface IdentifierNodeMatch {
 
 @Injectable({ providedIn: 'root' })
 export class VoudService {
+  private locationIndex?: { definition: string; locations: PlayerTargetLocations };
   private readonly conditionalVisibilityDefaults = new Map<string, unknown>([
     ['visibilityRules', []],
     ['visibilityDelay', 0],
@@ -144,29 +148,53 @@ export class VoudService {
   resolvePlayerTargetLocation(
     definition: string,
     variableId: string,
+    kind?: PlayerTargetIdentifierKind,
   ): PlayerTargetLocation | undefined {
-    const target = String(variableId || '').trim();
+    const target = String(variableId || '')
+      .trim()
+      .toLowerCase();
     if (!target) return undefined;
+    const locations = this.getPlayerTargetLocations(definition);
+    // A public reference keeps the same alias-first lookup as findTargetNode.
+    return kind
+      ? locations[kind].get(target)
+      : (locations.alias.get(target) ?? locations.id.get(target));
+  }
 
+  private getPlayerTargetLocations(definition: string): PlayerTargetLocations {
+    if (this.locationIndex?.definition === definition) return this.locationIndex.locations;
+    const ids = new Map<string, PlayerTargetLocation>();
+    const aliases = new Map<string, PlayerTargetLocation>();
     try {
-      const unitDefinition = this.parseDefinition(definition);
-      const pages: any[] = Array.isArray(unitDefinition?.pages) ? unitDefinition.pages : [];
-      const match = this.findTargetNode(pages, target);
-      if (!match) return undefined;
-
-      const isAlwaysVisiblePage = this.isPageAlwaysVisible(pages[match.pageIndex]);
-      const scrollPageIndex = pages
-        .slice(0, match.pageIndex)
-        .filter((page) => !this.isPageAlwaysVisible(page)).length;
-      return {
-        absolutePageIndex: match.pageIndex,
-        scrollPageIndex: isAlwaysVisiblePage ? undefined : scrollPageIndex,
-        isAlwaysVisiblePage,
-      };
+      const pages = this.parseDefinition(definition)?.pages;
+      let scrollPageIndex = 0;
+      if (Array.isArray(pages)) {
+        pages.forEach((page, absolutePageIndex) => {
+          const isAlwaysVisiblePage = this.isPageAlwaysVisible(page);
+          const location = {
+            absolutePageIndex,
+            isAlwaysVisiblePage,
+            scrollPageIndex: isAlwaysVisiblePage ? undefined : scrollPageIndex,
+          };
+          if (!isAlwaysVisiblePage) scrollPageIndex++;
+          for (const { node } of collectVoudNodeEntries(page)) {
+            const id = String(node['id'] || '')
+              .trim()
+              .toLowerCase();
+            const alias = String(node['alias'] || '')
+              .trim()
+              .toLowerCase();
+            if (id && !ids.has(id)) ids.set(id, location);
+            if (alias && !aliases.has(alias)) aliases.set(alias, location);
+          }
+        });
+      }
     } catch (e) {
       console.error('Error resolving player target location from VOUD:', e);
-      return undefined;
     }
+    const locations = { id: ids, alias: aliases };
+    this.locationIndex = { definition, locations };
+    return locations;
   }
 
   /**
@@ -200,12 +228,12 @@ export class VoudService {
 
   /**
    * Resolves the identifier and element type expected in Aspect's `elementCodes` data part.
-   * The player serializes responses by alias and falls back to the internal element id when
-   * no alias is present.
+   * Current players use aliases, while ASPECT 2.0–2.5 requires IDs for drop lists.
    */
   resolvePlayerResponseTarget(
     definition: string,
     variableId: string,
+    useLegacyDropListIds = false,
   ): PlayerResponseTarget | undefined {
     const target = String(variableId || '').trim();
     if (!target) return undefined;
@@ -217,11 +245,15 @@ export class VoudService {
       if (!match) return undefined;
 
       const identifiers = this.getNodeIdentifiers(match.node);
-      const responseId = String(match.node.alias || match.node.id || '').trim();
-      if (!responseId) return undefined;
       const elementType = String(match.node.type || '')
         .trim()
         .toLowerCase();
+      const responseId = String(
+        (useLegacyDropListIds && elementType === 'drop-list'
+          ? match.node.id
+          : match.node.alias || match.node.id) || '',
+      ).trim();
+      if (!responseId) return undefined;
       const isLikertRow = elementType === 'likert-row';
       const optionSource = isLikertRow ? match.parent : match.node;
       const hasValidOptions =
@@ -248,7 +280,10 @@ export class VoudService {
       }));
       const dropListTarget =
         elementType === 'drop-list'
-          ? resolveDropListTarget(pages, match.node, (value) => this.extractDisplayText(value))
+          ? resolveDropListTarget(pages, match.node, (value) => this.extractDisplayText(value), {
+              useLegacyIds: useLegacyDropListIds,
+              definitionVersion: unitDefinition?.version,
+            })
           : undefined;
 
       return {

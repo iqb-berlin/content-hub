@@ -2,6 +2,7 @@ import type { PlayerResponseTarget } from '../../core/services/voud.service';
 import type { PlayerDropList } from '../../core/services/voud-drop-lists';
 import {
   mergeDropListSolutionResponses,
+  mergeResponsesOutsideSolution,
   validateDropListAssignments,
 } from './item-explorer-drop-list-solution';
 import {
@@ -183,21 +184,13 @@ export function mergePlayerSolutionIntoDataParts(
     existingResponses = [];
   }
 
-  const solutionIds = new Set(
-    [
-      ...solutionResponses.map((response) => response.id),
-      ...dropLists.map((list) => list.responseId),
-    ].map(normalizeSolutionIdentifier),
-  );
   const dropListResponses = mergeDropListSolutionResponses(
     existingResponses,
     solutionResponses,
     dropLists,
   );
   merged['elementCodes'] = JSON.stringify([
-    ...existingResponses.filter(
-      (response) => !solutionIds.has(normalizeSolutionIdentifier(response?.id)),
-    ),
+    ...mergeResponsesOutsideSolution(existingResponses, solutionResponses, dropLists),
     ...solutionResponses.filter(
       (response) => !dropLists.some((list) => list.responseId === response.id),
     ),

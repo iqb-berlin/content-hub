@@ -33,12 +33,40 @@ describe("unit view access in capability responses", () => {
           }),
         } as any,
         {} as any,
+        {} as any,
       );
       const access = await controller.getCapabilities("ap", {
         apAccessLevel,
         ...(identity ? { user: { sub: "viewer" } } : {}),
       });
       expect(access.canViewUnit).toBe(expected);
+    },
+  );
+});
+
+describe("comment access in capability responses", () => {
+  it.each([
+    [false, ["review:participate"], true, true],
+    [true, ["review:participate"], true, true],
+    [false, ["review:manage"], true, true],
+    [false, ["item-explorer:view"], true, false],
+    [true, [], true, false],
+    [true, ["review:participate"], false, false],
+  ])(
+    "keeps comment access independent of Review activation (%j)",
+    async (enableReview, grants, identity, expected) => {
+      const controller = new ReviewController(
+        { resolve: async () => grants } as any,
+        {} as any,
+        { findOne: async () => ({ featureConfig: { enableReview } }) } as any,
+        {} as any,
+        {} as any,
+      );
+      const access = await controller.getCapabilities(
+        "ap",
+        identity ? { user: { sub: "me" } } : {},
+      );
+      expect(access.canReadReviewComments).toBe(expected);
     },
   );
 });
@@ -82,6 +110,7 @@ describe("ReviewController stale memberships", () => {
         {} as any,
         { manager, findOne: async () => config } as any,
         { check: jest.fn() } as any,
+        {} as any,
       );
       const result = await controller.configure(
         "ap",
@@ -147,6 +176,7 @@ describe("ReviewController stale memberships", () => {
         {} as any,
         { manager, findOne: async () => config } as any,
         { check: jest.fn().mockResolvedValue({ status: "READY" }) } as any,
+        {} as any,
       );
       await expect(
         controller.configure(
@@ -187,6 +217,7 @@ describe("ReviewController stale memberships", () => {
       {} as any,
       { manager, findOne: async () => config } as any,
       readiness as any,
+      {} as any,
     );
 
     await expect(
@@ -230,6 +261,7 @@ describe("deleting review groups", () => {
         {} as any,
         { manager, findOne: async () => config } as any,
         {} as any,
+        {} as any,
       );
       const dto = {
         configVersion: 1,
@@ -270,6 +302,7 @@ describe("deleting review groups", () => {
       { assert: jest.fn() } as any,
       {} as any,
       { manager, findOne: async () => config } as any,
+      {} as any,
       {} as any,
     );
     await expect(
@@ -315,6 +348,7 @@ describe.each(["hideReviewMetadata", "hideReviewDeveloperNames"])(
           capabilities as any,
           {} as any,
           { manager, findOne: async () => config } as any,
+          {} as any,
           {} as any,
         );
         const result = await controller.configure(

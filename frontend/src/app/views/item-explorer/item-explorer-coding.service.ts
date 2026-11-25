@@ -430,6 +430,7 @@ export class ItemExplorerCodingService {
   refreshCorrectSolutionPrefill(
     selectedItem: ReadonlyExplorerItem | null,
     definition: string | null,
+    useLegacyDropListIds = false,
   ): void {
     const variables = this.getCurrentCodingVariables();
     const variableMatch = this.resolveItemCodingVariable(selectedItem, variables);
@@ -458,7 +459,7 @@ export class ItemExplorerCodingService {
       this.correctSolutionPrefill = derivePlayerSolutionPrefill(
         selectedVariable,
         variables,
-        (variable) => this.resolvePlayerResponseTarget(definition, variable),
+        (variable) => this.resolvePlayerResponseTarget(definition, variable, useLegacyDropListIds),
       );
     } else {
       this.correctSolutionPrefill = {
@@ -493,7 +494,7 @@ export class ItemExplorerCodingService {
         this.isCodingVariableVisible(answer.variable, variables),
       );
       const answers = visibleAnswers.map((answer) =>
-        this.toCodingInformationAnswer(definition, answer),
+        this.toCodingInformationAnswer(definition, answer, useLegacyDropListIds),
       );
       if (!answers.length || answers.some((answer) => answer === null)) {
         this.codingInformation = {
@@ -587,6 +588,7 @@ export class ItemExplorerCodingService {
   private resolvePlayerResponseTarget(
     definition: string | null,
     variable: CodingVariableLike,
+    useLegacyDropListIds: boolean,
   ): PlayerResponseTarget | undefined {
     if (!definition) return undefined;
     const candidates = Array.from(
@@ -597,7 +599,11 @@ export class ItemExplorerCodingService {
       ),
     );
     for (const candidate of candidates) {
-      const target = this.voudService.resolvePlayerResponseTarget(definition, candidate);
+      const target = this.voudService.resolvePlayerResponseTarget(
+        definition,
+        candidate,
+        useLegacyDropListIds,
+      );
       if (target) return target;
     }
     return undefined;
@@ -606,8 +612,13 @@ export class ItemExplorerCodingService {
   private toCodingInformationAnswer(
     definition: string | null,
     answer: DerivedSolutionAnswer,
+    useLegacyDropListIds: boolean,
   ): CodingInformationAnswer | null {
-    const target = this.resolvePlayerResponseTarget(definition, answer.variable);
+    const target = this.resolvePlayerResponseTarget(
+      definition,
+      answer.variable,
+      useLegacyDropListIds,
+    );
     const responseId = String(
       target?.responseId || answer.variable.alias || answer.variable.id || '',
     ).trim();

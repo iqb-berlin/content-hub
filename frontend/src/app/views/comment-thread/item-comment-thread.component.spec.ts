@@ -179,6 +179,8 @@ describe('ItemCommentThreadComponent', () => {
     );
     component.loadThread(true);
     expect(component.selectedGroupId).toBe('');
+    component.loadThread(true);
+    expect(component.selectedGroupId).toBe('');
     expect(component.newCommentText).toBe('Entwurf für A');
     expect(component.editText).toBe('Ungespeicherte Änderung');
     expect(component.editAccessLost).toBe(true);

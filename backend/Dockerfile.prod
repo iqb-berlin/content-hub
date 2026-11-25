@@ -30,10 +30,13 @@ LABEL org.opencontainers.image.version=${APP_VERSION} \
       org.opencontainers.image.source="https://github.com/iqb-berlin/content-hub"
 WORKDIR /app
 
-# The pinned Node base currently contains OpenSSL 3.5.7-r0. Require the Alpine
-# security update that fixes CVE-2026-14456 and fail the build if it is not
-# available for every target architecture.
-RUN apk add --no-cache 'libcrypto3>=3.5.8-r0' 'libssl3>=3.5.8-r0'
+# Require patched Alpine runtime packages on every target architecture.
+RUN apk add --no-cache \
+      'libcrypto3>=3.5.8-r0' \
+      'libssl3>=3.5.8-r0' \
+      'musl>=1.2.6-r3' \
+      'musl-utils>=1.2.6-r3' \
+      'zlib>=1.3.2-r1'
 
 # The runtime starts the compiled application directly and does not need a
 # package manager or its transitive dependency tree.

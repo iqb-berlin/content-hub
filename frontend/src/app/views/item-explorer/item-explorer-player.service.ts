@@ -85,11 +85,47 @@ export class ItemExplorerPlayerService implements OnDestroy {
 
   private workingAnswerData: Record<string, any> | null = null;
   private flowStarted = false;
-  private pendingFlowPage: number | null = null;
+  private currentPlayerPageId = '0';
+  private pendingFlowPage: string | null = null;
   private playerPageIds: string[] = [];
   private declaredFlowPageIds: string[] = [];
+  private knownPlayerPageIds: string[] = [];
+
+  private get usesPlayerPageOrder(): boolean {
+    return this.knownPlayerPageIds.some(
+      (id) =>
+        !/^(0|[1-9]\d*)$/.test(id) ||
+        (this.declaredFlowPageIds.length > 0 && this.declaredFlowPageIds[Number(id)] !== id),
+    );
+  }
+
+  private pageIndexForId(id: string): number {
+    if (this.usesPlayerPageOrder) return this.knownPlayerPageIds.indexOf(id);
+    return /^(0|[1-9]\d*)$/.test(id) ? Number(id) : -1;
+  }
+
+  private rememberVisiblePages(visible: string[]): void {
+    // Keep hidden IDs next to their last known neighbours, while respecting the new report's order.
+    if (
+      visible.length === this.playerPageIds.length &&
+      visible.every((id, i) => id === this.playerPageIds[i])
+    )
+      return;
+    const order = [...visible];
+    let nextIndex = order.length;
+    for (let i = this.knownPlayerPageIds.length - 1; i >= 0; i--) {
+      const id = this.knownPlayerPageIds[i];
+      const index = order.indexOf(id);
+      if (index < 0) order.splice(nextIndex, 0, id);
+      else nextIndex = index;
+    }
+    this.knownPlayerPageIds = order;
+    this.playerPageIds = visible;
+  }
 
   private get flowNavigationPageIds(): string[] {
+    // ASPECT numbers its task pages, while other players supply their own identifiers.
+    if (this.usesPlayerPageOrder) return this.playerPageIds;
     return this.declaredFlowPageIds.length ? this.declaredFlowPageIds : this.playerPageIds;
   }
 
@@ -98,7 +134,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
   }
 
   get flowPageNumber(): number {
-    return this.flowNavigationPageIds.indexOf(String(this.currentPage - 1)) + 1;
+    return this.flowNavigationPageIds.indexOf(this.currentPlayerPageId) + 1;
   }
 
   get showFlowPageNavigation(): boolean {
@@ -135,23 +171,35 @@ export class ItemExplorerPlayerService implements OnDestroy {
     if (index >= 0) return pages[index + delta];
     // Conditional visibility may hide the current page while later pages remain available.
     const candidates = delta === 1 ? pages : [...pages].reverse();
-    return candidates.find((id) =>
-      delta === 1 ? Number(id) > this.currentPage - 1 : Number(id) < this.currentPage - 1,
-    );
+    const currentIndex = this.currentPage - 1;
+    return candidates.find((id) => {
+      const candidateIndex = this.pageIndexForId(id);
+      return delta === 1 ? candidateIndex > currentIndex : candidateIndex < currentIndex;
+    });
   }
 
   navigateFlowPage(delta: -1 | 1): void {
     if (this.destroyed || (delta !== -1 && delta !== 1) || !this.canNavigateFlowPage(delta)) return;
     const target = this.flowPageTarget(delta);
-    const page = Number(target);
-    if (!Number.isInteger(page) || page < 0) return;
+    if (target === undefined) return;
     this.clearLegacyPageNavigationTimers();
-    this.pendingFlowPage = page;
+    this.pendingFlowPage = target;
     this.sendToPlayer({
       type: 'vopPageNavigationCommand',
       sessionId: this.activePlayerSessionId,
       target,
     });
+  }
+
+  private acceptPlayerPage(value: unknown): void {
+    if (typeof value !== 'number' && typeof value !== 'string') return;
+    const id = String(value);
+    if (!id || (this.pendingFlowPage !== null && id !== this.pendingFlowPage)) return;
+    this.currentPlayerPageId = id;
+    const index = this.pageIndexForId(id);
+    if (index >= 0 && Number.isSafeInteger(index)) this.currentPage = index + 1;
+    this.pendingFlowPage = null;
+    if (this.usesPlayerPageOrder || index < 0) this.clearLegacyPageNavigationTimers();
   }
 
   private focusRetryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -216,6 +264,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
   private responseBeforeSolution: {
     origin: 'answers' | 'visibility';
     page: number;
+    playerPageId: string;
     dataParts: Record<string, any> | null;
   } | null = null;
 
@@ -243,6 +292,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
     this.responseBeforeSolution = {
       origin: this.responseSession.origin,
       page: this.currentPage - 1,
+      playerPageId: this.currentPlayerPageId,
       dataParts:
         this.currentResponseData ||
         this.responseBeforeSolution?.dataParts ||
@@ -366,28 +416,31 @@ export class ItemExplorerPlayerService implements OnDestroy {
             break;
           }
         }
-        if (playerMessage['playerState']?.currentPage !== undefined) {
-          const page = Number(playerMessage['playerState'].currentPage);
-          if (
-            Number.isInteger(page) &&
-            page >= 0 &&
-            (this.pendingFlowPage === null || page === this.pendingFlowPage)
-          ) {
-            this.currentPage = page + 1;
-            this.pendingFlowPage = null;
-          }
-        }
         {
-          const pages = playerMessage['playerState']?.validPages;
+          const state = playerMessage['playerState'];
+          const pages = state?.validPages;
           if (pages && typeof pages === 'object') {
-            this.playerPageIds = Array.isArray(pages)
+            const visiblePageIds = Array.isArray(pages)
               ? pages
                   .map((page: any) => page?.id ?? page)
                   .filter((id: unknown) => typeof id === 'string' || typeof id === 'number')
                   .map(String)
               : Object.keys(pages);
-            this.totalPages = this.playerPageIds.length || this.totalPages;
+            this.rememberVisiblePages(visiblePageIds);
+            if (
+              this.pendingFlowPage !== null &&
+              visiblePageIds.length > 0 &&
+              this.usesPlayerPageOrder &&
+              !visiblePageIds.includes(this.pendingFlowPage)
+            ) {
+              this.pendingFlowPage = null;
+              this.clearLegacyPageNavigationTimers();
+            }
+            this.totalPages = visiblePageIds.length || this.totalPages;
           }
+          if (state?.currentPage !== undefined) this.acceptPlayerPage(state.currentPage);
+          else if (pages && this.pendingFlowPage === null)
+            this.acceptPlayerPage(this.currentPlayerPageId);
         }
         // Capture response data from unitState.dataParts
         if (
@@ -409,9 +462,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
         break;
 
       case 'vopPageNavigationCommand':
-        if (playerMessage['target'] !== undefined) {
-          this.currentPage = playerMessage['target'] + 1;
-        }
+        this.acceptPlayerPage(playerMessage['target']);
         break;
 
       case 'vopResizeNotification':
@@ -481,6 +532,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
       return { kind: 'unavailable', reason: 'unresolved-target' };
     }
     let startPage = targetLocation.scrollPageIndex;
+    let startPageId: string | undefined;
     let origin: PreviewResponseSession['origin'] = this.responseBeforeSolution?.origin || 'answers';
     let dataParts = this.getPlayerStartDataParts();
     this.clearFocusRetryTimer();
@@ -500,6 +552,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
         return { kind: 'unavailable', reason: 'unresolved-visibility', message: resolved.reason };
       }
       startPage = resolved.page;
+      startPageId = resolved.playerPageId;
       origin = 'visibility';
       const print = this.pagingMode === 'view-all' || this.pagingMode === 'print-ids';
       dataParts = print ? resolved.printDataParts || resolved.dataParts : resolved.dataParts;
@@ -511,11 +564,13 @@ export class ItemExplorerPlayerService implements OnDestroy {
         // Replaying triggers again could change that already reached context.
         dataParts = this.responseBeforeSolution.dataParts || dataParts;
         startPage = this.responseBeforeSolution.page;
+        startPageId = this.responseBeforeSolution.playerPageId;
         navigation = undefined;
         triggerIds = [];
       }
     } else if (regularFlow) {
       startPage = this.flowStarted ? this.currentPage - 1 : 0;
+      if (this.flowStarted) startPageId = this.currentPlayerPageId;
       if (!this.flowStarted) dataParts = {};
       this.presentationMessage =
         'Regulärer Aufgabenablauf. Eine erreichte Itemansicht kann als Referenzkontext übernommen werden.';
@@ -532,6 +587,8 @@ export class ItemExplorerPlayerService implements OnDestroy {
     const usesPagedNavigation = this.pagingMode !== 'view-all' && this.pagingMode !== 'print-ids';
     const playerDefinition = this.getPlayerDefinitionContent();
 
+    startPageId ??= startPage?.toString();
+    if (!regularFlow || !this.flowStarted) this.knownPlayerPageIds = [];
     this.startSessionCounter += 1;
     this.beginResponseSession(sessionId, origin, dataParts);
     if (regularFlow) {
@@ -545,7 +602,8 @@ export class ItemExplorerPlayerService implements OnDestroy {
     // Aspect may initially report page 0 before accepting the restored page.
     // Keep that transient notification from resetting a quick solution toggle.
     this.pendingFlowPage =
-      regularFlow && startPage !== undefined && startPage > 0 ? startPage : null;
+      regularFlow && startPageId !== undefined && startPageId !== '0' ? startPageId : null;
+    this.currentPlayerPageId = startPageId ?? '0';
     this.currentPage = (startPage ?? 0) + 1;
     if (navigation && (navigation.length || triggerIds.length)) {
       this.presentation = {
@@ -580,7 +638,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
               : 'off',
         logPolicy: 'disabled',
         directDownloadUrl: GEOGEBRA_PLAYER_RESOURCE_BASE,
-        startPage: startPage !== undefined ? startPage.toString() : undefined,
+        startPage: startPageId,
         // Item selection and coding are coordinated by the Explorer navigation.
         enabledNavigationTargets: [],
       },
@@ -589,7 +647,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
       this.pagingMode === 'print-ids' ? request.printLabels : {},
     );
     if (navigation === undefined)
-      this.scheduleLegacyPageNavigation(sessionId, startPage, usesPagedNavigation);
+      this.scheduleLegacyPageNavigation(sessionId, startPageId, usesPagedNavigation);
 
     if (usesPagedNavigation) {
       this.playerHeight = '100%';
@@ -655,6 +713,7 @@ export class ItemExplorerPlayerService implements OnDestroy {
       definitionKey: previewDefinitionKey(this.definitionContent),
       target: request.target,
       page: this.currentPage - 1,
+      ...(this.usesPlayerPageOrder && { playerPageId: this.currentPlayerPageId }),
       dataParts,
     });
   }
@@ -762,13 +821,11 @@ export class ItemExplorerPlayerService implements OnDestroy {
 
   private scheduleLegacyPageNavigation(
     sessionId: string,
-    startPage: number | undefined,
+    target: string | undefined,
     enabled: boolean,
   ) {
     this.clearLegacyPageNavigationTimers();
-    if (!enabled || startPage === undefined) return;
-
-    const target = startPage.toString();
+    if (!enabled || target === undefined) return;
     this.legacyPageNavigationDelaysMs.forEach((delayMs) => {
       const timer = setTimeout(() => {
         this.sendToPlayer({

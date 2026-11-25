@@ -21,6 +21,7 @@ import {
   Comment,
   CommentThreadSnapshot,
   ItemCommentCountsSnapshot,
+  UnitCommentAvailability,
   ReviewCommentTarget,
   ReviewReadiness,
   AppSettings,
@@ -44,7 +45,9 @@ import {
   ItemExplorerChangeLogEntry,
   ItemExplorerSharedState,
   ValidateUnitsResponse,
+  ValidationResult,
   FilePreviewResponse,
+  FilePreviewVomdData,
   FileDeletionResponse,
   ItemCollectionsPayload,
   ItemCollectionRowsMutation,
@@ -230,6 +233,17 @@ export class ApiService {
   getReview(apId: string): Observable<any> {
     return this.http.get(`${this.API}/view/ap/${apId}/review`);
   }
+  getReviewTranscripts(
+    apId: string,
+    bookletId: string,
+    unitId: string,
+  ): Observable<FilePreviewVomdData['unitProfiles']> {
+    const booklet = encodeURIComponent(bookletId);
+    const unit = encodeURIComponent(unitId);
+    return this.http.get<FilePreviewVomdData['unitProfiles']>(
+      `${this.API}/view/ap/${apId}/review/booklets/${booklet}/units/${unit}/transcripts`,
+    );
+  }
   getReviewConfig(apId: string): Observable<any> {
     return this.http.get(`${this.API}/view/ap/${apId}/review/config`);
   }
@@ -330,6 +344,9 @@ export class ApiService {
   getFiles(apId: string): Observable<ApFile[]> {
     return this.http.get<ApFile[]>(`${this.API}/ap/${apId}/files`);
   }
+  getApConsistency(apId: string): Observable<ValidationResult> {
+    return this.http.get<ValidationResult>(`${this.API}/ap/${apId}/files/consistency`);
+  }
   uploadFiles(
     apId: string,
     formData: FormData,
@@ -423,8 +440,11 @@ export class ApiService {
     const suffix = query.length ? `?${query.join('&')}` : '';
     return `${this.API}/ap/${apId}/files/${fileId}/download${suffix}`;
   }
-  getFilePreview(apId: string, fileId: string): Observable<FilePreviewResponse> {
-    return this.http.get<FilePreviewResponse>(`${this.API}/ap/${apId}/files/${fileId}/preview`);
+  getFilePreview(apId: string, fileId: string, unitId?: string): Observable<FilePreviewResponse> {
+    const query = unitId ? `?unitId=${encodeURIComponent(unitId)}` : '';
+    return this.http.get<FilePreviewResponse>(
+      `${this.API}/ap/${apId}/files/${fileId}/preview${query}`,
+    );
   }
   validateUnitFiles(apId: string): Observable<ValidateUnitsResponse> {
     return this.http.get<ValidateUnitsResponse>(`${this.API}/ap/${apId}/files/validate-units`);
@@ -535,6 +555,12 @@ export class ApiService {
           error.status === 304 && previous ? of(previous) : throwError(() => error),
         ),
       );
+  }
+  getUnitCommentAvailability(apId: string, unitId: string) {
+    return this.http.get<UnitCommentAvailability>(
+      `${this.API}/ap/${apId}/review/comments/availability`,
+      { params: { unitId } },
+    );
   }
   getItemCommentCounts(apId: string): Observable<ItemCommentCountsSnapshot> {
     return this.http.get<ItemCommentCountsSnapshot>(

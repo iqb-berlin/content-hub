@@ -1,4 +1,8 @@
-import { explorerCapabilityGuard, reviewManageGuard } from './core/guards/capability.guard';
+import {
+  explorerCapabilityGuard,
+  reviewCommentsGuard,
+  reviewManageGuard,
+} from './core/guards/capability.guard';
 import { Routes } from '@angular/router';
 import { authGuard, adminGuard, apManagerGuard } from './core/guards/auth.guard';
 import { apViewGuard } from './core/guards/ap-view.guard';
@@ -145,6 +149,13 @@ export const routes: Routes = [
       {
         path: 'review/manage',
         canActivate: [reviewManageGuard],
+        loadComponent: () =>
+          import('./views/review/review.component').then((m) => m.ReviewComponent),
+      },
+      {
+        path: 'review/comments',
+        canActivate: [reviewCommentsGuard],
+        data: { section: 'analysis' },
         loadComponent: () =>
           import('./views/review/review.component').then((m) => m.ReviewComponent),
       },

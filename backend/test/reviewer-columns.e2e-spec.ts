@@ -12,8 +12,11 @@ import {
   User,
 } from "../src/database/entities";
 import { UnitParserService } from "../src/files/unit-parser.service";
+import { UnitViewResolver } from "../src/files/unit-view.resolver";
+import { FilesService } from "../src/files/files.service";
+import { parseVomd } from "../src/files/unit-file-parsing";
 import { ReviewManifestService } from "../src/review/review-manifest.service";
-import { mkdtemp, writeFile, rm } from "fs/promises";
+import { mkdtemp, readFile, writeFile, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 
@@ -88,6 +91,8 @@ describe("Published reviewer column boundary (HTTP)", () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(UnitParserService)
       .useValue({
+        parseVomd: (value: string) =>
+          parseVomd(value, false, { error: jest.fn() }),
         getItemRowKeysFromFiles: async () => new Set(["U_I"]),
         getItemListFromFiles: async () => ({
           items: [structuredClone(item)],
@@ -200,7 +205,65 @@ describe("Published reviewer column boundary (HTTP)", () => {
       const filePath = join(temp, name);
       await writeFile(
         filePath,
-        name === "P.html" ? "<html>Player</html>" : "SECRET_RAW",
+        name === "P.html"
+          ? "<html>Player</html>"
+          : name === "U.vomd"
+            ? JSON.stringify({
+                profiles: [
+                  {
+                    entries: [
+                      ...Array.from({ length: 13 }, (_, i) => ({
+                        id: `hidden-${i}`,
+                        label: "Hidden",
+                        value: "SECRET_METADATA",
+                      })),
+                      {
+                        id: "custom",
+                        label: "Transkript",
+                        value: "SECRET_CUSTOM",
+                      },
+                      {
+                        id: "k6",
+                        label: "Nebengeräusche",
+                        value: "SECRET_NOISE",
+                      },
+                      {
+                        id: "iqb_transcript",
+                        label: "Transkript",
+                        value: "Zeile 1\nZeile 2",
+                      },
+                      {
+                        id: "iqb_copyright_original",
+                        label: "Transkript Original / Text Original",
+                        value: "Originaltext der Leseaufgabe",
+                      },
+                      {
+                        id: "k6",
+                        label: "Transkript zur Aufgabe",
+                        value: "Legacy-Hörtext",
+                      },
+                      {
+                        id: "iqb_final_transcript",
+                        label: "Transkript zur Aufgabe",
+                        value: "  ",
+                      },
+                    ],
+                  },
+                ],
+                items: [
+                  {
+                    id: "I",
+                    profiles: [
+                      {
+                        entries: [
+                          { id: "iqb_transcript", value: "SECRET_ITEM" },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              })
+            : "SECRET_RAW",
       );
       const file = await db.getRepository(ApFile).save({
         apId,
@@ -222,6 +285,72 @@ describe("Published reviewer column boundary (HTTP)", () => {
     if (db && apId) await db.getRepository(Ap).delete(apId);
     if (app) await app.close();
     if (temp) await rm(temp, { recursive: true, force: true });
+  });
+
+  it("opens only the referenced metadata of a file-based unit before it is added to the index", async () => {
+    const configRepo = db.getRepository(ApAccessConfig);
+    const config = await configRepo.findOneByOrFail({ id: configId });
+    const files = db.getRepository(ApFile);
+    const unitId = "NEW";
+    const contentByName = {
+      "NEW.xml": "<Unit><Id>NEW</Id><Reference>new.vomd</Reference></Unit>",
+      "new.vomd": '{"profiles":[],"items":[]}',
+      "unrelated.vomd": '{"profiles":[],"items":[]}',
+    };
+    const resolveView = jest
+      .spyOn(app.get(UnitParserService), "getUnitViewFromFiles")
+      .mockImplementation(
+        async (id, unit) =>
+          (await app.get(UnitViewResolver).resolve(id, unit)).value,
+      );
+    try {
+      for (const [originalName, content] of Object.entries(contentByName)) {
+        const filePath = join(temp, originalName);
+        await writeFile(filePath, content);
+        await files.save({
+          apId,
+          originalName,
+          filePath,
+          fileSize: Buffer.byteLength(content),
+        });
+      }
+      await configRepo.update(configId, {
+        featureConfig: {
+          ...config.featureConfig,
+          allowFileDownload: false,
+          enableUnitView: true,
+        },
+      });
+      const { body } = await request(server)
+        .get(`/api/ap/${apId}/files/unit-view/${unitId}`)
+        .set(headers("reader"))
+        .expect(200);
+      expect(body.id).toBe(unitId);
+      const metadata = body.dependencies.find(
+        (dep: { type: string }) => dep.type === "METADATA",
+      );
+      await request(server)
+        .get(metadata.downloadUrl)
+        .set(headers("reader"))
+        .expect(200);
+      const unrelated = await files.findOneByOrFail({
+        apId,
+        originalName: "unrelated.vomd",
+      });
+      await request(server)
+        .get(`/api/ap/${apId}/files/${unrelated.id}/download`)
+        .query({ unitId })
+        .set(headers("reader"))
+        .expect(403);
+    } finally {
+      resolveView.mockRestore();
+      await configRepo.save({
+        id: configId,
+        featureConfig: config.featureConfig,
+      });
+      for (const originalName of Object.keys(contentByName))
+        await files.delete({ apId, originalName });
+    }
   });
 
   it("keeps defaults and drafts readable until publish, then enforces users, credentials and admin previews", async () => {
@@ -321,6 +450,182 @@ describe("Published reviewer column boundary (HTTP)", () => {
       `/api/ap/${apId}/items?filter=Secret`,
     ]) {
       await request(server).get(path).set(headers("reader")).expect(403);
+    }
+  });
+
+  it("uses the Unit XML metadata for preview, download and transcripts when index references drift", async () => {
+    const configRepo = db.getRepository(ApAccessConfig);
+    const config = await configRepo.findOneByOrFail({ id: configId });
+    const files = db.getRepository(ApFile);
+    const filePath = join(temp, "current.vomd.json");
+    const profiles = [
+      {
+        entries: [
+          { id: "iqb_transcript", label: "Transcript", value: "Current text" },
+        ],
+      },
+    ];
+    await writeFile(filePath, JSON.stringify({ profiles, items: [] }));
+    const metadata = await files.save({
+      apId,
+      originalName: "current.vomd.json",
+      filePath,
+      fileSize: 100,
+    });
+    const xml = join(temp, "U.xml");
+    const original = await readFile(xml);
+    try {
+      await writeFile(
+        xml,
+        "<Unit><Id>U</Id><Reference>current.vomd</Reference></Unit>",
+      );
+      await configRepo.update(configId, {
+        featureConfig: { ...config.featureConfig, allowFileDownload: false },
+      });
+      await patch(false);
+      await publish();
+      const view = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(headers("reader"))
+        .expect(200);
+      const source = view.body.dependencies.find(
+        (dep: { type: string }) => dep.type === "METADATA",
+      );
+      expect(source.fileId).toBe(metadata.id);
+      await request(server)
+        .get(source.downloadUrl)
+        .set(headers("reader"))
+        .expect(200);
+      const previewPath = `/api/ap/${apId}/files/${metadata.id}/preview`;
+      const preview = await request(server)
+        .get(previewPath)
+        .query({ unitId: "U" })
+        .set(headers("reader"))
+        .expect(200);
+      expect(preview.body.structuredData.unitProfiles).toEqual(
+        profiles[0].entries,
+      );
+      await request(server)
+        .get(previewPath)
+        .query({ unitId: "OTHER" })
+        .set(headers("reader"))
+        .expect(403);
+      expect(
+        await app.get(FilesService).getReviewTranscripts(apId, "U"),
+      ).toEqual(profiles[0].entries);
+      await patch(true);
+      await publish();
+      await request(server)
+        .get(source.downloadUrl)
+        .set(headers("reader"))
+        .expect(403);
+      await request(server)
+        .get(previewPath)
+        .query({ unitId: "U" })
+        .set(headers("reader"))
+        .expect(403);
+    } finally {
+      await writeFile(xml, original);
+      await files.delete(metadata.id);
+      await configRepo.save({
+        id: configId,
+        featureConfig: config.featureConfig,
+      });
+    }
+  });
+
+  it("releases only booklet transcripts to review participants when metadata and reviewer columns are hidden", async () => {
+    await patch(true);
+    await publish();
+    const configRepo = db.getRepository(ApAccessConfig);
+    const config = await configRepo.findOneByOrFail({
+      id: configId,
+    });
+    const manifests = app.get(ReviewManifestService);
+    const manifest = jest.spyOn(manifests, "getManifest").mockResolvedValue({
+      booklets: [
+        {
+          id: "B",
+          name: "Booklet",
+          children: [],
+          units: [
+            {
+              id: "U",
+              name: "",
+              occurrenceId: "one",
+              linkId: "one",
+              blockPath: [],
+            },
+          ],
+        },
+      ],
+      units: [],
+      issues: [],
+    });
+    const reviewPath = `/api/view/ap/${apId}/review/booklets/B/units`;
+    const transcriptPath = `${reviewPath}/U/transcripts`;
+    try {
+      await request(server)
+        .get(transcriptPath)
+        .set(headers("reviewer"))
+        .expect(403);
+      await configRepo.update(configId, {
+        featureConfig: {
+          ...config.featureConfig,
+          enableReview: true,
+          hideReviewMetadata: true,
+        },
+      });
+      const response = await request(server)
+        .get(transcriptPath)
+        .set(headers("reviewer"))
+        .expect(200);
+      expect(response.headers["cache-control"]).toContain("no-store");
+      expect(response.body).toEqual([
+        {
+          id: "iqb_transcript",
+          label: "Transkript",
+          value: "Zeile 1\nZeile 2",
+        },
+        {
+          id: "iqb_copyright_original",
+          label: "Transkript Original / Text Original",
+          value: "Originaltext der Leseaufgabe",
+        },
+        { id: "k6", label: "Transkript zur Aufgabe", value: "Legacy-Hörtext" },
+      ]);
+      await request(server)
+        .get(transcriptPath)
+        .set(headers("reader"))
+        .expect(403);
+      await request(server)
+        .get(transcriptPath)
+        .set(headers("credential"))
+        .expect(403);
+      await request(server)
+        .get(`${reviewPath}/unknown/transcripts`)
+        .set(headers("reviewer"))
+        .expect(404);
+      await request(server)
+        .get(transcriptPath.replace("/booklets/B/", "/booklets/unknown/"))
+        .set(headers("reviewer"))
+        .expect(404);
+      const ordinary = await request(server)
+        .get(`/api/view/ap/${apId}/units/U`)
+        .set(headers("reviewer"))
+        .expect(200);
+      expect(
+        ordinary.body.dependencies.map((entry: { type: string }) => entry.type),
+      ).toEqual(["PLAYER"]);
+      for (const action of ["preview", "download"]) {
+        await request(server)
+          .get(`/api/ap/${apId}/files/${fileIds["U.vomd"]}/${action}`)
+          .set(headers("reviewer"))
+          .expect(403);
+      }
+    } finally {
+      manifest.mockRestore();
+      await configRepo.save(config);
     }
   });
 

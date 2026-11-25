@@ -221,6 +221,7 @@ export interface UploadValidationSummary {
   invalidFiles: number;
   semanticValid: boolean;
   semanticIssueCount: number;
+  semanticIssues?: ValidationIssue[];
   timestamp: string;
 }
 
@@ -573,9 +574,29 @@ export interface CommentThreadSnapshot {
   comments: Comment[];
 }
 
+export interface ReviewItemVariableReferences {
+  variableId?: string;
+  sourceVariable?: string;
+  variableReadOnlyId?: string;
+}
+
+export interface UnitCommentAvailability {
+  codingCommentsAvailable: boolean;
+  additionalItems?: { id: string; label: string; targetTypes: ('ITEM' | 'CODING')[] }[];
+}
+
 export interface ItemCommentCountsSnapshot {
   revision: string;
-  counts: Array<{ unitId: string; itemId: string; count: number; codingCount: number }>;
+  codingUnitIds?: string[];
+  counts: Array<
+    ReviewItemVariableReferences & {
+      unitId: string;
+      itemId: string;
+      itemIdAlias?: string;
+      count: number;
+      codingCount: number;
+    }
+  >;
 }
 
 export interface AppSettings {
@@ -608,12 +629,18 @@ export interface PublicAp {
   requiresLogin?: boolean;
 }
 
+export interface ReviewNavigationItem extends ReviewItemVariableReferences {
+  id: string;
+  fallbackIds?: string[];
+}
+
 export interface UnitViewData {
   id: string;
   name: string;
   description?: string;
   lang?: string;
   items: any[];
+  navigationItems?: ReviewNavigationItem[];
   dependencies: FileDependency[];
   codingScheme?: unknown;
   richText?: string;

@@ -28,10 +28,23 @@ describe('ReviewRedirectComponent', () => {
     });
   });
 
-  it('returns participants and failed permission checks to the AP start page', () => {
-    const participant = setup(of({ canManageReview: false, canReview: true }));
+  it.each([true, false])('opens participant comments with Review activation %s', (canReview) => {
+    const participant = setup(
+      of({ canManageReview: false, canReview, canReadReviewComments: true }),
+    );
     participant.component.ngOnInit();
-    expect(participant.router.navigate).toHaveBeenCalledWith(['/view', 'ap-1'], {
+    expect(participant.router.navigate).toHaveBeenCalledWith(
+      ['/view', 'ap-1', 'review', 'comments'],
+      {
+        replaceUrl: true,
+      },
+    );
+  });
+
+  it('returns denied and failed permission checks to the AP start page', () => {
+    const denied = setup(of({ canManageReview: false, canReview: false }));
+    denied.component.ngOnInit();
+    expect(denied.router.navigate).toHaveBeenCalledWith(['/view', 'ap-1'], {
       replaceUrl: true,
     });
 

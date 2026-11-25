@@ -711,19 +711,23 @@ describe("ItemExplorerStateService", () => {
     }
   });
 
-  it("retains captured presentation context in shared preview settings", () => {
-    const context = {
-      definitionKey: "123-abc-def",
-      target: "item",
-      page: 1,
-      dataParts: { elementCodes: "[]" },
-    };
-    expect(
-      (service as any).normalizeItemProperties({
-        item1: { previewStart: { values: {}, context } },
-      }).item1.previewStart,
-    ).toEqual({ values: {}, context });
-  });
+  it.each([{}, { playerPageId: "20" }])(
+    "retains captured presentation context in shared preview settings (%j)",
+    (pageIdentity) => {
+      const context = {
+        ...pageIdentity,
+        definitionKey: "123-abc-def",
+        target: "item",
+        page: 1,
+        dataParts: { elementCodes: "[]" },
+      };
+      expect(
+        (service as any).normalizeItemProperties({
+          item1: { previewStart: { values: {}, context } },
+        }).item1.previewStart,
+      ).toEqual({ values: {}, context });
+    },
+  );
 
   it("publishes draft atomically into ACP domain data and feature config", async () => {
     const draftState = {

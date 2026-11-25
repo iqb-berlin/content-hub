@@ -36,6 +36,8 @@ import {
   UploadMultipleOptions,
 } from "./file-mutation.service";
 import { FileStorageService } from "./file-storage.service";
+import { ReviewItemCatalogService } from "./review-item-catalog.service";
+import { isReviewTranscript } from "../review/review-transcripts";
 export type FilePreviewMode =
   | "text"
   | "image"
@@ -166,6 +168,7 @@ export class FilesService {
     private readonly fileMutationService: FileMutationService,
     private readonly fileStorageService: FileStorageService,
     private readonly reviewManifestService: ReviewManifestService,
+    private readonly reviewItemCatalog: ReviewItemCatalogService,
   ) {
     this.storagePath = this.configService.get<string>(
       "FILE_STORAGE_PATH",
@@ -429,6 +432,20 @@ export class FilesService {
     return this.fileRepository.save(file);
   }
 
+  async getReviewTranscripts(apId: string, unitId: string) {
+    const unit = findUnitInIndex(await this.getApIndex(apId), unitId);
+    if (!unit) return [];
+    const metadata = await this.reviewItemCatalog.getUnitMetadata(apId, unit);
+    if (!metadata || !this.isVomdFile(metadata.file.originalName)) return [];
+    return this.extractVomdUnitEntries(metadata.unitProfiles).filter(
+      isReviewTranscript,
+    );
+  }
+
+  private isVomdFile(name: string): boolean {
+    return /\.vomd(?:\.json)?$/i.test(name);
+  }
+
   async getPreviewForAp(
     apId: string,
     id: string,
@@ -476,7 +493,7 @@ export class FilesService {
         structuredData = structuredXml;
         mode = "structured";
       }
-    } else if (extension === "vomd") {
+    } else if (this.isVomdFile(file.originalName)) {
       const structuredVomd = this.buildVomdPreview(rawContent);
       if (structuredVomd) {
         structuredData = structuredVomd;
@@ -658,7 +675,12 @@ export class FilesService {
     return false;
   }
 
-  async isUnitDependencyFile(apId: string, fileName: string): Promise<boolean> {
+  async isUnitDependencyFile(
+    apId: string,
+    fileName: string,
+    unitId?: string,
+    fileId?: string,
+  ): Promise<boolean> {
     const index = await this.getApIndex(apId);
     for (const unit of getIndexUnits(index)) {
       if (`${unit.id}.xml` === fileName) {
@@ -670,6 +692,25 @@ export class FilesService {
           return true;
         }
       }
+    }
+    if (unitId && fileId && this.isVomdFile(fileName)) {
+      const unit = findUnitInIndex(index, unitId);
+      if (unit) {
+        const metadata = await this.reviewItemCatalog.getUnitMetadata(
+          apId,
+          unit,
+        );
+        return metadata?.file.id === fileId;
+      }
+      // The file-based Unit view can already exist before the index is synchronized.
+      const view = await this.unitParserService.getUnitViewFromFiles(
+        apId,
+        unitId,
+      );
+      return (view?.dependencies ?? []).some(
+        (dependency: { type: string; fileId: string }) =>
+          dependency.type === "METADATA" && dependency.fileId === fileId,
+      );
     }
     return false;
   }
@@ -766,11 +807,10 @@ export class FilesService {
     }
 
     const metadataColumns = new Map<string, string>();
-    const unitProfiles = this.extractPreviewEntries(
-      (parsed.unitProfiles || []).flatMap((profile: any) =>
-        Array.isArray(profile?.entries) ? profile.entries : [],
-      ),
-    ).slice(0, STRUCTURED_PREVIEW_MAX_COLUMNS);
+    const unitProfiles = this.extractVomdUnitEntries(parsed.unitProfiles).slice(
+      0,
+      STRUCTURED_PREVIEW_MAX_COLUMNS,
+    );
 
     const items = (parsed.items || [])
       .slice(0, STRUCTURED_PREVIEW_MAX_ITEMS)
@@ -951,6 +991,14 @@ export class FilesService {
       headers,
       rows: parsedRows.slice(1, STRUCTURED_PREVIEW_MAX_ITEMS + 1),
     };
+  }
+
+  private extractVomdUnitEntries(profiles: any[]) {
+    return this.extractPreviewEntries(
+      profiles.flatMap((profile) =>
+        Array.isArray(profile?.entries) ? profile.entries : [],
+      ),
+    );
   }
 
   private extractPreviewEntries(

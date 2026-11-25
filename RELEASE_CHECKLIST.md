@@ -26,7 +26,9 @@ decision in the release issue or operational change record.
 ## 3. Promotion
 
 - [ ] A release owner confirms staging evidence
-- [ ] A separate authorized reviewer approves the protected `production` environment
+- [ ] An authorized person records the production Go decision. The release owner
+  may make that decision. Prefer an independent second review when available.
+- [ ] Any approval configured for the protected `production` environment is complete
 - [ ] Stable Git and GHCR tags were created without rebuilding
 - [ ] Stable manifest contains exactly the candidate backend/frontend digests
 - [ ] GitHub Release notes include configuration, migration, and rollback information

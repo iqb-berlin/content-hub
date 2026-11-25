@@ -223,6 +223,53 @@ describe("ReviewPolicyService", () => {
     ).resolves.toBe(false);
   });
 
+  it.each(["user", "credential"] as const)(
+    "limits overview visibility for %s identities without broadening PRIVATE threads",
+    async (kind) => {
+      accessConfigRepository.findOne.mockResolvedValue({
+        featureConfig: {
+          commentVisibilityMode: "SHARED",
+          ungroupedVisibilityMode: "SHARED",
+        },
+        reviewGroups: [
+          { id: "own", archived: false, members: [{ kind, id: "me" }] },
+          { id: "former", archived: true, members: [{ kind, id: "me" }] },
+          { id: "foreign", archived: false, members: [{ kind, id: "other" }] },
+        ],
+      });
+      const actor = {
+        [kind === "user" ? "userId" : "credentialId"]: "me",
+        authorLabel: "ME",
+        isManager: false,
+      };
+      await policy.prepareVisibility("ap", actor);
+      const own = { ...actor, groupId: null } as any;
+      const peer = { userId: "peer", groupId: "own" } as any;
+      const foreign = { userId: "peer", groupId: "foreign" } as any;
+      const archived = { userId: "peer", groupId: "former" } as any;
+      const ungrouped = { userId: "peer", groupId: null } as any;
+      for (const mode of ["PRIVATE", "GROUP", "SHARED"] as const) {
+        expect(policy.canViewOverviewComment(mode, actor, own)).toBe(true);
+        expect(policy.canViewOverviewComment(mode, actor, peer)).toBe(
+          mode !== "PRIVATE",
+        );
+        for (const hidden of [foreign, archived, ungrouped]) {
+          expect(policy.canViewOverviewComment(mode, actor, hidden)).toBe(
+            false,
+          );
+          expect(
+            policy.canViewOverviewComment(
+              mode,
+              { ...actor, isManager: true },
+              hidden,
+            ),
+          ).toBe(true);
+        }
+      }
+      expect(policy.canViewComment("SHARED", actor, foreign)).toBe(true);
+    },
+  );
+
   it("requires explicit opt-in for new booklet and coding targets", async () => {
     accessConfigRepository.findOne.mockResolvedValue({
       featureConfig: {

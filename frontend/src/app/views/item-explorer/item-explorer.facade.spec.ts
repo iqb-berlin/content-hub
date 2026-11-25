@@ -423,6 +423,39 @@ describe('ItemExplorerFacade comment counts', () => {
     expect(component.comments.itemCommentCounts['unit-1\u0000item-1']).toBe(2);
   });
 
+  it('shares counts and thread updates between a canonical item and its previous raw ID', () => {
+    const component = createFacade({
+      api: {
+        getItemCommentCounts: () =>
+          of({
+            revision: 'catalog',
+            counts: [
+              {
+                unitId: 'unit-1',
+                itemId: 'unit-1_item-1',
+                itemIdAlias: 'item-1',
+                count: 2,
+                codingCount: 1,
+              },
+            ],
+          }),
+      },
+    });
+    component.apId = 'ap-1';
+    component.comments.itemCommentsEnabled = true;
+    const raw = item('raw', 'item-1');
+    const canonical = item('prefixed', 'unit-1_item-1');
+    component.refreshItemComments(false);
+    expect(component.getItemCommentCount(raw)).toBe(2);
+    expect(component.getItemCommentCount(canonical)).toBe(2);
+    expect(component.getCodingCommentCount(raw)).toBe(1);
+
+    component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'unit-1_item-1', count: 3 });
+    expect(component.getItemCommentCount(raw)).toBe(3);
+    component.updateItemCommentCount({ unitId: 'unit-1', itemId: 'item-1', count: 4 });
+    expect(component.getItemCommentCount(canonical)).toBe(4);
+  });
+
   it('keeps distinct raw and prefixed item IDs separate', () => {
     const component = createFacade();
     component.items = [item('raw', 'item-1'), item('prefixed', 'unit-1_item-1')];
@@ -4815,6 +4848,104 @@ describe('ItemExplorerFacade', () => {
       component.coding.currentCodingSchemeAsText =
         component.coding.createCodingSchemeAsText(variables);
     };
+
+    it('applies a requested solution when ASPECT reports legacy IDs after the frame starts', () => {
+      const voud = new VoudService();
+      const component = createFacade({
+        resolvePlayerResponseTarget: voud.resolvePlayerResponseTarget.bind(voud),
+      });
+      configureCoding(component, [
+        {
+          id: 'answer',
+          sourceType: 'BASE',
+          codes: [
+            {
+              id: 1,
+              type: 'FULL_CREDIT',
+              score: 1,
+              ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['object'] }] }],
+            },
+            residual,
+          ],
+        },
+      ]);
+      component.player.definitionContent = JSON.stringify({
+        version: '4.6.0',
+        pages: [
+          {
+            elements: [
+              {
+                id: 'pool',
+                type: 'drop-list',
+                value: [{ id: 'object', text: 'Richtiges Objekt' }],
+                connectedTo: ['answer'],
+                onlyOneItem: false,
+                copyOnDrop: false,
+                isSortList: false,
+              },
+              {
+                id: 'answer',
+                type: 'drop-list',
+                value: [],
+                connectedTo: [],
+                onlyOneItem: true,
+                copyOnDrop: false,
+                isSortList: false,
+              },
+            ],
+          },
+        ],
+      });
+      const postMessage = vi.fn();
+      registerPlayerDom(component, postMessage);
+      component.player.unit = { id: 'UNIT_1' };
+      const savedData = {
+        elementCodes: JSON.stringify([{ id: 'answer', status: 'VALUE_CHANGED', value: [] }]),
+      };
+      component.player.applyResponseState(savedData);
+      setPreviewStatus(component, 'ready');
+      component.toggleCorrectSolution();
+      component.onPlayerLoaded();
+      expect(component.isCorrectSolutionActive).toBe(false);
+      const answerStart = postMessage.mock.calls[0][0];
+      expect(answerStart.unitState.dataParts).toEqual(savedData);
+      const liveData = { ...savedData, stateVariableCodes: 'current' };
+      component.handlePlayerMessage({
+        type: 'vopStateChangedNotification',
+        sessionId: answerStart.sessionId,
+        unitState: { dataParts: liveData },
+      });
+
+      const ready = {
+        type: 'vopReadyNotification',
+        metadata: { id: 'iqb-player-aspect', version: '2.5.0' },
+      };
+      component.handlePlayerMessage(ready);
+      expect(component.correctSolutionPrefill).toMatchObject({
+        status: 'available',
+        responses: [{ id: 'answer', value: ['object'] }],
+      });
+      expect(component.codingInformation).toMatchObject({
+        status: 'exact',
+        answers: [{ responseId: 'answer', valueLabel: 'Richtiges Objekt' }],
+      });
+      expect(postMessage).toHaveBeenCalledTimes(2);
+      expect(JSON.parse(postMessage.mock.calls[1][0].unitState.dataParts.elementCodes)).toEqual([
+        { id: 'pool', status: 'VALUE_CHANGED', value: [] },
+        { id: 'answer', status: 'VALUE_CHANGED', value: ['object'] },
+      ]);
+      component.handlePlayerMessage(ready);
+      expect(postMessage).toHaveBeenCalledTimes(2);
+
+      component.toggleCorrectSolution();
+      expect(postMessage.mock.calls[2][0].unitState.dataParts).toEqual(liveData);
+      component.handlePlayerMessage({
+        type: 'vopReadyNotification',
+        metadata: { id: 'iqb-player-aspect', version: '3.1.2' },
+      });
+      expect(component.correctSolutionPrefill.status).toBe('unavailable');
+      destroyFacade(component);
+    });
 
     it('loads the preview and manual instruction when optional ruleSets are absent', () => {
       const previewLoader = {

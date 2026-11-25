@@ -33,10 +33,15 @@ import {
   ItemListParser,
   ItemListParseContext,
   ItemListParseResult,
+  ItemListUnitSources,
 } from "./item-list.parser";
 import { NumberedItemListCache } from "./numbered-item-list.cache";
 import { UnitViewResolver } from "./unit-view.resolver";
 import {
+  compareUnitXmlFilenames,
+  findReferencedMetadataFile,
+  isUnitXmlFilename,
+  matchIndexedVomdItem,
   extractValueText,
   findPlayerFile,
   getXmlRootElement,
@@ -70,6 +75,11 @@ interface ParsedItemListResult {
   sourceReadMs: number;
   fileSignatureMs: number;
   parseMs: number;
+  cacheable: boolean;
+  unitSources: ItemListUnitSources;
+}
+
+interface ItemListLoadDiagnostics extends ItemExplorerLoadDiagnostics {
   cacheable: boolean;
 }
 
@@ -313,6 +323,10 @@ export class UnitParserService {
     );
 
     const uploadedBooklets: UploadedBooklet[] = [];
+    const unitSources = new Map<
+      string,
+      { file: ApFile; parsed: UnitXmlData }
+    >();
 
     await progress?.startPhase("sync-index", xmlFiles.length, {
       message:
@@ -352,7 +366,7 @@ export class UnitParserService {
       }
 
       if (
-        xmlFile.originalName.toLowerCase().startsWith("testtaker") ||
+        !isUnitXmlFilename(xmlFile.originalName) ||
         !xmlContent.includes("<Unit")
       ) {
         await progress?.advance({ message: xmlFile.originalName });
@@ -360,7 +374,8 @@ export class UnitParserService {
       }
 
       const parsedUnit = this.parseUnitXml(xmlContent, xmlFile.originalName);
-      if (!parsedUnit?.unitId) {
+      const id = parsedUnit?.unitId.trim();
+      if (!parsedUnit || !id) {
         warningSet.add(
           `Unit-XML konnte nicht geparst werden: ${xmlFile.originalName}`,
         );
@@ -368,6 +383,22 @@ export class UnitParserService {
         continue;
       }
 
+      const previous = unitSources.get(id);
+      if (previous) {
+        const preferCurrent =
+          compareUnitXmlFilenames(
+            id,
+            xmlFile.originalName,
+            previous.file.originalName,
+          ) < 0;
+        const skipped = preferCurrent ? previous.file : xmlFile;
+        await progress?.advance({ message: skipped.originalName });
+        if (!preferCurrent) continue;
+      }
+      unitSources.set(id, { file: xmlFile, parsed: parsedUnit });
+    }
+
+    for (const { file: xmlFile, parsed: parsedUnit } of unitSources.values()) {
       const location = unitLocation.get(parsedUnit.unitId);
       const existingUnit = location
         ? parts[location.partIndex].units[location.unitIndex]
@@ -389,12 +420,21 @@ export class UnitParserService {
         warningSet,
       );
       const mergedItems = [...existingItems];
-
+      const indexById = new Map<string, number>();
+      for (const [index, item] of existingItems.entries()) {
+        const id = String(item?.id || "").trim();
+        if (id && !indexById.has(id)) indexById.set(id, index);
+      }
+      const fileIds = new Set(parsedItems.map((item) => item.id.trim()));
       for (const parsedItem of parsedItems) {
-        const existingIndex = mergedItems.findIndex(
-          (i: any) => i?.id === parsedItem.id,
+        const { indexedItem: existingIndex } = matchIndexedVomdItem(
+          parsedUnit.unitId.trim(),
+          { ...parsedItem, id: parsedItem.id.trim() },
+          indexById,
+          fileIds,
         );
-        if (existingIndex === -1) {
+        if (existingIndex === undefined) {
+          indexById.set(parsedItem.id.trim(), mergedItems.length);
           mergedItems.push(parsedItem);
           report.itemsAdded++;
           continue;
@@ -478,6 +518,7 @@ export class UnitParserService {
           unitIndex: parts[0].units.length - 1,
         });
         report.unitsAdded++;
+        await progress?.advance({ message: xmlFile.originalName });
         continue;
       }
 
@@ -566,7 +607,10 @@ export class UnitParserService {
       publishedItemPropertiesOverride?: Record<string, Record<string, unknown>>;
       activeStateSignature?: string;
       publishedStateSignature?: string;
-      onDiagnostics?: (diagnostics: ItemExplorerLoadDiagnostics) => void;
+      includeStudioItemComments?: boolean;
+      persistMissingRowNumbers?: boolean;
+      onUnitSources?: (sources: ItemListUnitSources) => void;
+      onDiagnostics?: (diagnostics: ItemListLoadDiagnostics) => void;
     } = {},
     manager?: EntityManager,
   ): Promise<ItemListResult> {
@@ -601,12 +645,16 @@ export class UnitParserService {
       apId,
       options.itemPropertiesOverride === undefined,
     );
+    if (options.includeStudioItemComments === false) {
+      sourceContext.normalizedFeatureConfig.showStudioItemComments = false;
+    }
     const activeParse = await this.parseItemListFromContext(
       apId,
       sourceContext,
       options.itemPropertiesOverride || sourceContext.fallbackItemProperties,
       options.activeStateSignature,
     );
+    options.onUnitSources?.(activeParse.unitSources);
     let parseDiagnostics = activeParse;
     let publishedParse: ParsedItemListResult | undefined;
 
@@ -633,7 +681,9 @@ export class UnitParserService {
       };
     }
 
-    if (this.readOnlyRowNumbers) {
+    const cacheable =
+      activeParse.cacheable && (publishedParse?.cacheable ?? true);
+    if (this.readOnlyRowNumbers || options.persistMissingRowNumbers === false) {
       const { rowNumberRevisionMs } = await rowRevisionPromise;
       const rowNumberingStartedAt = performance.now();
       const result = await this.applyItemRowNumbers(
@@ -644,6 +694,7 @@ export class UnitParserService {
         },
       );
       options.onDiagnostics?.({
+        cacheable,
         cacheStatus: parseDiagnostics.cacheStatus,
         rowCacheStatus: "miss",
         sourceReadMs: sourceContext.sourceReadMs,
@@ -656,10 +707,7 @@ export class UnitParserService {
       return result;
     }
 
-    if (
-      !activeParse.cacheable ||
-      (publishedParse && !publishedParse.cacheable)
-    ) {
+    if (!cacheable) {
       const { rowNumberRevisionMs } = await rowRevisionPromise;
       const rowNumberingStartedAt = performance.now();
       let result: ItemListResult;
@@ -672,6 +720,7 @@ export class UnitParserService {
         result = await this.applyItemRowNumbers(apId, activeParse.itemList, {});
       }
       options.onDiagnostics?.({
+        cacheable,
         cacheStatus: parseDiagnostics.cacheStatus,
         rowCacheStatus: "miss",
         sourceReadMs: sourceContext.sourceReadMs,
@@ -710,6 +759,7 @@ export class UnitParserService {
         },
       );
     options.onDiagnostics?.({
+      cacheable,
       cacheStatus: parseDiagnostics.cacheStatus,
       rowCacheStatus,
       sourceReadMs: sourceContext.sourceReadMs,
@@ -1328,7 +1378,7 @@ export class UnitParserService {
   > {
     if (!parsedUnit.metadataRef) return [];
 
-    const vomdFile = this.findFileByOriginalName(
+    const vomdFile = findReferencedMetadataFile(
       allFiles,
       parsedUnit.metadataRef,
     );
@@ -1405,17 +1455,6 @@ export class UnitParserService {
     }
 
     return parsedItems;
-  }
-
-  private findFileByOriginalName(
-    allFiles: ApFile[],
-    originalName: string,
-  ): ApFile | undefined {
-    return allFiles.find(
-      (f) =>
-        f.originalName === originalName ||
-        f.originalName === `${originalName}.json`,
-    );
   }
 
   /**

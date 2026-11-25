@@ -160,6 +160,25 @@ export class ReviewPolicyService {
     );
   }
 
+  /** Overview and downloads stay within own contributions and current groups,
+   * even when SHARED allows broader discussion in individual threads.
+   */
+  canViewOverviewComment(
+    visibilityMode: CommentVisibilityMode,
+    actor: CommentActor,
+    comment: Comment,
+  ): boolean {
+    return (
+      this.canViewComment(visibilityMode, actor, comment) &&
+      (actor.isManager ||
+        this.isOwnedBy(comment, actor) ||
+        Boolean(
+          comment.groupId &&
+          actor.groups?.some((group) => group.id === comment.groupId),
+        ))
+    );
+  }
+
   assertCanReply(
     visibilityMode: CommentVisibilityMode,
     actor: CommentActor,

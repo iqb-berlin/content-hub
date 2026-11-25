@@ -98,6 +98,11 @@ describe("FilesController", () => {
     };
 
     validationService = {
+      validateApConsistency: jest.fn().mockResolvedValue({
+        valid: false,
+        issues: [{ severity: "error", message: "Booklet fehlt" }],
+        timestamp: "2026-11-05T12:00:00.000Z",
+      }),
       autoValidateUploadedFiles: jest.fn().mockResolvedValue({
         files: [baseFile],
         summary: { totalFiles: 1 },
@@ -435,6 +440,20 @@ describe("FilesController", () => {
       'attachment; filename="ap-ap-1-selected-files.zip"',
     );
     expect(res.send).toHaveBeenCalledWith(Buffer.from("job-archive"));
+  });
+
+  it("loads current AP consistency without revalidating or saving files", async () => {
+    const result = await controller.getConsistency("ap-1");
+
+    expect(result).toMatchObject({
+      valid: false,
+      issues: [{ severity: "error", message: "Booklet fehlt" }],
+    });
+    expect(validationService.validateApConsistency).toHaveBeenCalledWith(
+      "ap-1",
+    );
+    expect(validationService.autoValidateUploadedFiles).not.toHaveBeenCalled();
+    expect(unitParserService.validateUnitFiles).not.toHaveBeenCalled();
   });
 
   it("validates units and returns validation summary", async () => {

@@ -5,7 +5,11 @@ import { performance } from "perf_hooks";
 import { ApFile } from "../database/entities";
 import { AsyncCacheStatus, AsyncLruCache } from "./async-lru-cache";
 import { FileCatalogCache, FileCatalogResult } from "./file-catalog.cache";
-import { findPlayerFile, parseUnitXml } from "./unit-file-parsing";
+import {
+  findPlayerFile,
+  findReferencedMetadataFile,
+  parseUnitXml,
+} from "./unit-file-parsing";
 
 interface UnitViewCacheValue {
   value: any;
@@ -115,16 +119,15 @@ export class UnitViewResolver {
     );
 
     if (parsed.metadataRef) {
-      const metadataFile = allFiles.find(
-        (file) =>
-          file.originalName === parsed.metadataRef ||
-          file.originalName === `${parsed.metadataRef}.json`,
+      const metadataFile = findReferencedMetadataFile(
+        allFiles,
+        parsed.metadataRef,
       );
       if (metadataFile) {
         dependencies.push({
           type: "METADATA",
           originalName: metadataFile.originalName,
-          downloadUrl: `/api/ap/${apId}/files/${metadataFile.id}/download`,
+          downloadUrl: `/api/ap/${apId}/files/${metadataFile.id}/download?unitId=${encodeURIComponent(unitId)}`,
           fileId: metadataFile.id,
         });
       }

@@ -143,6 +143,10 @@ export class ReviewerColumnsInterceptor implements NestInterceptor {
         if (controller === "ReviewController" && handler === "getReview") {
           return policy.projectReviewManifest(response);
         }
+        if (controller === "ReviewController" && handler === "getTranscripts") {
+          // The review endpoint has already authorized the booklet and selected the transcript fields.
+          return response;
+        }
         if (
           controller === "ViewsController" &&
           handler === "getSequence" &&

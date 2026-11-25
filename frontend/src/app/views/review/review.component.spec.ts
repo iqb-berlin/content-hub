@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { of, Subject, throwError } from 'rxjs';
 import { ReviewComponent } from './review.component';
 
-function setup() {
+function setup(section?: string) {
   const api = {
-    getCapabilities: vi.fn().mockReturnValue(of({ canManageReview: true, canReview: true })),
+    getCapabilities: vi
+      .fn()
+      .mockReturnValue(of({ canManageReview: true, canReview: true, canReadReviewComments: true })),
     getReview: vi.fn().mockReturnValue(of({ booklets: [] })),
     getVisibleReviewComments: vi.fn().mockReturnValue(of([])),
     getReviewConfig: vi.fn(),
@@ -25,7 +27,7 @@ function setup() {
     exportVisibleReviewComments: vi.fn().mockReturnValue(new Subject()),
   };
   const component = new ReviewComponent(
-    { snapshot: { paramMap: { get: () => 'ap' } } } as any,
+    { snapshot: { paramMap: { get: () => 'ap' }, data: { section } } } as any,
     api as any,
   );
   component.apId = 'ap';
@@ -40,6 +42,39 @@ function setup() {
 }
 
 describe('Review configuration', () => {
+  it.each([true, false])(
+    'opens participant comments and exports with Review activation %s',
+    (canReview) => {
+      const { component, api } = setup();
+      api.getCapabilities.mockReturnValue(
+        of({ canManageReview: false, canReview, canReadReviewComments: true }),
+      );
+      component.ngOnInit();
+      expect(component.activeSection).toBe('analysis');
+      expect(api.getVisibleReviewComments).toHaveBeenCalledWith('ap');
+      expect(api.getReviewConfig).not.toHaveBeenCalled();
+      expect(api.getReviewReadiness).not.toHaveBeenCalled();
+      expect(api.getReviewMembers).not.toHaveBeenCalled();
+      expect(api.getReview).toHaveBeenCalledTimes(canReview ? 1 : 0);
+      component.exportComments();
+      expect(api.exportVisibleReviewComments).toHaveBeenCalledWith('ap', {});
+      component.exportComments('csv');
+      expect(api.exportMyReviewCommentsCsv).toHaveBeenCalledWith('ap', {});
+      component.exportComments('xlsx');
+      expect(api.exportMyReviewCommentsXlsx).toHaveBeenCalledWith('ap', {});
+      expect(component.error).toBe('');
+      component.ngOnDestroy();
+    },
+  );
+
+  it('opens the analysis section for managers following the direct comment link', () => {
+    const { component, api } = setup('analysis');
+    api.getReviewConfig.mockReturnValue(of(component.config));
+    component.ngOnInit();
+    expect(component.activeSection).toBe('analysis');
+    component.ngOnDestroy();
+  });
+
   it('restores category and group deletions together after a rejected save', () => {
     const { component, api } = setup();
     const category = { id: 'c', name: 'Fachlich', archived: false };

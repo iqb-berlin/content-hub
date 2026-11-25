@@ -36,6 +36,7 @@ import {
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { UuidParam } from "../common/uuid-param";
 import { CommentsService } from "./comments.service";
+import type { UnitCommentAvailability } from "./comments.service";
 import { ReviewPolicyService } from "./review-policy.service";
 import { ReviewAccessGuard } from "./review-access.guard";
 import { CommentTargetType } from "../database/entities";
@@ -173,6 +174,32 @@ export class ReviewCommentsController {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       `comments-${apId}-visible.xlsx`,
     );
+  }
+
+  @Get("availability")
+  @ApiOperation({
+    summary: "Get comment availability and saved targets for one unit",
+  })
+  async getUnitCommentAvailability(
+    @UuidParam("apId") apId: string,
+    @Query("unitId") rawUnitId: string,
+    @Request() req: any,
+  ): Promise<UnitCommentAvailability> {
+    const unitId = typeof rawUnitId === "string" ? rawUnitId.trim() : "";
+    if (!unitId) throw new BadRequestException("unitId is required");
+    const availability = await this.commentsService.getUnitCommentAvailability(
+      apId,
+      unitId,
+      this.reviewPolicy.resolveActor(req),
+    );
+    if (!req.reviewerColumnPolicy?.restricted || !availability.additionalItems)
+      return availability;
+    return {
+      ...availability,
+      additionalItems: availability.additionalItems.map(
+        ({ id, targetTypes }) => ({ id, label: id, targetTypes }),
+      ),
+    };
   }
 
   @Get("counts")

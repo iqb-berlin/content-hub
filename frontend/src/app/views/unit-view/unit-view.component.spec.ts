@@ -1,11 +1,16 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
-import { FeatureConfig, UnitViewData } from '../../core/models/api.models';
+import {
+  FeatureConfig,
+  FilePreviewVomdData,
+  UnitCommentAvailability,
+  UnitViewData,
+} from '../../core/models/api.models';
 import { UnitViewComponent } from './unit-view.component';
 
 vi.mock('../comment-thread/item-comment-thread.component', async () => {
@@ -14,6 +19,7 @@ vi.mock('../comment-thread/item-comment-thread.component', async () => {
     apId = '';
     targetType = '';
     unitId = '';
+    itemId = '';
     bookletId = '';
     enabled = false;
     initiallyOpen = false;
@@ -25,11 +31,12 @@ vi.mock('../comment-thread/item-comment-thread.component', async () => {
     selector: 'app-item-comment-thread',
     standalone: true,
     template:
-      '<div class="comment-thread-stub" [attr.data-target-type]="targetType" [attr.data-unit-id]="unitId" [attr.data-booklet-id]="bookletId"></div>',
+      '@if (itemId || targetType === "UNIT" || targetType === "BOOKLET") { <div class="comment-thread-stub" [attr.data-target-type]="targetType" [attr.data-unit-id]="unitId" [attr.data-item-id]="itemId" [attr.data-booklet-id]="bookletId"></div> }',
     inputs: [
       'apId',
       'targetType',
       'unitId',
+      'itemId',
       'unitName',
       'bookletId',
       'bookletName',
@@ -55,25 +62,55 @@ describe('UnitViewComponent', () => {
       pages: [{ alwaysVisible: true }, {}, {}],
     }),
     codingScheme?: unknown,
+    metadataByUnit?: Record<string, FilePreviewVomdData['unitProfiles']>,
+    items: UnitViewData['items'] = [],
+    codingFile?: Promise<unknown>,
+    navigationItemsByUnit?: Record<string, UnitViewData['navigationItems']>,
   ) {
     const api = {
+      getReviewTranscripts: (_apId: string, _bookletId: string, unitId: string) =>
+        of(
+          (metadataByUnit?.[unitId] ?? [])
+            .filter(
+              (entry) =>
+                ['iqb_transcript', 'iqb_final_transcript', 'iqb_copyright_original'].includes(
+                  entry.id,
+                ) ||
+                (entry.id === 'k6' && entry.label === 'Transkript zur Aufgabe'),
+            )
+            .filter((entry) => entry.value.trim()),
+        ),
       appendAuthToken: (url: string) => url,
-      getViewUnit: () =>
+      getViewUnit: (_apId: string, unitId: string) =>
         of({
-          id: 'u1',
+          id: unitId,
           name: 'Aufgabe',
-          items: [],
+          items,
+          navigationItems: navigationItemsByUnit?.[unitId],
           codingScheme,
           dependencies: [
             { type: 'PLAYER', downloadUrl: '/player' },
             { type: 'UNIT_DEFINITION', downloadUrl: '/definition' },
+            ...(codingFile ? [{ type: 'CODING_SCHEME', downloadUrl: '/coding' }] : []),
+            ...(metadataByUnit ? [{ type: 'METADATA', fileId: unitId }] : []),
           ],
         }),
+      getFilePreview: (_apId: string, fileId: string) =>
+        of({ structuredData: { type: 'vomd', unitProfiles: metadataByUnit?.[fileId] || [] } }),
+      getItemCommentCounts: vi.fn(),
+      getUnitCommentAvailability: (): Observable<UnitCommentAvailability> =>
+        of({ codingCommentsAvailable: true }),
     };
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string) => ({
-        text: async () => (url === '/definition' ? definition : '<p>Player</p>'),
+        ok: true,
+        text: async () =>
+          url === '/definition'
+            ? definition
+            : url === '/coding'
+              ? JSON.stringify(await codingFile)
+              : '<p>Player</p>',
       })),
     );
     await TestBed.configureTestingModule({
@@ -89,6 +126,7 @@ describe('UnitViewComponent', () => {
     const fixture = TestBed.createComponent(UnitViewComponent);
     fixture.componentRef.setInput('apId', 'ap');
     fixture.componentRef.setInput('unitId', 'u1');
+    fixture.componentRef.setInput('bookletId', 'booklet-1');
     fixture.componentRef.setInput('embedded', true);
     fixture.componentRef.setInput('reviewMode', true);
     fixture.componentRef.setInput('featureConfigOverride', {});
@@ -101,8 +139,1164 @@ describe('UnitViewComponent', () => {
       window.dispatchEvent(new MessageEvent('message', { data, source }));
       await fixture.whenStable();
     };
-    return { fixture, component: fixture.componentInstance, frame, postMessage, message };
+    return { fixture, component: fixture.componentInstance, frame, postMessage, message, api };
   }
+
+  async function enableComments(result: Awaited<ReturnType<typeof playerFixture>>) {
+    result.fixture.componentRef.setInput('featureConfigOverride', {
+      enableCommenting: true,
+      commentTargets: ['ITEM', 'CODING'],
+    });
+    result.fixture.detectChanges();
+    await result.message({ type: 'vopReadyNotification' });
+  }
+
+  const twoPages = JSON.stringify({
+    pages: [
+      { elements: [{ id: 'input-1', alias: 'FIRST', type: 'text-field' }] },
+      { elements: [{ id: 'input-2', alias: 'SECOND', type: 'text-field' }] },
+    ],
+  });
+  const fullCode = [{ id: 1, type: 'FULL_CREDIT', score: 1 }];
+
+  it.each([undefined, 'FIRST'])(
+    'limits items to their explicitly referenced subtotal pages within a shared aggregate (legacy reference: %s)',
+    async (legacyReference) => {
+      const result = await playerFixture(
+        JSON.stringify({
+          pages: ['FIRST', 'SECOND', 'THIRD'].map((alias) => ({ elements: [{ alias }] })),
+        }),
+        {
+          variableCodings: [
+            { id: 'FIRST', sourceType: 'BASE', codes: [] },
+            { id: 'SECOND', sourceType: 'BASE', codes: [] },
+            { id: 'THIRD', sourceType: 'BASE', codes: [] },
+            { id: 'subtotal-1', sourceType: 'SUM_SCORE', deriveSources: ['FIRST', 'SECOND'] },
+            { id: 'subtotal-2', sourceType: 'SUM_SCORE', deriveSources: ['THIRD'] },
+            {
+              id: 'total',
+              sourceType: 'SUM_SCORE',
+              deriveSources: ['subtotal-1', 'subtotal-2'],
+              codes: fullCode,
+            },
+          ],
+        },
+        undefined,
+        [
+          { id: 'I1', variableReadOnlyId: 'total', sourceVariable: 'subtotal-1' },
+          {
+            id: 'I2',
+            variableReadOnlyId: 'total',
+            sourceVariable: 'subtotal-2',
+            variableId: legacyReference,
+          },
+        ],
+      );
+      await enableComments(result);
+      expect(result.component.selectedCommentItemId).toBe('I1');
+      for (const [page, itemId] of [
+        [2, 'I1'],
+        [3, 'I2'],
+        [1, 'I1'],
+      ] as const) {
+        result.component.navigateToPage(page);
+        expect(result.component.selectedCommentItemId).toBe(itemId);
+        expect(result.component.activeReviewCodingId).toBe('total');
+      }
+    },
+  );
+
+  it.each([false, true])(
+    'keeps distinct VOMD items when a generated ID collides with an exact ID (comments: %s)',
+    async (comments) => {
+      const result = await playerFixture(
+        twoPages,
+        {
+          variableCodings: [
+            { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+            { id: 'SECOND', sourceType: 'BASE', codes: [] },
+            {
+              id: 'result-second',
+              sourceType: 'COPY_VALUE',
+              deriveSources: ['SECOND'],
+              codes: fullCode,
+            },
+          ],
+        },
+        undefined,
+        [{ id: 'u1_I', variableReadOnlyId: 'result-second' }],
+        undefined,
+        {
+          u1: [
+            { id: 'u1_I', variableReadOnlyId: 'result-second' },
+            { id: 'I', variableId: 'FIRST' },
+          ],
+        },
+      );
+      if (comments) await enableComments(result);
+      else await result.message({ type: 'vopReadyNotification' });
+
+      expect(result.component.activeReviewCodingId).toBe('FIRST');
+      expect(result.component.selectedCommentItemId).toBe(comments ? 'I' : '');
+      result.component.navigateToPage(2);
+      expect(result.component.activeReviewCodingId).toBe('result-second');
+      expect(result.component.selectedCommentItemId).toBe(comments ? 'u1_I' : '');
+    },
+  );
+
+  it.each([false, true])(
+    'falls back to a permanently visible item when the scroll page has no item (comments: %s)',
+    async (comments) => {
+      const result = await playerFixture(
+        JSON.stringify({
+          pages: [
+            { alwaysVisible: true, elements: [{ alias: 'FIRST' }] },
+            { elements: [] },
+            { elements: [{ alias: 'SECOND' }] },
+          ],
+        }),
+        {
+          variableCodings: ['FIRST', 'SECOND'].map((id) => ({
+            id,
+            sourceType: 'BASE',
+            codes: fullCode,
+          })),
+        },
+        undefined,
+        [
+          { id: 'I1', variableId: 'FIRST' },
+          { id: 'I2', variableId: 'SECOND' },
+        ],
+      );
+      if (comments) await enableComments(result);
+      else await result.message({ type: 'vopReadyNotification' });
+
+      expect(result.component.activeReviewCodingId).toBe('FIRST');
+      expect(result.component.selectedCommentItemId).toBe(comments ? 'I1' : '');
+      result.component.navigateToPage(2);
+      expect(result.component.activeReviewCodingId).toBe('SECOND');
+      expect(result.component.selectedCommentItemId).toBe(comments ? 'I2' : '');
+      result.component.navigateToPage(1);
+      expect(result.component.activeReviewCodingId).toBe('FIRST');
+      expect(result.component.selectedCommentItemId).toBe(comments ? 'I1' : '');
+    },
+  );
+
+  it('keeps the permanent input as the comment target when its coding derives from a scroll page', async () => {
+    const result = await playerFixture(
+      JSON.stringify({
+        pages: [
+          { alwaysVisible: true, elements: [{ alias: 'PERMANENT' }] },
+          { elements: [{ alias: 'FIRST' }] },
+          { elements: [] },
+        ],
+      }),
+      {
+        variableCodings: [
+          { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+          { id: 'result', sourceType: 'COPY_VALUE', deriveSources: ['FIRST'], codes: fullCode },
+        ],
+      },
+      undefined,
+      [
+        { id: 'I1', variableId: 'FIRST' },
+        { id: 'I2', sourceVariable: 'PERMANENT', variableReadOnlyId: 'result' },
+      ],
+    );
+    await enableComments(result);
+    expect(result.component.selectedCommentItemId).toBe('I1');
+    result.component.navigateToPage(2);
+    expect(result.component.selectedCommentItemId).toBe('I2');
+    expect(result.component.activeReviewCodingId).toBe('result');
+    result.component.navigateToPage(1);
+    expect(result.component.selectedCommentItemId).toBe('I1');
+    expect(result.component.activeReviewCodingId).toBe('FIRST');
+  });
+
+  it.each([
+    { reference: 'sourceVariable', sourceId: 'output' },
+    { reference: 'variableId', sourceId: 'output' },
+    { reference: 'sourceVariable', sourceId: 'FIRST' },
+    { reference: 'variableId', sourceId: 'FIRST' },
+  ])(
+    'uses explicit player reference $reference when the pinned coding derives from $sourceId',
+    async ({ reference, sourceId }) => {
+      const result = await playerFixture(
+        twoPages,
+        {
+          variableCodings: [
+            { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+            { id: 'output', sourceType: 'BASE', codes: [] },
+            { id: 'result', sourceType: 'COPY_VALUE', deriveSources: [sourceId], codes: fullCode },
+          ],
+        },
+        undefined,
+        [
+          { id: 'I1', variableId: 'FIRST' },
+          { id: 'I2', [reference]: 'SECOND', variableReadOnlyId: 'result' },
+        ],
+      );
+      await enableComments(result);
+      expect(result.component.selectedCommentItemId).toBe('I1');
+      result.component.reviewCodingVisible = true;
+      result.component.navigateToPage(2);
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      const panel = result.fixture.nativeElement;
+      expect(panel.querySelector('.comment-thread-stub').dataset.itemId).toBe('I2');
+      expect(panel.querySelector('.current-coding')?.dataset.codingId).toBe('result');
+    },
+  );
+
+  it.each([false, true])(
+    'follows the MDB007 aggregate and inherits only missing source instructions and codes (own codes: %s)',
+    async (ownCodes) => {
+      const result = await playerFixture(
+        twoPages,
+        {
+          variableCodings: [
+            { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+            {
+              id: '01',
+              alias: 'SECOND',
+              sourceType: 'BASE',
+              codes: fullCode,
+              manualInstruction: 'Nur Segment Bilderbücher markieren.',
+            },
+            {
+              id: '01_1',
+              alias: '01',
+              sourceType: 'SUM_SCORE',
+              deriveSources: ['01', 'FIRST'],
+              codes: ownCodes ? [{ ...fullCode[0], id: 2 }] : [],
+            },
+          ],
+        },
+        undefined,
+        [
+          { id: 'I1', variableId: 'FIRST' },
+          { id: 'I2', variableId: '01', variableReadOnlyId: '01_1' },
+        ],
+      );
+      await enableComments(result);
+      result.component.reviewCodingVisible = true;
+      result.component.navigateToPage(2);
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      const panel = result.fixture.nativeElement;
+      expect(panel.querySelector('.comment-thread-stub').dataset.itemId).toBe('I2');
+      const active = panel.querySelector('.current-coding');
+      expect(active?.dataset.codingId).toBe('01');
+      expect(active.textContent).toContain('Nur Segment Bilderbücher markieren.');
+      expect(active.querySelector('.coding-code strong').textContent.trim()).toBe(
+        ownCodes ? 'Code 2' : 'Code 1',
+      );
+      result.component.navigateToPage(1);
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      expect(panel.querySelector('.comment-thread-stub').dataset.itemId).toBe('I1');
+      expect(panel.querySelector('.current-coding')?.dataset.codingId).toBe('FIRST');
+    },
+  );
+
+  it('selects the canonical item and inherits its leaf instructions through a shared subtotal', async () => {
+    const result = await playerFixture(
+      twoPages,
+      {
+        variableCodings: [
+          { id: 'a', alias: 'FIRST', manualInstruction: 'Erste Anweisung', codes: fullCode },
+          { id: 'b', alias: 'SECOND', manualInstruction: 'Zweite Anweisung', codes: fullCode },
+          { id: 'subtotal', sourceType: 'SUM_SCORE', deriveSources: ['a', 'b'], codes: [] },
+          { id: 'total', sourceType: 'SUM_SCORE', deriveSources: ['subtotal'], codes: [] },
+        ],
+      },
+      undefined,
+      [
+        { id: 'I1', variableReadOnlyId: 'total', sourceVariable: 'FIRST' },
+        { id: 'I2', variableReadOnlyId: 'total', sourceVariable: 'SECOND' },
+      ],
+    );
+    await enableComments(result);
+    result.component.toggleReviewCoding();
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    const panel = result.fixture.nativeElement;
+    expect(panel.querySelector('.comment-thread-stub').dataset.itemId).toBe('I2');
+    expect(panel.querySelector('.current-coding').dataset.codingId).toBe('total');
+    expect(panel.querySelector('.current-coding').textContent).toContain('Zweite Anweisung');
+    await result.message({
+      type: 'vopStateChangedNotification',
+      playerState: { currentPage: '0' },
+    });
+    expect(panel.querySelector('.comment-thread-stub').dataset.itemId).toBe('I1');
+    expect(panel.querySelector('.current-coding').textContent).toContain('Erste Anweisung');
+  });
+
+  it('keeps aggregate coding on an extra source page without selecting another page’s item', async () => {
+    const result = await playerFixture(
+      JSON.stringify({
+        pages: ['FIRST', 'SECOND', 'HELPER'].map((alias) => ({
+          elements: [{ alias, type: 'text-field' }],
+        })),
+      }),
+      {
+        variableCodings: [
+          { id: 'FIRST', sourceType: 'BASE', codes: [] },
+          { id: 'SECOND', sourceType: 'BASE', codes: [], manualInstruction: 'Zweite Anweisung' },
+          { id: 'HELPER', sourceType: 'BASE', codes: [] },
+          {
+            id: 'total',
+            sourceType: 'SUM_SCORE',
+            deriveSources: ['FIRST', 'SECOND', 'HELPER'],
+            codes: fullCode,
+          },
+        ],
+      },
+      undefined,
+      [
+        { id: 'I1', variableReadOnlyId: 'total', sourceVariable: 'FIRST' },
+        { id: 'I2', variableReadOnlyId: 'total', sourceVariable: 'SECOND' },
+      ],
+    );
+    await enableComments(result);
+    result.component.toggleReviewCoding();
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    const panel = result.fixture.nativeElement;
+    expect(panel.querySelector('.comment-thread-stub').dataset.itemId).toBe('I2');
+    expect(panel.querySelector('.current-coding').textContent).toContain('Zweite Anweisung');
+
+    await result.message({
+      type: 'vopStateChangedNotification',
+      sessionId: result.component.playerSessionId,
+      playerState: { currentPage: '2' },
+    });
+    expect(panel.querySelector('.comment-thread-stub')).toBeNull();
+    expect(panel.querySelector('.current-coding').dataset.codingId).toBe('total');
+    expect(panel.querySelector('.current-coding').textContent).not.toContain('Zweite Anweisung');
+  });
+
+  it('follows each item’s explicit source of a shared aggregate without item comments', async () => {
+    const result = await playerFixture(
+      twoPages,
+      {
+        variableCodings: [
+          {
+            id: 'FIRST',
+            manualInstruction: 'Erste Anweisung',
+            sourceType: 'BASE',
+            codes: fullCode,
+          },
+          {
+            id: 'SECOND',
+            manualInstruction: 'Zweite Anweisung',
+            sourceType: 'BASE',
+            codes: fullCode,
+          },
+          { id: 'total', sourceType: 'SUM_SCORE', deriveSources: ['FIRST', 'SECOND'], codes: [] },
+        ],
+      },
+      undefined,
+      [
+        { id: 'I2', variableReadOnlyId: 'total', sourceVariable: 'SECOND' },
+        { id: 'I1', variableReadOnlyId: 'total', sourceVariable: 'FIRST' },
+      ],
+    );
+    result.component.reviewCodingVisible = true;
+    await result.message({ type: 'vopReadyNotification' });
+    const active = () => result.fixture.nativeElement.querySelector('.current-coding');
+    expect(active()?.textContent).toContain('Erste Anweisung');
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    expect(active()?.textContent).toContain('Zweite Anweisung');
+  });
+
+  it.each([
+    { enableCommenting: false, commentTargets: ['ITEM', 'CODING'] },
+    { enableCommenting: true, commentTargets: ['UNIT', 'BOOKLET'] },
+  ] satisfies FeatureConfig[])(
+    'review: follows file-only aggregate references beyond the metadata preview without item comments for %j',
+    async (featureConfig) => {
+      const aliases = Array.from({ length: 25 }, (_, index) => `FIELD_${index + 1}`);
+      const result = await playerFixture(
+        JSON.stringify({
+          pages: aliases.map((alias) => ({ elements: [{ alias, type: 'text-field' }] })),
+        }),
+        {
+          variableCodings: [
+            ...aliases.map((alias, index) => ({
+              id: `base-${index}`,
+              alias,
+              sourceType: 'BASE',
+              codes: fullCode,
+            })),
+            ...aliases.map((_, index) => ({
+              id: `result-${index}`,
+              sourceType: 'SUM_SCORE',
+              deriveSources: [`base-${index}`],
+              codes: fullCode,
+            })),
+          ],
+        },
+        undefined,
+        [],
+        undefined,
+        {
+          u1: aliases.map((_, index) => ({
+            id: `I${index + 1}`,
+            variableReadOnlyId: `result-${index}`,
+          })),
+        },
+      );
+      const availability = vi.spyOn(result.api, 'getUnitCommentAvailability');
+      result.fixture.componentRef.setInput('featureConfigOverride', featureConfig);
+      result.component.reviewCodingVisible = true;
+      await result.message({ type: 'vopReadyNotification' });
+      expect(result.component.activeReviewCodingId).toBe('result-0');
+      result.component.navigateToPage(25);
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      expect(result.component.activeReviewCodingId).toBe('result-24');
+      expect(
+        result.fixture.nativeElement.querySelector('.current-coding h4').textContent,
+      ).toContain('result-24');
+      expect(result.component.commentItems).toEqual([]);
+      expect(result.component.selectedCommentItemId).toBe('');
+      expect(availability).not.toHaveBeenCalled();
+      result.fixture.componentRef.setInput('unitId', 'u2');
+      result.fixture.detectChanges();
+      await vi.waitFor(() => expect(result.component.definitionContent).not.toBeNull());
+      await result.fixture.whenStable();
+      expect(result.component.activeReviewCodingId).toBe('FIELD_1');
+    },
+  );
+
+  it.each(['variableId', 'sourceVariable'] as const)(
+    'review: keeps legacy %s targets separate when another variable has a colliding alias',
+    async (reference) => {
+      const result = await playerFixture(
+        JSON.stringify({
+          pages: [
+            { elements: [{ alias: 'FIRST', type: 'text-field' }] },
+            { elements: [{ alias: 'A', type: 'text-field' }] },
+          ],
+        }),
+        {
+          variableCodings: [
+            { id: 'A', alias: 'FIRST', sourceType: 'BASE', codes: fullCode },
+            { id: 'B', alias: 'A', sourceType: 'BASE', codes: fullCode },
+          ],
+        },
+        undefined,
+        [
+          { id: 'I1', [reference]: 'A' },
+          { id: 'I2', [reference]: 'B' },
+        ],
+      );
+      await enableComments(result);
+      result.component.navigateToPage(2);
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      expect(result.component.selectedCommentItemId).toBe('I2');
+      expect(result.component.activeReviewCodingId).toBe('A');
+      await result.message({
+        type: 'vopStateChangedNotification',
+        playerState: { currentPage: '0' },
+      });
+      expect(result.component.selectedCommentItemId).toBe('I1');
+      expect(result.component.activeReviewCodingId).toBe('FIRST');
+    },
+  );
+
+  it.each(['host', 'player', 'manual'] as const)(
+    'review: clears the active coding for an uncoded item selected through %s navigation',
+    async (navigation) => {
+      const result = await playerFixture(
+        twoPages,
+        {
+          variableCodings: [
+            { id: 'internal-first', alias: 'FIRST', sourceType: 'BASE', codes: fullCode },
+          ],
+        },
+        undefined,
+        [
+          { id: 'I1', variableId: 'FIRST' },
+          { id: 'I2', variableId: 'SECOND' },
+        ],
+      );
+      await enableComments(result);
+      result.component.reviewCodingVisible = true;
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      expect(
+        result.fixture.nativeElement.querySelector('.current-coding h4').textContent,
+      ).toContain('FIRST');
+      if (navigation === 'host') result.component.navigateToPage(2);
+      else if (navigation === 'player')
+        await result.message({
+          type: 'vopStateChangedNotification',
+          playerState: { currentPage: '1' },
+        });
+      else {
+        const select = result.fixture.nativeElement.querySelector(
+          '.comment-item-select select',
+        ) as HTMLSelectElement;
+        select.value = 'I2';
+        select.dispatchEvent(new Event('change'));
+        // A repeated report for the displayed coded page must preserve this explicit choice.
+        await result.message({
+          type: 'vopStateChangedNotification',
+          playerState: { currentPage: '0' },
+        });
+      }
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      expect(result.component.selectedCommentItemId).toBe('I2');
+      expect(result.component.activeReviewCodingId).toBe('');
+      expect(result.fixture.nativeElement.querySelector('.current-coding')).toBeNull();
+      result.component.selectedCommentItemId = 'I1';
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      expect(
+        result.fixture.nativeElement.querySelector('.current-coding h4').textContent,
+      ).toContain('FIRST');
+    },
+  );
+
+  it.each(
+    (['host', 'player'] as const).flatMap((navigation) =>
+      [false, true].map((emptyVariable) => ({ navigation, emptyVariable })),
+    ),
+  )(
+    'review: requests a choice on shared pages after $navigation navigation (empty variable: $emptyVariable)',
+    async ({ navigation, emptyVariable }) => {
+      const result = await playerFixture(
+        JSON.stringify({
+          pages: [
+            { elements: [{ alias: 'FIRST', type: 'text-field' }] },
+            {
+              elements: [
+                { alias: 'UNCODED', type: 'text-field' },
+                { alias: 'SECOND', type: 'text-field' },
+              ],
+            },
+          ],
+        }),
+        {
+          variableCodings: [
+            { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+            ...(emptyVariable ? [{ id: 'UNCODED', sourceType: 'BASE', codes: [] }] : []),
+            { id: 'SECOND', sourceType: 'BASE', codes: fullCode },
+          ],
+        },
+        undefined,
+        [
+          { id: 'I1', variableId: 'FIRST' },
+          { id: 'I2', variableId: 'UNCODED' },
+          { id: 'I3', variableId: 'SECOND' },
+        ],
+      );
+      await enableComments(result);
+      result.component.reviewCodingVisible = true;
+      const navigate = async (page: number) => {
+        if (navigation === 'host') result.component.navigateToPage(page);
+        else
+          await result.message({
+            type: 'vopStateChangedNotification',
+            playerState: { currentPage: String(page - 1) },
+          });
+        result.fixture.changeDetectorRef.markForCheck();
+        await result.fixture.whenStable();
+      };
+      await navigate(2);
+      expect(result.component.selectedCommentItemId).toBe('');
+      expect(result.component.activeReviewCodingId).toBe('');
+      expect(result.fixture.nativeElement.querySelector('.current-coding')).toBeNull();
+
+      const select = result.fixture.nativeElement.querySelector(
+        'select[aria-label="Item auf dieser Seite"]',
+      ) as HTMLSelectElement;
+      expect(Array.from(select.options, (option) => option.value)).toEqual(['', 'I2', 'I3']);
+      select.value = 'I3';
+      select.dispatchEvent(new Event('change'));
+      await result.message({
+        type: 'vopStateChangedNotification',
+        playerState: { currentPage: '1' },
+      });
+      expect(result.component.selectedCommentItemId).toBe('I3');
+      expect(result.component.activeReviewCodingId).toBe('SECOND');
+      result.component.selectedCommentItemId = 'I2';
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      expect(result.fixture.nativeElement.querySelector('.current-coding')).toBeNull();
+      await navigate(1);
+      expect(result.component.selectedCommentItemId).toBe('I1');
+      expect(result.component.activeReviewCodingId).toBe('FIRST');
+      await navigate(2);
+      expect(result.component.selectedCommentItemId).toBe('');
+      expect(result.component.activeReviewCodingId).toBe('');
+    },
+  );
+
+  it.each([false, true])(
+    'keeps the coding empty for the only uncoded item on its page (comments: %s)',
+    async (comments) => {
+      const result = await playerFixture(
+        JSON.stringify({
+          pages: [
+            { elements: [{ alias: 'FIRST' }] },
+            { elements: [{ alias: 'UNCODED' }, { alias: 'HELPER' }] },
+            { elements: [{ alias: 'THIRD' }] },
+          ],
+        }),
+        {
+          variableCodings: ['FIRST', 'HELPER', 'THIRD'].map((id) => ({
+            id,
+            sourceType: 'BASE',
+            codes: fullCode,
+          })),
+        },
+        undefined,
+        [
+          { id: 'I1', variableId: 'FIRST' },
+          { id: 'I2', variableId: 'UNCODED' },
+        ],
+      );
+      if (comments) await enableComments(result);
+      else await result.message({ type: 'vopReadyNotification' });
+      result.component.navigateToPage(2);
+      expect(result.component.selectedReviewItemId).toBe('I2');
+      expect(result.component.activeReviewCodingId).toBe('');
+
+      result.component.navigateToPage(3);
+      expect(result.component.selectedReviewItemId).toBe('');
+      expect(result.component.activeReviewCodingId).toBe('THIRD');
+    },
+  );
+
+  it('offers item selection without comments and preserves an explicit item across its source pages', async () => {
+    const result = await playerFixture(
+      JSON.stringify({
+        pages: [
+          { elements: [{ alias: 'FIRST' }, { alias: 'EXTRA' }] },
+          { elements: [{ alias: 'SECOND' }, { alias: 'OTHER' }] },
+          { elements: [{ alias: 'THIRD' }] },
+        ],
+      }),
+      {
+        variableCodings: [
+          ...['FIRST', 'EXTRA', 'SECOND', 'OTHER', 'THIRD'].map((id) => ({
+            id,
+            sourceType: 'BASE',
+            codes: fullCode,
+          })),
+          {
+            id: 'TOTAL',
+            sourceType: 'SUM_SCORE',
+            deriveSources: ['FIRST', 'SECOND'],
+            codes: fullCode,
+          },
+        ],
+      },
+      undefined,
+      [
+        { id: 'I1', variableReadOnlyId: 'TOTAL' },
+        { id: 'I2', variableId: 'EXTRA' },
+        { id: 'I3', variableId: 'OTHER' },
+        { id: 'I4', variableId: 'THIRD' },
+      ],
+    );
+    await result.message({ type: 'vopReadyNotification' });
+    expect(result.component.selectedReviewItemId).toBe('');
+    expect(result.component.activeReviewCodingId).toBe('');
+    const select = result.fixture.nativeElement.querySelector(
+      'select[aria-label="Item auf dieser Seite"]',
+    ) as HTMLSelectElement;
+    expect(Array.from(select.options, (option) => option.value)).toEqual(['', 'I1', 'I2']);
+    select.value = 'I1';
+    select.dispatchEvent(new Event('change'));
+    await result.fixture.whenStable();
+
+    result.component.navigateToPage(2);
+    expect(result.component.selectedReviewItemId).toBe('I1');
+    expect(result.component.activeReviewCodingId).toBe('TOTAL');
+
+    result.component.navigateToPage(3);
+    expect(result.component.selectedReviewItemId).toBe('I4');
+    result.component.navigateToPage(2);
+    expect(result.component.selectedReviewItemId).toBe('');
+    expect(result.component.activeReviewCodingId).toBe('');
+  });
+
+  it('review: follows public item references without a coding scheme despite internal IDs', async () => {
+    const result = await playerFixture(twoPages, undefined, undefined, [
+      { id: 'I1', variableId: 'FIRST', variableReadOnlyId: 'internal-first' },
+      { id: 'I2', sourceVariable: 'SECOND', variableReadOnlyId: 'internal-second' },
+    ]);
+    await enableComments(result);
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    expect(result.component.selectedCommentItemId).toBe('I2');
+    expect(result.component.activeReviewCodingId).toBe('');
+    await result.message({
+      type: 'vopStateChangedNotification',
+      sessionId: result.component.playerSessionId,
+      playerState: { currentPage: '0' },
+    });
+    expect(result.component.selectedCommentItemId).toBe('I1');
+  });
+
+  it('review: retains the item when the delayed coding scheme makes its fallback ambiguous', async () => {
+    let resolveCoding!: (scheme: unknown) => void;
+    const codingFile = new Promise<unknown>((resolve) => {
+      resolveCoding = resolve;
+    });
+    const result = await playerFixture(
+      twoPages,
+      undefined,
+      undefined,
+      [
+        { id: 'I1', sourceVariable: 'FIRST', variableReadOnlyId: 'stale-id' },
+        { id: 'I2', variableReadOnlyId: 'FIRST' },
+      ],
+      codingFile,
+    );
+    await enableComments(result);
+    expect(result.component.selectedCommentItemId).toBe('I1');
+    resolveCoding({
+      variableCodings: [
+        { id: 'FIRST', alias: 'SECOND', sourceType: 'BASE', codes: fullCode },
+        { id: 'internal-first', alias: 'FIRST', sourceType: 'BASE', codes: fullCode },
+      ],
+    });
+    await vi.waitFor(() => expect(result.component.codingSchemeLoading).toBe(false));
+    await result.fixture.whenStable();
+    expect(result.fixture.nativeElement.querySelector('.comment-thread-stub')?.dataset.itemId).toBe(
+      'I1',
+    );
+    expect(result.component.activeReviewCodingId).toBe('');
+    result.component.navigateToPage(2);
+    expect(result.component.selectedCommentItemId).toBe('I2');
+    expect(result.component.activeReviewCodingId).toBe('SECOND');
+  });
+
+  it('review: follows pages before strict coding identities load and preserves a manual choice when they arrive', async () => {
+    let resolveCoding!: (scheme: unknown) => void;
+    const codingFile = new Promise<unknown>((resolve) => {
+      resolveCoding = resolve;
+    });
+    const result = await playerFixture(
+      twoPages,
+      undefined,
+      undefined,
+      [
+        { id: 'I1', variableId: 'FIRST', variableReadOnlyId: 'internal-first' },
+        { id: 'I2', variableId: 'SECOND', variableReadOnlyId: 'internal-second' },
+      ],
+      codingFile,
+    );
+    await enableComments(result);
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    expect(result.component.selectedCommentItemId).toBe('I2');
+
+    result.component.selectedCommentItemId = 'I1';
+    resolveCoding({
+      variableCodings: [
+        { id: 'internal-first', alias: 'FIRST', sourceType: 'BASE', codes: fullCode },
+        { id: 'internal-second', alias: 'SECOND', sourceType: 'BASE', codes: fullCode },
+      ],
+    });
+    await vi.waitFor(() => expect(result.component.codingSchemeLoading).toBe(false));
+    await result.fixture.whenStable();
+    expect(result.component.selectedCommentItemId).toBe('I1');
+    expect(result.component.activeReviewCodingId).toBe('FIRST');
+    await result.message({
+      type: 'vopStateChangedNotification',
+      sessionId: result.component.playerSessionId,
+      playerState: { currentPage: '0' },
+    });
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    expect(result.component.selectedCommentItemId).toBe('I2');
+    expect(result.component.activeReviewCodingId).toBe('SECOND');
+  });
+
+  it.each([
+    { enableCommenting: false, commentTargets: ['ITEM', 'CODING'] },
+    { enableCommenting: true, commentTargets: ['UNIT', 'BOOKLET'] },
+  ] satisfies FeatureConfig[])(
+    'review: retains item aggregate codings without item commenting for %j',
+    async (featureConfig) => {
+      const result = await playerFixture(
+        twoPages,
+        {
+          variableCodings: [
+            { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+            { id: 'SECOND', sourceType: 'BASE', codes: fullCode },
+            { id: 'RESULT_1', sourceType: 'SUM_SCORE', deriveSources: ['FIRST'], codes: fullCode },
+            { id: 'RESULT_2', sourceType: 'SUM_SCORE', deriveSources: ['SECOND'], codes: fullCode },
+          ],
+        },
+        undefined,
+        [
+          { id: 'I1', variableId: 'RESULT_1' },
+          { id: 'I2', variableId: 'RESULT_2' },
+        ],
+      );
+      const availability = vi.spyOn(result.api, 'getUnitCommentAvailability');
+      result.fixture.componentRef.setInput('featureConfigOverride', featureConfig);
+      result.component.reviewCodingVisible = true;
+      await result.message({ type: 'vopReadyNotification' });
+      expect(result.component.activeReviewCodingId).toBe('RESULT_1');
+      result.component.navigateToPage(2);
+      result.fixture.changeDetectorRef.markForCheck();
+      await result.fixture.whenStable();
+      expect(result.component.activeReviewCodingId).toBe('RESULT_2');
+      expect(
+        result.fixture.nativeElement.querySelector('.current-coding h4').textContent,
+      ).toContain('RESULT_2');
+      await result.message({
+        type: 'vopStateChangedNotification',
+        sessionId: result.component.playerSessionId,
+        playerState: { currentPage: '0' },
+      });
+      expect(result.component.activeReviewCodingId).toBe('RESULT_1');
+      expect(result.component.selectedCommentItemId).toBe('');
+      expect(result.component.commentItems).toEqual([]);
+      expect(availability).not.toHaveBeenCalled();
+    },
+  );
+
+  it('review: uses the canonical list and asks only for unit comment availability', async () => {
+    const result = await playerFixture(
+      twoPages,
+      undefined,
+      undefined,
+      [{ id: 'index-only', variableId: 'SECOND' }],
+      undefined,
+      { u1: [{ id: 'canonical', variableId: 'FIRST' }] },
+    );
+    const availability = vi.spyOn(result.api, 'getUnitCommentAvailability');
+    await enableComments(result);
+    expect(availability).toHaveBeenCalledWith('ap', 'u1');
+    expect(result.api.getItemCommentCounts).not.toHaveBeenCalled();
+    expect(result.component.selectedCommentItemId).toBe('canonical');
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    expect(result.component.selectedCommentItemId).toBe('');
+    expect(result.fixture.nativeElement.querySelector('.comment-thread-stub')).toBeNull();
+    const select = result.fixture.nativeElement.querySelector(
+      '.comment-item-select select',
+    ) as HTMLSelectElement;
+    expect(select.value).toBe('');
+    expect(Array.from(select.options, (option) => option.value)).toEqual(['', 'canonical']);
+  });
+
+  it.each([false, true])(
+    'review: uses the current VOMD mapping for a prefixed index alias with item comments %s',
+    async (enableItemComments) => {
+      const result = await playerFixture(
+        twoPages,
+        {
+          variableCodings: [
+            { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+            { id: 'SECOND', sourceType: 'BASE', codes: fullCode },
+            {
+              id: 'old-result',
+              sourceType: 'COPY_VALUE',
+              deriveSources: ['FIRST'],
+              codes: fullCode,
+            },
+            {
+              id: 'new-result',
+              sourceType: 'COPY_VALUE',
+              deriveSources: ['SECOND'],
+              codes: fullCode,
+            },
+          ],
+        },
+        undefined,
+        [{ id: 'I1', variableReadOnlyId: 'old-result' }],
+        undefined,
+        { u1: [{ id: 'I1', fallbackIds: ['u1_I1'], variableReadOnlyId: 'new-result' }] },
+      );
+      if (enableItemComments) await enableComments(result);
+      else await result.message({ type: 'vopReadyNotification' });
+      expect(result.component.activeReviewCodingId).toBe('FIRST');
+      expect(result.component.selectedCommentItemId).toBe('');
+
+      result.component.navigateToPage(2);
+      expect(result.component.activeReviewCodingId).toBe('new-result');
+      expect(result.component.selectedCommentItemId).toBe(enableItemComments ? 'I1' : '');
+    },
+  );
+
+  it('review: follows items bound to derived variables to their base player pages', async () => {
+    const result = await playerFixture(
+      twoPages,
+      {
+        variableCodings: [
+          { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+          { id: 'SECOND', sourceType: 'BASE', codes: fullCode },
+          { id: 'RESULT_1', sourceType: 'SUM_SCORE', deriveSources: ['FIRST'], codes: fullCode },
+          { id: 'RESULT_2', sourceType: 'SUM_SCORE', deriveSources: ['SECOND'], codes: fullCode },
+        ],
+      },
+      undefined,
+      [
+        { id: 'I1', variableId: 'RESULT_1' },
+        { id: 'I2', variableId: 'RESULT_2' },
+      ],
+    );
+    await enableComments(result);
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    expect(result.component.selectedCommentItemId).toBe('I2');
+    expect(result.component.activeReviewCodingId).toBe('RESULT_2');
+  });
+
+  it('uses current canonical references where the index has stale internal IDs', async () => {
+    const result = await playerFixture(
+      twoPages,
+      {
+        variableCodings: ['FIRST', 'SECOND'].map((id) => ({
+          id,
+          sourceType: 'BASE',
+          codes: fullCode,
+        })),
+      },
+      undefined,
+      [
+        { id: 'I1', variableReadOnlyId: 'FIRST' },
+        { id: 'I2', variableReadOnlyId: 'SECOND' },
+      ],
+      undefined,
+      {
+        u1: [
+          { id: 'I1', variableId: 'SECOND' },
+          { id: 'I2', variableId: 'FIRST' },
+        ],
+      },
+    );
+    await enableComments(result);
+    expect(result.component.selectedCommentItemId).toBe('I2');
+    expect(result.component.activeReviewCodingId).toBe('FIRST');
+    result.component.navigateToPage(2);
+    expect(result.component.selectedCommentItemId).toBe('I1');
+    expect(result.component.activeReviewCodingId).toBe('SECOND');
+  });
+
+  it.each([
+    {
+      scope: 'item',
+      type: 'ITEM',
+      activeCoding: true,
+      expectedOptions: ['I1', 'I2', 'I3', 'ARCHIVE'],
+    },
+    { scope: 'coding', type: 'CODING', activeCoding: false, expectedOptions: ['', 'ARCHIVE'] },
+  ] as const)(
+    'opens an existing $scope thread outside the player navigation',
+    async ({ scope, type, activeCoding, expectedOptions }) => {
+      const result = await playerFixture(
+        twoPages,
+        {
+          variableCodings: [
+            { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+            { id: 'SECOND', sourceType: 'BASE', codes: fullCode },
+          ],
+        },
+        undefined,
+        [],
+        undefined,
+        {
+          u1: [
+            { id: 'I1', variableId: 'FIRST' },
+            { id: 'I2', variableId: 'FIRST' },
+            { id: 'I3', variableId: 'SECOND' },
+          ],
+        },
+      );
+      vi.spyOn(result.api, 'getUnitCommentAvailability').mockReturnValue(
+        of({
+          codingCommentsAvailable: activeCoding,
+          additionalItems: [{ id: 'ARCHIVE', label: 'Historisches Item', targetTypes: [type] }],
+        }),
+      );
+      await enableComments(result);
+      const { fixture, component } = result;
+      component.activeTab = 'comments';
+      component.commentScope = scope;
+      component.selectedReviewItemId = 'I1';
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+
+      const pagePicker = fixture.nativeElement.querySelector(
+        'select[aria-label="Item auf dieser Seite"]',
+      ) as HTMLSelectElement;
+      const picker = fixture.nativeElement.querySelector(
+        'select[aria-label="Item"]',
+      ) as HTMLSelectElement;
+      expect(Array.from(pagePicker.options).map(({ value }) => value)).toEqual(['I1', 'I2']);
+      expect(Array.from(picker.options).map(({ value }) => value)).toEqual(expectedOptions);
+      picker.value = 'ARCHIVE';
+      picker.dispatchEvent(new Event('change'));
+      fixture.changeDetectorRef.markForCheck();
+      await fixture.whenStable();
+      const thread = fixture.nativeElement.querySelector('.comment-thread-stub') as HTMLElement;
+      expect(thread.dataset['targetType']).toBe(type);
+      expect(thread.dataset['itemId']).toBe('ARCHIVE');
+      expect(component.selectedReviewItemId).toBe('I1');
+      expect(component.activeReviewCodingId).toBe('FIRST');
+
+      component.navigateToPage(2);
+      expect(component.selectedReviewItemId).toBe('I3');
+      expect(component.selectedCommentItemId).toBe(activeCoding ? 'I3' : '');
+    },
+  );
+
+  it('review: follows canonical items supplied by the file-backed catalog', async () => {
+    const result = await playerFixture(
+      twoPages,
+      {
+        variableCodings: [
+          { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+          { id: 'SECOND', sourceType: 'BASE', codes: fullCode },
+        ],
+      },
+      undefined,
+      [],
+      undefined,
+      {
+        u1: [
+          { id: 'I1', variableId: 'FIRST' },
+          { id: 'I2', variableReadOnlyId: 'SECOND' },
+        ],
+      },
+    );
+    await enableComments(result);
+    expect(result.component.commentItems).toHaveLength(2);
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    expect(result.component.selectedCommentItemId).toBe('I2');
+  });
+
+  it('review: respects a strict internal variable reference when another alias shadows it', async () => {
+    const definition = JSON.stringify({
+      pages: [
+        { elements: [{ id: 'input-a', alias: 'FIRST', type: 'text-field' }] },
+        { elements: [{ id: 'input-b', alias: 'A', type: 'text-field' }] },
+      ],
+    });
+    const result = await playerFixture(
+      definition,
+      {
+        variableCodings: [
+          { id: 'A', alias: 'FIRST', sourceType: 'BASE', codes: fullCode },
+          { id: 'B', alias: 'A', sourceType: 'BASE', codes: fullCode },
+        ],
+      },
+      undefined,
+      [
+        { id: 'I1', variableReadOnlyId: 'A' },
+        { id: 'I2', variableReadOnlyId: 'B' },
+      ],
+    );
+    await enableComments(result);
+    result.component.navigateToPage(2);
+    result.fixture.changeDetectorRef.markForCheck();
+    await result.fixture.whenStable();
+    expect(result.component.selectedCommentItemId).toBe('I2');
+  });
+
+  it.each([false, true])(
+    'prioritizes both canonical IDs over colliding raw VOMD IDs (reversed: %s)',
+    async (reversed) => {
+      const navigationItems = [
+        { id: 'u1_I1', fallbackIds: ['I1'], variableId: 'FIRST' },
+        { id: 'u1_u1_I1', variableId: 'SECOND' },
+      ];
+      const result = await playerFixture(
+        twoPages,
+        {
+          variableCodings: [
+            { id: 'FIRST', sourceType: 'BASE', codes: fullCode },
+            { id: 'SECOND', sourceType: 'BASE', codes: fullCode },
+          ],
+        },
+        undefined,
+        [],
+        undefined,
+        { u1: reversed ? [...navigationItems].reverse() : navigationItems },
+      );
+      await enableComments(result);
+
+      for (const [page, itemId, codingId] of [
+        [1, 'u1_I1', 'FIRST'],
+        [2, 'u1_u1_I1', 'SECOND'],
+        [1, 'u1_I1', 'FIRST'],
+      ] as const) {
+        result.component.navigateToPage(page);
+        result.fixture.changeDetectorRef.markForCheck();
+        await result.fixture.whenStable();
+        expect(result.component.selectedCommentItemId).toBe(itemId);
+        expect(result.component.activeReviewCodingId).toBe(codingId);
+        expect(
+          result.fixture.nativeElement.querySelector('.comment-thread-stub').dataset.itemId,
+        ).toBe(itemId);
+      }
+    },
+  );
+
+  it('follows the internal player ID when another page uses it as a public alias', async () => {
+    const result = await playerFixture(
+      JSON.stringify({
+        pages: [
+          { elements: [{ id: 'input-a', alias: 'FIRST', type: 'text-field' }] },
+          { elements: [{ id: 'input-b', alias: 'input-a', type: 'text-field' }] },
+        ],
+      }),
+      { variableCodings: [{ id: 'input-a', sourceType: 'BASE', codes: fullCode }] },
+      undefined,
+      [{ id: 'item-a', variableReadOnlyId: 'input-a', sourceVariable: 'FIRST' }],
+    );
+    await enableComments(result);
+
+    expect(result.component.selectedCommentItemId).toBe('item-a');
+    expect(result.component.activeReviewCodingId).toBe('input-a');
+    result.component.navigateToPage(2);
+    expect(result.component.selectedCommentItemId).toBe('');
+    expect(result.component.activeReviewCodingId).toBe('');
+  });
+
+  it.each([1, 2])(
+    'selects the sole unmapped index item only when the definition has one scroll page (%i pages)',
+    async (pages) => {
+      const result = await playerFixture(
+        pages === 2
+          ? twoPages
+          : JSON.stringify({
+              pages: [{ elements: [{ alias: 'FIRST', type: 'text-field' }] }],
+            }),
+        { variableCodings: [{ id: 'FIRST', sourceType: 'BASE', codes: fullCode }] },
+        undefined,
+        [{ id: 'legacy-item' }],
+      );
+      await enableComments(result);
+
+      expect(result.component.selectedCommentItemId).toBe(pages === 1 ? 'legacy-item' : '');
+      expect(result.component.activeReviewCodingId).toBe(pages === 1 ? '' : 'FIRST');
+    },
+  );
 
   const solutionScheme = {
     variableCodings: [
@@ -127,9 +1321,365 @@ describe('UnitViewComponent', () => {
     ],
   };
 
+  async function reviewNavigationFixture(withSolution = false, codingFile?: Promise<unknown>) {
+    const aliases = ['FIRST', 'SECOND', 'THIRD'];
+    const result = await playerFixture(
+      JSON.stringify({
+        pages: [
+          { alwaysVisible: true, elements: [{ id: 'stimulus', type: 'text' }] },
+          ...aliases.map((alias) => ({
+            elements: [{ id: `input-${alias}`, alias, type: 'text-field' }],
+          })),
+        ],
+      }),
+      codingFile
+        ? undefined
+        : {
+            variableCodings: aliases.map((alias, index) => ({
+              id: `internal-${index}`,
+              alias,
+              sourceType: 'BASE',
+              codes: [
+                {
+                  id: 1,
+                  type: 'FULL_CREDIT',
+                  score: 1,
+                  ...(withSolution
+                    ? { ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['Berlin'] }] }] }
+                    : {}),
+                },
+              ],
+            })),
+          },
+      undefined,
+      aliases.map((variableId, index) => ({ id: `I${index + 1}`, variableId })),
+      codingFile,
+    );
+    result.fixture.componentRef.setInput('featureConfigOverride', {
+      enableCommenting: true,
+      commentTargets: ['ITEM', 'CODING'],
+    });
+    result.fixture.detectChanges();
+    await result.message({ type: 'vopReadyNotification' });
+    return result;
+  }
+
+  it.each([
+    { format: 'Verona 6', validPages: [{ id: '0' }, { id: '2' }] },
+    { format: 'legacy', validPages: { '0': 'First', '2': 'Third' } },
+  ])(
+    'matches the actual page ID for sparse $format pages in both navigation directions',
+    async ({ validPages }) => {
+      const { fixture, component, message, postMessage } = await reviewNavigationFixture();
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId: component.playerSessionId,
+        playerState: { validPages, currentPage: '2' },
+      });
+      expect(component.currentPage).toBe(2);
+      expect(component.selectedCommentItemId).toBe('I3');
+      expect(component.activeReviewCodingId).toBe('THIRD');
+      component.navigateToPage(1);
+      fixture.changeDetectorRef.markForCheck();
+      await fixture.whenStable();
+      expect(component.selectedCommentItemId).toBe('I1');
+      expect(component.activeReviewCodingId).toBe('FIRST');
+      component.navigateToPage(2);
+      fixture.changeDetectorRef.markForCheck();
+      await fixture.whenStable();
+      expect(component.selectedCommentItemId).toBe('I3');
+      expect(component.activeReviewCodingId).toBe('THIRD');
+      expect(postMessage.mock.calls.at(-1)?.[0]).toMatchObject({ target: '2' });
+    },
+  );
+
+  it.each([undefined, { currentPage: '0' }])(
+    'preserves an explicit comment target on response updates with playerState %j',
+    async (playerState) => {
+      const { fixture, component, message } = await reviewNavigationFixture();
+      const select = fixture.nativeElement.querySelector(
+        '.comment-item-select select',
+      ) as HTMLSelectElement;
+      select.value = 'I2';
+      select.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId: component.playerSessionId,
+        unitState: { dataParts: { elementCodes: '[]' } },
+        playerState,
+      });
+      expect(component.currentPage).toBe(1);
+      expect(component.selectedCommentItemId).toBe('I2');
+      expect(component.activeReviewCodingId).toBe('SECOND');
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId: component.playerSessionId,
+        playerState: { currentPage: '2' },
+      });
+      expect(component.selectedCommentItemId).toBe('I3');
+      expect(component.activeReviewCodingId).toBe('THIRD');
+    },
+  );
+
+  it.each([
+    {
+      change: 'reordered',
+      validPages: [{ id: '2' }, { id: '0' }],
+      pageId: '2',
+      item: 'I2',
+      coding: 'SECOND',
+    },
+    { change: 'removed', validPages: [{ id: '0' }], pageId: '0', item: 'I1', coding: 'FIRST' },
+  ])(
+    'keeps page, comment and coding in sync across restart when the current page is $change',
+    async ({ validPages, pageId, item, coding }) => {
+      const { fixture, component, message } = await reviewNavigationFixture();
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId: component.playerSessionId,
+        playerState: { validPages: [{ id: '0' }, { id: '2' }], currentPage: '2' },
+      });
+      const select = fixture.nativeElement.querySelector(
+        '.comment-item-select select',
+      ) as HTMLSelectElement;
+      select.value = 'I2';
+      select.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId: component.playerSessionId,
+        playerState: { validPages },
+      });
+      expect(component.currentPage).toBe(1);
+      expect(component.selectedCommentItemId).toBe(item);
+      expect(component.activeReviewCodingId).toBe(coding);
+      component.pagingMode = 'concat-scroll';
+      component.onPagingModeChange();
+      fixture.detectChanges();
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(fixture.nativeElement.querySelector('iframe')).not.toBeNull();
+      });
+      const frame = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+      const postMessage = vi.spyOn(frame.contentWindow!, 'postMessage');
+      await message({ type: 'vopReadyNotification' }, frame.contentWindow!);
+      expect(postMessage.mock.calls[0][0]).toMatchObject({
+        type: 'vopStartCommand',
+        playerConfig: { startPage: pageId },
+      });
+      await message(
+        {
+          type: 'vopStateChangedNotification',
+          sessionId: component.playerSessionId,
+          playerState: { validPages, currentPage: pageId },
+        },
+        frame.contentWindow!,
+      );
+      expect(component.selectedCommentItemId).toBe(item);
+      expect(component.activeReviewCodingId).toBe(coding);
+    },
+  );
+
+  it('preserves a manual target when its coding file arrives after the selection', async () => {
+    let resolveCoding!: (scheme: unknown) => void;
+    const codingFile = new Promise<unknown>((resolve) => {
+      resolveCoding = resolve;
+    });
+    const { fixture, component, message } = await reviewNavigationFixture(false, codingFile);
+    const select = fixture.nativeElement.querySelector(
+      '.comment-item-select select',
+    ) as HTMLSelectElement;
+    select.value = 'I2';
+    select.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    resolveCoding({
+      variableCodings: ['FIRST', 'SECOND', 'THIRD'].map((alias) => ({
+        id: alias,
+        sourceType: 'BASE',
+        codes: [{ id: 1, type: 'FULL_CREDIT', score: 1 }],
+      })),
+    });
+    await vi.waitFor(() => expect(component.codingSchemeLoading).toBe(false));
+    await fixture.whenStable();
+    expect(component.selectedCommentItemId).toBe('I2');
+    expect(component.activeReviewCodingId).toBe('SECOND');
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: component.playerSessionId,
+      playerState: { currentPage: '2' },
+    });
+    expect(component.selectedCommentItemId).toBe('I3');
+  });
+
+  it.each([false, true])(
+    'reveals the current coding when opening through the solution button (prefill: %s)',
+    async (withSolution) => {
+      const { fixture, component, message } = await reviewNavigationFixture(withSolution);
+      await message({
+        type: 'vopStateChangedNotification',
+        sessionId: component.playerSessionId,
+        playerState: { currentPage: '1' },
+      });
+      expect(component.activeReviewCodingId).toBe('SECOND');
+      expect(component.reviewCodingVisible).toBe(false);
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: HTMLElement,
+      ) {
+        return { top: this.dataset['codingId'] === 'SECOND' ? 400 : 100 } as DOMRect;
+      });
+      const button = Array.from(
+        fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+      ).find((button) => button.textContent?.trim() === 'Musterlösung anzeigen')!;
+      button.click();
+      await fixture.whenStable();
+      expect(component.reviewCodingVisible).toBe(true);
+      const pane = fixture.nativeElement.querySelector('.review-coding-body') as HTMLElement;
+      expect(pane.scrollTop).toBe(300);
+      expect(component.selectedCommentItemId).toBe('I2');
+    },
+  );
+
+  it('follows host and player page changes with the item comment and aliased coding', async () => {
+    const scheme = {
+      variableCodings: ['FIRST', 'SECOND'].map((alias, index) => ({
+        id: `internal-${index}`,
+        alias,
+        sourceType: 'BASE',
+        codes: [{ id: 1, type: 'FULL_CREDIT', score: 1 }],
+      })),
+    };
+    const { fixture, component, message } = await playerFixture(
+      JSON.stringify({
+        pages: [
+          { alwaysVisible: true, elements: [{ id: 'text', type: 'text' }] },
+          { elements: [{ id: 'input-1', alias: 'FIRST', type: 'text-field' }] },
+          { elements: [{ id: 'input-2', alias: 'SECOND', type: 'text-field' }] },
+        ],
+      }),
+      scheme,
+      undefined,
+      [
+        { id: 'I1', variableId: 'FIRST' },
+        { id: 'I2', variableId: 'SECOND' },
+      ],
+    );
+    fixture.componentRef.setInput('featureConfigOverride', {
+      enableCommenting: true,
+      commentTargets: ['ITEM', 'CODING'],
+    });
+    component.reviewCodingVisible = true;
+    fixture.detectChanges();
+    await message({ type: 'vopReadyNotification' });
+    expect(component.selectedCommentItemId).toBe('I1');
+
+    component.navigateToPage(2);
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(component.selectedCommentItemId).toBe('I2');
+    expect(
+      fixture.nativeElement.querySelector('.coding-variable.current-coding h4').textContent,
+    ).toContain('SECOND');
+
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: component.playerSessionId,
+      playerState: { currentPage: '0', validPages: [{ id: '0' }, { id: '1' }] },
+    });
+    expect(component.selectedCommentItemId).toBe('I1');
+    expect(
+      fixture.nativeElement.querySelector('.coding-variable.current-coding h4').textContent,
+    ).toContain('FIRST');
+  });
+
+  it('reveals the selected coding inside its pane and retains a manual choice on the same page', async () => {
+    const { fixture, component, message } = await playerFixture(
+      JSON.stringify({
+        pages: [
+          {
+            elements: [
+              { id: 'one', alias: 'I1', type: 'text-field' },
+              { id: 'two', alias: 'I2', type: 'text-field' },
+            ],
+          },
+        ],
+      }),
+      {
+        variableCodings: ['I1', 'I2'].map((id) => ({
+          id,
+          sourceType: 'BASE',
+          codes: [{ id: 1, type: 'FULL_CREDIT', score: 1 }],
+        })),
+      },
+      undefined,
+      [{ id: 'I1' }, { id: 'I2' }],
+    );
+    fixture.componentRef.setInput('featureConfigOverride', {
+      enableCommenting: true,
+      commentTargets: ['ITEM'],
+    });
+    component.toggleReviewCoding();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const content = fixture.nativeElement.querySelector('.review-coding-body') as HTMLElement;
+    const coding = content.querySelector('[data-coding-id="I2"]') as HTMLElement;
+    vi.spyOn(content, 'getBoundingClientRect').mockReturnValue({ top: 100 } as DOMRect);
+    vi.spyOn(coding, 'getBoundingClientRect').mockReturnValue({ top: 400 } as DOMRect);
+    content.scrollTop = 20;
+    const select = fixture.nativeElement.querySelector(
+      '.comment-item-select select',
+    ) as HTMLSelectElement;
+    select.value = 'I2';
+    select.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(component.activeReviewCodingId).toBe('I2');
+    expect(content.scrollTop).toBe(320);
+    await message({ type: 'vopStateChangedNotification', playerState: { currentPage: '0' } });
+    expect(component.selectedCommentItemId).toBe('I2');
+    expect(component.activeReviewCodingId).toBe('I2');
+    expect(content.scrollTop).toBe(320);
+  });
+
+  it('uses the unit item list before comment availability arrives and ignores stale player messages', async () => {
+    const { fixture, component, message, api } = await playerFixture(
+      JSON.stringify({
+        pages: [
+          { elements: [{ alias: 'I1', type: 'text-field' }] },
+          { elements: [{ alias: 'I2', type: 'text-field' }] },
+        ],
+      }),
+      undefined,
+      undefined,
+      [{ id: 'I1' }, { id: 'I2' }],
+    );
+    const availability = new Subject<{ codingCommentsAvailable: boolean }>();
+    vi.spyOn(api, 'getUnitCommentAvailability').mockReturnValue(availability);
+    fixture.componentRef.setInput('featureConfigOverride', {
+      enableCommenting: true,
+      commentTargets: ['ITEM'],
+    });
+    fixture.detectChanges();
+    await message({ type: 'vopReadyNotification' });
+    component.navigateToPage(2);
+    availability.next({ codingCommentsAvailable: false });
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(component.selectedCommentItemId).toBe('I2');
+    await message({
+      type: 'vopStateChangedNotification',
+      sessionId: 'stale',
+      playerState: { currentPage: '0' },
+    });
+    expect(component.selectedCommentItemId).toBe('I2');
+    component.navigateToPage(1);
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(component.selectedCommentItemId).toBe('I1');
+  });
+
   it('shows aliased manual instructions, custom labels and searchable automatic rules', async () => {
     const { fixture, component } = await playerFixture(undefined, solutionScheme);
-    component.activeTab = 'coding';
+    component.reviewCodingVisible = true;
     fixture.changeDetectorRef.markForCheck();
     await fixture.whenStable();
     const panel = fixture.nativeElement.querySelector('.coding-content') as HTMLElement;
@@ -142,6 +1692,23 @@ describe('UnitViewComponent', () => {
     expect(component.visibleCodingSchemeAsText).toHaveLength(1);
     component.codingFilterText = 'unbekannt';
     expect(component.visibleCodingSchemeAsText).toHaveLength(0);
+  });
+
+  it('keeps the coding tab available in the ordinary unit view', async () => {
+    const { fixture, component } = await playerFixture(undefined, solutionScheme);
+    fixture.componentRef.setInput('reviewMode', false);
+    fixture.componentRef.setInput('featureConfigOverride', { showCodingScheme: true });
+    fixture.detectChanges();
+    component.togglePanel();
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('.review-coding-panel')).toBeNull();
+    const tab = fixture.nativeElement.querySelector('.panel-tabs button') as HTMLButtonElement;
+    expect(tab.textContent?.trim()).toBe('Kodierung');
+    expect(tab.getAttribute('aria-pressed')).toBe('true');
+    expect(fixture.nativeElement.querySelector('.coding-content').textContent).toContain(
+      'Allgemeine Hinweise zur Antwort',
+    );
   });
 
   it('keeps toggle-button coding readable without claiming an unverified scalar player solution', async () => {
@@ -369,6 +1936,67 @@ describe('UnitViewComponent', () => {
     expect(send.mock.calls.at(-1)![0].sessionId).toContain('u2');
   });
 
+  it('derives drop-list responses when the current frame identifies a legacy ASPECT player', async () => {
+    const { component, fixture, message } = await playerFixture(
+      JSON.stringify({
+        version: '4.0.0',
+        pages: [
+          {
+            elements: [
+              {
+                id: 'pool',
+                type: 'drop-list',
+                value: [{ id: 'object' }],
+                connectedTo: ['answer'],
+                onlyOneItem: false,
+                copyOnDrop: false,
+              },
+              {
+                id: 'answer',
+                type: 'drop-list',
+                value: [],
+                connectedTo: [],
+                onlyOneItem: true,
+                copyOnDrop: false,
+              },
+            ],
+          },
+        ],
+      }),
+      {
+        variableCodings: [
+          {
+            id: 'answer',
+            sourceType: 'BASE',
+            codes: [
+              {
+                id: 1,
+                type: 'FULL_CREDIT',
+                score: 1,
+                ruleSets: [{ rules: [{ method: 'MATCH', parameters: ['object'] }] }],
+              },
+            ],
+          },
+        ],
+      },
+    );
+    const notification = {
+      type: 'vopReadyNotification',
+      metadata: { id: 'iqb-player-aspect', version: '2.0.3' },
+    };
+    await message(notification, window);
+    expect(component.reviewSolution.prefill.status).toBe('unavailable');
+    await message(notification);
+    expect(component.reviewSolution.prefill).toMatchObject({
+      status: 'available',
+      responses: [{ id: 'answer', value: ['object'] }],
+    });
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.reviewSolution.prefill.status).toBe('unavailable');
+  });
+
   it('opens a readable explanation without changing the player for unsupported solutions', async () => {
     const { fixture, component, message, postMessage } = await playerFixture();
     await message({ type: 'vopReadyNotification' });
@@ -378,7 +2006,8 @@ describe('UnitViewComponent', () => {
     await fixture.whenStable();
     expect(component.solutionVisible).toBe(false);
     expect(component.reviewPanelCollapsed).toBe(false);
-    expect(component.activeTab).toBe('coding');
+    expect(component.reviewCodingVisible).toBe(true);
+    expect(component.activeTab).toBe('comments');
     expect(postMessage).toHaveBeenCalledTimes(1);
     expect(fixture.nativeElement.querySelector('.solution-info').textContent).toContain(
       'Keine eindeutige Musterlösung',
@@ -667,6 +2296,127 @@ describe('UnitViewComponent', () => {
     expect(component.showMetadata).toBe(true);
   });
 
+  const transcriptMetadata = [
+    { id: 'iqb_transcript', label: 'Hörsequenz Transkript', value: 'Erste Zeile\nZweite Zeile' },
+    { id: 'iqb_final_transcript', label: 'Transkript zur Aufgabe', value: 'Bearbeiteter Hörtext' },
+    {
+      id: 'iqb_copyright_original',
+      label: 'Transkript Original / Text Original',
+      value: 'Originaler Hörtext',
+    },
+    { id: 'k6', label: 'Transkript zur Aufgabe', value: 'Hörtext aus älterem Profil' },
+  ];
+  const otherMetadata = [
+    { id: 'iqb_author', label: 'Entwickler:in', value: 'EM' },
+    { id: 'subject', label: 'Fach', value: 'Deutsch' },
+    { id: 'k6', label: 'Nebengeräusche', value: 'Vogelstimmen' },
+    { id: 'note', label: 'Hinweise zum Transkript', value: 'Interner Hinweis' },
+    { id: 'iqb_copyright', label: 'Quellenangaben', value: 'Quellenvermerk' },
+  ];
+
+  it.each([true, false])(
+    'shows only transcript fields in their own review tab (hideReviewMetadata: %s)',
+    async (hideReviewMetadata) => {
+      const { fixture, component } = await playerFixture(undefined, undefined, {
+        u1: [...otherMetadata, ...transcriptMetadata],
+      });
+      fixture.componentRef.setInput('featureConfigOverride', {
+        hideReviewMetadata,
+        hideReviewDeveloperNames: true,
+      });
+      fixture.detectChanges();
+      const tabs = Array.from(
+        fixture.nativeElement.querySelectorAll('.panel-tabs button'),
+      ) as HTMLButtonElement[];
+      tabs.find((tab) => tab.textContent?.trim() === 'Hörtranskripte')!.click();
+      fixture.detectChanges();
+      const transcripts = fixture.nativeElement.querySelector('.transcript-dl') as HTMLElement;
+      expect(transcripts.querySelectorAll('dd')).toHaveLength(4);
+      expect(transcripts.querySelector('dd')?.textContent).toBe('Erste Zeile\nZweite Zeile');
+      for (const entry of transcriptMetadata)
+        expect(transcripts.textContent).toContain(entry.value);
+      for (const entry of otherMetadata) expect(transcripts.textContent).not.toContain(entry.value);
+      expect(component.showMetadata).toBe(!hideReviewMetadata);
+      if (!hideReviewMetadata) {
+        tabs.find((tab) => tab.textContent?.trim() === 'Metadaten')!.click();
+        fixture.detectChanges();
+        const metadata = fixture.nativeElement.querySelector('.meta-dl').textContent;
+        expect(metadata).toContain('Deutsch');
+        expect(metadata).toContain('Vogelstimmen');
+        expect(metadata).not.toContain('EM');
+        for (const entry of transcriptMetadata) expect(metadata).not.toContain(entry.value);
+      }
+    },
+  );
+
+  it('keeps transcripts accessible when toggling metadata and clears them across unit changes', async () => {
+    const { fixture, component } = await playerFixture(undefined, undefined, {
+      u1: [...transcriptMetadata, ...otherMetadata],
+      u2: [{ id: 'iqb_transcript', label: 'Transkript', value: 'Zweiter Hörtext' }],
+      u3: otherMetadata,
+    });
+    const openTranscripts = () => {
+      const tabs = Array.from(
+        fixture.nativeElement.querySelectorAll('.panel-tabs button'),
+      ) as HTMLButtonElement[];
+      tabs.find((tab) => tab.textContent?.trim() === 'Hörtranskripte')!.click();
+      fixture.detectChanges();
+    };
+    for (const hideReviewMetadata of [true, false, true]) {
+      fixture.componentRef.setInput('featureConfigOverride', { hideReviewMetadata });
+      fixture.detectChanges();
+      openTranscripts();
+      expect(fixture.nativeElement.querySelector('.transcript-dl').textContent).toContain(
+        'Bearbeiteter Hörtext',
+      );
+    }
+    fixture.componentRef.setInput('unitId', 'u2');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    openTranscripts();
+    const transcripts = fixture.nativeElement.querySelector('.transcript-dl').textContent;
+    expect(transcripts).toContain('Zweiter Hörtext');
+    expect(transcripts).not.toContain('Bearbeiteter Hörtext');
+    fixture.componentRef.setInput('unitId', 'u3');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.activeTab).toBe('comments');
+    expect(fixture.nativeElement.querySelector('.transcript-dl')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Hörtranskripte');
+    expect(fixture.nativeElement.textContent).not.toContain('Zweiter Hörtext');
+  });
+
+  it('does not show an empty transcript tab', async () => {
+    const { fixture } = await playerFixture(undefined, undefined, {
+      u1: [{ id: 'iqb_transcript', label: 'Transkript', value: '  \n ' }, ...otherMetadata],
+    });
+    expect(fixture.nativeElement.textContent).not.toContain('Hörtranskripte');
+  });
+
+  it.each([true, false])(
+    'keeps the ordinary metadata setting for transcript fields (showMetadata: %s)',
+    async (showMetadata) => {
+      const { fixture, component } = await playerFixture(undefined, undefined, {
+        u1: [...transcriptMetadata, ...otherMetadata],
+      });
+      fixture.componentRef.setInput('reviewMode', false);
+      fixture.componentRef.setInput('featureConfigOverride', {
+        showMetadata,
+        showCodingScheme: true,
+      });
+      fixture.detectChanges();
+      component.panelVisible = true;
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).not.toContain('Hörtranskripte');
+      const metadata = fixture.nativeElement.querySelector('.meta-dl') as HTMLElement | null;
+      if (showMetadata) {
+        expect(metadata?.textContent).toContain('Originaler Hörtext');
+        expect(metadata?.textContent).toContain('Deutsch');
+      } else expect(metadata).toBeNull();
+    },
+  );
+
   it.each([true, false])(
     'filters developer metadata only in Review (reviewMode: %s)',
     async (reviewMode) => {
@@ -746,6 +2496,7 @@ describe('UnitViewComponent', () => {
       appendAuthToken: vi.fn((url: string) => url),
       getApStartPage: vi.fn().mockReturnValue(of({ featureConfig: {} })),
       getViewUnit: vi.fn((_apId: string, unitId: string) => unitResponses[unitId]),
+      getReviewTranscripts: vi.fn().mockReturnValue(of([])),
       getFilePreview: vi.fn().mockReturnValue(
         of({
           fileId: 'metadata-u1',
@@ -851,7 +2602,7 @@ describe('UnitViewComponent', () => {
     expect(component.showCodingScheme).toBe(true);
     expect(component.showCommentBtn).toBe(true);
     expect(component.showBookletCommentBtn).toBe(true);
-    expect(api.getFilePreview).toHaveBeenCalledWith('ap-1', 'metadata-u1');
+    expect(api.getFilePreview).toHaveBeenCalledWith('ap-1', 'metadata-u1', 'u1');
     expect(fetchMock).toHaveBeenCalledWith('/coding-u1', {
       signal: expect.any(AbortSignal),
     });
@@ -864,7 +2615,7 @@ describe('UnitViewComponent', () => {
     const tabs = Array.from(
       fixture.nativeElement.querySelectorAll('.panel-tabs .tab') as NodeListOf<HTMLButtonElement>,
     ).map((button) => button.textContent?.trim());
-    expect(tabs).toEqual(['Kommentare', 'Metadaten', 'Kodierung']);
+    expect(tabs).toEqual(['Kommentare', 'Metadaten']);
     expect(component.activeTab).toBe('comments');
     const commentScope = fixture.nativeElement.querySelector(
       '.comment-scope-select select',
@@ -899,7 +2650,9 @@ describe('UnitViewComponent', () => {
     expect(fixture.nativeElement.querySelector('.meta-dl').textContent).toContain('Deutsch');
     expect(fixture.nativeElement.textContent).not.toContain('Items (');
     expect(fixture.nativeElement.textContent).not.toContain('Abhängigkeiten');
-    (fixture.nativeElement.querySelectorAll('.panel-tabs .tab')[2] as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('.review-coding-panel button') as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
     expect(
       Array.from(
@@ -1008,6 +2761,7 @@ describe('Review panel interactions', () => {
       null as any,
       null as any,
       { markForCheck: vi.fn() } as any,
+      null as any,
       null as any,
       null as any,
     );

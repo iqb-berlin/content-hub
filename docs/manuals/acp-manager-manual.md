@@ -208,6 +208,15 @@ Die Ergebnisse zeigen:
 - `Fehler`
 - `Nicht geprueft`
 
+Die Spalte `Validierung` bewertet jede Datei fuer sich. Fehler bei Booklets oder
+Verweisen im gesamten AP stehen getrennt unter `AP-weite Prüfung`. Oeffnen Sie
+`Hinweise zur AP-weiten Prüfung`, um die Meldungen und ihre Fundstellen zu sehen.
+Eine fehlerfreie Datei kann deshalb `OK` anzeigen, obwohl im AP noch ein
+Booklet- oder Referenzfehler besteht. Mit `Dateien prüfen` werden auch bereits
+gespeicherte Dateiergebnisse neu berechnet.
+Die AP-weiten Hinweise werden beim Oeffnen der Dateiseite neu geladen und nach
+dem Loeschen von Dateien aktualisiert.
+
 Falls Unit-Dateien unvollstaendig sind, sehen Sie zusaetzlich Hinweise zu fehlenden Bestandteilen,
 zum Beispiel:
 
@@ -661,10 +670,11 @@ Wenn Kommentare aktiviert sind, koennen angemeldete Nutzerinnen und Nutzer Komme
 jeweiligen fachlichen Kontext anlegen. Item-Kommentare werden beim ausgewaehlten Item im
 Item-Explorer erfasst; Unit-Kommentare in der Ansicht der jeweiligen Unit.
 
-Im Review-Arbeitsplatz kann unter `Kommentarziel` zwischen `Aufgabe`, `Item` und `Testheft`
-gewechselt werden, soweit diese Ziele fuer den AP aktiviert sind. Fuer `Item` waehlen Sie
-anschliessend das gewuenschte Item der aktuellen Aufgabe aus. Die Auswahl zeigt die Item-ID
-und, soweit vorhanden, die Bezeichnung. Nicht abgesendete Kommentare bleiben beim Wechsel
+Im Review-Arbeitsplatz kann unter `Kommentarziel` zwischen `Aufgabe`, `Item`, `Testheft` und
+`Kodierung` gewechselt werden, soweit diese Ziele fuer den AP aktiviert sind. Fuer `Item` und
+`Kodierung` waehlen Sie das gewuenschte Item der aktuellen Aufgabe aus. Kodierkommentare
+setzen ein Kodierschema voraus. Die Auswahl zeigt die Item-ID und, soweit vorhanden, die
+Bezeichnung. Nicht abgesendete Kommentare bleiben beim Wechsel
 zwischen Items und Kommentarzielen erhalten. Ein separater Zugang zum Item-Explorer ist fuer
 diese Kommentierung nicht erforderlich.
 
